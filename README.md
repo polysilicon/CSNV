@@ -38,7 +38,7 @@ Launcher tests: `cd launcher && go test ./...`.
 - `melty.json` (repository root) is the install recipe Melty reads from this repository: it installs `Data/` into
   the New Vegas folder and `CSNV/` into Melty's own folder, asks Melty for xNVSE, and starts `csnv-launch.exe`.
   It is checked with Melty's `validate_recipe` and `one_click_check` (one click: yes).
-- Releases: push a tag like `v0.1.0`. `.github/workflows/release.yml` runs preflight and tests, builds
+- Releases: push a tag like `v0.1.0`, or run the Release workflow by hand on GitHub with a version. `.github/workflows/release.yml` runs preflight and tests, builds
   `CSNV-0.1.0.zip` with `tools/build.py --release` (which needs `vendor/jip_nvse.dll`), and attaches it to a GitHub release.
 
 ## License and remixing

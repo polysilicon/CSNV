@@ -1,10 +1,16 @@
 name: Release
 
-# Push a tag like v0.1.0 to build CSNV-0.1.0.zip and attach it to a GitHub release.
+# Push a tag like v0.1.0, or run this workflow by hand with a version, to build CSNV-<version>.zip and
+# attach it to a GitHub release (a hand run creates the v<version> tag on the commit it runs on).
 # Melty reads melty.json from this repository and picks up each release's CSNV-*.zip.
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, e.g. 0.1.0"
+        required: true
 
 permissions:
   contents: write
@@ -24,13 +30,18 @@ jobs:
         run: |
           python3 tools/preflight.py
           (cd launcher && go vet ./... && go test ./...)
+      - name: Work out the version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [ -n "$INPUT_VERSION" ]; then VERSION="${INPUT_VERSION#v}"; else VERSION="${GITHUB_REF_NAME#v}"; fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
       - name: Build the release package
-        run: python3 tools/build.py --release --version "${GITHUB_REF_NAME#v}"
+        run: python3 tools/build.py --release --version "$VERSION"
       - name: Publish the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          gh release create "$GITHUB_REF_NAME" "build/CSNV-${VERSION}.zip" \
+          gh release create "v${VERSION}" "build/CSNV-${VERSION}.zip" --target "$GITHUB_SHA" \
             --title "CS2 in the Mojave ${VERSION}" \
             --notes "Install from Melty and press Play. See README.md and CREDITS.md."
