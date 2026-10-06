@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: launcher/go.mod
+      - name: Preflight the design sheets
+        run: python3 tools/preflight.py
+      - name: Launcher tests
+        working-directory: launcher
+        run: |
+          go vet ./...
+          go test ./...
+      - name: Build (JIP LN optional here)
+        run: python3 tools/build.py
+      - name: Generated Go file is up to date
+        run: git diff --exit-code launcher/sheets_gen.go

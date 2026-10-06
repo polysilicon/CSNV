@@ -1,22 +1,58 @@
 # CS2 in the Mojave: mod log
 
-Solo Fallout: New Vegas mod with a Counter-Strike 2-style layer. CS2 is inspiration only: nothing loads
-into CS2, and no Valve files are used.
+Solo Fallout: New Vegas mod with a Counter-Strike 2 layer. The player's CS2 buy key and crosshair come along
+(read from CS2's settings files on disk; CS2 is never started, so no VAC risk). CS-style HUD, CS2-styled buy
+menu, 3 weapons bought with caps.
+
+## Decisions (with the user)
+- Continue this design; CS2 brings the player's setup (binds + crosshair) by reading files only.
+- First minute: the HUD switches as soon as a save loads; the buy key works anywhere.
+- v1 scope: core loop + CS2-styled buy menu (option 2). Solo.
+
+## Melty read-up (2026-10-06)
+- fallout-new-vegas: Melty installs xNVSE 6.4.9 itself; launch `{game}/nvse_loader.exe`. 0 live mashups.
+- counter-strike-2: no loader; VAC risk for anything loading into the game. Closest mashup: Spike Rush
+  (CS2 + Geometry Dash, standalone, reads the player's CS2 binds/crosshair). Nothing like this exists.
+- Recipe checked with validate_recipe + one_click_check (with every entry): **one click: yes, publishable**.
+  `entries` must be `{path, size}` objects; plain strings crash Melty's checker server-side.
+
+## Route
+- Loader: xNVSE (Melty installs it) + **JIP LN NVSE bundled** (GPL-3.0; needed for the script runner,
+  InjectUIXML, key/menu events, MessageBoxExAlt, GetINIFloat, aux vars, GetFormFromMod).
+- No GECK, no hand-made .esp: logic is an xNVSE UDF file in `Data/NVSE/user_defined_functions/csnv/`
+  (xNVSE precompiles that folder at startup; `CompileScript "csnv\csnv_main.txt"` returns it), started by a
+  one-line JIP runner script `Data/NVSE/Plugins/scripts/ln_csnv.txt` (`ln_` = load or new game).
+- Weapons: **not** xNVSE CloneForm. Its own help text says clones are not saved, and the persist flag is
+  ignored in `TESForm::CloneForm`, so bought guns would vanish on reload. Instead `csnv-launch.exe` copies
+  the base WEAP records out of the player's own FalloutNV.esm into `Data/CSNV.esp` before every Play
+  (DATA damage/clip, DNAM flags/fire rate per xEdit's wbDefinitionsFNV.pas) and adds it to plugins.txt.
+- Launch: Melty runs `{managed}/csnv-launch.exe --fnv {game} --cs2 {game:counter-strike-2}`; it writes
+  `Data/config/csnv_cs2.ini` + `xhair.dds`, builds CSNV.esp, then runs `nvse_loader.exe`. Log: `{managed}/csnv-launch.log`.
+- HUD/buy screen: XML layers injected into HUDMainMenu (once per session) and MessageMenu (each open).
+
+## Source facts checked (xNVSE 6.4.9 tag, JIP LN main)
+- JIP runner prefixes: gr_ restart, lg_/gl_ load, ln_/nl_ load-or-new, ng_ new, sg_ save, xg_ exit, mx_ main menu.
+- JIP temp aux vars (`*` prefix) survive loading a save; names starting `_` are global (not tied to a mod).
+- JIP event handlers are not cleared on load; xNVSE delayed calls (CallWhilePerSeconds) are -> restart each load.
+- JIP GetINIFloat reads `Data\config\<file>`, key syntax `Section:Key`.
+- InjectUIXML path is relative to the game folder (JIP itself reads `jip_temp.xml` from the cwd).
+- MessageBoxExAlt calls its callback with the 0-based button index.
+
+## GitHub / Melty setup
+- melty.json at the repo root (validated, one click: yes; fileName CSNV-*.zip).
+- CI: .github/workflows/ci.yml (preflight, go vet/test, build). Release: tag v* -> release.yml builds with --release and attaches the zip.
+- The repo default branch is claude/cs2-mojave-mod-rmm4pm (old); melty.json must reach the default branch.
+- vendor/jip_nvse.dll (JIP 57.30) is committed; build --release works.
 
 ## Status
-- Design sheets in `sheets/` are the source of truth. Run `python3 tools/preflight.py` before every build.
-- Nothing is built or tested in game yet. Melty read-up (game_info, search_mashups) is still pending:
-  this cloud session cannot reach melty.gg.
-- In-game testing and capture will run from a session on the player's Windows PC.
+- Build: `python3 tools/preflight.py` clean (0 unfilled, 0 broken). `python3 tools/build.py` -> build/CSNV-0.1.0.zip.
+- Launcher: `go vet` + `go test` pass (synthetic ESM, CS2 vcfg parsing, plugins.txt, DDS); Linux smoke run OK.
+- **Untested in game** (all 49 sheet rows verified=false). Needs a session on the Windows PC.
 
-## Route (proposed, not yet built)
-- Loader: xNVSE only (Melty installs it). Anything else must be bundled and shareable.
-- Plugin (.esp) with a quest script: hotkey poll, buy menu, caps checks, AddItem.
-- Weapons: new records reusing vanilla New Vegas models, with CS-style names and stats.
-- HUD: route still open (see `hooks.hud_overlay`).
-
-## Open items (from preflight)
-- `hooks.weapon_ammo`: an in-clip ammo call that works with xNVSE alone.
-- `hooks.hud_overlay`: how to draw the HUD without a hand-installed dependency.
-- Weapon stats: take them from the vanilla base weapons, then tune.
-- `hud.hud_armor.art`: an original armor icon.
+## Open items
+1. Done: JIP LN NVSE 57.30 committed in vendor/ (user supplied the Nexus file).
+2. In-game test: user is testing by hand with TESTING.md (checks A-J); waiting on their results.
+3. Confirm the vanilla HUD tile names in `sheets/hud_hide.json` (dump the HUD tile tree in game).
+4. Confirm the base form IDs (the launcher logs any that aren't WEAP records).
+5. Listing: title/tagline/description still to choose. License: MIT (own code/sheets/art; JIP stays GPL-3.0). Remix: allowed. (User asked for a default option.)
+6. Real gameplay screenshot from this build.

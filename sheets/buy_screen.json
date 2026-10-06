@@ -1,0 +1,26 @@
+{
+  "sheet": "buy_screen",
+  "about": "The CS2-styled layer injected into the game's message menu while the buy screen is open (tile CSNV_Buy). The game's own buttons still take the clicks; these tiles are the CS2 look: dark panel, team-colour bar, header, caps and the price list. Positions in New Vegas UI units, from the top-left of the screen.",
+  "columns": {
+    "id": "unique element id (also the tile name in csnv_buy.xml)",
+    "kind": "panel | bar | text",
+    "text": "text shown; {caps} = player's caps, {name}/{price} = filled from the buy_menu row that points here; '-' for panels",
+    "x": "left edge",
+    "y": "top edge",
+    "width": "width",
+    "height": "height (text: line height)",
+    "color": "R,G,B (0-255)",
+    "alpha": "0-255",
+    "verified": "true once seen in the running game"
+  },
+  "rows": [
+    {"id": "bs_panel", "kind": "panel", "text": "-", "x": 60, "y": 120, "width": 420, "height": 330, "color": "18,20,24", "alpha": 225, "verified": false},
+    {"id": "bs_bar", "kind": "bar", "text": "-", "x": 60, "y": 120, "width": 420, "height": 6, "color": "222,155,53", "alpha": 255, "verified": false},
+    {"id": "bs_header", "kind": "text", "text": "BUY MENU", "x": 84, "y": 140, "width": 380, "height": 34, "color": "235,235,235", "alpha": 255, "verified": false},
+    {"id": "bs_caps", "kind": "text", "text": "$ {caps}", "x": 84, "y": 182, "width": 380, "height": 28, "color": "120,200,90", "alpha": 255, "verified": false},
+    {"id": "bs_row1", "kind": "text", "text": "1  {name}   $ {price}", "x": 84, "y": 236, "width": 380, "height": 28, "color": "235,235,235", "alpha": 255, "verified": false},
+    {"id": "bs_row2", "kind": "text", "text": "2  {name}   $ {price}", "x": 84, "y": 276, "width": 380, "height": 28, "color": "235,235,235", "alpha": 255, "verified": false},
+    {"id": "bs_row3", "kind": "text", "text": "3  {name}   $ {price}", "x": 84, "y": 316, "width": 380, "height": 28, "color": "235,235,235", "alpha": 255, "verified": false},
+    {"id": "bs_hint", "kind": "text", "text": "Pick a weapon below. Caps are taken when you buy.", "x": 84, "y": 400, "width": 380, "height": 24, "color": "150,150,150", "alpha": 255, "verified": false}
+  ]
+}

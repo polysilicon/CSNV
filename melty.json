@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "mode": "installed",
+  "games": [
+    {
+      "slug": "fallout-new-vegas",
+      "role": "primary"
+    },
+    {
+      "slug": "counter-strike-2",
+      "role": "secondary"
+    }
+  ],
+  "components": [
+    {
+      "id": "main",
+      "fileName": "CSNV-*.zip",
+      "label": "CS2 in the Mojave",
+      "kind": "main",
+      "required": true
+    }
+  ],
+  "requirements": [
+    {
+      "kind": "loader",
+      "id": "nvse"
+    }
+  ],
+  "mappings": [
+    {
+      "component": "main",
+      "from": "Data/",
+      "to": "{game}/Data"
+    },
+    {
+      "component": "main",
+      "from": "CSNV/",
+      "to": "{managed}"
+    }
+  ],
+  "launch": {
+    "kind": "exe",
+    "path": "{managed}/csnv-launch.exe",
+    "args": [
+      "--fnv",
+      "{game}",
+      "--cs2",
+      "{game:counter-strike-2}"
+    ],
+    "cwd": "{game}"
+  }
+}

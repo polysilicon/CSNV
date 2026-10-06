@@ -9,11 +9,21 @@ SHEETS = Path(__file__).resolve().parent.parent / "sheets"
 
 # column -> sheet whose ids it must reference
 REFS = {
-    ("hud", "source_hook"): "hooks",
-    ("buy_menu", "weapon"): "weapons",
-    ("buy_menu", "open_hook"): "hooks",
-    ("buy_menu", "pay_hook"): "hooks",
-    ("buy_menu", "give_hook"): "hooks",
+    ("hud", "source_hook"): ("hooks",),
+    ("buy_menu", "weapon"): ("weapons",),
+    ("buy_menu", "open_hook"): ("hooks",),
+    ("buy_menu", "pay_hook"): ("hooks",),
+    ("buy_menu", "give_hook"): ("hooks",),
+    ("buy_menu", "screen_row"): ("buy_screen",),
+    ("hud_hide", "replaced_by"): ("hud",),
+    ("cs2_settings", "used_by"): ("hooks", "hud"),
+}
+ROOT = SHEETS.parent
+# column -> allowed values
+ENUMS = {
+    ("hooks", "provider"): {"launcher", "vanilla", "xnvse", "jip"},
+    ("hooks", "runs"): {"before_launch", "once_per_session", "each_load", "per_tick", "on_event"},
+    ("buy_screen", "kind"): {"panel", "bar", "text"},
 }
 
 
@@ -38,11 +48,17 @@ def main():
                     unfilled.append(f"{name}.{rid}.{col}")
             if row.get("verified") is not True:
                 unverified.append(f"{name}.{rid}")
-            for (sheet, col), target in REFS.items():
+            for (sheet, col), targets in REFS.items():
                 if sheet == name and row.get(col) is not None:
-                    target_ids = {r["id"] for r in sheets.get(target, {"rows": []})["rows"]}
+                    target_ids = {r["id"] for t in targets for r in sheets.get(t, {"rows": []})["rows"]}
                     if row[col] not in target_ids:
-                        broken.append(f"{name}.{rid}.{col} -> {target}.{row[col]}")
+                        broken.append(f"{name}.{rid}.{col} -> {'|'.join(targets)}.{row[col]}")
+            for (sheet, col), allowed in ENUMS.items():
+                if sheet == name and row.get(col) is not None and row[col] not in allowed:
+                    problems.append(f"{name}.{rid}.{col}: '{row[col]}' not one of {sorted(allowed)}")
+            art = row.get("art") if name == "hud" else None
+            if art and art != "text" and not (ROOT / art).is_file():
+                broken.append(f"{name}.{rid}.art -> missing file {art}")
 
     total = sum(len(d["rows"]) * len(d["columns"]) for d in sheets.values())
     print(f"Sheets: {', '.join(sheets)}  |  cells: {total}")
