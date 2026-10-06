@@ -9,11 +9,8 @@ Use a test save: the buy test adds caps with the console.
    https://github.com/xNVSE/NVSE/releases/tag/6.4.9 (the .7z or .zip under "Assets") and extract everything
    into the New Vegas folder (the one with `FalloutNV.exe`; in Steam: right-click Fallout: New Vegas >
    Manage > Browse local files).
-3. **JIP LN NVSE** (needs a free Nexus login): https://www.nexusmods.com/newvegas/mods/58277 > Files >
-   the main file (manual download). From inside that archive, copy `nvse\plugins\jip_nvse.dll` into
-   `<New Vegas>\Data\NVSE\Plugins\`.
-4. **This mod.** Extract `CSNV-0.1.0.zip` into the New Vegas folder. It merges into `Data\` and adds a `CSNV\` folder.
-5. **Start it.** Double-click `<New Vegas>\CSNV\csnv-launch.exe`. If Windows shows "Windows protected your PC",
+3. **This mod.** Extract `CSNV-0.1.0.zip` into the New Vegas folder. It merges into `Data\` (JIP LN NVSE 57.30 is included) and adds a `CSNV\` folder.
+4. **Start it.** Double-click `<New Vegas>\CSNV\csnv-launch.exe`. If Windows shows "Windows protected your PC",
    click **More info > Run anyway** (the launcher isn't code-signed yet). New Vegas starts through xNVSE.
 
 ## Checks (reply with each letter: OK, or what you saw)

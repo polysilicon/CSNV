@@ -1,7 +1,7 @@
 # Credits
 
 - **CS2 in the Mojave**: design, scripts, launcher and art made for this project, built with Claude Code (AI-assisted).
-- **JIP LN NVSE** by jazzisparis, bundled as `jip_nvse.dll` under the GPL-3.0 (license text in
+- **JIP LN NVSE 57.30** by jazzisparis, bundled unmodified (`jip_nvse.dll`, `textinput/texteditmenu.xml`) under the GPL-3.0 (license text in
   `JIP-LN-NVSE-LICENSE.txt`; source: https://github.com/jazzisparis/JIP-LN-NVSE).
 - **xNVSE** (New Vegas Script Extender) by the xNVSE team; installed by Melty, not bundled.
 - **Fallout: New Vegas** by Obsidian Entertainment / Bethesda Softworks. The weapon records are copied from the

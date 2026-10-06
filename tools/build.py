@@ -399,6 +399,8 @@ def main():
     if JIP_DLL.exists():
         plug = DATA / "NVSE" / "Plugins"
         shutil.copy(JIP_DLL, plug / "jip_nvse.dll")
+        (plug / "textinput").mkdir(exist_ok=True)  # part of JIP LN's own install (its text-input menu)
+        shutil.copy(ROOT / "vendor" / "textinput" / "texteditmenu.xml", plug / "textinput" / "texteditmenu.xml")
         shutil.copy(ROOT / "vendor" / "JIP-LN-NVSE-LICENSE.txt", managed / "JIP-LN-NVSE-LICENSE.txt")
     elif args.release:
         sys.exit("vendor/jip_nvse.dll is missing: a release without JIP LN NVSE does not work (see vendor/README.md)")

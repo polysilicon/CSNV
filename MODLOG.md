@@ -42,7 +42,7 @@ menu, 3 weapons bought with caps.
 - melty.json at the repo root (validated, one click: yes; fileName CSNV-*.zip).
 - CI: .github/workflows/ci.yml (preflight, go vet/test, build). Release: tag v* -> release.yml builds with --release and attaches the zip.
 - The repo default branch is claude/cs2-mojave-mod-rmm4pm (old); melty.json must reach the default branch.
-- vendor/jip_nvse.dll must be committed before the first release (build --release refuses without it).
+- vendor/jip_nvse.dll (JIP 57.30) is committed; build --release works.
 
 ## Status
 - Build: `python3 tools/preflight.py` clean (0 unfilled, 0 broken). `python3 tools/build.py` -> build/CSNV-0.1.0.zip.
@@ -50,7 +50,7 @@ menu, 3 weapons bought with caps.
 - **Untested in game** (all 49 sheet rows verified=false). Needs a session on the Windows PC.
 
 ## Open items
-1. `vendor/jip_nvse.dll`: download JIP LN from Nexus (login) https://www.nexusmods.com/newvegas/mods/58277.
+1. Done: JIP LN NVSE 57.30 committed in vendor/ (user supplied the Nexus file).
 2. In-game test: user is testing by hand with TESTING.md (checks A-J); waiting on their results.
 3. Confirm the vanilla HUD tile names in `sheets/hud_hide.json` (dump the HUD tile tree in game).
 4. Confirm the base form IDs (the launcher logs any that aren't WEAP records).
