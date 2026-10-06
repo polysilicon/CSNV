@@ -1,0 +1,4 @@
+build/
+vendor/*.dll
+launcher/csnv-launch
+launcher/csnv-launch.exe

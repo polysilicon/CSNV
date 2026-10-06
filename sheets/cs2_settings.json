@@ -12,15 +12,105 @@
     "verified": "true once read from a real CS2 install and seen working in game"
   },
   "rows": [
-    {"id": "buy_key", "cs2_file": "cs2_user_keys_*.vcfg", "cs2_key": "buymenu", "default": "b", "ini_key": "Keys:BuyKey", "convert": "the key bound to 'buymenu' -> DirectInput scancode (launcher keymap); unknown key -> 48 (B)", "used_by": "key_buy_menu", "verified": false},
-    {"id": "xhair_color", "cs2_file": "cs2_user_convars_*.vcfg", "cs2_key": "cl_crosshaircolor", "default": "1", "ini_key": "Crosshair:R,G,B", "convert": "preset 0 red 250,50,50 | 1 green 50,250,50 | 2 yellow 250,250,50 | 3 blue 50,50,250 | 4 cyan 50,250,250 | 5 custom = xhair_r/g/b", "used_by": "hud_crosshair", "verified": false},
-    {"id": "xhair_r", "cs2_file": "cs2_user_convars_*.vcfg", "cs2_key": "cl_crosshaircolor_r", "default": "50", "ini_key": "Crosshair:R", "convert": "used when cl_crosshaircolor is 5; clamp 0-255", "used_by": "hud_crosshair", "verified": false},
-    {"id": "xhair_g", "cs2_file": "cs2_user_convars_*.vcfg", "cs2_key": "cl_crosshaircolor_g", "default": "250", "ini_key": "Crosshair:G", "convert": "used when cl_crosshaircolor is 5; clamp 0-255", "used_by": "hud_crosshair", "verified": false},
-    {"id": "xhair_b", "cs2_file": "cs2_user_convars_*.vcfg", "cs2_key": "cl_crosshaircolor_b", "default": "50", "ini_key": "Crosshair:B", "convert": "used when cl_crosshaircolor is 5; clamp 0-255", "used_by": "hud_crosshair", "verified": false},
-    {"id": "xhair_alpha", "cs2_file": "cs2_user_convars_*.vcfg", "cs2_key": "cl_crosshairalpha", "default": "200", "ini_key": "Crosshair:Alpha", "convert": "used when cl_crosshairusealpha is 1, else 255; clamp 0-255", "used_by": "hud_crosshair", "verified": false},
-    {"id": "xhair_size", "cs2_file": "cs2_user_convars_*.vcfg", "cs2_key": "cl_crosshairsize", "default": "5", "ini_key": "Crosshair:Length", "convert": "arm length in UI units = size * 2, clamp 1-60", "used_by": "hud_crosshair", "verified": false},
-    {"id": "xhair_gap", "cs2_file": "cs2_user_convars_*.vcfg", "cs2_key": "cl_crosshairgap", "default": "1", "ini_key": "Crosshair:Gap", "convert": "gap from centre in UI units = 4 + gap, clamp 0-40", "used_by": "hud_crosshair", "verified": false},
-    {"id": "xhair_thickness", "cs2_file": "cs2_user_convars_*.vcfg", "cs2_key": "cl_crosshairthickness", "default": "0.5", "ini_key": "Crosshair:Thickness", "convert": "arm thickness in UI units = max(1, round(thickness * 2))", "used_by": "hud_crosshair", "verified": false},
-    {"id": "xhair_dot", "cs2_file": "cs2_user_convars_*.vcfg", "cs2_key": "cl_crosshairdot", "default": "0", "ini_key": "Crosshair:Dot", "convert": "1 shows a centre dot, else 0", "used_by": "hud_crosshair", "verified": false}
+    {
+      "id": "buy_key",
+      "cs2_file": "cs2_user_keys_*.vcfg",
+      "cs2_key": "buymenu",
+      "default": "b",
+      "ini_key": "Keys:BuyKey",
+      "convert": "the key bound to 'buymenu' -> DirectInput scancode (launcher keymap); unknown key -> 48 (B)",
+      "used_by": "key_buy_menu",
+      "verified": false
+    },
+    {
+      "id": "xhair_color",
+      "cs2_file": "cs2_user_convars_*.vcfg",
+      "cs2_key": "cl_crosshaircolor",
+      "default": "1",
+      "ini_key": "Crosshair:R,G,B",
+      "convert": "preset 0 red 250,50,50 | 1 green 50,250,50 | 2 yellow 250,250,50 | 3 blue 50,50,250 | 4 cyan 50,250,250 | 5 custom = xhair_r/g/b",
+      "used_by": "hud_crosshair",
+      "verified": false
+    },
+    {
+      "id": "xhair_r",
+      "cs2_file": "cs2_user_convars_*.vcfg",
+      "cs2_key": "cl_crosshaircolor_r",
+      "default": "50",
+      "ini_key": "Crosshair:R",
+      "convert": "used when cl_crosshaircolor is 5; clamp 0-255",
+      "used_by": "hud_crosshair",
+      "verified": false
+    },
+    {
+      "id": "xhair_g",
+      "cs2_file": "cs2_user_convars_*.vcfg",
+      "cs2_key": "cl_crosshaircolor_g",
+      "default": "250",
+      "ini_key": "Crosshair:G",
+      "convert": "used when cl_crosshaircolor is 5; clamp 0-255",
+      "used_by": "hud_crosshair",
+      "verified": false
+    },
+    {
+      "id": "xhair_b",
+      "cs2_file": "cs2_user_convars_*.vcfg",
+      "cs2_key": "cl_crosshaircolor_b",
+      "default": "50",
+      "ini_key": "Crosshair:B",
+      "convert": "used when cl_crosshaircolor is 5; clamp 0-255",
+      "used_by": "hud_crosshair",
+      "verified": false
+    },
+    {
+      "id": "xhair_alpha",
+      "cs2_file": "cs2_user_convars_*.vcfg",
+      "cs2_key": "cl_crosshairalpha",
+      "default": "200",
+      "ini_key": "Crosshair:Alpha",
+      "convert": "used when cl_crosshairusealpha is 1, else 255; clamp 0-255",
+      "used_by": "hud_crosshair",
+      "verified": false
+    },
+    {
+      "id": "xhair_size",
+      "cs2_file": "cs2_user_convars_*.vcfg",
+      "cs2_key": "cl_crosshairsize",
+      "default": "5",
+      "ini_key": "Crosshair:Length",
+      "convert": "arm length in UI units = size * 2, clamp 1-60",
+      "used_by": "hud_crosshair",
+      "verified": false
+    },
+    {
+      "id": "xhair_gap",
+      "cs2_file": "cs2_user_convars_*.vcfg",
+      "cs2_key": "cl_crosshairgap",
+      "default": "1",
+      "ini_key": "Crosshair:Gap",
+      "convert": "gap from centre in UI units = 4 + gap, clamp 0-40",
+      "used_by": "hud_crosshair",
+      "verified": false
+    },
+    {
+      "id": "xhair_thickness",
+      "cs2_file": "cs2_user_convars_*.vcfg",
+      "cs2_key": "cl_crosshairthickness",
+      "default": "0.5",
+      "ini_key": "Crosshair:Thickness",
+      "convert": "arm thickness in UI units = max(1, round(thickness * 2))",
+      "used_by": "hud_crosshair",
+      "verified": false
+    },
+    {
+      "id": "xhair_dot",
+      "cs2_file": "cs2_user_convars_*.vcfg",
+      "cs2_key": "cl_crosshairdot",
+      "default": "0",
+      "ini_key": "Crosshair:Dot",
+      "convert": "1 shows a centre dot, else 0",
+      "used_by": "hud_crosshair",
+      "verified": false
+    }
   ]
 }

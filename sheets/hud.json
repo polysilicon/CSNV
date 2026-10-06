@@ -13,10 +13,60 @@
     "verified": "true once seen in the running game"
   },
   "rows": [
-    {"id": "hud_health", "label": "health", "anchor": "bottom-left", "x": 40, "y": 60, "source_hook": "player_health", "format": "+ {value}", "art": "text", "verified": false},
-    {"id": "hud_armor", "label": "armor", "anchor": "bottom-left", "x": 210, "y": 60, "source_hook": "player_armor", "format": "{value}", "art": "assets/armor.png", "verified": false},
-    {"id": "hud_caps", "label": "caps", "anchor": "bottom-left", "x": 40, "y": 110, "source_hook": "player_caps", "format": "$ {value}", "art": "text", "verified": false},
-    {"id": "hud_ammo", "label": "ammo", "anchor": "bottom-right", "x": 60, "y": 60, "source_hook": "weapon_ammo", "format": "{clip} / {reserve}", "art": "text", "verified": false},
-    {"id": "hud_crosshair", "label": "crosshair", "anchor": "center", "x": 0, "y": 0, "source_hook": "load_settings", "format": "crosshair", "art": "assets/white.png", "verified": false}
+    {
+      "id": "hud_health",
+      "label": "health",
+      "anchor": "bottom-left",
+      "x": 40,
+      "y": 60,
+      "source_hook": "player_health",
+      "format": "+ {value}",
+      "art": "text",
+      "verified": false
+    },
+    {
+      "id": "hud_armor",
+      "label": "armor",
+      "anchor": "bottom-left",
+      "x": 210,
+      "y": 60,
+      "source_hook": "player_armor",
+      "format": "{value}",
+      "art": "assets/armor.png",
+      "verified": false
+    },
+    {
+      "id": "hud_caps",
+      "label": "caps",
+      "anchor": "bottom-left",
+      "x": 40,
+      "y": 110,
+      "source_hook": "player_caps",
+      "format": "$ {value}",
+      "art": "text",
+      "verified": false
+    },
+    {
+      "id": "hud_ammo",
+      "label": "ammo",
+      "anchor": "bottom-right",
+      "x": 60,
+      "y": 60,
+      "source_hook": "weapon_ammo",
+      "format": "{clip} / {reserve}",
+      "art": "text",
+      "verified": false
+    },
+    {
+      "id": "hud_crosshair",
+      "label": "crosshair",
+      "anchor": "center",
+      "x": 0,
+      "y": 0,
+      "source_hook": "write_settings",
+      "format": "crosshair",
+      "art": "assets/white.png",
+      "verified": false
+    }
   ]
 }

@@ -1,23 +1,66 @@
 {
   "sheet": "weapons",
-  "about": "The 3 v1 weapons. Each is a runtime clone (xNVSE CloneForm) of a vanilla Fallout: New Vegas weapon, so models, sounds and animations are the game's own and nothing from CS2 is used. Multipliers apply to the base weapon's own values read at runtime. Form IDs are from FalloutNV.esm (mod index 00); the scripts check every one at load and print a CSNV error line if one does not resolve.",
+  "about": "The 3 v1 weapons. Each is a copy of a vanilla Fallout: New Vegas weapon record, made on the player's PC by the launcher from their own FalloutNV.esm into Data/CSNV.esp before every Play (nothing from Bethesda is shipped; models, sounds and animations stay the game's own, nothing from CS2 is used). Multipliers apply to the base record's own values. Base form IDs are FalloutNV.esm IDs taken from public lists; the launcher refuses to write a weapon whose base form is missing or not a WEAP and logs it, and the in-game script prints a CSNV error line if a plugin form does not resolve.",
   "columns": {
     "id": "unique weapon id (also the aux-variable key the clone is stored under)",
     "name": "in-game name (original, CS-flavoured, not a Valve trademark)",
     "role": "pistol | rifle | sniper",
     "base_form": "FalloutNV.esm form ID of the vanilla weapon that is cloned",
     "base_name": "the vanilla weapon's in-game name (for humans checking base_form)",
+    "plugin_form": "form ID of the copy inside CSNV.esp (local index; the launcher writes it as 01xxxxxx)",
     "ammo_form": "FalloutNV.esm form ID of the ammo given with the purchase",
-    "damage_mult": "multiplier on the base weapon's damage (SetAttackDamage)",
-    "clip_size": "rounds per magazine, absolute (SetWeaponClipRounds)",
-    "fire_rate_mult": "multiplier on the base fire rate (SetWeaponFireRate)",
-    "automatic": "1 = full auto, 0 = semi auto (SetWeaponIsAutomatic)",
+    "damage_mult": "multiplier on the base DATA 'Base Damage' (rounded)",
+    "clip_size": "rounds per magazine, absolute (DATA 'Clip Size')",
+    "fire_rate_mult": "multiplier on the base DNAM 'Fire Rate' and 'Attack Shots/Sec'",
+    "automatic": "1 = full auto, 0 = semi auto (DNAM 'Flags 1' bit 0x02)",
     "starter_ammo": "rounds given with the purchase",
     "verified": "true once bought and fired in the running game"
   },
   "rows": [
-    {"id": "CSNVPistol", "name": "P-18 Sidearm", "role": "pistol", "base_form": "0E3778", "base_name": "9mm pistol", "ammo_form": "08ED03", "damage_mult": 1.0, "clip_size": 20, "fire_rate_mult": 1.2, "automatic": 0, "starter_ammo": 60, "verified": false},
-    {"id": "CSNVRifle", "name": "K-47 Rifle", "role": "rifle", "base_form": "0E9C3B", "base_name": "Service rifle", "ammo_form": "004240", "damage_mult": 1.15, "clip_size": 30, "fire_rate_mult": 1.0, "automatic": 1, "starter_ammo": 90, "verified": false},
-    {"id": "CSNVSniper", "name": "Magnum Longshot", "role": "sniper", "base_form": "004353", "base_name": "Sniper rifle", "ammo_form": "140AA0", "damage_mult": 1.6, "clip_size": 5, "fire_rate_mult": 0.8, "automatic": 0, "starter_ammo": 30, "verified": false}
+    {
+      "id": "CSNVPistol",
+      "name": "P-18 Sidearm",
+      "role": "pistol",
+      "base_form": "0E3778",
+      "base_name": "9mm pistol",
+      "plugin_form": "000800",
+      "ammo_form": "08ED03",
+      "damage_mult": 1.0,
+      "clip_size": 20,
+      "fire_rate_mult": 1.2,
+      "automatic": 0,
+      "starter_ammo": 60,
+      "verified": false
+    },
+    {
+      "id": "CSNVRifle",
+      "name": "K-47 Rifle",
+      "role": "rifle",
+      "base_form": "0E9C3B",
+      "base_name": "Service rifle",
+      "plugin_form": "000801",
+      "ammo_form": "004240",
+      "damage_mult": 1.15,
+      "clip_size": 30,
+      "fire_rate_mult": 1.0,
+      "automatic": 1,
+      "starter_ammo": 90,
+      "verified": false
+    },
+    {
+      "id": "CSNVSniper",
+      "name": "Magnum Longshot",
+      "role": "sniper",
+      "base_form": "004353",
+      "base_name": "Sniper rifle",
+      "plugin_form": "000802",
+      "ammo_form": "140AA0",
+      "damage_mult": 1.6,
+      "clip_size": 5,
+      "fire_rate_mult": 0.8,
+      "automatic": 0,
+      "starter_ammo": 30,
+      "verified": false
+    }
   ]
 }

@@ -21,8 +21,8 @@ REFS = {
 ROOT = SHEETS.parent
 # column -> allowed values
 ENUMS = {
-    ("hooks", "provider"): {"vanilla", "xnvse", "jip"},
-    ("hooks", "runs"): {"once_per_session", "each_load", "per_tick", "on_event"},
+    ("hooks", "provider"): {"launcher", "vanilla", "xnvse", "jip"},
+    ("hooks", "runs"): {"before_launch", "once_per_session", "each_load", "per_tick", "on_event"},
     ("buy_screen", "kind"): {"panel", "bar", "text"},
 }
 
