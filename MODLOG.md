@@ -41,7 +41,8 @@ menu, 3 weapons bought with caps.
 ## GitHub / Melty setup
 - melty.json at the repo root (validated, one click: yes; fileName CSNV-*.zip).
 - CI: .github/workflows/ci.yml (preflight, go vet/test, build). Release: tag v* -> release.yml builds with --release and attaches the zip.
-- The repo default branch is claude/cs2-mojave-mod-rmm4pm (old); melty.json must reach the default branch.
+- Default branch claude/cs2-mojave-mod-rmm4pm now carries everything (PRs #1, #2 merged).
+- Release v0.1.0 published by the workflow (manual run; this session cannot push tags): CSNV-0.1.0.zip, 1247674 bytes, sha256 cf22a238f7333da1fcc249a35287bc7c6b6abf40c6e4870778630cc69d2f3362. Still untested in game.
 - vendor/jip_nvse.dll (JIP 57.30) is committed; build --release works.
 
 ## Status
