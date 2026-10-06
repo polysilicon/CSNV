@@ -51,7 +51,8 @@ menu, 3 weapons bought with caps.
 - Release 0.1.0 submitted (releaseId e51073e3-4334-426b-ab63-bc3ded61408c): upload CSNV-0.1.0.zip = the GitHub v0.1.0 asset,
   sha256 cf22a238...3362. submit_release + one_click_check on the stored files: one click yes, publishable, nothing to finish.
   Only finding: 'executable-code' (csnv-launch.exe, jip_nvse.dll), severity review.
-- Next: user presses Test in the Melty app; then publish on their say-so.
+- Release 0.1.1 submitted (GitHub v0.1.1 asset, 1249813 bytes, sha256 9df53ca2...a32f, 22 files): one click yes. Supersedes 0.1.0 (broken script).
+- Next: user presses Test on 0.1.1 in the Melty app; then publish on their say-so.
 
 ## In-game test 1 (0.1.0, user's PC, via Melty Test)
 - Console: xNVSE 6.3.5 (not 6.4.9) and JIP LN 57.30 loaded. Then: "Max script expression length inside
