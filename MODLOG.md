@@ -63,6 +63,13 @@ menu, 3 weapons bought with caps.
   csnv_hudtick, csnv_always) fetched with CompileScript. build.py now fails on >512 chars in parentheses or
   inline lambdas (it reproduces the line-80 error on the 0.1.0 script). All commands checked present in xNVSE 6.3.5.
 
+## In-game test 2 (0.1.1)
+- 512-char error gone. New: "Unquoted argument 'PlayerRef' will be treated as string by default",
+  "Invalid operands for operator ." -> csnv_hudtick, csnv_main, csnv_onkey, csnv_onmenu failed to precompile.
+  xNVSE precompiles user_defined_functions at startup, when editor IDs (PlayerRef) do not resolve.
+- Fix (0.1.2): every function sets `ref rP` = GetFormFromMod "FalloutNV.esm" "000014" (the player ref) after its
+  declarations and calls through rP; build.py fails if PlayerRef/player. appears in a script.
+
 ## Status
 - Build: `python3 tools/preflight.py` clean (0 unfilled, 0 broken). `python3 tools/build.py` -> build/CSNV-0.1.0.zip.
 - Launcher: `go vet` + `go test` pass (synthetic ESM, CS2 vcfg parsing, plugins.txt, DDS); Linux smoke run OK.
