@@ -51,7 +51,8 @@ menu, 3 weapons bought with caps.
 - Release 0.1.0 submitted (releaseId e51073e3-4334-426b-ab63-bc3ded61408c): upload CSNV-0.1.0.zip = the GitHub v0.1.0 asset,
   sha256 cf22a238...3362. submit_release + one_click_check on the stored files: one click yes, publishable, nothing to finish.
   Only finding: 'executable-code' (csnv-launch.exe, jip_nvse.dll), severity review.
-- Next: user presses Test in the Melty app; then publish on their say-so.
+- Release 0.1.1 submitted (GitHub v0.1.1 asset, 1249813 bytes, sha256 9df53ca2...a32f, 22 files): one click yes. Supersedes 0.1.0 (broken script).
+- Next: user presses Test on 0.1.1 in the Melty app; then publish on their say-so.
 
 ## In-game test 1 (0.1.0, user's PC, via Melty Test)
 - Console: xNVSE 6.3.5 (not 6.4.9) and JIP LN 57.30 loaded. Then: "Max script expression length inside
@@ -61,6 +62,13 @@ menu, 3 weapons bought with caps.
 - Fix (0.1.1): no inline lambdas; each handler is its own UDF file (csnv_onkey, csnv_buy, csnv_onmenu,
   csnv_hudtick, csnv_always) fetched with CompileScript. build.py now fails on >512 chars in parentheses or
   inline lambdas (it reproduces the line-80 error on the 0.1.0 script). All commands checked present in xNVSE 6.3.5.
+
+## In-game test 2 (0.1.1)
+- 512-char error gone. New: "Unquoted argument 'PlayerRef' will be treated as string by default",
+  "Invalid operands for operator ." -> csnv_hudtick, csnv_main, csnv_onkey, csnv_onmenu failed to precompile.
+  xNVSE precompiles user_defined_functions at startup, when editor IDs (PlayerRef) do not resolve.
+- Fix (0.1.2): every function sets `ref rP` = GetFormFromMod "FalloutNV.esm" "000014" (the player ref) after its
+  declarations and calls through rP; build.py fails if PlayerRef/player. appears in a script.
 
 ## Status
 - Build: `python3 tools/preflight.py` clean (0 unfilled, 0 broken). `python3 tools/build.py` -> build/CSNV-0.1.0.zip.
