@@ -40,3 +40,7 @@ Launcher tests: `cd launcher && go test ./...`.
   It is checked with Melty's `validate_recipe` and `one_click_check` (one click: yes).
 - Releases: push a tag like `v0.1.0`. `.github/workflows/release.yml` runs preflight and tests, builds
   `CSNV-0.1.0.zip` with `tools/build.py --release` (which needs `vendor/jip_nvse.dll`), and attaches it to a GitHub release.
+
+## License and remixing
+CS2 in the Mojave's own code, sheets and art are MIT-licensed (see `LICENSE`), and remixes are welcome,
+on Melty too. The bundled JIP LN NVSE stays under its own GPL-3.0 license.

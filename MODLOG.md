@@ -54,5 +54,5 @@ menu, 3 weapons bought with caps.
 2. In-game test: user is testing by hand with TESTING.md (checks A-J); waiting on their results.
 3. Confirm the vanilla HUD tile names in `sheets/hud_hide.json` (dump the HUD tile tree in game).
 4. Confirm the base form IDs (the launcher logs any that aren't WEAP records).
-5. Listing: title/tagline/description, content license, remix permission (ask the user).
+5. Listing: title/tagline/description still to choose. License: MIT (own code/sheets/art; JIP stays GPL-3.0). Remix: allowed. (User asked for a default option.)
 6. Real gameplay screenshot from this build.
