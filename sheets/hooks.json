@@ -1,0 +1,23 @@
+{
+  "sheet": "hooks",
+  "about": "Every point where the mod touches Fallout: New Vegas. One row = one hook. A null cell is unfilled; verified=false means the call has not been checked in the running game.",
+  "columns": {
+    "id": "unique hook id, referenced by other sheets",
+    "kind": "input | read | write",
+    "call": "the script call (vanilla GECK script or xNVSE) that implements it",
+    "provider": "vanilla | xnvse | other (anything other than vanilla/xnvse must be bundled)",
+    "notes": "what it is for",
+    "verified": "true once tested in the running game"
+  },
+  "rows": [
+    {"id": "key_buy_menu", "kind": "input", "call": "IsKeyPressed 48 (B, DirectInput scancode)", "provider": "xnvse", "notes": "Opens the buy menu anywhere; edge-detected in the quest script so one press = one open", "verified": false},
+    {"id": "player_health", "kind": "read", "call": "player.GetActorValue Health / player.GetBaseActorValue Health", "provider": "vanilla", "notes": "HUD health, bottom-left", "verified": false},
+    {"id": "player_armor", "kind": "read", "call": "player.GetActorValue DamageThreshold", "provider": "vanilla", "notes": "HUD armor, bottom-left. New Vegas armor is DT, shown as the CS-style armor number", "verified": false},
+    {"id": "weapon_ammo", "kind": "read", "call": null, "provider": null, "notes": "HUD ammo, bottom-right: rounds in clip / total reserve. Reserve = player.GetItemCount <ammo>; in-clip count needs a call confirmed in xNVSE docs", "verified": false},
+    {"id": "player_caps", "kind": "read", "call": "player.GetItemCount Caps001", "provider": "vanilla", "notes": "Money shown as caps on the HUD and buy menu", "verified": false},
+    {"id": "spend_caps", "kind": "write", "call": "player.RemoveItem Caps001 <price> 1", "provider": "vanilla", "notes": "Silent remove when a purchase succeeds", "verified": false},
+    {"id": "give_item", "kind": "write", "call": "player.AddItem <form> <count> 1", "provider": "vanilla", "notes": "Weapon and its starter ammo land in inventory", "verified": false},
+    {"id": "hud_overlay", "kind": "write", "call": null, "provider": null, "notes": "Draw the CS-style HUD. Route still open: injected UI XML on the HUD menu vs. a tile-based menu; must work with xNVSE alone or a bundled, shareable plugin", "verified": false},
+    {"id": "buy_menu_ui", "kind": "write", "call": "ShowMessage CSNVBuyMenuMsg (message form with one button per buy_menu row)", "provider": "vanilla", "notes": "v1 fallback that needs nothing extra; CS2 styling of it is an open item", "verified": false}
+  ]
+}

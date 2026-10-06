@@ -1,0 +1,21 @@
+{
+  "sheet": "weapons",
+  "about": "The 3 v1 weapons. Each is a new weapon record that reuses a vanilla New Vegas model (no new meshes, nothing from CS2). Stats null = not yet chosen/verified against the base weapon in the game data.",
+  "columns": {
+    "id": "unique weapon id (also the editor ID in the plugin)",
+    "name": "in-game name (original, CS-flavoured, not a Valve trademark)",
+    "role": "pistol | rifle | sniper",
+    "base_form": "vanilla weapon whose model/sounds are reused",
+    "ammo": "vanilla ammo editor ID",
+    "damage": "per shot",
+    "clip_size": "rounds per magazine",
+    "fire_rate": "shots per second",
+    "starter_ammo": "rounds given with the purchase",
+    "verified": "true once fired in the running game"
+  },
+  "rows": [
+    {"id": "CSNVPistol", "name": "P-18 Sidearm", "role": "pistol", "base_form": "Weap9mmPistol", "ammo": "Ammo9mm", "damage": null, "clip_size": null, "fire_rate": null, "starter_ammo": 60, "verified": false},
+    {"id": "CSNVRifle", "name": "K-47 Rifle", "role": "rifle", "base_form": "WeapNVServiceRifle", "ammo": "Ammo556mm", "damage": null, "clip_size": null, "fire_rate": null, "starter_ammo": 90, "verified": false},
+    {"id": "CSNVSniper", "name": "Magnum Longshot", "role": "sniper", "base_form": "WeapSniperRifle", "ammo": "Ammo308", "damage": null, "clip_size": null, "fire_rate": null, "starter_ammo": 30, "verified": false}
+  ]
+}
