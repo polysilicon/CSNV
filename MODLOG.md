@@ -45,7 +45,7 @@ menu, 3 weapons bought with caps.
 
 ## Open items
 1. `vendor/jip_nvse.dll`: download JIP LN from Nexus (login) https://www.nexusmods.com/newvegas/mods/58277.
-2. In-game test on the PC: check the `CSNV error` console lines, buy each weapon, save/reload, HUD, crosshair.
+2. In-game test: user is testing by hand with TESTING.md (checks A-J); waiting on their results.
 3. Confirm the vanilla HUD tile names in `sheets/hud_hide.json` (dump the HUD tile tree in game).
 4. Confirm the base form IDs (the launcher logs any that aren't WEAP records).
 5. Listing: title/tagline/description, content license, remix permission (ask the user).

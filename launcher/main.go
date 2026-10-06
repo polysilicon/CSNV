@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -59,6 +60,32 @@ func activatePlugin(pluginsTxt, dataDir string) (bool, error) {
 	return true, os.WriteFile(pluginsTxt, []byte(strings.Join(lines, "\r\n")+"\r\n"), 0o644)
 }
 
+func fileExists(p string) bool {
+	_, err := os.Stat(p)
+	return err == nil
+}
+
+// findCS2Dir looks for Counter-Strike 2 in the Steam libraries next to New Vegas and in Steam's library list.
+func findCS2Dir(fnvDir string) string {
+	const cs2Folder = "Counter-Strike Global Offensive"
+	candidates := []string{filepath.Join(filepath.Dir(fnvDir), cs2Folder)}
+	for _, root := range steamRoots("") {
+		candidates = append(candidates, filepath.Join(root, "steamapps", "common", cs2Folder))
+		if b, err := os.ReadFile(filepath.Join(root, "steamapps", "libraryfolders.vdf")); err == nil {
+			for _, m := range regexp.MustCompile(`"path"\s+"([^"]+)"`).FindAllStringSubmatch(string(b), -1) {
+				lib := strings.ReplaceAll(m[1], `\\`, `\`)
+				candidates = append(candidates, filepath.Join(lib, "steamapps", "common", cs2Folder))
+			}
+		}
+	}
+	for _, c := range candidates {
+		if fileExists(filepath.Join(c, "game", "csgo")) {
+			return c
+		}
+	}
+	return ""
+}
+
 func main() {
 	fnv := flag.String("fnv", "", "Fallout: New Vegas folder (Melty passes {game})")
 	cs2 := flag.String("cs2", "", "Counter-Strike 2 folder (Melty passes {game:counter-strike-2}); optional")
@@ -82,8 +109,16 @@ func main() {
 	}()
 
 	if *fnv == "" {
-		logf("error: --fnv <Fallout New Vegas folder> is required")
-		os.Exit(2)
+		// started by hand from <New Vegas>/CSNV/csnv-launch.exe: the game is the folder above
+		if dir := filepath.Dir(filepath.Dir(exe)); fileExists(filepath.Join(dir, "FalloutNV.exe")) {
+			*fnv = dir
+		} else {
+			logf("error: pass --fnv <Fallout New Vegas folder>, or put the CSNV folder inside the New Vegas folder")
+			os.Exit(2)
+		}
+	}
+	if *cs2 == "" {
+		*cs2 = findCS2Dir(*fnv)
 	}
 	data := filepath.Join(*fnv, "Data")
 	logf("CS2 in the Mojave launcher: New Vegas at %s, CS2 at %q", *fnv, *cs2)

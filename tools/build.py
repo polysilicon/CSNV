@@ -392,7 +392,7 @@ def main():
 
     managed = STAGE / "CSNV"
     managed.mkdir(parents=True, exist_ok=True)
-    for name in ("README.md", "CREDITS.md", "LICENSE"):
+    for name in ("README.md", "CREDITS.md", "TESTING.md", "LICENSE"):
         if (ROOT / name).exists():
             shutil.copy(ROOT / name, managed / name)
     if JIP_DLL.exists():

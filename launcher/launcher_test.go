@@ -244,3 +244,17 @@ func TestSolidDDS(t *testing.T) {
 		t.Fatalf("dds header/pixel wrong: %d bytes", len(d))
 	}
 }
+
+func TestFindCS2NextToNewVegas(t *testing.T) {
+	common := filepath.Join(t.TempDir(), "steamapps", "common")
+	fnv := filepath.Join(common, "Fallout New Vegas")
+	cs2 := filepath.Join(common, "Counter-Strike Global Offensive")
+	os.MkdirAll(fnv, 0o755)
+	if got := findCS2Dir(fnv); got != "" {
+		t.Fatalf("found %q with no CS2 installed", got)
+	}
+	os.MkdirAll(filepath.Join(cs2, "game", "csgo"), 0o755)
+	if got := findCS2Dir(fnv); got != cs2 {
+		t.Fatalf("got %q, want %q", got, cs2)
+	}
+}
