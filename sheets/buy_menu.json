@@ -1,19 +1,20 @@
 {
   "sheet": "buy_menu",
-  "about": "What the hotkey buy menu sells. Prices are in caps.",
+  "about": "What the buy screen sells. Prices are in caps. Row order = button order on the buy screen.",
   "columns": {
     "id": "unique entry id",
-    "slot": "menu position (1 = first button)",
+    "slot": "button position (1 = first button)",
     "weapon": "weapons.id that lands in inventory",
     "price_caps": "cost in caps",
-    "open_hook": "hooks.id that opens the menu",
+    "open_hook": "hooks.id that opens the buy screen",
     "pay_hook": "hooks.id that takes the caps",
     "give_hook": "hooks.id that adds the item",
+    "screen_row": "buy_screen.id of the price-list line that shows this entry",
     "verified": "true once bought in the running game"
   },
   "rows": [
-    {"id": "buy_pistol", "slot": 1, "weapon": "CSNVPistol", "price_caps": 200, "open_hook": "key_buy_menu", "pay_hook": "spend_caps", "give_hook": "give_item", "verified": false},
-    {"id": "buy_rifle", "slot": 2, "weapon": "CSNVRifle", "price_caps": 900, "open_hook": "key_buy_menu", "pay_hook": "spend_caps", "give_hook": "give_item", "verified": false},
-    {"id": "buy_sniper", "slot": 3, "weapon": "CSNVSniper", "price_caps": 1500, "open_hook": "key_buy_menu", "pay_hook": "spend_caps", "give_hook": "give_item", "verified": false}
+    {"id": "buy_pistol", "slot": 1, "weapon": "CSNVPistol", "price_caps": 200, "open_hook": "key_buy_menu", "pay_hook": "spend_caps", "give_hook": "give_item", "screen_row": "bs_row1", "verified": false},
+    {"id": "buy_rifle", "slot": 2, "weapon": "CSNVRifle", "price_caps": 900, "open_hook": "key_buy_menu", "pay_hook": "spend_caps", "give_hook": "give_item", "screen_row": "bs_row2", "verified": false},
+    {"id": "buy_sniper", "slot": 3, "weapon": "CSNVSniper", "price_caps": 1500, "open_hook": "key_buy_menu", "pay_hook": "spend_caps", "give_hook": "give_item", "screen_row": "bs_row3", "verified": false}
   ]
 }

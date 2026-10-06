@@ -1,0 +1,15 @@
+{
+  "sheet": "hud_hide",
+  "about": "Vanilla HUDMainMenu tiles hidden while the CS HUD is on. Tile names are not yet read from the game's hud_main_menu.xml (this cloud machine has no game files): they must be confirmed on the PC by dumping the HUD tile tree, then verified=true. A wrong name only means that vanilla element stays visible; nothing breaks.",
+  "columns": {
+    "id": "unique row id",
+    "tile": "child tile name under HUDMainMenu",
+    "replaced_by": "hud.id that takes its place",
+    "verified": "true once the tile name is confirmed and it hides in game"
+  },
+  "rows": [
+    {"id": "hide_hp", "tile": "HitPoints", "replaced_by": "hud_health", "verified": false},
+    {"id": "hide_ammo", "tile": "AmmoCount", "replaced_by": "hud_ammo", "verified": false},
+    {"id": "hide_reticle", "tile": "ReticleCenter", "replaced_by": "hud_crosshair", "verified": false}
+  ]
+}

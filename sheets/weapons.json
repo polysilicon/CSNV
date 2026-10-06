@@ -1,21 +1,23 @@
 {
   "sheet": "weapons",
-  "about": "The 3 v1 weapons. Each is a new weapon record that reuses a vanilla New Vegas model (no new meshes, nothing from CS2). Stats null = not yet chosen/verified against the base weapon in the game data.",
+  "about": "The 3 v1 weapons. Each is a runtime clone (xNVSE CloneForm) of a vanilla Fallout: New Vegas weapon, so models, sounds and animations are the game's own and nothing from CS2 is used. Multipliers apply to the base weapon's own values read at runtime. Form IDs are from FalloutNV.esm (mod index 00); the scripts check every one at load and print a CSNV error line if one does not resolve.",
   "columns": {
-    "id": "unique weapon id (also the editor ID in the plugin)",
+    "id": "unique weapon id (also the aux-variable key the clone is stored under)",
     "name": "in-game name (original, CS-flavoured, not a Valve trademark)",
     "role": "pistol | rifle | sniper",
-    "base_form": "vanilla weapon whose model/sounds are reused",
-    "ammo": "vanilla ammo editor ID",
-    "damage": "per shot",
-    "clip_size": "rounds per magazine",
-    "fire_rate": "shots per second",
+    "base_form": "FalloutNV.esm form ID of the vanilla weapon that is cloned",
+    "base_name": "the vanilla weapon's in-game name (for humans checking base_form)",
+    "ammo_form": "FalloutNV.esm form ID of the ammo given with the purchase",
+    "damage_mult": "multiplier on the base weapon's damage (SetAttackDamage)",
+    "clip_size": "rounds per magazine, absolute (SetWeaponClipRounds)",
+    "fire_rate_mult": "multiplier on the base fire rate (SetWeaponFireRate)",
+    "automatic": "1 = full auto, 0 = semi auto (SetWeaponIsAutomatic)",
     "starter_ammo": "rounds given with the purchase",
-    "verified": "true once fired in the running game"
+    "verified": "true once bought and fired in the running game"
   },
   "rows": [
-    {"id": "CSNVPistol", "name": "P-18 Sidearm", "role": "pistol", "base_form": "Weap9mmPistol", "ammo": "Ammo9mm", "damage": null, "clip_size": null, "fire_rate": null, "starter_ammo": 60, "verified": false},
-    {"id": "CSNVRifle", "name": "K-47 Rifle", "role": "rifle", "base_form": "WeapNVServiceRifle", "ammo": "Ammo556mm", "damage": null, "clip_size": null, "fire_rate": null, "starter_ammo": 90, "verified": false},
-    {"id": "CSNVSniper", "name": "Magnum Longshot", "role": "sniper", "base_form": "WeapSniperRifle", "ammo": "Ammo308", "damage": null, "clip_size": null, "fire_rate": null, "starter_ammo": 30, "verified": false}
+    {"id": "CSNVPistol", "name": "P-18 Sidearm", "role": "pistol", "base_form": "0E3778", "base_name": "9mm pistol", "ammo_form": "08ED03", "damage_mult": 1.0, "clip_size": 20, "fire_rate_mult": 1.2, "automatic": 0, "starter_ammo": 60, "verified": false},
+    {"id": "CSNVRifle", "name": "K-47 Rifle", "role": "rifle", "base_form": "0E9C3B", "base_name": "Service rifle", "ammo_form": "004240", "damage_mult": 1.15, "clip_size": 30, "fire_rate_mult": 1.0, "automatic": 1, "starter_ammo": 90, "verified": false},
+    {"id": "CSNVSniper", "name": "Magnum Longshot", "role": "sniper", "base_form": "004353", "base_name": "Sniper rifle", "ammo_form": "140AA0", "damage_mult": 1.6, "clip_size": 5, "fire_rate_mult": 0.8, "automatic": 0, "starter_ammo": 30, "verified": false}
   ]
 }

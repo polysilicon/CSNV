@@ -1,23 +1,30 @@
 {
   "sheet": "hooks",
-  "about": "Every point where the mod touches Fallout: New Vegas. One row = one hook. A null cell is unfilled; verified=false means the call has not been checked in the running game.",
+  "about": "Every point where the mod touches Fallout: New Vegas. One row = one hook. Scripts are plain text run by JIP LN NVSE's script runner (Data/NVSE/Plugins/scripts), so no .esp and no GECK are needed. provider: vanilla = base game script call, xnvse = xNVSE 6.4.9 (Melty installs it), jip = JIP LN NVSE (bundled, GPL-3.0). Every call name was checked in the xNVSE 6.4.9 / JIP LN source; verified=true only once it works in the running game.",
   "columns": {
     "id": "unique hook id, referenced by other sheets",
-    "kind": "input | read | write",
-    "call": "the script call (vanilla GECK script or xNVSE) that implements it",
-    "provider": "vanilla | xnvse | other (anything other than vanilla/xnvse must be bundled)",
+    "kind": "input | read | write | lifecycle",
+    "call": "the script call that implements it",
+    "provider": "vanilla | xnvse | jip",
+    "runs": "when it runs: once_per_session | each_load | per_tick | on_event",
     "notes": "what it is for",
     "verified": "true once tested in the running game"
   },
   "rows": [
-    {"id": "key_buy_menu", "kind": "input", "call": "IsKeyPressed 48 (B, DirectInput scancode)", "provider": "xnvse", "notes": "Opens the buy menu anywhere; edge-detected in the quest script so one press = one open", "verified": false},
-    {"id": "player_health", "kind": "read", "call": "player.GetActorValue Health / player.GetBaseActorValue Health", "provider": "vanilla", "notes": "HUD health, bottom-left", "verified": false},
-    {"id": "player_armor", "kind": "read", "call": "player.GetActorValue DamageThreshold", "provider": "vanilla", "notes": "HUD armor, bottom-left. New Vegas armor is DT, shown as the CS-style armor number", "verified": false},
-    {"id": "weapon_ammo", "kind": "read", "call": null, "provider": null, "notes": "HUD ammo, bottom-right: rounds in clip / total reserve. Reserve = player.GetItemCount <ammo>; in-clip count needs a call confirmed in xNVSE docs", "verified": false},
-    {"id": "player_caps", "kind": "read", "call": "player.GetItemCount Caps001", "provider": "vanilla", "notes": "Money shown as caps on the HUD and buy menu", "verified": false},
-    {"id": "spend_caps", "kind": "write", "call": "player.RemoveItem Caps001 <price> 1", "provider": "vanilla", "notes": "Silent remove when a purchase succeeds", "verified": false},
-    {"id": "give_item", "kind": "write", "call": "player.AddItem <form> <count> 1", "provider": "vanilla", "notes": "Weapon and its starter ammo land in inventory", "verified": false},
-    {"id": "hud_overlay", "kind": "write", "call": null, "provider": null, "notes": "Draw the CS-style HUD. Route still open: injected UI XML on the HUD menu vs. a tile-based menu; must work with xNVSE alone or a bundled, shareable plugin", "verified": false},
-    {"id": "buy_menu_ui", "kind": "write", "call": "ShowMessage CSNVBuyMenuMsg (message form with one button per buy_menu row)", "provider": "vanilla", "notes": "v1 fallback that needs nothing extra; CS2 styling of it is an open item", "verified": false}
+    {"id": "load_settings", "kind": "read", "call": "GetINIFloat \"Section:Key\" \"csnv_cs2.ini\" (reads Data/config/csnv_cs2.ini written by the launcher)", "provider": "jip", "runs": "each_load", "notes": "Pulls the CS2 values from cs2_settings into script variables; missing file or key falls back to cs2_settings.default", "verified": false},
+    {"id": "resolve_forms", "kind": "read", "call": "GetFormFromMod \"FalloutNV.esm\" \"<form id>\" + IsFormValid", "provider": "jip", "runs": "each_load", "notes": "Looks up every weapons.base_form, weapons.ammo_form and the caps form; prints 'CSNV error: form <id> missing' to the console for any that fail", "verified": false},
+    {"id": "clone_weapons", "kind": "write", "call": "CloneForm <base> then SetName, SetAttackDamage, SetWeaponClipRounds, SetWeaponFireRate, SetWeaponIsAutomatic; clone stored with AuxVarSetRef \"CSNV_<weapons.id>\" on the player", "provider": "xnvse", "runs": "each_load", "notes": "Creates each weapon once per save; later loads reuse the stored clone and re-apply the sheet stats", "verified": false},
+    {"id": "key_buy_menu", "kind": "input", "call": "SetOnKeyDownEventHandler <lambda> 1 <cs2_settings.buy_key>", "provider": "jip", "runs": "once_per_session", "notes": "Opens the buy screen on the player's CS2 buy key; ignored while any menu is open (MenuMode)", "verified": false},
+    {"id": "buy_screen_open", "kind": "write", "call": "MessageBoxExAlt <lambda(int button)> \"^title^body|row1|row2|row3|Cancel\"", "provider": "jip", "runs": "on_event", "notes": "The buy screen itself; the lambda gets the clicked button index (0-based) and runs pay/give for that buy_menu row", "verified": false},
+    {"id": "buy_screen_style", "kind": "write", "call": "SetOnMenuOpenEventHandler <lambda> 1 1001, then InjectUIXML \"MessageMenu\" \"Data\\menus\\csnv\\csnv_buy.xml\" while the CSNV buy flag is set", "provider": "jip", "runs": "on_event", "notes": "Adds the CS2-style panel, header and price list (buy_screen sheet) on top of the game's message menu; MessageMenu is rebuilt each time, so it is injected on every open", "verified": false},
+    {"id": "player_health", "kind": "read", "call": "player.GetActorValue Health", "provider": "vanilla", "runs": "per_tick", "notes": "HUD health", "verified": false},
+    {"id": "player_armor", "kind": "read", "call": "player.GetActorValue DamageThreshold", "provider": "vanilla", "runs": "per_tick", "notes": "HUD armor; New Vegas armor is DT, shown as the CS-style armor number", "verified": false},
+    {"id": "weapon_ammo", "kind": "read", "call": "GetPlayerCurrentAmmoRounds (clip) and player.GetItemCount (GetPlayerCurrentAmmo) (reserve)", "provider": "xnvse", "runs": "per_tick", "notes": "HUD ammo: rounds in clip / reserve; hidden when the equipped weapon uses no ammo", "verified": false},
+    {"id": "player_caps", "kind": "read", "call": "player.GetItemCount <caps form 00000F>", "provider": "vanilla", "runs": "per_tick", "notes": "Money shown as caps on the HUD and buy screen", "verified": false},
+    {"id": "spend_caps", "kind": "write", "call": "player.RemoveItem <caps form> <price> 1", "provider": "vanilla", "runs": "on_event", "notes": "Silent remove after the caps check passes", "verified": false},
+    {"id": "give_item", "kind": "write", "call": "player.AddItem <clone> 1 1; player.AddItem <ammo_form> <starter_ammo> 1; player.EquipItem <clone> 0 1", "provider": "vanilla", "runs": "on_event", "notes": "Weapon and starter ammo land in inventory and the weapon goes to hand", "verified": false},
+    {"id": "hud_overlay", "kind": "write", "call": "InjectUIXML \"HUDMainMenu\" \"Data\\menus\\csnv\\csnv_hud.xml\"", "provider": "jip", "runs": "once_per_session", "notes": "HUDMainMenu stays loaded, so one injection per game session (guarded by a temporary '*' aux variable)", "verified": false},
+    {"id": "hud_update", "kind": "write", "call": "CallWhilePerSeconds 0.1 <lambda> <condition lambda>, writing with SetUIStringEx / SetUIFloat", "provider": "xnvse", "runs": "per_tick", "notes": "Pushes the per_tick reads into the hud rows and applies the crosshair values", "verified": false},
+    {"id": "hide_vanilla_hud", "kind": "write", "call": "SetUIFloat \"HUDMainMenu/<hud_hide.tile>/visible\" 0 for each hud_hide row", "provider": "xnvse", "runs": "per_tick", "notes": "Hides the vanilla readouts our HUD replaces; re-applied each tick because the game re-shows them", "verified": false}
   ]
 }
