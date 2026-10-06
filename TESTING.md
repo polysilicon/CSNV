@@ -1,4 +1,4 @@
-# Testing CS2 in the Mojave v0.1.0 by hand
+# Testing CS2 in the Mojave by hand
 
 This is a hand install for testing only. Once it is on Melty, players just press Play.
 Use a test save: the buy test adds caps with the console.
@@ -9,7 +9,7 @@ Use a test save: the buy test adds caps with the console.
    https://github.com/xNVSE/NVSE/releases/tag/6.4.9 (the .7z or .zip under "Assets") and extract everything
    into the New Vegas folder (the one with `FalloutNV.exe`; in Steam: right-click Fallout: New Vegas >
    Manage > Browse local files).
-3. **This mod.** Extract `CSNV-0.1.0.zip` into the New Vegas folder. It merges into `Data\` (JIP LN NVSE 57.30 is included) and adds a `CSNV\` folder.
+3. **This mod.** Extract the `CSNV-<version>.zip` you were given into the New Vegas folder. It merges into `Data\` (JIP LN NVSE 57.30 is included) and adds a `CSNV\` folder.
 4. **Start it.** Double-click `<New Vegas>\CSNV\csnv-launch.exe`. If Windows shows "Windows protected your PC",
    click **More info > Run anyway** (the launcher isn't code-signed yet). New Vegas starts through xNVSE.
 

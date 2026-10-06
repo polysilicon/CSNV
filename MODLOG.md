@@ -53,6 +53,15 @@ menu, 3 weapons bought with caps.
   Only finding: 'executable-code' (csnv-launch.exe, jip_nvse.dll), severity review.
 - Next: user presses Test in the Melty app; then publish on their say-so.
 
+## In-game test 1 (0.1.0, user's PC, via Melty Test)
+- Console: xNVSE 6.3.5 (not 6.4.9) and JIP LN 57.30 loaded. Then: "Max script expression length inside
+  parenthesis (512 characters) exceeded", "Failed to precompile ... csnv_main.txt", "Error on line 80",
+  "Could not extract function script". Line 80 = the inline buy-key lambda (1662 chars in one paren pair).
+  Main script never compiled -> no HUD, no buy key.
+- Fix (0.1.1): no inline lambdas; each handler is its own UDF file (csnv_onkey, csnv_buy, csnv_onmenu,
+  csnv_hudtick, csnv_always) fetched with CompileScript. build.py now fails on >512 chars in parentheses or
+  inline lambdas (it reproduces the line-80 error on the 0.1.0 script). All commands checked present in xNVSE 6.3.5.
+
 ## Status
 - Build: `python3 tools/preflight.py` clean (0 unfilled, 0 broken). `python3 tools/build.py` -> build/CSNV-0.1.0.zip.
 - Launcher: `go vet` + `go test` pass (synthetic ESM, CS2 vcfg parsing, plugins.txt, DDS); Linux smoke run OK.
