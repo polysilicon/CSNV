@@ -1,6 +1,6 @@
 {
   "sheet": "hooks",
-  "about": "Every point where the mod touches Fallout: New Vegas. One row = one hook. Scripts are plain text run by JIP LN NVSE's script runner (Data/NVSE/Plugins/scripts), so no .esp and no GECK are needed. provider: launcher = csnv-launch.exe, before the game starts; vanilla = base game script call, xnvse = xNVSE 6.4.9 (Melty installs it), jip = JIP LN NVSE (bundled, GPL-3.0). Every call name was checked in the xNVSE 6.4.9 / JIP LN source; verified=true only once it works in the running game.",
+  "about": "Every point where the mod touches Fallout: New Vegas. One row = one hook. Scripts are plain text run by JIP LN NVSE's script runner (Data/NVSE/Plugins/scripts), so no .esp and no GECK are needed. provider: launcher = csnv-launch.exe, before the game starts; vanilla = base game script call, xnvse = xNVSE 6.4.9 (Melty installs it), jip = JIP LN NVSE (bundled, GPL-3.0). Every call name was checked in the xNVSE 6.4.9 / JIP LN source; verified=true only once it works in the running game. Every handler is its own function file in Data/NVSE/user_defined_functions/csnv/ (xNVSE rejects more than 512 characters inside one pair of parentheses, which an inline lambda counts as: seen in game on 0.1.0).",
   "columns": {
     "id": "unique hook id, referenced by other sheets",
     "kind": "input | read | write | lifecycle",
@@ -59,7 +59,7 @@
     {
       "id": "key_buy_menu",
       "kind": "input",
-      "call": "SetOnKeyDownEventHandler <lambda> 1 <cs2_settings.buy_key>",
+      "call": "SetOnKeyDownEventHandler (CompileScript \"csnv\\csnv_onkey.txt\") 1 <cs2_settings.buy_key>",
       "provider": "jip",
       "runs": "once_per_session",
       "notes": "Opens the buy screen on the player's CS2 buy key; ignored while any menu is open (MenuMode)",
@@ -68,7 +68,7 @@
     {
       "id": "buy_screen_open",
       "kind": "write",
-      "call": "MessageBoxExAlt <lambda(int button)> \"^title^body|row1|row2|row3|Cancel\"",
+      "call": "MessageBoxExAlt (CompileScript \"csnv\\csnv_buy.txt\") \"^title^body|row1|row2|row3|Cancel\" (in csnv_onkey.txt)",
       "provider": "jip",
       "runs": "on_event",
       "notes": "The buy screen itself; the lambda gets the clicked button index (0-based) and runs pay/give for that buy_menu row",
@@ -77,7 +77,7 @@
     {
       "id": "buy_screen_style",
       "kind": "write",
-      "call": "SetOnMenuOpenEventHandler <lambda> 1 1001, then InjectUIXML \"MessageMenu\" \"Data\\menus\\csnv\\csnv_buy.xml\" while the CSNV buy flag is set",
+      "call": "SetOnMenuOpenEventHandler (CompileScript \"csnv\\csnv_onmenu.txt\") 1 1001; it runs InjectUIXML \"MessageMenu\" \"Data\\menus\\csnv\\csnv_buy.xml\" while the CSNV buy flag is set",
       "provider": "jip",
       "runs": "on_event",
       "notes": "Adds the CS2-style panel, header and price list (buy_screen sheet) on top of the game's message menu; MessageMenu is rebuilt each time, so it is injected on every open",
@@ -149,7 +149,7 @@
     {
       "id": "hud_update",
       "kind": "write",
-      "call": "CallWhilePerSeconds 0.1 <lambda> <condition lambda>, writing with SetUIStringEx / SetUIFloat",
+      "call": "CallWhilePerSeconds 0.1 (csnv_hudtick.txt) (csnv_always.txt), writing with SetUIStringEx / SetUIFloat",
       "provider": "xnvse",
       "runs": "per_tick",
       "notes": "Pushes the per_tick reads into the hud rows and applies the crosshair values",
