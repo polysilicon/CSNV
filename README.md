@@ -33,3 +33,10 @@ The design lives in JSON sheets in `sheets/` (weapons, buy menu, buy screen, HUD
 
 Build: `python3 tools/preflight.py && python3 tools/build.py` (needs Python 3 and Go; put `jip_nvse.dll` in `vendor/`).
 Launcher tests: `cd launcher && go test ./...`.
+
+## Publishing on Melty
+- `melty.json` (repository root) is the install recipe Melty reads from this repository: it installs `Data/` into
+  the New Vegas folder and `CSNV/` into Melty's own folder, asks Melty for xNVSE, and starts `csnv-launch.exe`.
+  It is checked with Melty's `validate_recipe` and `one_click_check` (one click: yes).
+- Releases: push a tag like `v0.1.0`. `.github/workflows/release.yml` runs preflight and tests, builds
+  `CSNV-0.1.0.zip` with `tools/build.py --release` (which needs `vendor/jip_nvse.dll`), and attaches it to a GitHub release.

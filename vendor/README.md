@@ -5,4 +5,6 @@ The build copies it to `Data/NVSE/Plugins/` and `JIP-LN-NVSE-LICENSE.txt` next t
 
 JIP LN NVSE has no GitHub releases; the built DLL is published on Nexus Mods (needs a free Nexus login):
 https://www.nexusmods.com/newvegas/mods/58277 . Source: https://github.com/jazzisparis/JIP-LN-NVSE .
-The DLL is not committed to this repository (it is a binary); `JIP-LN-NVSE-LICENSE.txt` is.
+Commit `jip_nvse.dll` here (GPL-3.0 allows redistributing it with its license and a source link, both included):
+the release workflow builds from the repository, and `tools/build.py --release` refuses to package without it.
+Record the JIP LN version you committed in CREDITS.md.

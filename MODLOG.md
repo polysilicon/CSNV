@@ -38,6 +38,12 @@ menu, 3 weapons bought with caps.
 - InjectUIXML path is relative to the game folder (JIP itself reads `jip_temp.xml` from the cwd).
 - MessageBoxExAlt calls its callback with the 0-based button index.
 
+## GitHub / Melty setup
+- melty.json at the repo root (validated, one click: yes; fileName CSNV-*.zip).
+- CI: .github/workflows/ci.yml (preflight, go vet/test, build). Release: tag v* -> release.yml builds with --release and attaches the zip.
+- The repo default branch is claude/cs2-mojave-mod-rmm4pm (old); melty.json must reach the default branch.
+- vendor/jip_nvse.dll must be committed before the first release (build --release refuses without it).
+
 ## Status
 - Build: `python3 tools/preflight.py` clean (0 unfilled, 0 broken). `python3 tools/build.py` -> build/CSNV-0.1.0.zip.
 - Launcher: `go vet` + `go test` pass (synthetic ESM, CS2 vcfg parsing, plugins.txt, DDS); Linux smoke run OK.

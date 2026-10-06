@@ -9,7 +9,7 @@ Every generated file comes from sheets/*.json; edit a sheet, then rebuild. Steps
   4. csnv-launch.exe (Go, cross-compiled for Windows) -> build/stage/CSNV/
   5. build/CSNV-<version>.zip
 
-Usage: python3 tools/build.py [--version 0.1.0] [--no-exe]
+Usage: python3 tools/build.py [--version 0.1.0] [--no-exe] [--release]
 """
 import argparse
 import json
@@ -368,6 +368,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--version", default="0.1.0")
     ap.add_argument("--no-exe", action="store_true", help="skip the Go build (scripts and XML only)")
+    ap.add_argument("--release", action="store_true", help="fail instead of warning when vendor/jip_nvse.dll is missing")
     args = ap.parse_args()
 
     if subprocess.run([sys.executable, str(ROOT / "tools" / "preflight.py")], stdout=subprocess.DEVNULL).returncode:
@@ -399,8 +400,10 @@ def main():
         plug = DATA / "NVSE" / "Plugins"
         shutil.copy(JIP_DLL, plug / "jip_nvse.dll")
         shutil.copy(ROOT / "vendor" / "JIP-LN-NVSE-LICENSE.txt", managed / "JIP-LN-NVSE-LICENSE.txt")
+    elif args.release:
+        sys.exit("vendor/jip_nvse.dll is missing: a release without JIP LN NVSE does not work (see vendor/README.md)")
     else:
-        print("WARNING: vendor/jip_nvse.dll is missing; the package will not work until it is added (see MODLOG.md)")
+        print("WARNING: vendor/jip_nvse.dll is missing; the package will not work until it is added (see vendor/README.md)")
 
     if not args.no_exe:
         subprocess.run(["go", "build", "-trimpath", "-ldflags", "-s -w -H windowsgui", "-o", str(managed / "csnv-launch.exe"), "."],

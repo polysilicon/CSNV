@@ -1,0 +1,36 @@
+name: Release
+
+# Push a tag like v0.1.0 to build CSNV-0.1.0.zip and attach it to a GitHub release.
+# Melty reads melty.json from this repository and picks up each release's CSNV-*.zip.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: launcher/go.mod
+      - name: Preflight and tests
+        run: |
+          python3 tools/preflight.py
+          (cd launcher && go vet ./... && go test ./...)
+      - name: Build the release package
+        run: python3 tools/build.py --release --version "${GITHUB_REF_NAME#v}"
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          gh release create "$GITHUB_REF_NAME" "build/CSNV-${VERSION}.zip" \
+            --title "CS2 in the Mojave ${VERSION}" \
+            --notes "Install from Melty and press Play. See README.md and CREDITS.md."
