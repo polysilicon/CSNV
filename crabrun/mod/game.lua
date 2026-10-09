@@ -17,14 +17,17 @@ M.try = try
 
 function M.player() return Game.GetPlayer() end
 
+-- in a loaded game (not the main menu). The pre-game check is the menu scenario's, as Entity Spawner's
+-- GameUI does it; if that check itself fails, a present, attached player is enough.
 function M.session_ok()
-  return try("session", function()
-    local p = Game.GetPlayer()
-    if not p then return false end
-    local h = Game.GetSystemRequestsHandler()
-    if h and h:IsPreGame() then return false end
-    return true
-  end) or false
+  local p = try("player", function() return Game.GetPlayer() end)
+  if not p then return false end
+  local attached = try("attached", function() return p:IsAttached() end)
+  if attached == false then return false end
+  local pre = try("pregame", function()
+    return GetSingleton("inkMenuScenario"):GetSystemRequestsHandler():IsPreGame()
+  end)
+  return pre ~= true
 end
 
 function M.is_paused()

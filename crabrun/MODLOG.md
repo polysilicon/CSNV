@@ -42,6 +42,16 @@ Champions-style run in Night City.
   sha256 6d635a08...c3ac. One click: yes, publishable. Finding: executable-code (review).
 - No screenshot yet: needs the game running on the user's PC.
 
+## In-game test 1 (0.1.0, user's PC)
+- Save loaded, no countdown, no waves. Cause: game.session_ok called Game.GetSystemRequestsHandler(), which
+  is an inkMenuScenario method, not a Game function; the error made every frame read as "main menu", so the
+  run never started. The hooks sheet had marked it "community idiom" instead of checking it.
+- Fix (0.1.1): GetSingleton('inkMenuScenario'):GetSystemRequestsHandler():IsPreGame(), and a failing
+  pre-game check no longer blocks (player present + attached is enough). tests/test_game.lua loads the real
+  game.lua with CET-like globals; it fails on 0.1.0 with the same error and passes on 0.1.1. All other
+  Game.* calls re-checked against the 2.31 scripts (GetDynamicEntitySystem is native-only, used by Entity Spawner).
+- Release 0.1.1 submitted (CrabRun-0.1.1.zip, sha256 ab124248...628d), one click yes.
+
 ## Next
 1. In-game test on the user's PC (Melty Test): check crabrun.log, bridge.log, crab/crab_data.json.
 2. Fix what it shows (perk keys vs DA_Perk names, sound keywords, spawn hostility).

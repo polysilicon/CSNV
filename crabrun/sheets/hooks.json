@@ -140,9 +140,9 @@
   },
   {
    "id": "pregame",
-   "api": "Game.GetSystemRequestsHandler():IsPreGame()",
+   "api": "GetSingleton('inkMenuScenario'):GetSystemRequestsHandler():IsPreGame(), never blocking if it fails",
    "used_for": "detect main menu",
-   "source": "CET community idiom",
+   "source": "inkMenuScenario.GetSystemRequestsHandler in orphans.swift; Entity Spawner GameUI.lua",
    "verified": true,
    "in_game": false
   },
