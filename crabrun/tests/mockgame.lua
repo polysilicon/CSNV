@@ -20,8 +20,8 @@ function M.new(opts)
     return { x = c.x + math.cos(a) * r, y = c.y + math.sin(a) * r, z = c.z }
   end
   g.spawn_npc = function(rec, pos) log("spawn", rec) local id = g.nextid g.nextid = id + 1
-    g.ents[id] = { rec = rec, pos = pos, dead = false } return id end
-  g.get_entity = function(id) return g.ents[id] end
+    g.ents[id] = { rec = rec, pos = pos, dead = opts.born_dead or false } return id end
+  g.get_entity = function(id) if opts.ghost then return nil end return g.ents[id] end
   g.make_hostile = function(h) log("hostile") return true end
   g.is_dead = function(h) return h.dead end
   g.entity_pos = function(h) return h.pos end

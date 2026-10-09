@@ -19,7 +19,10 @@ end
 local function new_run(opts)
   local g = mock.new(opts)
   local events = {}
-  local R = run.new({ data = data, game = g, emit = function(e) events[#events + 1] = e end, files = {} })
+  local logs = {}
+  local R = run.new({ data = data, game = g, emit = function(e) events[#events + 1] = e end, files = {},
+                     log = function(s) logs[#logs + 1] = s end })
+  R.logs = logs
   run.validate(R)
   return R, g, events
 end
@@ -33,7 +36,7 @@ do
   check("start state", R.state == "countdown")
   check("seed", R.seed == "CRAB42")
   check("immortal", g.immortal == true)
-  check("unequip orig", g.count("unequip") == 1)
+  check("weapons and cyberware stashed", g.count("unequip") == #data.systems.strip_areas, g.count("unequip"))
   check("starter given", g.calls[#g.calls] and true and g.count("give") == 1)
   check("teleported", g.count("teleport") == 1)
   check("portal sound", has(ev, "portal"))
@@ -106,6 +109,45 @@ do
   check("no enemies left", next(g.ents) == nil)
   check("sent home", g.pos.x == 0 and g.pos.y == 0)
   check("best recorded", R.best.wave >= 4)
+end
+
+-- 1b. enemies only leave the count when seen alive then dead
+do
+  -- never appear: the counter must not tick down by itself; they are respawned, then dropped with a log line
+  local R, g = new_run({ ghost = true })
+  run.start(R, "GHOST1") tick(R, data.systems.countdown_s + 0.2)
+  local start_count = #R.queue + run.alive_count(R)
+  tick(R, data.systems.enemy_appear_timeout_s - 1)
+  check("ghosts still counted before the timeout", #R.queue + run.alive_count(R) == start_count)
+  check("no crystals for ghosts", R.crystals == data.systems.start_crystals)
+  local respawned = false
+  for _, l in ipairs(R.logs) do if l:find("never appeared, spawning it again") then respawned = true end end
+  tick(R, 3)
+  for _, l in ipairs(R.logs) do if l:find("never appeared, spawning it again") then respawned = true end end
+  check("ghost enemy respawned", respawned)
+  tick(R, 120)
+  local dropped = false
+  for _, l in ipairs(R.logs) do if l:find("dropped after") then dropped = true end end
+  check("ghost dropped after retries, logged", dropped)
+  check("no kill credit for ghosts", R.kills == 0)
+end
+do
+  -- spawned already dead (e.g. not initialised): no credit, spawned again
+  local R, g = new_run({ born_dead = true })
+  run.start(R, "DEAD01") tick(R, data.systems.countdown_s + 0.2) tick(R, 5)
+  check("born-dead not credited", R.kills == 0 and R.crystals == data.systems.start_crystals)
+end
+do
+  -- seen alive, then dead: credited once
+  local R, g = new_run()
+  run.start(R, "ALIVE1") tick(R, data.systems.countdown_s + 0.2) tick(R, 0.5)
+  local before = R.kills
+  g.kill_all() tick(R, 0.2) tick(R, 0.2)
+  check("real kill credited", R.kills > before)
+  -- the run ends: every stashed area is re-equipped
+  local eq = g.count("equip")
+  run.finish(R, "quit")
+  check("all stashed gear re-equipped", g.count("equip") - eq == #data.systems.strip_areas, g.count("equip") - eq)
 end
 
 -- 2. seeds: same seed -> same islands, waves and first shop; different seed differs

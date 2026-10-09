@@ -1,6 +1,6 @@
 {
  "sheet": "systems",
- "doc": "Global run rules (one row).",
+ "doc": "Global run rules (one row). strip_areas: equipment areas emptied at run start (weapons and cyberware) and restored at run end.",
  "rows": [
   {
    "id": "run",
@@ -23,7 +23,23 @@
    "seed_alphabet": "ABCDEFGHJKLMNPQRSTUVWXYZ23456789",
    "starter_weapon": "unity",
    "verified": true,
-   "in_game": false
+   "in_game": false,
+   "strip_areas": [
+    "Weapon",
+    "ArmsCW",
+    "SystemReplacementCW",
+    "HandsCW",
+    "EyesCW",
+    "FrontalCortexCW",
+    "IntegumentarySystemCW",
+    "MusculoskeletalSystemCW",
+    "NervousSystemCW",
+    "CardiovascularSystemCW",
+    "ImmuneSystemCW",
+    "LegsCW"
+   ],
+   "enemy_appear_timeout_s": 10.0,
+   "enemy_respawn_attempts": 2
   }
  ]
 }

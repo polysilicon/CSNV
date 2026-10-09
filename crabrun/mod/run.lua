@@ -11,6 +11,7 @@ local M = {}
 function M.new(deps)
   local R = {
     data = deps.data, game = deps.game, emit = deps.emit or function() end, files = deps.files or {},
+    log = deps.log or function() end,
     state = "idle", banner = nil, valid = {}, names = {}, failed = {}, seed_input = nil, last = nil,
     best = { wave = 0 },
   }
@@ -74,10 +75,17 @@ function M.grant(R, kind, row)
   end
 end
 
+-- fresh start: stash the save's weapons and cyberware (they stay in the inventory) and remember them
 local function fresh_start_gear(R)
   local g = R.game
-  R.snap = { Weapon = g.equipped("Weapon") }
-  for slot in pairs(R.snap.Weapon) do g.unequip("Weapon", slot) end
+  R.snap = {}
+  local n = 0
+  for _, area in ipairs(R.data.systems.strip_areas) do
+    local slots = g.equipped(area)
+    R.snap[area] = slots
+    for slot in pairs(slots) do g.unequip(area, slot) n = n + 1 end
+  end
+  R.log("fresh start: stashed " .. n .. " equipped weapons/cyberware")
   local starter = util.index(R.data.shop_weapons, "id")[R.data.systems.starter_weapon]
   R.owned[starter.id] = true
   M.grant(R, "weapon", starter)
@@ -88,9 +96,11 @@ local function restore_gear(R)
   for _, it in ipairs(R.given or {}) do
     g.remove_item(it.id)
   end
-  for area, slots in pairs(R.snap or {}) do
-    for _, id in pairs(slots) do g.equip(id) end
+  local n = 0
+  for _, area in ipairs(R.data.systems.strip_areas) do
+    for _, id in pairs((R.snap or {})[area] or {}) do g.equip(id) n = n + 1 end
   end
+  R.log("run end: took back " .. #(R.given or {}) .. " run items, re-equipped " .. n .. " of yours")
   R.given, R.snap = {}, {}
 end
 
@@ -163,14 +173,16 @@ function M.begin_wave(R)
   R.wave = R.wave + 1
   local list, boss = M.compose(R, R.wave)
   R.queue, R.enemies, R.spawn_t, R.wave_t, R.boss = list, {}, 0, 0, boss
+  R.log(string.format("wave %d: %d enemies%s", R.wave, #list, boss and " (boss wave)" or ""))
   R.state = "wave"
   R.emit(boss and "boss" or "wave_start")
   banner(R, boss and ("BOSS WAVE " .. R.wave) or ("WAVE " .. R.wave), M.stage(R).name, 2)
 end
 
 local function spawn_one(R)
-  local row = table.remove(R.queue, 1)
-  if not row then return true end
+  local item = table.remove(R.queue, 1)
+  if not item then return true end
+  local row, tries = item.row or item, item.tries or 0
   local sys = R.data.systems
   local center = M.stage(R)
   local ppos = R.game.player_pos() or center
@@ -180,10 +192,15 @@ local function spawn_one(R)
     pos = R.game.find_spawn_point(ppos, a, R.rng:range(sys.spawn_radius_min, sys.spawn_radius_max))
     if pos then break end
   end
-  if not pos then table.insert(R.queue, 1, row); return false end  -- navmesh not streamed yet: retry soon
+  if not pos then table.insert(R.queue, 1, item); return false end  -- navmesh not streamed yet: retry soon
   local id = R.game.spawn_npc(row.record, pos, 0)
-  if not id then R.failed[row.record] = (R.failed[row.record] or 0) + 1; return true end
-  R.enemies[#R.enemies + 1] = { id = id, row = row, age = 0, pos = pos }
+  if not id then
+    R.failed[row.record] = (R.failed[row.record] or 0) + 1
+    R.log("could not spawn " .. row.id .. " (" .. row.record .. ")")
+    return true
+  end
+  R.enemies[#R.enemies + 1] = { id = id, row = row, age = 0, pos = pos, tries = tries }
+  R.log(string.format("spawned %s (%s)", row.id, row.record))
   return true
 end
 
@@ -210,6 +227,21 @@ local function kill(R, e, credit)
   end
 end
 
+-- An enemy leaves the count only when it is seen alive and then seen dead. One that never shows up (or
+-- vanishes) is spawned again; after enemy_respawn_attempts tries it is dropped, and every step is logged.
+local function respawn(R, e, why)
+  R.game.despawn(e.id)
+  e.dead = true
+  e.tries = (e.tries or 0) + 1
+  if e.tries > R.data.systems.enemy_respawn_attempts then
+    R.failed[e.row.record] = (R.failed[e.row.record] or 0) + 1
+    R.log(string.format("enemy %s dropped after %d tries (%s)", e.row.id, e.tries, why))
+    return
+  end
+  R.log(string.format("enemy %s %s, spawning it again", e.row.id, why))
+  table.insert(R.queue, 1, { row = e.row, tries = e.tries })   -- queue items are rows, or {row, tries} for a respawn
+end
+
 local function update_enemies(R, dt)
   local sys, ppos = R.data.systems, R.game.player_pos()
   for _, e in ipairs(R.enemies) do
@@ -218,16 +250,25 @@ local function update_enemies(R, dt)
       local h = R.game.get_entity(e.id)
       e.handle = h
       if h then
+        if not e.appeared then e.appeared = true R.log(string.format("enemy %s appeared after %.1fs", e.row.id, e.age)) end
         if not e.hostile then e.hostile = R.game.make_hostile(h) end
         e.pos = R.game.entity_pos(h) or e.pos
-        if R.game.is_dead(h) then
+        local dead = R.game.is_dead(h)
+        if not dead then
+          e.alive = true
+        elseif e.alive then
+          R.log(string.format("enemy %s killed", e.row.id))
           kill(R, e, true)
-        elseif ppos and e.pos and e.age > sys.stuck_timeout_s and util.dist(ppos, e.pos) > sys.despawn_distance then
-          R.game.despawn(e.id); kill(R, e, false)       -- wandered off or stuck: drop without crystals
+        elseif e.age > 3 then
+          respawn(R, e, "spawned dead")
         end
-      elseif e.age > 10 then
-        R.failed[e.row.record] = (R.failed[e.row.record] or 0) + 1   -- never appeared
-        kill(R, e, false)
+        if not e.dead and ppos and e.pos and e.age > sys.stuck_timeout_s and util.dist(ppos, e.pos) > sys.despawn_distance then
+          respawn(R, e, "wandered off")
+        end
+      elseif e.appeared then
+        respawn(R, e, "vanished")
+      elseif e.age > sys.enemy_appear_timeout_s then
+        respawn(R, e, "never appeared")
       end
     end
   end

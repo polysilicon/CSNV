@@ -23,5 +23,19 @@ Game.GetPlayer = function() return nil end
 check("no player, no session", fresh().session_ok() == false)
 Game.GetPlayer = function() return { IsAttached = function() return false end } end
 check("detached player, no session", fresh().session_ok() == false)
+-- equipped(): CET's ItemID global has no IsValid; empty slots are told apart by the inventory
+ItemID = {}
+local held = { gun = true, sandy = true }
+Game.GetPlayer = function() return player end
+Game.GetTransactionSystem = function() return { HasItem = function(_, p, id) return held[id] == true end } end
+gamedataEquipmentArea = { Weapon = 1, SystemReplacementCW = 2 }
+EquipmentSystem = { GetData = function() return {
+  GetNumberOfSlots = function(_, a) return a == 1 and 3 or 1 end,
+  GetItemInEquipSlot = function(_, a, i) if a == 1 then return ({ [0] = "gun", [1] = "empty", [2] = "empty" })[i] end return "sandy" end,
+} end }
+local g2 = fresh()
+local w = g2.equipped("Weapon")
+check("equipped weapon found without ItemID.IsValid", w[0] == "gun" and w[1] == nil and w[2] == nil)
+check("equipped cyberware found", fresh().equipped("SystemReplacementCW")[0] == "sandy")
 print(string.format("%d passed, %d failed", pass, fail))
 os.exit(fail == 0 and 0 or 1)

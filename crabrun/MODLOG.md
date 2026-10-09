@@ -66,6 +66,18 @@ Champions-style run in Night City.
   version, CET files present, and after the game closes whether CET loaded Crab Run plus the tails of
   cyber_engine_tweaks.log, scripting.log and CrabRun.log. Release 0.1.2 submitted (sha256 2780bc84...0e8a).
 
+## In-game test 4 (0.1.3 direct test with CET)
+- CET loaded the mod: run starts, countdown, waves and island hops work.
+- Enemy counter dropped on its own; save's weapons and cyberware stayed equipped.
+- Causes (from the code; CrabRun.log not yet seen): an enemy the mod couldn't see within 10 s was dropped
+  silently; death counted IsDead/IsDefeated even before the NPC was seen alive. Fresh start only covered
+  weapons (cyberware was never in scope: my mistake vs the agreed "gear stripped"), and the equipped read
+  used ItemID.IsValid, which CET's replacement ItemID global may lack, so it likely returned nothing.
+- Fix (0.1.4): systems.strip_areas (weapon + 11 cyberware areas) stashed with force=true and re-equipped at
+  run end; equipped() tells empty slots apart with TransactionSystem.HasItem; enemies count as killed only
+  when seen alive then dead, missing/vanished/born-dead ones respawn (enemy_respawn_attempts), every
+  spawn/appear/kill/respawn/drop is logged to CET's CrabRun.log. Release 0.1.4 (sha256 4d2dcea4...f846).
+
 ## Next
 1. In-game test on the user's PC (Melty Test): check crabrun.log, bridge.log, crab/crab_data.json.
 2. Fix what it shows (perk keys vs DA_Perk names, sound keywords, spawn hostility).

@@ -31,7 +31,7 @@ registerForEvent("onInit", function()
   log("Crab Run " .. data.version .. " loaded")
   bridge.init()
   CrabRun.crab = load_crab()
-  CrabRun.R = run.new({ data = data, game = game, emit = bridge.emit,
+  CrabRun.R = run.new({ data = data, game = game, emit = bridge.emit, log = log,
                         files = { ledger = "io/ledger.json", best = "io/best.json" } })
   -- PlayerPuppet attaches on every load / new game: that is a fresh session and a fresh run
   Observe("PlayerPuppet", "OnGameAttached", function() CrabRun.attached = true end)

@@ -197,19 +197,23 @@ function M.unequip(area, slot)
     req.owner = Game.GetPlayer()
     req.areaType = gamedataEquipmentArea[area]
     req.slotIndex = slot
+    req.force = true
     eqsys():QueueRequest(req)
   end)
 end
 
--- {slot = ItemID} for an equipment area
+-- {slot = ItemID} for an equipment area. Empty slots are left out: an ItemID counts only when the
+-- inventory holds it (CET replaces the ItemID global, so ItemID.IsValid may not be there).
 function M.equipped(area)
   return try("equip_query", function()
-    local data = EquipmentSystem.GetData(Game.GetPlayer())
+    local p = Game.GetPlayer()
+    local data = EquipmentSystem.GetData(p)
+    local ts = Game.GetTransactionSystem()
     local a = gamedataEquipmentArea[area]
     local out = {}
     for i = 0, data:GetNumberOfSlots(a) - 1 do
       local id = data:GetItemInEquipSlot(a, i)
-      if id and ItemID.IsValid(id) then out[i] = id end
+      if id and ts:HasItem(p, id) then out[i] = id end
     end
     return out
   end) or {}
