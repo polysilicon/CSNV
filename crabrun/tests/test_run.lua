@@ -150,6 +150,28 @@ do
   check("all stashed gear re-equipped", g.count("equip") - eq == #data.systems.strip_areas, g.count("equip") - eq)
 end
 
+do
+  -- a spawn call that fails must not shrink the count: the enemy is queued again, and the error is logged
+  local R, g = new_run({ spawn_fails = 2 })
+  run.start(R, "FAIL01") tick(R, data.systems.countdown_s + 0.2)
+  local total = run.band(R, 1).count
+  tick(R, 0.1)
+  check("failed spawn keeps the count", #R.queue + run.alive_count(R) == total, #R.queue + run.alive_count(R))
+  local logged = false
+  for _, l in ipairs(R.logs) do if l:find("could not spawn .*bad spec field") then logged = true end end
+  check("spawn error logged with its reason", logged)
+  tick(R, 10)
+  check("enemy spawned after the failures pass", g.count("spawn") >= 3 and run.alive_count(R) >= 1)
+end
+do
+  -- a spawn that always fails is dropped only after its tries, with a log line
+  local R, g = new_run({ spawn_fails = 1000 })
+  run.start(R, "FAIL02") tick(R, data.systems.countdown_s + 0.2) tick(R, 60)
+  local dropped = false
+  for _, l in ipairs(R.logs) do if l:find("dropped after .* failed spawns") then dropped = true end end
+  check("always-failing spawn dropped with a log line", dropped)
+end
+
 -- 2. seeds: same seed -> same islands, waves and first shop; different seed differs
 do
   local function fingerprint(seed)

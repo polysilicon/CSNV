@@ -19,7 +19,9 @@ function M.new(opts)
     if g.navfail > 0 then g.navfail = g.navfail - 1 return nil end
     return { x = c.x + math.cos(a) * r, y = c.y + math.sin(a) * r, z = c.z }
   end
-  g.spawn_npc = function(rec, pos) log("spawn", rec) local id = g.nextid g.nextid = id + 1
+  g.spawn_npc = function(rec, pos) log("spawn", rec)
+    if opts.spawn_fails and opts.spawn_fails > 0 then opts.spawn_fails = opts.spawn_fails - 1 return nil, "bad spec field" end
+    local id = g.nextid g.nextid = id + 1
     g.ents[id] = { rec = rec, pos = pos, dead = opts.born_dead or false } return id end
   g.get_entity = function(id) if opts.ghost then return nil end return g.ents[id] end
   g.make_hostile = function(h) log("hostile") return true end

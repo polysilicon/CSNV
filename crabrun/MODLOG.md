@@ -78,6 +78,16 @@ Champions-style run in Night City.
   when seen alive then dead, missing/vanished/born-dead ones respawn (enemy_respawn_attempts), every
   spawn/appear/kill/respawn/drop is logged to CET's CrabRun.log. Release 0.1.4 (sha256 4d2dcea4...f846).
 
+## In-game test 5 (0.1.4)
+- Wave enemies never appear (only the area's own NPCs); the count still drops with no kills.
+- Cause (from code, matching the symptom): spawn_npc set spec.tags = {"CrabRun"}, a field Entity Spawner
+  never sets ([CName]); if that assignment throws, the whole spawn fails, and spawn_one dropped the enemy from
+  the count at once (failed++), so the counter fell every spawn_interval with nobody there.
+- Fix (0.1.5): spec carries only Entity Spawner's fields (recordID, position, orientation, alwaysSpawned);
+  spawn errors are returned and logged; a failed spawn is re-queued until enemy_respawn_attempts, then dropped
+  with a log line. test_game.lua checks spawn_npc against a spec that rejects unknown fields (fails on 0.1.4).
+- Release 0.1.5 submitted.
+
 ## Next
 1. In-game test on the user's PC (Melty Test): check crabrun.log, bridge.log, crab/crab_data.json.
 2. Fix what it shows (perk keys vs DA_Perk names, sound keywords, spawn hostility).

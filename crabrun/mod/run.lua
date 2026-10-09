@@ -193,10 +193,16 @@ local function spawn_one(R)
     if pos then break end
   end
   if not pos then table.insert(R.queue, 1, item); return false end  -- navmesh not streamed yet: retry soon
-  local id = R.game.spawn_npc(row.record, pos, 0)
+  local id, err = R.game.spawn_npc(row.record, pos, 0)
   if not id then
-    R.failed[row.record] = (R.failed[row.record] or 0) + 1
-    R.log("could not spawn " .. row.id .. " (" .. row.record .. ")")
+    -- never drop an enemy silently: it goes back in the queue until it has used its tries
+    R.log(string.format("could not spawn %s (%s): %s", row.id, row.record, tostring(err)))
+    if tries < sys.enemy_respawn_attempts then
+      table.insert(R.queue, { row = row, tries = tries + 1 })
+    else
+      R.failed[row.record] = (R.failed[row.record] or 0) + 1
+      R.log(string.format("enemy %s dropped after %d failed spawns", row.id, tries + 1))
+    end
     return true
   end
   R.enemies[#R.enemies + 1] = { id = id, row = row, age = 0, pos = pos, tries = tries }

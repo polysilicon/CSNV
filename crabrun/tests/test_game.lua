@@ -37,5 +37,20 @@ local g2 = fresh()
 local w = g2.equipped("Weapon")
 check("equipped weapon found without ItemID.IsValid", w[0] == "gun" and w[1] == nil and w[2] == nil)
 check("equipped cyberware found", fresh().equipped("SystemReplacementCW")[0] == "sandy")
+-- spawn_npc sets only the fields Entity Spawner sets; anything else must not sneak back in
+local allowed = { recordID = true, position = true, orientation = true, alwaysSpawned = true }
+DynamicEntitySpec = { new = function()
+  return setmetatable({}, { __newindex = function(t, k, v)
+    if not allowed[k] then error("bad field " .. k) end rawset(t, k, v) end })
+end }
+Vector4 = { new = function(x, y, z, w) return { x = x, y = y, z = z, w = w } end }
+EulerAngles = { new = function() return { ToQuat = function() return "quat" end } end }
+local made
+Game.GetDynamicEntitySystem = function() return { CreateEntity = function(_, spec) made = spec return 42 end } end
+local id, err = fresh().spawn_npc("Character.x", { x = 1, y = 2, z = 3 }, 0)
+check("spawn_npc uses only known spec fields", id == 42 and made.recordID == "Character.x", tostring(err))
+Game.GetDynamicEntitySystem = function() return { CreateEntity = function() error("boom") end } end
+local id2, err2 = fresh().spawn_npc("Character.x", { x = 1, y = 2, z = 3 }, 0)
+check("spawn error is returned for the log", id2 == nil and err2:find("boom") ~= nil)
 print(string.format("%d passed, %d failed", pass, fail))
 os.exit(fail == 0 and 0 or 1)

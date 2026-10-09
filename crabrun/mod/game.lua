@@ -85,16 +85,19 @@ function M.find_spawn_point(center, angle, r)
   end)
 end
 
+-- the same DynamicEntitySpec fields Entity Spawner sets (aiSpot.lua / entityRecord.lua); nothing else, since a
+-- field of the wrong type makes the whole spawn fail. The error is returned so the run can log it.
 function M.spawn_npc(record, pos, yaw)
-  return try("spawn", function()
+  local ok, res = pcall(function()
     local spec = DynamicEntitySpec.new()
     spec.recordID = record
     spec.position = Vector4.new(pos.x, pos.y, pos.z, 1)
     spec.orientation = EulerAngles.new(0, 0, yaw or 0):ToQuat()
     spec.alwaysSpawned = true
-    spec.tags = { "CrabRun" }
     return Game.GetDynamicEntitySystem():CreateEntity(spec)
   end)
+  if ok and res then return res end
+  return nil, tostring(res)
 end
 
 function M.get_entity(id)
