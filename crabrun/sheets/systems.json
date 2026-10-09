@@ -1,0 +1,29 @@
+{
+ "sheet": "systems",
+ "doc": "Global run rules (one row).",
+ "rows": [
+  {
+   "id": "run",
+   "countdown_s": 5.0,
+   "shop_time_s": 25.0,
+   "shop_time_dilation": 0.15,
+   "waves_per_stage": 3,
+   "boss_every": 5,
+   "bosses_per_boss_wave": 1,
+   "spawn_radius_min": 12.0,
+   "spawn_radius_max": 22.0,
+   "despawn_distance": 90.0,
+   "stuck_timeout_s": 60.0,
+   "reroll_price": 15,
+   "reroll_growth": 10,
+   "price_growth_per_wave": 0.06,
+   "start_crystals": 30,
+   "death_health_pct": 3.0,
+   "seed_length": 6,
+   "seed_alphabet": "ABCDEFGHJKLMNPQRSTUVWXYZ23456789",
+   "starter_weapon": "unity",
+   "verified": true,
+   "in_game": false
+  }
+ ]
+}

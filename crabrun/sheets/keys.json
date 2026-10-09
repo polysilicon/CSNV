@@ -1,0 +1,314 @@
+{
+ "sheet": "keys",
+ "doc": "Keys the bridge relays from the keyboard while Cyberpunk is the foreground window. Shop keys only act while the shop is open; seed_char only while typing a seed.",
+ "rows": [
+  {
+   "key": "1",
+   "vk": 49,
+   "action": "buy1",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "2",
+   "vk": 50,
+   "action": "buy2",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "3",
+   "vk": 51,
+   "action": "buy3",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "4",
+   "vk": 52,
+   "action": "buy4",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "5",
+   "vk": 53,
+   "action": "buy5",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "6",
+   "vk": 54,
+   "action": "buy6",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "R",
+   "vk": 82,
+   "action": "reroll",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "ENTER",
+   "vk": 13,
+   "action": "continue",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "F7",
+   "vk": 118,
+   "action": "seed_entry",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "F8",
+   "vk": 119,
+   "action": "new_run",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "F9",
+   "vk": 120,
+   "action": "end_run",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "BACK",
+   "vk": 8,
+   "action": "seed_back",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "A",
+   "vk": 65,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "B",
+   "vk": 66,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "C",
+   "vk": 67,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "D",
+   "vk": 68,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "E",
+   "vk": 69,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "F",
+   "vk": 70,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "G",
+   "vk": 71,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "H",
+   "vk": 72,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "J",
+   "vk": 74,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "K",
+   "vk": 75,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "L",
+   "vk": 76,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "M",
+   "vk": 77,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "N",
+   "vk": 78,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "P",
+   "vk": 80,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "Q",
+   "vk": 81,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "R",
+   "vk": 82,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "S",
+   "vk": 83,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "T",
+   "vk": 84,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "U",
+   "vk": 85,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "V",
+   "vk": 86,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "W",
+   "vk": 87,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "X",
+   "vk": 88,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "Y",
+   "vk": 89,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "Z",
+   "vk": 90,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "2",
+   "vk": 50,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "3",
+   "vk": 51,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "4",
+   "vk": 52,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "5",
+   "vk": 53,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "6",
+   "vk": 54,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "7",
+   "vk": 55,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "8",
+   "vk": 56,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "key": "9",
+   "vk": 57,
+   "action": "seed_char",
+   "verified": true,
+   "in_game": false
+  }
+ ]
+}

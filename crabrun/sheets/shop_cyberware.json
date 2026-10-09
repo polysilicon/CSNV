@@ -1,0 +1,96 @@
+{
+ "sheet": "shop_cyberware",
+ "doc": "Cyberpunk cyberware sold in the crystal shop; equipped on purchase into its area, removed when the run ends.",
+ "rows": [
+  {
+   "id": "gorilla",
+   "record": "Items.StrongArms",
+   "area": "ArmsCW",
+   "price": 150,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "mantis",
+   "record": "Items.MantisBlades",
+   "area": "ArmsCW",
+   "price": 150,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "monowire",
+   "record": "Items.NanoWires",
+   "area": "ArmsCW",
+   "price": 150,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "launcher",
+   "record": "Items.ProjectileLauncher",
+   "area": "ArmsCW",
+   "price": 150,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "sandy_mk4",
+   "record": "Items.AdvancedSandevistanC4MK4",
+   "area": "SystemReplacementCW",
+   "price": 260,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "sandy_apogee",
+   "record": "Items.AdvancedSandevistanApogee",
+   "area": "SystemReplacementCW",
+   "price": 320,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "optical_camo",
+   "record": "Items.AdvancedOpticalCamoCommon",
+   "area": "IntegumentarySystemCW",
+   "price": 120,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "muscles",
+   "record": "Items.ReinforcedMusclesRare",
+   "area": "MusculoskeletalSystemCW",
+   "price": 110,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "bionic_joints",
+   "record": "Items.AdvancedBionicJointsCommon",
+   "area": "MusculoskeletalSystemCW",
+   "price": 100,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "coprocessor",
+   "record": "Items.IconicAdvancedSubdermalCoProcessorLegendary_Regina",
+   "area": "IntegumentarySystemCW",
+   "price": 180,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  }
+ ]
+}

@@ -1,0 +1,116 @@
+{
+ "sheet": "waves",
+ "doc": "Wave bands. Waves in [from_wave,to_wave] use this row. boss=True: every boss row adds tier-4/5 boss enemies (bosses column in systems) on multiples of systems.boss_every.",
+ "rows": [
+  {
+   "id": "w1",
+   "from_wave": 1,
+   "to_wave": 2,
+   "count": 4,
+   "max_alive": 3,
+   "tiers": [
+    1
+   ],
+   "spawn_interval": 2.0,
+   "boss": false,
+   "clear_bonus": 10,
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "w2",
+   "from_wave": 3,
+   "to_wave": 4,
+   "count": 6,
+   "max_alive": 4,
+   "tiers": [
+    1,
+    2
+   ],
+   "spawn_interval": 1.8,
+   "boss": false,
+   "clear_bonus": 15,
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "w3",
+   "from_wave": 5,
+   "to_wave": 5,
+   "count": 4,
+   "max_alive": 4,
+   "tiers": [
+    2
+   ],
+   "spawn_interval": 1.5,
+   "boss": true,
+   "clear_bonus": 40,
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "w4",
+   "from_wave": 6,
+   "to_wave": 9,
+   "count": 8,
+   "max_alive": 5,
+   "tiers": [
+    2,
+    3
+   ],
+   "spawn_interval": 1.5,
+   "boss": false,
+   "clear_bonus": 25,
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "w5",
+   "from_wave": 10,
+   "to_wave": 10,
+   "count": 6,
+   "max_alive": 5,
+   "tiers": [
+    3
+   ],
+   "spawn_interval": 1.2,
+   "boss": true,
+   "clear_bonus": 60,
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "w6",
+   "from_wave": 11,
+   "to_wave": 14,
+   "count": 10,
+   "max_alive": 6,
+   "tiers": [
+    2,
+    3,
+    4
+   ],
+   "spawn_interval": 1.2,
+   "boss": false,
+   "clear_bonus": 35,
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "w7",
+   "from_wave": 15,
+   "to_wave": 999,
+   "count": 12,
+   "max_alive": 7,
+   "tiers": [
+    3,
+    4
+   ],
+   "spawn_interval": 1.0,
+   "boss": true,
+   "clear_bonus": 80,
+   "verified": true,
+   "in_game": false
+  }
+ ]
+}

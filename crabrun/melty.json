@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "mode": "installed",
+  "games": [
+    {
+      "slug": "cyberpunk-2077",
+      "role": "primary"
+    },
+    {
+      "slug": "custom-crab-champions",
+      "role": "companion"
+    }
+  ],
+  "components": [
+    {
+      "id": "main",
+      "fileName": "CrabRun-0.1.0.zip",
+      "label": "Crab Run: Night City",
+      "kind": "main",
+      "required": true
+    }
+  ],
+  "requirements": [
+    {
+      "kind": "loader",
+      "id": "cet"
+    }
+  ],
+  "mappings": [
+    {
+      "component": "main",
+      "from": "bin/",
+      "to": "{game}/bin"
+    },
+    {
+      "component": "main",
+      "from": "CrabRun/",
+      "to": "{managed}"
+    }
+  ],
+  "launch": {
+    "kind": "exe",
+    "path": "{managed}/CrabRunBridge.exe",
+    "args": [
+      "--game",
+      "{game}",
+      "--crab",
+      "{game:custom-crab-champions}"
+    ],
+    "cwd": "{managed}"
+  }
+}

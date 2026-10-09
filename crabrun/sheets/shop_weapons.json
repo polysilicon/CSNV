@@ -1,0 +1,196 @@
+{
+ "sheet": "shop_weapons",
+ "doc": "Cyberpunk weapons sold in the crystal shop. starter=True is given at run start. Names/icons are the game's own (read from TweakDB at runtime).",
+ "rows": [
+  {
+   "id": "unity",
+   "record": "Items.Craftable_Common_Unity",
+   "price": 0,
+   "iconic": false,
+   "starter": true,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "lexington",
+   "record": "Items.Craftable_Common_Lexington",
+   "price": 40,
+   "iconic": false,
+   "starter": false,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "nova",
+   "record": "Items.Craftable_Common_Nova",
+   "price": 45,
+   "iconic": false,
+   "starter": false,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "copperhead",
+   "record": "Items.Craftable_Common_Copperhead",
+   "price": 70,
+   "iconic": false,
+   "starter": false,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "pulsar",
+   "record": "Items.Craftable_Common_Pulsar",
+   "price": 70,
+   "iconic": false,
+   "starter": false,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "igla",
+   "record": "Items.Craftable_Common_Igla",
+   "price": 75,
+   "iconic": false,
+   "starter": false,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "carnage",
+   "record": "Items.Craftable_Common_Carnage",
+   "price": 80,
+   "iconic": false,
+   "starter": false,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "sidewinder",
+   "record": "Items.Craftable_Common_Sidewinder",
+   "price": 80,
+   "iconic": false,
+   "starter": false,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "katana",
+   "record": "Items.Craftable_Common_Katana",
+   "price": 60,
+   "iconic": false,
+   "starter": false,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "nekomata",
+   "record": "Items.Craftable_Uncommon_Nekomata",
+   "price": 110,
+   "iconic": false,
+   "starter": false,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "quasar",
+   "record": "Items.Craftable_Uncommon_Quasar",
+   "price": 110,
+   "iconic": false,
+   "starter": false,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "kerry_overture",
+   "record": "Items.Preset_Overture_Kerry_Legendary",
+   "price": 220,
+   "iconic": true,
+   "starter": false,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "jackie_nue",
+   "record": "Items.Preset_Nue_Jackie_Legendary",
+   "price": 200,
+   "iconic": true,
+   "starter": false,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "satori",
+   "record": "Items.Preset_Katana_Saburo_Legendary",
+   "price": 240,
+   "iconic": true,
+   "starter": false,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "mox_carnage",
+   "record": "Items.Preset_Carnage_Mox_Legendary",
+   "price": 230,
+   "iconic": true,
+   "starter": false,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "breakthrough",
+   "record": "Items.Preset_Nekomata_Breakthrough_Legendary",
+   "price": 260,
+   "iconic": true,
+   "starter": false,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "panam_grad",
+   "record": "Items.Preset_Grad_Panam_Legendary",
+   "price": 250,
+   "iconic": true,
+   "starter": false,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "buzzsaw",
+   "record": "Items.Preset_Pulsar_Buzzsaw_Legendary",
+   "price": 220,
+   "iconic": true,
+   "starter": false,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "suzie_omaha",
+   "record": "Items.Preset_Omaha_Suzie_Legendary",
+   "price": 210,
+   "iconic": true,
+   "starter": false,
+   "source": "cp-scripts-2.31",
+   "verified": true,
+   "in_game": false
+  }
+ ]
+}

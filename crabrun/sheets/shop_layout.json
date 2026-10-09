@@ -1,0 +1,42 @@
+{
+ "sheet": "shop_layout",
+ "doc": "Six shop cards between waves; each slot rolls from one pool (seeded).",
+ "rows": [
+  {
+   "slot": 1,
+   "pool": "crab_perks",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "slot": 2,
+   "pool": "crab_perks",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "slot": 3,
+   "pool": "crab_perks",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "slot": 4,
+   "pool": "shop_cyberware",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "slot": 5,
+   "pool": "shop_weapons",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "slot": 6,
+   "pool": "shop_weapons",
+   "verified": true,
+   "in_game": false
+  }
+ ]
+}

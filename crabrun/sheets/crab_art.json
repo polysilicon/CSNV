@@ -1,0 +1,19 @@
+{
+ "sheet": "crab_art",
+ "doc": "Other Crab Champions art used by the HUD (Texture2D found by path keywords).",
+ "rows": [
+  {
+   "id": "crystal_icon",
+   "kind": "texture",
+   "keywords": [
+    "crystal",
+    "icon"
+   ],
+   "fallback_keywords": [
+    "crystal"
+   ],
+   "verified": false,
+   "in_game": false
+  }
+ ]
+}

@@ -1,0 +1,292 @@
+{
+ "sheet": "enemies",
+ "doc": "Cyberpunk enemies spawned in waves. tier 1-5 (5 = boss-only). crystals = Crab crystals dropped on kill. boss rows only appear on boss waves.",
+ "rows": [
+  {
+   "id": "mox_lexington",
+   "record": "Character.the_mox_1_ranged1_lexington_wa",
+   "faction": "Mox",
+   "tier": 1,
+   "crystals": 3,
+   "boss": false,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "vale_bat",
+   "record": "Character.rey_valentinos_grunt1_melee1_baseball_wa",
+   "faction": "Valentinos",
+   "tier": 1,
+   "crystals": 3,
+   "boss": false,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "vale_nova",
+   "record": "Character.spr_valentinos_grunt1_ranged1_nova_wa",
+   "faction": "Valentinos",
+   "tier": 1,
+   "crystals": 3,
+   "boss": false,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "wraith_pipe",
+   "record": "Character.bls_se_wraiths_grunt1_melee1_ironpipe_wa",
+   "faction": "Wraiths",
+   "tier": 1,
+   "crystals": 3,
+   "boss": false,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "wraith_nova",
+   "record": "Character.bls_se_wraiths_grunt1_ranged1_nova_ma",
+   "faction": "Wraiths",
+   "tier": 1,
+   "crystals": 3,
+   "boss": false,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "tyger_knife",
+   "record": "Character.jpn_tyger_claws_gangster1_melee1_knife_wa",
+   "faction": "Tyger Claws",
+   "tier": 1,
+   "crystals": 3,
+   "boss": false,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "tyger_nue",
+   "record": "Character.dtn_tyger_claws_biker1_ranged1_nue_wa",
+   "faction": "Tyger Claws",
+   "tier": 1,
+   "crystals": 3,
+   "boss": false,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "voodoo_sidewinder",
+   "record": "Character.voodooboys_grunt1_ranged2_sidewinder_wa",
+   "faction": "Voodoo Boys",
+   "tier": 2,
+   "crystals": 5,
+   "boss": false,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "scav_knife",
+   "record": "Character.arr_scavenger_grunt2_melee2_knife_wa",
+   "faction": "Scavengers",
+   "tier": 2,
+   "crystals": 5,
+   "boss": false,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "scav_pulsar",
+   "record": "Character.arr_scavenger_grunt2_ranged2_pulsar_ma",
+   "faction": "Scavengers",
+   "tier": 2,
+   "crystals": 5,
+   "boss": false,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "vale_ajax",
+   "record": "Character.arr_valentinos_grunt2_ranged2_ajax_wa",
+   "faction": "Valentinos",
+   "tier": 2,
+   "crystals": 5,
+   "boss": false,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "animals_overture",
+   "record": "Character.animals_grunt2_ranged2_overture_mb",
+   "faction": "Animals",
+   "tier": 2,
+   "crystals": 5,
+   "boss": false,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "tyger_shingen",
+   "record": "Character.kab_tyger_claws_biker2_ranged2_shingen_ma",
+   "faction": "Tyger Claws",
+   "tier": 2,
+   "crystals": 5,
+   "boss": false,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "militech_ajax",
+   "record": "Character.gle_militech_ranger2_ranged2_ajax_ma",
+   "faction": "Militech",
+   "tier": 2,
+   "crystals": 6,
+   "boss": false,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "tyger_sidewinder",
+   "record": "Character.bls_se_tyger_claws_gangster3_ranged3_sidewinder_ma",
+   "faction": "Tyger Claws",
+   "tier": 3,
+   "crystals": 8,
+   "boss": false,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "scav_tactician",
+   "record": "Character.cvi_scavenger_elite2_shotgun_tactician_ma",
+   "faction": "Scavengers",
+   "tier": 3,
+   "crystals": 8,
+   "boss": false,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "animals_fists",
+   "record": "Character.cvi_animals_elite2_hmelee2_fists_mba_rare",
+   "faction": "Animals",
+   "tier": 3,
+   "crystals": 9,
+   "boss": false,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "tyger_katana",
+   "record": "Character.kab_tyger_claws_martial_fmelee2_katana_ma_rare",
+   "faction": "Tyger Claws",
+   "tier": 3,
+   "crystals": 9,
+   "boss": false,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "wraith_android",
+   "record": "Character.bls_se_wraiths_android_android2_pulsar_ma",
+   "faction": "Wraiths",
+   "tier": 3,
+   "crystals": 8,
+   "boss": false,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "scav_sniper",
+   "record": "Character.lch_scavenger_elite3_sniper2_grad_ma",
+   "faction": "Scavengers",
+   "tier": 3,
+   "crystals": 9,
+   "boss": false,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "vale_dual",
+   "record": "Character.rey_valentinos_elite3_ranged3_dual_ma_elite",
+   "faction": "Valentinos",
+   "tier": 4,
+   "crystals": 14,
+   "boss": true,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "wraith_hmg",
+   "record": "Character.bls_se_wraiths_strong_gunner3_hmg_mb_elite",
+   "faction": "Wraiths",
+   "tier": 4,
+   "crystals": 15,
+   "boss": true,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "kunoichi",
+   "record": "Character.jpn_tyger_claws_kunoichi_fmelee3_katana_wa_elite",
+   "faction": "Tyger Claws",
+   "tier": 4,
+   "crystals": 15,
+   "boss": true,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "mox_mantis",
+   "record": "Character.the_mox_elite3_fmelee3_mantis_wa_elite",
+   "faction": "Mox",
+   "tier": 4,
+   "crystals": 15,
+   "boss": true,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "maxtac",
+   "record": "Character.maxtac_rifle_ma_elite",
+   "faction": "MaxTac",
+   "tier": 5,
+   "crystals": 30,
+   "boss": true,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "maxtac_w",
+   "record": "Character.maxtac_rifle_wa_elite",
+   "faction": "MaxTac",
+   "tier": 5,
+   "crystals": 30,
+   "boss": true,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  }
+ ]
+}

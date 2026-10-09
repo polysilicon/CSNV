@@ -1,0 +1,114 @@
+{
+ "sheet": "stages",
+ "doc": "Island hops: each stage is a real Night City spot (AMM location list). V is teleported there; enemies spawn on the human navmesh around it.",
+ "rows": [
+  {
+   "id": "junkyard",
+   "name": "Junkyard Island",
+   "district": "Badlands",
+   "x": 1374.86,
+   "y": -1674.92,
+   "z": 49.3,
+   "yaw": -173.3,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "drivein",
+   "name": "Drive-In Island",
+   "district": "Northside",
+   "x": -81.23,
+   "y": 1963.31,
+   "z": 100.68,
+   "yaw": 145.0,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "petrochem",
+   "name": "Petrochem Island",
+   "district": "Santo Domingo",
+   "x": -118.05,
+   "y": -486.54,
+   "z": 7.3,
+   "yaw": 79.3,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "h8roof",
+   "name": "Megabuilding H8 Rooftop",
+   "district": "Japantown",
+   "x": -680.8,
+   "y": 811.03,
+   "z": 337.28,
+   "yaw": 97.3,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "industrial",
+   "name": "Industrial Park Island",
+   "district": "Santo Domingo",
+   "x": -235.55,
+   "y": -1428.82,
+   "z": 10.4,
+   "yaw": 55.0,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "reconciliation",
+   "name": "Reconciliation Park Island",
+   "district": "Heywood",
+   "x": -1720.81,
+   "y": -365.62,
+   "z": -13.89,
+   "yaw": -4.1,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "northside",
+   "name": "Northside Island",
+   "district": "Watson",
+   "x": -342.05,
+   "y": 2270.51,
+   "z": 36.29,
+   "yaw": 57.3,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "dogtown_mall",
+   "name": "Grand Imperial Island",
+   "district": "Dogtown",
+   "x": -2278.21,
+   "y": -1992.33,
+   "z": 20.57,
+   "yaw": -157.1,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "windfarm",
+   "name": "Wind Farm Island",
+   "district": "Badlands",
+   "x": 3810.47,
+   "y": -1560.97,
+   "z": 130.11,
+   "yaw": -11.6,
+   "source": "amm-db",
+   "verified": true,
+   "in_game": false
+  }
+ ]
+}

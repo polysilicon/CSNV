@@ -1,0 +1,174 @@
+{
+ "sheet": "hooks",
+ "doc": "Every Cyberpunk/CET API the mod calls, with where its exact signature was checked.",
+ "rows": [
+  {
+   "id": "spawn",
+   "api": "Game.GetDynamicEntitySystem():CreateEntity(DynamicEntitySpec)",
+   "used_for": "spawn wave enemies",
+   "source": "entSpawner aiSpot.lua / entityRecord.lua",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "despawn",
+   "api": "Game.GetDynamicEntitySystem():DeleteEntity(id)",
+   "used_for": "clear enemies at run end",
+   "source": "entSpawner entityRecord.lua",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "get_entity",
+   "api": "Game.GetDynamicEntitySystem():GetEntity(id)",
+   "used_for": "track spawned NPCs",
+   "source": "entSpawner entityRecord.lua",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "hostile",
+   "api": "GetAttitudeAgent():SetAttitudeGroup/SetAttitudeTowards(AIA_Hostile)+reactionComponent:TriggerCombat",
+   "used_for": "make spawns fight V",
+   "source": "AMM util.lua SetHostileRole/TriggerCombatAgainst",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "navmesh",
+   "api": "Game.GetNavigationSystem():FindPointInSphereOnlyHumanNavmesh(center,r,NavGenAgentSize.Human,false)",
+   "used_for": "safe spawn points",
+   "source": "core/systems/navigationSystem.swift",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "teleport",
+   "api": "Game.GetTeleportationFacility():Teleport(obj,Vector4,EulerAngles)",
+   "used_for": "island hops",
+   "source": "orphans.swift TeleportationFacility; AMM tools.lua",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "give_item",
+   "api": "Game.GetTransactionSystem():GiveItem(player,ItemID.FromTDBID(TweakDBID.new(rec)),1)",
+   "used_for": "shop purchases",
+   "source": "AMM util.lua AddToInventory",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "remove_item",
+   "api": "Game.GetTransactionSystem():RemoveItem(player,itemID,1)",
+   "used_for": "undo run items",
+   "source": "orphans.swift TransactionSystem",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "equip",
+   "api": "EquipRequest{owner,itemID,addToInventory} -> EquipmentSystem:QueueRequest",
+   "used_for": "equip bought gear",
+   "source": "orphans.swift EquipRequest; AMM util.lua",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "unequip",
+   "api": "UnequipRequest{owner,areaType,slotIndex} -> QueueRequest",
+   "used_for": "fresh start / restore",
+   "source": "inventoryDataManagerV2.swift UnequipItem",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "equip_query",
+   "api": "EquipmentSystem.GetData(player):GetItemInEquipSlot(area,i)/GetNumberOfSlots(area)",
+   "used_for": "snapshot gear",
+   "source": "equipmentSystem.swift",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "stat_mod",
+   "api": "RPGManager.CreateStatModifier(gamedataStatType,gameStatModifierType,v) + Game.GetStatsSystem():AddModifier/RemoveModifier",
+   "used_for": "Crab stat perks",
+   "source": "rpgManager.swift",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "status",
+   "api": "StatusEffectHelper.ApplyStatusEffect(target,TweakDBID,playerEntityID)",
+   "used_for": "auras / on-kill perks",
+   "source": "core/systems/statusEffectSystem.swift",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "stat_pool",
+   "api": "Game.GetStatPoolsSystem():GetStatPoolValue/RequestChangingStatPoolValue(id,Health,...)",
+   "used_for": "death check, regen",
+   "source": "orphans.swift StatPoolsSystem",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "godmode",
+   "api": "Game.GetGodModeSystem():AddGodMode/RemoveGodMode(id,gameGodModeType.Immortal,'CrabRun')",
+   "used_for": "run ends instead of game over",
+   "source": "orphans.swift GodModeSystem; AMM util.lua",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "time_dilation",
+   "api": "Game.GetTimeSystem():SetTimeDilation/UnsetTimeDilation('CrabRunShop',d)",
+   "used_for": "slow world while shopping",
+   "source": "orphans.swift TimeSystem",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "paused",
+   "api": "Game.GetTimeSystem():IsPausedState()",
+   "used_for": "freeze timers in menus",
+   "source": "orphans.swift TimeSystem",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "pregame",
+   "api": "Game.GetSystemRequestsHandler():IsPreGame()",
+   "used_for": "detect main menu",
+   "source": "CET community idiom",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "records",
+   "api": "TweakDB:GetRecord(id) + Game.GetLocalizedTextByKey(rec:DisplayName())",
+   "used_for": "validate rows, game names",
+   "source": "AMM init.lua",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "texture",
+   "api": "ImGui.LoadTexture(relpath) + ImGui.Image(tex,size)",
+   "used_for": "Crab icons",
+   "source": "CET src/scripting/Texture.cpp, LuaSandbox.cpp (v1.37.1)",
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "id": "file_io",
+   "api": "io.open(relative path) inside the mod folder",
+   "used_for": "bridge channel (events/keys)",
+   "source": "melty game_info: CET limits Lua file access to the mod folder",
+   "verified": true,
+   "in_game": false
+  }
+ ]
+}
