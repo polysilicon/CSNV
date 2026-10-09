@@ -52,6 +52,20 @@ Champions-style run in Night City.
   Game.* calls re-checked against the 2.31 scripts (GetDynamicEntitySystem is native-only, used by Entity Spawner).
 - Release 0.1.1 submitted (CrabRun-0.1.1.zip, sha256 ab124248...628d), one click yes.
 
+## In-game test 2 (0.1.1, user's PC)
+- bridge.log: Crab paks read fine (1 pak, 9964 files, no AES). 109 DA_Perk assets; all 19 sheet keys found
+  (paths blueprint/pickup/perk/<rarity>/da_perk_<key>). Class CrabPerkDA: Name/Description/LevelDescription
+  are StrProperty (plain strings), Icon is an object import. 0 perks kept because only FText was read.
+- Sounds found: crystal a_pickup_crystal_01, buy a_purchase_01, death a_crab_death_01, countdown
+  a_countdown_01, music 'aurora' (all OGG). Crystal icon ui/icon/old/ui_icon_crystal. Missing: perk,
+  wave_start, wave_clear, portal, boss. Folder layout: audio/pickup/*, audio/ui/gamestate/*, audio/ui/gameplay/*.
+- No CrabRun.log at all: CET creates <mod>/<mod>.log as soon as it loads a mod, so CET never loaded Crab Run
+  (CET not running or not loading mods). Also: our own crabrun.log was the same file name as CET's on Windows.
+- Fix (0.1.2): strings accepted for name/description (exact "Name"/"Description" first); sound rows reordered
+  and pointed at the real folders, no sound reused; mod logs only via print (CET's CrabRun.log); bridge logs game
+  version, CET files present, and after the game closes whether CET loaded Crab Run plus the tails of
+  cyber_engine_tweaks.log, scripting.log and CrabRun.log. Release 0.1.2 submitted (sha256 2780bc84...0e8a).
+
 ## Next
 1. In-game test on the user's PC (Melty Test): check crabrun.log, bridge.log, crab/crab_data.json.
 2. Fix what it shows (perk keys vs DA_Perk names, sound keywords, spawn hostility).

@@ -10,10 +10,9 @@ local bridge = require("bridge")
 
 local CrabRun = { R = nil, crab = nil, session = false, settle = 0, bridge_ok = false, alive_t = 0, attached = false }
 
+-- print goes to CET's console and to CrabRun.log, which CET keeps for this mod in its folder
 local function log(s)
   print("[CrabRun] " .. s)
-  local f = io.open("crabrun.log", "a")
-  if f then f:write(os.date("%H:%M:%S ") .. s .. "\n") f:close() end
 end
 
 local function load_crab()
@@ -29,7 +28,6 @@ local function load_crab()
 end
 
 registerForEvent("onInit", function()
-  util.write_file("crabrun.log", "")
   log("Crab Run " .. data.version .. " loaded")
   bridge.init()
   CrabRun.crab = load_crab()

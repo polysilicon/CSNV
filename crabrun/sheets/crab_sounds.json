@@ -1,6 +1,6 @@
 {
  "sheet": "crab_sounds",
- "doc": "Crab Champions sounds played on run events. The bridge searches the player's paks for SoundWave assets whose path contains all keywords (else all fallback_keywords) and plays the first match.",
+ "doc": "Crab Champions sounds played on run events. The bridge searches the player's paks for SoundWave assets whose path contains all keywords (else all fallback_keywords) and plays the first match. Rows are matched in order and no sound is used twice, so specific events come before broad fallbacks.",
  "rows": [
   {
    "event": "crystal",
@@ -13,7 +13,7 @@
    ],
    "volume": 0.6,
    "loop": false,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -28,82 +28,22 @@
    ],
    "volume": 0.8,
    "loop": false,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
-   "event": "perk",
+   "event": "countdown",
    "keywords": [
-    "perk"
-   ],
-   "fallback_keywords": [
-    "pickup",
-    "levelup",
-    "level_up"
-   ],
-   "volume": 0.8,
-   "loop": false,
-   "verified": false,
-   "in_game": false
-  },
-  {
-   "event": "wave_start",
-   "keywords": [
-    "wave",
-    "start"
-   ],
-   "fallback_keywords": [
-    "horn",
-    "round",
     "countdown"
    ],
-   "volume": 0.9,
-   "loop": false,
-   "verified": false,
-   "in_game": false
-  },
-  {
-   "event": "wave_clear",
-   "keywords": [
-    "island",
-    "complete"
-   ],
    "fallback_keywords": [
-    "clear",
-    "complete",
-    "victory"
+    "tick",
+    "beep",
+    "timer"
    ],
-   "volume": 0.9,
+   "volume": 0.7,
    "loop": false,
-   "verified": false,
-   "in_game": false
-  },
-  {
-   "event": "portal",
-   "keywords": [
-    "portal"
-   ],
-   "fallback_keywords": [
-    "teleport",
-    "warp"
-   ],
-   "volume": 0.9,
-   "loop": false,
-   "verified": false,
-   "in_game": false
-  },
-  {
-   "event": "boss",
-   "keywords": [
-    "boss"
-   ],
-   "fallback_keywords": [
-    "elite",
-    "alarm"
-   ],
-   "volume": 0.9,
-   "loop": false,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -119,22 +59,7 @@
    ],
    "volume": 0.9,
    "loop": false,
-   "verified": false,
-   "in_game": false
-  },
-  {
-   "event": "countdown",
-   "keywords": [
-    "countdown"
-   ],
-   "fallback_keywords": [
-    "tick",
-    "beep",
-    "timer"
-   ],
-   "volume": 0.7,
-   "loop": false,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -150,6 +75,74 @@
    ],
    "volume": 0.35,
    "loop": true,
+   "verified": true,
+   "in_game": false
+  },
+  {
+   "event": "perk",
+   "keywords": [
+    "pickup",
+    "perk"
+   ],
+   "fallback_keywords": [
+    "audio/pickup"
+   ],
+   "volume": 0.8,
+   "loop": false,
+   "verified": false,
+   "in_game": false
+  },
+  {
+   "event": "wave_start",
+   "keywords": [
+    "gamestate",
+    "start"
+   ],
+   "fallback_keywords": [
+    "audio/ui/gamestate"
+   ],
+   "volume": 0.9,
+   "loop": false,
+   "verified": false,
+   "in_game": false
+  },
+  {
+   "event": "wave_clear",
+   "keywords": [
+    "gamestate",
+    "complete"
+   ],
+   "fallback_keywords": [
+    "audio/ui/gamestate"
+   ],
+   "volume": 0.9,
+   "loop": false,
+   "verified": false,
+   "in_game": false
+  },
+  {
+   "event": "portal",
+   "keywords": [
+    "portal"
+   ],
+   "fallback_keywords": [
+    "audio/ui/gamestate"
+   ],
+   "volume": 0.9,
+   "loop": false,
+   "verified": false,
+   "in_game": false
+  },
+  {
+   "event": "boss",
+   "keywords": [
+    "boss"
+   ],
+   "fallback_keywords": [
+    "audio/ui/gamestate"
+   ],
+   "volume": 0.9,
+   "loop": false,
    "verified": false,
    "in_game": false
   }

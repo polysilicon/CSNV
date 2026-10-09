@@ -35,6 +35,9 @@ local real_open = io.open
 io.open = function(p, m) if not p:match("^/") then p = tmp .. "/" .. p end return real_open(p, m) end
 
 local function put(p, s, m) local f = io.open(p, m or "w") f:write(s) f:close() end
+local LOG = {}
+print = function(...) local p = {} for i = 1, select("#", ...) do p[i] = tostring((select(i, ...))) end LOG[#LOG + 1] = table.concat(p, " ") end
+local function logtext() return table.concat(LOG, "\n") end
 local pass, fail = 0, 0
 local function check(n, c, m) if c then pass = pass + 1 else fail = fail + 1 print("FAIL " .. n .. (m and (": " .. tostring(m)) or "")) end end
 
@@ -52,7 +55,7 @@ check("observer", observers["PlayerPuppet.OnGameAttached"] ~= nil)
 local function frame(dt) handlers.onUpdate(dt) handlers.onDraw()
   check("balanced", depth == 0 and styles == 0 and vars == 0, depth .. "/" .. styles .. "/" .. vars) end
 for _ = 1, 40 do frame(0.1) end -- 3s settle then the run starts
-local log = io.open("crabrun.log"):read("*a")
+local log = logtext()
 check("run started", log:find("run started, seed") ~= nil, log)
 check("crab content read", log:find("Crab Champions content: 1 perks") ~= nil, log)
 for _ = 1, 80 do frame(0.1) end
@@ -67,9 +70,9 @@ for _ = 1, 3 do frame(0.1) end
 -- reload: OnGameAttached resets and starts a fresh run after settling
 observers["PlayerPuppet.OnGameAttached"]()
 for _ = 1, 40 do frame(0.1) end
-local n = 0 for _ in io.open("crabrun.log"):read("*a"):gmatch("run started") do n = n + 1 end
+local n = 0 for _ in logtext():gmatch("run started") do n = n + 1 end
 check("fresh run on reload", n == 2, n)
 handlers.onShutdown()
 os.execute("rm -rf " .. tmp)
-print(string.format("%d passed, %d failed", pass, fail))
+io.write(string.format("%d passed, %d failed\n", pass, fail))
 os.exit(fail == 0 and 0 or 1)

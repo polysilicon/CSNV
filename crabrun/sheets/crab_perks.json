@@ -16,7 +16,7 @@
    "chance": 0.0,
    "amount": 0.0,
    "max_stacks": 5,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -33,7 +33,7 @@
    "chance": 0.0,
    "amount": 0.0,
    "max_stacks": 5,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -50,7 +50,7 @@
    "chance": 0.0,
    "amount": 0.0,
    "max_stacks": 5,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -67,7 +67,7 @@
    "chance": 0.0,
    "amount": 0.0,
    "max_stacks": 5,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -84,7 +84,7 @@
    "chance": 0.0,
    "amount": 0.0,
    "max_stacks": 5,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -101,7 +101,7 @@
    "chance": 0.0,
    "amount": 0.0,
    "max_stacks": 3,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -118,7 +118,7 @@
    "chance": 0.0,
    "amount": 0.0,
    "max_stacks": 3,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -135,7 +135,7 @@
    "chance": 0.0,
    "amount": 1.0,
    "max_stacks": 5,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -152,7 +152,7 @@
    "chance": 0.0,
    "amount": 0.0,
    "max_stacks": 5,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -169,7 +169,7 @@
    "chance": 0.0,
    "amount": 0.0,
    "max_stacks": 5,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -186,7 +186,7 @@
    "chance": 0.0,
    "amount": 0.0,
    "max_stacks": 5,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -203,7 +203,7 @@
    "chance": 0.35,
    "amount": 0.0,
    "max_stacks": 5,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -220,7 +220,7 @@
    "chance": 0.35,
    "amount": 0.0,
    "max_stacks": 5,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -237,7 +237,7 @@
    "chance": 0.35,
    "amount": 0.0,
    "max_stacks": 5,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -254,7 +254,7 @@
    "chance": 0.25,
    "amount": 0.0,
    "max_stacks": 5,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -271,7 +271,7 @@
    "chance": 0.0,
    "amount": 2.0,
    "max_stacks": 5,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -288,7 +288,7 @@
    "chance": 0.0,
    "amount": 15.0,
    "max_stacks": 5,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -305,7 +305,7 @@
    "chance": 0.0,
    "amount": 0.2,
    "max_stacks": 5,
-   "verified": false,
+   "verified": true,
    "in_game": false
   },
   {
@@ -322,7 +322,7 @@
    "chance": 0.0,
    "amount": 0.08,
    "max_stacks": 5,
-   "verified": false,
+   "verified": true,
    "in_game": false
   }
  ]

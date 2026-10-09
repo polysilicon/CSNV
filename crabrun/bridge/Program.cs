@@ -26,6 +26,8 @@ public static class Program
         catch (Exception e) { Log.Info("Crab Champions extraction failed: " + e); }
         if (extractOnly) return 0;
 
+        var cet = new CetCheck(game);
+        cet.BeforeLaunch();
         Process proc = null;
         if (launch)
         {
@@ -36,7 +38,8 @@ public static class Program
         }
         using var channel = new Channel(modDir, Path.Combine(modDir, "crab"));
         channel.RunWhileGameAlive(TimeSpan.FromSeconds(launch ? 90 : 5));
-        Log.Info("Cyberpunk 2077 closed; bridge exiting");
+        Log.Info("Cyberpunk 2077 closed");
+        cet.AfterGame();
         return 0;
     }
 

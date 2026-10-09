@@ -130,9 +130,10 @@ public static class CrabExtract
         // ---- sounds
         var sndDir = Path.Combine(outDir, "sounds");
         Directory.CreateDirectory(sndDir);
+        var usedSounds = new HashSet<string>();
         foreach (var s in SheetData.Sounds)
         {
-            foreach (var path in Candidates(uassets, s.Keywords, s.FallbackKeywords).Take(25))
+            foreach (var path in Candidates(uassets, s.Keywords, s.FallbackKeywords).Where(p => !usedSounds.Contains(p)).Take(25))
             {
                 try
                 {
@@ -143,6 +144,7 @@ public static class CrabExtract
                     if (ext == null) { res.notes.Add($"sound {s.Event}: {path} is {fmt}, not playable"); continue; }
                     var file = Path.Combine(sndDir, s.Event + "." + ext);
                     File.WriteAllBytes(file, data);
+                    usedSounds.Add(path);
                     res.sounds[s.Event] = new SoundOut { file = file, asset = path, volume = s.Volume, loop = s.Loop };
                     Log.Info($"sound {s.Event}: {path} ({fmt})");
                     break;
@@ -183,17 +185,24 @@ public static class CrabExtract
         if (obj == null) return new PerkOut { seen = "no exports" };
         var p = new PerkOut { asset = path };
         UTexture2D icon = null;
+        string name = null, nameLoose = null, desc = null, descLoose = null;
         var seen = new List<string>();
         Walk(obj.Properties, 0, (name, value) =>
         {
             var n = name.ToLowerInvariant();
             if (seen.Count < 30) seen.Add($"{name}:{value?.GetType().Name}");
+            // Crab Champions keeps Name/Description as plain strings (CrabPerkDA), other builds may use FText
+            var text = value switch { FText t => t.Text, string str => str, _ => null };
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                if (n == "description") desc = text;
+                else if (n.Contains("desc")) descLoose ??= text;
+                else if (n == "name" || n == "displayname") name = text;
+                else if (n.Contains("name") || n.Contains("title")) nameLoose ??= text;
+                return;
+            }
             switch (value)
             {
-                case FText t when !string.IsNullOrWhiteSpace(t.Text):
-                    if (n.Contains("desc")) p.desc ??= t.Text;
-                    else if (n.Contains("name") || n.Contains("title")) p.name ??= t.Text;
-                    break;
                 case FPackageIndex idx when icon == null && !idx.IsNull:
                     if (idx.TryLoad<UTexture2D>(out var tex)) icon = tex;
                     break;
@@ -203,6 +212,8 @@ public static class CrabExtract
             }
         });
         p.seen = $"{obj.ExportType} [" + string.Join(", ", seen) + "]";
+        p.name = name ?? nameLoose;
+        p.desc = desc ?? descLoose;
         if (p.name == null) return p;
         if (icon != null && SavePng(icon, Path.Combine(iconDir, key + ".png"))) p.icon = $"crab/icons/{key}.png";
         return p;
