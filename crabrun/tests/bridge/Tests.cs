@@ -20,6 +20,14 @@ Check("sound candidates", CrabExtract.Candidates(paths, new[] { "crystal", "pick
 Check("objpath", CrabExtract.ObjPath("a/b/da_perk_vitality.uasset") == "a/b/da_perk_vitality.da_perk_vitality");
 Check("norm", CrabExtract.Norm("Speed Demon") == CrabExtract.Norm("speed_demon") && CrabExtract.Norm("SpeedDemon") == "speeddemon");
 
+// --- perk text fields, as CrabPerkDA has them (bridge.log from the real game, 2026-10-09)
+var pf = new CrabExtract.PerkFields();
+foreach (var (k, v) in new (string, object)[] { ("PerkType", null), ("LevelDescription", "+10% max health"), ("BaseBuff", 0.1f),
+         ("Name", "Vitality"), ("Description", "Increases max health."), ("Icon", null) })
+    pf.Add(k, v);
+Check("perk name from string Name", pf.Name == "Vitality", pf.Name ?? "null");
+Check("perk description prefers Description over LevelDescription", pf.Desc == "Increases max health.", pf.Desc ?? "null");
+
 // --- pak discovery + mount + resilience against unreadable assets (pak built by tools/make_test_pak.py)
 var crab = Path.Combine(root, "Crab Champions");
 var paks = Path.Combine(crab, "CrabChampions", "Content", "Paks");

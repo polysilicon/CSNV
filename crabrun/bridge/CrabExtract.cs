@@ -185,22 +185,12 @@ public static class CrabExtract
         if (obj == null) return new PerkOut { seen = "no exports" };
         var p = new PerkOut { asset = path };
         UTexture2D icon = null;
-        string name = null, nameLoose = null, desc = null, descLoose = null;
+        var fields = new PerkFields();
         var seen = new List<string>();
-        Walk(obj.Properties, 0, (name, value) =>
+        Walk(obj.Properties, 0, (prop, value) =>
         {
-            var n = name.ToLowerInvariant();
-            if (seen.Count < 30) seen.Add($"{name}:{value?.GetType().Name}");
-            // Crab Champions keeps Name/Description as plain strings (CrabPerkDA), other builds may use FText
-            var text = value switch { FText t => t.Text, string str => str, _ => null };
-            if (!string.IsNullOrWhiteSpace(text))
-            {
-                if (n == "description") desc = text;
-                else if (n.Contains("desc")) descLoose ??= text;
-                else if (n == "name" || n == "displayname") name = text;
-                else if (n.Contains("name") || n.Contains("title")) nameLoose ??= text;
-                return;
-            }
+            if (seen.Count < 30) seen.Add($"{prop}:{value?.GetType().Name}");
+            if (fields.Add(prop, value)) return;
             switch (value)
             {
                 case FPackageIndex idx when icon == null && !idx.IsNull:
@@ -212,11 +202,33 @@ public static class CrabExtract
             }
         });
         p.seen = $"{obj.ExportType} [" + string.Join(", ", seen) + "]";
-        p.name = name ?? nameLoose;
-        p.desc = desc ?? descLoose;
+        p.name = fields.Name;
+        p.desc = fields.Desc;
         if (p.name == null) return p;
         if (icon != null && SavePng(icon, Path.Combine(iconDir, key + ".png"))) p.icon = $"crab/icons/{key}.png";
         return p;
+    }
+
+    // Picks a perk's name and description out of its properties. Crab Champions' CrabPerkDA keeps them as plain
+    // strings ("Name", "Description"; "LevelDescription" is the per-level line); other builds may use FText.
+    public sealed class PerkFields
+    {
+        string name, nameLoose, desc, descLoose;
+        public string Name => name ?? nameLoose;
+        public string Desc => desc ?? descLoose;
+
+        // true when the value was text (consumed here)
+        public bool Add(string prop, object value)
+        {
+            var text = value switch { FText t => t.Text, string str => str, _ => null };
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            var n = prop.ToLowerInvariant();
+            if (n == "description") desc ??= text;
+            else if (n.Contains("desc")) descLoose ??= text;
+            else if (n == "name" || n == "displayname") name ??= text;
+            else if (n.Contains("name") || n.Contains("title")) nameLoose ??= text;
+            return true;
+        }
     }
 
     // visit every (property name, value) pair, descending into structs and arrays
