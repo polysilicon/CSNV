@@ -120,6 +120,7 @@ func (l *launcher) run(rebuild bool) error {
 		return fmt.Errorf("Cyberpunk 2077's archive\\pc\\content folder not found in %s", l.cpDir)
 	}
 	l.logf("Black Ops: %s", l.boDir)
+	l.previousConsole()
 	l.logf("Cyberpunk 2077: %s", l.cpDir)
 
 	cacheRoot := os.Getenv("LOCALAPPDATA")
@@ -379,7 +380,8 @@ func (l *launcher) launch(boExe string) error {
 		return nil
 	}
 	l.logf("Starting Black Ops with the mod. In the menu: Zombies > Solo > Kino der Toten.")
-	args := []string{"+set", "fs_game", "mods/cyberkino"}
+	// logfile 2: Black Ops writes its console to mods/cyberkino/console.log, read back on the next Play
+	args := []string{"+set", "fs_game", "mods/cyberkino", "+set", "logfile", "2"}
 	if steam := findSteamExe(); steam != "" {
 		cmd := exec.Command(steam, append([]string{"-applaunch", steamAppID}, args...)...)
 		if err := cmd.Start(); err == nil {
@@ -506,4 +508,31 @@ func writeIWD(path, imagesDir string) error {
 		return err
 	}
 	return f.Close()
+}
+
+var consoleInteresting = regexp.MustCompile(`(?i)cyberkino|fs_game|mod\.ff|error|script|could not|unknown function|failed`)
+
+// previousConsole copies the telling lines of Black Ops' console log from the last game into this log.
+func (l *launcher) previousConsole() {
+	for _, p := range []string{
+		filepath.Join(l.boDir, "mods", "cyberkino", "console.log"),
+		filepath.Join(l.boDir, "main", "console.log"),
+	} {
+		data, err := os.ReadFile(p)
+		if err != nil {
+			continue
+		}
+		lines := strings.Split(strings.ReplaceAll(string(data), "\r", ""), "\n")
+		l.logf("Black Ops console from the last game (%s, %d lines), telling lines:", p, len(lines))
+		shown := 0
+		for _, line := range lines {
+			if consoleInteresting.MatchString(line) && shown < 200 {
+				l.logf("  | %s", strings.TrimSpace(line))
+				shown++
+			}
+		}
+		if shown == 0 {
+			l.logf("  | (none)")
+		}
+	}
 }

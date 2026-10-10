@@ -58,6 +58,7 @@ def strings():
     out[key("ALL_INSTALLED")] = "All cyberware installed"
     out[key("SANDEVISTAN_ON")] = "SANDEVISTAN"
     out[key("READY")] = "Sandevistan ready"
+    out[key("LOADED")] = "Cyberpunk Kino loaded"
     out[key("W", "MANTIS")] = "Mantis Blades"
     return out
 

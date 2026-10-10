@@ -86,6 +86,12 @@
   registry: HKCU SteamExe, HKLM InstallPath); fallback steam://run link URL-encoded. No more steam_appid.txt
   (the one 0.1.4 wrote stays; it is harmless). Release 0.1.5 sha256 49c1cfc5..4e6f, test 05394932-6d9f-472e-9f7e-abd893977759.
 
+## Test 6 (0.1.5)
+- Still stock guns; no log sent. Unknown whether fs_game reaches the game or the mod loads but its scripts don't run.
+- 0.1.6 adds proof: "Cyberpunk Kino loaded" on screen 8 s into Kino (post_main ran), PrintLn markers, and
+  +set logfile 2 so Black Ops writes mods/cyberkino/console.log; the next Play copies its telling lines into
+  cyberkino-launch.log. Release 0.1.6 sha256 5c8e9659..ad30, test 44fafbe4-15f5-4b08-b776-6351c3963ad1.
+
 ## Open
 1. In-game test on the creator's PC (TESTING.md), then fixes.
 2. Real screenshot from that test.

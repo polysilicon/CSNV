@@ -227,6 +227,9 @@ LANG_ENGLISH        "SANDEVISTAN"
 REFERENCE           CYBERKINO_READY
 LANG_ENGLISH        "Sandevistan ready"
 
+REFERENCE           CYBERKINO_LOADED
+LANG_ENGLISH        "Cyberpunk Kino loaded"
+
 REFERENCE           CYBERKINO_W_MANTIS
 LANG_ENGLISH        "Mantis Blades"
 

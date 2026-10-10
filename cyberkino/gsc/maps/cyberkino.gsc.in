@@ -48,6 +48,7 @@ cpk_weight_rare()
 
 pre_main()
 {
+	PrintLn( "CYBERKINO: pre_main" );
 	init_tables();
 
 	PrecacheModel( "cpk_chip" );
@@ -55,6 +56,7 @@ pre_main()
 	PrecacheString( &"CYBERKINO_ALL_INSTALLED" );
 	PrecacheString( &"CYBERKINO_SANDEVISTAN_ON" );
 	PrecacheString( &"CYBERKINO_READY" );
+	PrecacheString( &"CYBERKINO_LOADED" );
 
 	for( i = 0; i < level.cpk_weapons.size; i++ )
 	{
@@ -112,6 +114,20 @@ post_main()
 
 	level thread cpk_player_watch();
 	level thread cpk_special_loop();
+	level thread cpk_announce();
+	PrintLn( "CYBERKINO: post_main, " + level.cpk_weapons.size + " guns" );
+}
+
+// Shows that the mod's script runs, once the first player is in.
+cpk_announce()
+{
+	wait( 8 );
+	players = get_players();
+	for( i = 0; i < players.size; i++ )
+	{
+		players[i] iPrintLnBold( &"CYBERKINO_LOADED" );
+	}
+	PrintLn( "CYBERKINO: announced to " + players.size + " players" );
 }
 
 // ---------------------------------------------------------------- players
