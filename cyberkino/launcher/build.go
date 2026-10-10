@@ -17,6 +17,8 @@ type modBuilder struct {
 	cpOut  string
 	tex    texResolver
 	zone   *zoneFile
+	// exported .glb files by lower-case file name
+	cpIndex map[string]string
 	// built once each: colour maps per gun and Cyberpunk material, materials per colour map and Black Ops material
 	images    map[string]string
 	imgCount  map[string]int
@@ -36,15 +38,7 @@ func (b *modBuilder) cpParts(depot []string) ([]part, map[string]cpMaterial, err
 	var parts []part
 	mats := map[string]cpMaterial{}
 	for _, d := range depot {
-		rel := filepath.FromSlash(strings.ReplaceAll(d, "\\", "/"))
-		noExt := strings.TrimSuffix(rel, filepath.Ext(rel))
-		var found string
-		for _, cand := range []string{noExt + ".glb", rel + ".glb"} {
-			if _, err := os.Stat(filepath.Join(b.cpOut, cand)); err == nil {
-				found = filepath.Join(b.cpOut, cand)
-				break
-			}
-		}
+		found := b.cpFile(d)
 		if found == "" {
 			if len(parts) == 0 {
 				return nil, nil, fmt.Errorf("WolvenKit did not export %s", d)
@@ -115,7 +109,7 @@ func (b *modBuilder) material(prefix, boMaterial string, cp cpMaterial) (string,
 	}
 	base, err := b.dump.material(boMaterial)
 	if err != nil {
-		return "", fmt.Errorf("Black Ops material %s not dumped", boMaterial)
+		return "", err
 	}
 	name := fmt.Sprintf("mc_%s_%d", image, len(b.materials))
 	js, err := cloneMaterial(base, image)
@@ -352,4 +346,32 @@ func imagePrefix(model string) string {
 	p := strings.TrimPrefix(model, "cpk_")
 	p = strings.TrimSuffix(p, "_view")
 	return strings.TrimSuffix(p, "_world")
+}
+
+// cpFile finds the .glb WolvenKit exported for a depot path: at its depot path under the output folder,
+// or, failing that, anywhere under it by file name.
+func (b *modBuilder) cpFile(depot string) string {
+	rel := filepath.FromSlash(strings.ReplaceAll(depot, "\\", "/"))
+	noExt := strings.TrimSuffix(rel, filepath.Ext(rel))
+	for _, cand := range []string{noExt + ".glb", rel + ".glb"} {
+		if _, err := os.Stat(filepath.Join(b.cpOut, cand)); err == nil {
+			return filepath.Join(b.cpOut, cand)
+		}
+	}
+	if b.cpIndex == nil {
+		b.cpIndex = map[string]string{}
+		filepath.Walk(b.cpOut, func(p string, info os.FileInfo, err error) error {
+			if err == nil && !info.IsDir() && strings.EqualFold(filepath.Ext(p), ".glb") {
+				b.cpIndex[strings.ToLower(filepath.Base(p))] = p
+			}
+			return nil
+		})
+	}
+	base := strings.ToLower(filepath.Base(noExt))
+	for _, name := range []string{base + ".glb", base + ".mesh.glb"} {
+		if p, ok := b.cpIndex[name]; ok {
+			return p
+		}
+	}
+	return ""
 }

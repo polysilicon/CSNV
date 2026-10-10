@@ -40,6 +40,17 @@
   validate_recipe valid; one_click_check yes, publishable; findings: review (executable code, unverified layout).
 - Test d6e7f31b-4de1-44bb-95cc-01f965357d0e (3 runs x 8 min): waiting for the creator to open it on their PC.
 
+## Test 1 (0.1.0, creator's PC, pressed Play)
+- Error box: "none of the Cyberpunk guns could be built". Unlinker and WolvenKit both exited 0, so every gun failed
+  a later step. No log received yet. Likely cause: the zombie weapon files, view models and materials live in
+  common_zombie.ff, and only zombie_theater.ff was dumped. (WolvenKit also exits 0 when it exports nothing.)
+- Fix (0.1.1): zones use load | unlink | both; common_zombie.ff and zombie_theater.ff are both dumped (Kino's own
+  wins) and referenced while linking; dumps logged with counts; Cyberpunk .glb found anywhere in WolvenKit's output;
+  WolvenKit exporting nothing is its own error; material falls back to any dumped weapon material; the error box
+  lists the first three reasons.
+- Release 0.1.1: CyberKino-0.1.1.zip, 85118954 bytes, sha256 9c8724d2..2087, releaseId 707cea70-7f62-4bb9-9b5c-31f3a259db03.
+  Test e26abf39-4f77-4cd3-9263-aa36fa138523. (Test d6e7f31b was never picked up by Melty on the PC.)
+
 ## Open
 1. In-game test on the creator's PC (TESTING.md), then fixes.
 2. Real screenshot from that test.

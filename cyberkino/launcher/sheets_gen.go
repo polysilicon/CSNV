@@ -2,7 +2,7 @@
 
 package main
 
-const modVersion = "0.1.0"
+const modVersion = "0.1.1"
 
 var weaponRows = []weaponRow{
 	{ID: "unity", Name: "Unity", Base: "m1911_zm", BaseUp: "m1911_upgraded_zm", Meshes: []string{"base\\weapons\\firearms\\handgun\\constitutional_unity\\entities\\meshes\\w_handgun__constitutional_unity__base1_01.mesh"}, DamageMult: 1.6, Clip: 12, MaxAmmo: 84, FireTimeMult: 1.0, PapDamageMult: 1.5, PapClip: 12, PapMaxAmmo: 108, FitScale: 1.0},
@@ -44,6 +44,6 @@ var hookRows = []hookRow{
 var zoneRows = []zoneRow{
 	{ID: "code_post_gfx.ff", Dir: "Common", Use: "load", Required: true},
 	{ID: "common.ff", Dir: "Common", Use: "load", Required: false},
-	{ID: "common_zombie.ff", Dir: "Common", Use: "load", Required: true},
-	{ID: "zombie_theater.ff", Dir: "Common", Use: "unlink", Required: true},
+	{ID: "common_zombie.ff", Dir: "Common", Use: "both", Required: true},
+	{ID: "zombie_theater.ff", Dir: "Common", Use: "both", Required: true},
 }

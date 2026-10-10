@@ -1,10 +1,10 @@
 {
   "sheet": "zones",
-  "about": "Black Ops zone files the launcher reads from the player's install. load = referenced while linking (techniques, sounds, animations stay theirs); unlink = dumped to read weapon files, models, materials and Kino's scripts.",
+  "about": "Black Ops zone files the launcher reads from the player's install. load = referenced while linking (techniques, sounds, animations stay theirs); unlink = dumped to read weapon files, models, materials and scripts; both = dumped and referenced. Zones are processed in order; each dump loads the zones listed before it.",
   "columns": {
     "id": "zone file name",
     "dir": "folder under the Black Ops zone folder",
-    "use": "load | unlink",
+    "use": "load | unlink | both",
     "required": "true = stop if missing",
     "about": "why",
     "tested_in_game": "true once seen working on a real install"
@@ -29,17 +29,17 @@
     {
       "id": "common_zombie.ff",
       "dir": "Common",
-      "use": "load",
+      "use": "both",
       "required": true,
-      "about": "shared Zombies assets",
+      "about": "shared Zombies assets: the zombie weapon files, view models and materials most maps share",
       "tested_in_game": false
     },
     {
       "id": "zombie_theater.ff",
       "dir": "Common",
-      "use": "unlink",
+      "use": "both",
       "required": true,
-      "about": "Kino: weapon files, view and world models, materials, scripts",
+      "about": "Kino: its own weapons, models, materials and scripts; also referenced while linking",
       "tested_in_game": false
     }
   ]

@@ -231,27 +231,82 @@ func (z *zoneFile) String() string {
 // ---------------------------------------------------------------- dump lookups
 
 type boDump struct {
-	Root string
+	Roots []string // dump folders, searched in order
+}
+
+func (d boDump) find(rel ...string) string {
+	for _, root := range d.Roots {
+		for _, r := range rel {
+			p := filepath.Join(root, filepath.FromSlash(r))
+			if _, err := os.Stat(p); err == nil {
+				return p
+			}
+		}
+	}
+	return ""
 }
 
 func (d boDump) weaponFile(name string) (string, error) {
-	for _, rel := range []string{filepath.Join("weapons", name), filepath.Join("weapons", "sp", name)} {
-		if b, err := os.ReadFile(filepath.Join(d.Root, rel)); err == nil {
-			return string(b), nil
-		}
+	p := d.find("weapons/"+name, "weapons/sp/"+name, "weapons/zm/"+name)
+	if p == "" {
+		return "", fmt.Errorf("weapon %s was not found in the Black Ops zones read", name)
 	}
-	return "", fmt.Errorf("weapon %s is not in zombie_theater.ff", name)
+	b, err := os.ReadFile(p)
+	return string(b), err
 }
 
 func (d boDump) modelGLB(name string) string {
-	return filepath.Join(d.Root, "model_export", name+"_lod0.glb")
+	if p := d.find("model_export/"+name+"_lod0.glb", "model_export/"+name+".glb"); p != "" {
+		return p
+	}
+	return filepath.Join(d.Roots[0], "model_export", name+"_lod0.glb")
 }
 
+// material reads a dumped material; when it isn't there, any dumped weapon material with a colour map
+// stands in (same kind of lit, skinned model surface).
 func (d boDump) material(name string) ([]byte, error) {
-	return os.ReadFile(filepath.Join(d.Root, "materials", materialFileName(name)+".json"))
+	if p := d.find("materials/" + materialFileName(name) + ".json"); p != "" {
+		return os.ReadFile(p)
+	}
+	for _, root := range d.Roots {
+		files, _ := filepath.Glob(filepath.Join(root, "materials", "*.json"))
+		sort.Strings(files)
+		for _, pass := range []string{"mtl_weapon", ""} {
+			for _, f := range files {
+				if !strings.HasPrefix(strings.ToLower(filepath.Base(f)), pass) {
+					continue
+				}
+				b, err := os.ReadFile(f)
+				if err == nil && strings.Contains(string(b), "colorMap") && strings.Contains(string(b), "techniqueSet") {
+					return b, nil
+				}
+			}
+		}
+	}
+	return nil, fmt.Errorf("material %s was not found in the Black Ops zones read", name)
 }
 
 func (d boDump) rawfile(rel string) (string, error) {
-	b, err := os.ReadFile(filepath.Join(d.Root, filepath.FromSlash(rel)))
+	p := d.find(rel)
+	if p == "" {
+		return "", fmt.Errorf("%s not found", rel)
+	}
+	b, err := os.ReadFile(p)
 	return string(b), err
+}
+
+// inventory says how much of each kind a dump folder holds, for the log.
+func (d boDump) inventory(root string) string {
+	count := func(pattern string) int {
+		n := 0
+		filepath.Walk(filepath.Join(root, pattern), func(_ string, info os.FileInfo, err error) error {
+			if err == nil && !info.IsDir() {
+				n++
+			}
+			return nil
+		})
+		return n
+	}
+	return fmt.Sprintf("%s: %d weapons, %d models, %d materials, %d scripts", filepath.Base(root),
+		count("weapons"), count("model_export"), count("materials"), count("maps")+count("clientscripts"))
 }

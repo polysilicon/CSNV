@@ -21,7 +21,7 @@ ENUMS = {
     ("cyberware", "effect"): {"slowmo", "double_jump", "armor", "mantis"},
     ("models", "kind"): {"view", "rigid"},
     ("hooks", "action"): {"insert_before", "insert_after"},
-    ("zones", "use"): {"load", "unlink"},
+    ("zones", "use"): {"load", "unlink", "both"},
 }
 # columns that may legitimately hold an empty list
 EMPTY_LIST_OK = {("weapons", "replaces")}
@@ -130,7 +130,7 @@ def main():
             problems.append(f"hooks.{h['id']}.anchor: {e}")
     zones = {z["id"]: z for z in sheets["zones"]["rows"]}
     hook_files = {h["file"] for h in sheets["hooks"]["rows"]}
-    if not any(z["use"] == "unlink" for z in zones.values()) and hook_files:
+    if not any(z["use"] in ("unlink", "both") for z in zones.values()) and hook_files:
         broken.append("hooks: no zone is unlinked, so the hooked scripts can't be read")
 
     for t in sheets["tools"]["rows"]:

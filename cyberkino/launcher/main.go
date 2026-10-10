@@ -236,9 +236,10 @@ func (l *launcher) build(modDir string) error {
 		}
 	}
 
-	// 1. Kino from the player's Black Ops
+	// 1. Kino from the player's Black Ops. Kino's weapons, models and materials are spread over the shared
+	// Zombies zone and Kino's own, so each "unlink" zone is dumped, loading the zones before it first.
 	var loads []string
-	unlink := ""
+	dump := boDump{}
 	for _, z := range zoneRows {
 		p := l.zonePath(z)
 		if _, err := os.Stat(p); err != nil {
@@ -248,22 +249,28 @@ func (l *launcher) build(modDir string) error {
 			l.logf("Optional zone %s not found; going on without it.", z.ID)
 			continue
 		}
-		if z.Use == "load" {
+		if z.Use == "unlink" || z.Use == "both" {
+			args := []string{}
+			for _, lp := range loads {
+				args = append(args, "-l", lp)
+			}
+			args = append(args, "--model-format", "GLB", "--include-assets", "weapon,xmodel,material,rawfile", "-o", filepath.Join(dumpRoot, "?zone?"), p)
+			l.logf("Reading %s from Black Ops...", z.ID)
+			if err := l.exec(l.tool("oat", exeName("Unlinker")), l.work, args...); err != nil {
+				return err
+			}
+			root := filepath.Join(dumpRoot, strings.TrimSuffix(z.ID, ".ff"))
+			// later zones (Kino's own) win over earlier ones (shared Zombies)
+			dump.Roots = append([]string{root}, dump.Roots...)
+			l.logf("  %s", dump.inventory(root))
+		}
+		if z.Use == "load" || z.Use == "both" {
 			loads = append(loads, p)
-		} else {
-			unlink = p
 		}
 	}
-	args := []string{}
-	for _, p := range loads {
-		args = append(args, "-l", p)
+	if len(dump.Roots) == 0 {
+		return errors.New("no Black Ops zone was read (zones sheet)")
 	}
-	args = append(args, "--model-format", "GLB", "--include-assets", "weapon,xmodel,material,rawfile", "-o", filepath.Join(dumpRoot, "?zone?"), unlink)
-	l.logf("Reading Kino from Black Ops...")
-	if err := l.exec(l.tool("oat", exeName("Unlinker")), l.work, args...); err != nil {
-		return err
-	}
-	dump := boDump{Root: filepath.Join(dumpRoot, strings.TrimSuffix(filepath.Base(unlink), ".ff"))}
 
 	// 2. The Cyberpunk meshes from the player's Cyberpunk
 	var depot []string
@@ -284,6 +291,17 @@ func (l *launcher) build(modDir string) error {
 	if err := l.exec(l.tool("dotnet", exeName("dotnet")), l.work, wk...); err != nil {
 		return err
 	}
+	glbs := 0
+	filepath.Walk(cpOut, func(p string, info os.FileInfo, err error) error {
+		if err == nil && !info.IsDir() && strings.EqualFold(filepath.Ext(p), ".glb") {
+			glbs++
+		}
+		return nil
+	})
+	l.logf("  WolvenKit exported %d of %d meshes.", glbs, len(depot))
+	if glbs == 0 {
+		return errors.New("WolvenKit exported none of the Cyberpunk meshes (its output is in the log)")
+	}
 	tex := texResolver{Repo: cpRepo, Log: l.logf}
 
 	z := &zoneFile{}
@@ -291,15 +309,19 @@ func (l *launcher) build(modDir string) error {
 
 	// 3. Guns
 	built := 0
+	var reasons []string
 	for _, w := range weaponRows {
 		if err := b.weapon(w); err != nil {
 			l.logf("CyberKino warning: %s skipped: %v", w.Name, err)
+			if len(reasons) < 3 {
+				reasons = append(reasons, w.Name+": "+err.Error())
+			}
 			continue
 		}
 		built++
 	}
 	if built == 0 {
-		return errors.New("none of the Cyberpunk guns could be built (see the log)")
+		return fmt.Errorf("none of the Cyberpunk guns could be built. First reasons:\n%s", strings.Join(reasons, "\n"))
 	}
 	l.logf("%d of %d guns built.", built, len(weaponRows))
 
