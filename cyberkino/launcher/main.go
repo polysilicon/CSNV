@@ -386,6 +386,7 @@ func (l *launcher) launch(boExe string) error {
 		cmd := exec.Command(steam, append([]string{"-applaunch", steamAppID}, args...)...)
 		if err := cmd.Start(); err == nil {
 			l.logf("Asked Steam (%s) to start Black Ops with: %s", steam, strings.Join(args, " "))
+			l.watchGame()
 			return nil
 		} else {
 			l.logf("CyberKino warning: could not run %s (%v)", steam, err)
@@ -396,7 +397,48 @@ func (l *launcher) launch(boExe string) error {
 		return fmt.Errorf("could not start Black Ops through Steam: %w", err)
 	}
 	l.logf("Asked Steam to run %s (Steam may ask once to allow the launch options).", link)
+	l.watchGame()
 	return nil
+}
+
+// watchGame records the command line Black Ops really started with, waits for it to close and reads
+// its console log, so one play session shows whether the mod's options arrived and what the game said.
+func (l *launcher) watchGame() {
+	if runtime.GOOS != "windows" {
+		return
+	}
+	var line string
+	for i := 0; i < 60 && line == ""; i++ {
+		time.Sleep(2 * time.Second)
+		line = processCommandLine("BlackOps.exe")
+	}
+	if line == "" {
+		l.logf("CyberKino warning: BlackOps.exe did not start within 2 minutes.")
+		return
+	}
+	l.logf("Black Ops is running with command line: %s", line)
+	if strings.Contains(strings.ToLower(line), "fs_game") {
+		l.logf("The mod's launch options arrived.")
+	} else {
+		l.logf("CyberKino warning: Steam started Black Ops WITHOUT the mod's launch options.")
+	}
+	for processCommandLine("BlackOps.exe") != "" {
+		time.Sleep(5 * time.Second)
+	}
+	l.logf("Black Ops closed.")
+	l.previousConsole()
+}
+
+// processCommandLine returns the command line of a running process by name ("" when not running).
+func processCommandLine(name string) string {
+	cmd := exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command",
+		"(Get-CimInstance Win32_Process -Filter \"Name='"+name+"'\" | Select-Object -First 1).CommandLine")
+	hideWindow(cmd)
+	out, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
 }
 
 // findSteamExe reads Steam's install from the registry (the games may be in another library folder).

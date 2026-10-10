@@ -92,6 +92,12 @@
   +set logfile 2 so Black Ops writes mods/cyberkino/console.log; the next Play copies its telling lines into
   cyberkino-launch.log. Release 0.1.6 sha256 5c8e9659..ad30, test 44fafbe4-15f5-4b08-b776-6351c3963ad1.
 
+## Test 7 (0.1.6)
+- No "Cyberpunk Kino loaded" message; creator's Black Ops shows no Mods menu. Log (first run of 0.1.6): mod built,
+  steam.exe -applaunch asked with +set fs_game mods/cyberkino +set logfile 2; no console.log from before.
+- 0.1.7: the launcher stays after handing over to Steam, logs BlackOps.exe's real command line (Win32_Process via
+  PowerShell), says whether fs_game arrived, waits for the game to close and copies console.log's telling lines.
+
 ## Open
 1. In-game test on the creator's PC (TESTING.md), then fixes.
 2. Real screenshot from that test.
