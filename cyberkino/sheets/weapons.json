@@ -1,6 +1,6 @@
 {
   "sheet": "weapons",
-  "about": "Every gun in Kino. Each Black Ops gun is rebuilt on the player's PC each Play: its weapon file is copied from their own Black Ops (bo_base, dumped from zombie_theater.ff by OpenAssetTools' Unlinker) with Cyberpunk numbers and models swapped in, and its models are the listed Cyberpunk meshes exported from their own Cyberpunk install by WolvenKit, fitted into the bo_base gun's own shape and skeleton so Black Ops' animations carry them. Nothing from either game is shipped. Pack-a-Punch gives the _upgraded copy, built the same way from bo_base_upgraded.",
+  "about": "Every gun in Kino. Each Black Ops gun is rebuilt on the player's PC each Play: its weapon file is copied from their own Black Ops (bo_base, dumped from zombie_theater.ff by OpenAssetTools' Unlinker) with Cyberpunk numbers and models swapped in, and its models are the listed Cyberpunk meshes exported from their own Cyberpunk install by WolvenKit, fitted into the bo_base gun's own shape and skeleton so Black Ops' animations carry them. Nothing from either game is shipped. Pack-a-Punch gives the _upgraded copy, built the same way from bo_base_upgraded. Each gun is also written under its Black Ops weapon's own names (bo_base, bo_base_upgraded and every stock weapon in replaces), so Kino's wall-buys, Mystery Box and starting pistol show it straight from mod.ff, without depending on the script.",
   "columns": {
     "id": "unique id; Black Ops weapon names are cpk_<id>_zm and cpk_<id>_upgraded_zm",
     "name": "in-game name (the Cyberpunk gun's name)",

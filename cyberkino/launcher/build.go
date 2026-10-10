@@ -220,6 +220,19 @@ func (b *modBuilder) weapon(w weaponRow) error {
 	}{
 		{"cpk_" + w.ID + "_zm", w.Base, "CYBERKINO_W_" + strings.ToUpper(w.ID), w.DamageMult, w.Clip, w.MaxAmmo},
 		{"cpk_" + w.ID + "_upgraded_zm", w.BaseUp, "CYBERKINO_W_" + strings.ToUpper(w.ID) + "_UP", w.PapDamageMult, w.PapClip, w.PapMaxAmmo},
+		// the same gun under the Black Ops weapon's own name, so the wall-buy, the box and the starting
+		// pistol show it even before (or without) the mod's script running
+		{w.Base, w.Base, "CYBERKINO_W_" + strings.ToUpper(w.ID), w.DamageMult, w.Clip, w.MaxAmmo},
+		{w.BaseUp, w.BaseUp, "CYBERKINO_W_" + strings.ToUpper(w.ID) + "_UP", w.PapDamageMult, w.PapClip, w.PapMaxAmmo},
+	}
+	for _, stock := range w.Replaces {
+		if stock != w.Base {
+			edits = append(edits, struct {
+				weapon, base, display string
+				dmg                   float64
+				clip, ammo            int
+			}{stock, stock, "CYBERKINO_W_" + strings.ToUpper(w.ID), w.DamageMult, w.Clip, w.MaxAmmo})
+		}
 	}
 	for _, e := range edits {
 		src, err := b.dump.weaponFile(e.base)

@@ -182,7 +182,7 @@ def go_tables():
     for w in weapons:
         lines.append(
             f"\t{{ID: {go_string(w['id'])}, Name: {go_string(w['name'])}, Base: {go_string(w['bo_base'])}, BaseUp: {go_string(w['bo_base_upgraded'])}, "
-            f"Meshes: []string{{{', '.join(go_string(p) for p in w['cp_meshes'])}}}, DamageMult: {w['damage_mult']}, Clip: {w['clip_size']}, MaxAmmo: {w['max_ammo']}, "
+            f"Meshes: []string{{{', '.join(go_string(p) for p in w['cp_meshes'])}}}, Replaces: []string{{{', '.join(go_string(r) for r in w['replaces'])}}}, DamageMult: {w['damage_mult']}, Clip: {w['clip_size']}, MaxAmmo: {w['max_ammo']}, "
             f"FireTimeMult: {w['fire_time_mult']}, PapDamageMult: {w['pap_damage_mult']}, PapClip: {w['pap_clip_size']}, PapMaxAmmo: {w['pap_max_ammo']}, FitScale: {w['fit_scale']}}},")
     lines += ["}", "", "var modelRows = []modelRow{"]
     for m in models:

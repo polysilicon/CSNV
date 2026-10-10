@@ -34,6 +34,7 @@ import (
 type weaponRow struct {
 	ID, Name, Base, BaseUp string
 	Meshes                 []string
+	Replaces               []string
 	DamageMult             float64
 	Clip, MaxAmmo          int
 	FireTimeMult           float64
@@ -407,6 +408,8 @@ func (l *launcher) watchGame() {
 	if runtime.GOOS != "windows" {
 		return
 	}
+	started := time.Now()
+	l.listModFolder()
 	var line string
 	for i := 0; i < 60 && line == ""; i++ {
 		time.Sleep(2 * time.Second)
@@ -427,6 +430,7 @@ func (l *launcher) watchGame() {
 	}
 	l.logf("Black Ops closed.")
 	l.previousConsole()
+	l.findGameLogs(started)
 }
 
 // processCommandLine returns the command line of a running process by name ("" when not running).
@@ -576,5 +580,71 @@ func (l *launcher) previousConsole() {
 		if shown == 0 {
 			l.logf("  | (none)")
 		}
+	}
+}
+
+// listModFolder logs what is in <Black Ops>/mods/cyberkino.
+func (l *launcher) listModFolder() {
+	dir := filepath.Join(l.boDir, "mods", "cyberkino")
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		l.logf("CyberKino warning: %s can't be read: %v", dir, err)
+		return
+	}
+	for _, e := range entries {
+		if info, err := e.Info(); err == nil {
+			l.logf("  mods\\cyberkino\\%s (%d bytes)", e.Name(), info.Size())
+		}
+	}
+}
+
+// findGameLogs looks for any log Black Ops wrote while it ran (its console log's folder differs between
+// versions) and copies the telling lines.
+func (l *launcher) findGameLogs(since time.Time) {
+	roots := []string{l.boDir}
+	if la := os.Getenv("LOCALAPPDATA"); la != "" {
+		roots = append(roots, filepath.Join(la, "Activision"), filepath.Join(la, "VirtualStore"))
+	}
+	if docs := os.Getenv("USERPROFILE"); docs != "" {
+		roots = append(roots, filepath.Join(docs, "Documents", "Activision"), filepath.Join(docs, "Documents", "Call of Duty Black Ops"))
+	}
+	found := 0
+	for _, root := range roots {
+		filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
+			if err != nil {
+				return nil
+			}
+			if info.IsDir() {
+				rel, _ := filepath.Rel(root, p)
+				if strings.Count(rel, string(filepath.Separator)) > 3 || strings.EqualFold(info.Name(), "zone") {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+			if !strings.EqualFold(filepath.Ext(p), ".log") || info.ModTime().Before(since.Add(-time.Minute)) {
+				return nil
+			}
+			if strings.EqualFold(info.Name(), "cyberkino-launch.log") {
+				return nil
+			}
+			found++
+			data, _ := os.ReadFile(p)
+			lines := strings.Split(strings.ReplaceAll(string(data), "\r", ""), "\n")
+			l.logf("Log written while Black Ops ran: %s (%d lines)", p, len(lines))
+			shown := 0
+			for _, line := range lines {
+				if consoleInteresting.MatchString(line) && shown < 200 {
+					l.logf("  | %s", strings.TrimSpace(line))
+					shown++
+				}
+			}
+			for i := 0; i < len(lines) && i < 40; i++ {
+				l.logf("  > %s", strings.TrimSpace(lines[i]))
+			}
+			return nil
+		})
+	}
+	if found == 0 {
+		l.logf("No log file was written by Black Ops while it ran.")
 	}
 }

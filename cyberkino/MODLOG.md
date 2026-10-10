@@ -98,6 +98,14 @@
 - 0.1.7: the launcher stays after handing over to Steam, logs BlackOps.exe's real command line (Win32_Process via
   PowerShell), says whether fs_game arrived, waits for the game to close and copies console.log's telling lines.
 
+## Test 8 (0.1.7, log received)
+- Black Ops' real command line: "BlackOps.exe" +set fs_game mods/cyberkino +set logfile 2. The options arrive;
+  Steam was not the problem. No console.log in mods/cyberkino or main afterwards.
+- Remaining causes: Black Ops doesn't load mod.ff, or loads it before Kino's zone so Kino's own scripts win.
+- 0.1.8: every gun is also written under its stock weapon names (bo_base, bo_base_upgraded, replaces), so mod.ff
+  alone swaps the guns, no script needed; the launcher lists mods/cyberkino and scans the Black Ops folder,
+  LocalAppData\Activision, VirtualStore and Documents for any .log written while the game ran.
+
 ## Open
 1. In-game test on the creator's PC (TESTING.md), then fixes.
 2. Real screenshot from that test.
