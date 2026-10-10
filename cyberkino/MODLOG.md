@@ -106,6 +106,16 @@
   alone swaps the guns, no script needed; the launcher lists mods/cyberkino and scans the Black Ops folder,
   LocalAppData\Activision, VirtualStore and Documents for any .log written while the game ran.
 
+## Test 9 (0.1.8, log received) - root cause found
+- mods/cyberkino holds mod.ff (22.8 MB) and cyberkino.iwd (70 MB); BlackOps.exe ran 4 min with
+  +set fs_game mods/cyberkino +set logfile 2; starting pistol and the Olympia wall-buy stayed stock; no log written.
+- Cause: retail Black Ops 1 on Steam has no mod loading (no Mods menu, fs_game ignored). The community route is
+  Game_Mod from Nukem9/LinkerMod: a DLL started by bin/launcher_ldr.exe via BO_Mods.bat that patches BlackOps.exe,
+  including turning off Steam DRM (CEG) checks (components/game_mod/CEG.cpp). The repository has no licence.
+- So the Black Ops-host design can't ship one-click: Game_Mod can't be bundled (no licence), players would install
+  it by hand (Melty blocks that), and writing an equivalent means bypassing the game's DRM, which this project won't do.
+- Waiting on the creator's decision (see reply).
+
 ## Open
 1. In-game test on the creator's PC (TESTING.md), then fixes.
 2. Real screenshot from that test.
