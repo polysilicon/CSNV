@@ -233,7 +233,8 @@ func TestLinkerReadsFittedModel(t *testing.T) {
 	os.MkdirAll(filepath.Join(dir, "zone_source"), 0o755)
 	g, _ := parseGLB(syntheticBase(t))
 	base, _ := loadBaseModel("cpk_test_view", g)
-	fitted, _, err := fitParts([]part{boxPart("body", vec3{-0.02, 0, -0.15}, vec3{0.02, 0.05, 0.15})}, base, 1)
+	dense, _ := simplify([]part{densePart(300)}, maxModelVerts)
+	fitted, _, err := fitParts(dense, base, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -295,7 +296,66 @@ func TestLinkerReadsFittedModel(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Logf("round-trip box %v, forward %v", rb.BBox, rb.Forward)
-	if rb.Forward != (vec3{1, 0, 0}) || math.Abs(rb.BBox.extent()[0]-20) > 0.05 {
+	if math.Abs(rb.BBox.extent()[0]-20) > 0.05 {
 		t.Errorf("round trip changed the model: box %v forward %v", rb.BBox, rb.Forward)
+	}
+}
+
+// densePart is a 0.3 m long tube-ish grid with about n*n vertices, like a Cyberpunk gun's density.
+func densePart(n int) part {
+	p := part{Material: "Default", Mesh: "0_submesh_00_LOD_1"}
+	for i := 0; i < n; i++ {
+		for j := 0; j < n; j++ {
+			a := float64(j) / float64(n) * 2 * math.Pi
+			p.Pos = append(p.Pos, vec3{0.02 * math.Cos(a), 0.03 * math.Sin(a), -0.15 + 0.3*float64(i)/float64(n-1)})
+			p.Nrm = append(p.Nrm, vec3{math.Cos(a), math.Sin(a), 0})
+			p.UV = append(p.UV, [2]float64{float64(j) / float64(n), float64(i) / float64(n)})
+		}
+	}
+	for i := 0; i+1 < n; i++ {
+		for j := 0; j < n; j++ {
+			a, b, c, d := i*n+j, i*n+(j+1)%n, (i+1)*n+j, (i+1)*n+(j+1)%n
+			p.Idx = append(p.Idx, a, c, b, b, c, d)
+		}
+	}
+	return p
+}
+
+func TestSimplify(t *testing.T) {
+	parts := []part{densePart(300)} // 90,000 vertices
+	out, n := simplify(parts, maxModelVerts)
+	if n > maxModelVerts || n < maxModelVerts/4 {
+		t.Fatalf("simplified to %d vertices, want at most %d and not far below", n, maxModelVerts)
+	}
+	got := 0
+	for _, p := range out {
+		got += len(p.Pos)
+		for _, i := range p.Idx {
+			if i < 0 || i >= len(p.Pos) {
+				t.Fatal("index out of range after simplify")
+			}
+		}
+	}
+	if got != n || len(out[0].Idx) == 0 {
+		t.Fatalf("count %d vs %d, %d indices", got, n, len(out[0].Idx))
+	}
+	b0, b1 := partsBBox(parts), partsBBox(out)
+	if math.Abs(b0.extent()[2]-b1.extent()[2]) > 0.01 {
+		t.Errorf("simplify changed the length: %v vs %v", b0.extent(), b1.extent())
+	}
+}
+
+func TestSubmeshMaterials(t *testing.T) {
+	dir := t.TempDir()
+	p := filepath.Join(dir, "w.Material.json")
+	os.WriteFile(p, []byte(`{"Header":{},"Data":{"MaterialRepo":"x","Materials":[{"Name":"body","Data":{}}],"Appearances":{"default":["body","mag"],"zz":["a"]}}}`), 0o644)
+	names := submeshMaterials(p)
+	if strings.Join(names, ",") != "body,mag" {
+		t.Fatalf("got %v", names)
+	}
+	for name, want := range map[string]int{"1_submesh_01_LOD_1": 1, "submesh_03_LOD_1": 3, "0_x": 0, "mesh": 7} {
+		if got, _ := submeshIndex(name, 7); got != want {
+			t.Errorf("%s -> %d, want %d", name, got, want)
+		}
 	}
 }

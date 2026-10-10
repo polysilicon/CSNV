@@ -62,6 +62,7 @@ func (b bbox) grown(f float64) bbox {
 // part is geometry that uses one material.
 type part struct {
 	Material string
+	Mesh     string // glTF mesh name (WolvenKit: "<submesh index>_<name>")
 	Pos      []vec3
 	Nrm      []vec3
 	UV       [][2]float64
@@ -102,7 +103,7 @@ func loadParts(g *glb) ([]part, error) {
 			if err != nil {
 				return nil, err
 			}
-			p := part{Material: "default"}
+			p := part{Material: "default", Mesh: g.Doc.Meshes[*node.Mesh].Name}
 			if prim.Material != nil && *prim.Material < len(g.Doc.Materials) {
 				p.Material = g.Doc.Materials[*prim.Material].Name
 			}
@@ -369,7 +370,7 @@ func fitParts(parts []part, base *baseModel, fitScale float64) ([]part, fitInfo,
 		kept = append(kept, p)
 	}
 	cpBox := partsBBox(kept)
-	info.CPForward = muzzleByShape(kept, cpBox)
+	info.CPForward = cyberpunkForward(kept, cpBox)
 	rot := yRotation(info.CPForward, base.Forward)
 	axisLen := func(b bbox, f vec3) float64 {
 		if f[0] != 0 {
@@ -475,4 +476,118 @@ func writeModelGLB(base *baseModel, parts []part, materialFor func(string) strin
 	w.doc.Scene = &scene
 	w.doc.Scenes = []gltfScene{{Nodes: append(append([]int{}, base.Roots...), len(w.doc.Nodes)-1)}}
 	return w.bytes()
+}
+
+// cyberpunkForward: Cyberpunk models its guns with the muzzle along +Y in its Z-up space, which WolvenKit's
+// Y-up glTF turns into -Z. The shape guess is only used for a mesh not lying along Z.
+func cyberpunkForward(parts []part, b bbox) vec3 {
+	if b.extent()[2] >= b.extent()[0] {
+		return vec3{0, 0, -1}
+	}
+	return muzzleByShape(parts, b)
+}
+
+// simplify merges vertices on a grid (per material and normal direction) until the parts hold at most
+// maxVerts vertices. Cyberpunk's guns are far denser than a Black Ops model may be (65535 at most).
+func simplify(parts []part, maxVerts int) ([]part, int) {
+	total := 0
+	for _, p := range parts {
+		total += len(p.Pos)
+	}
+	if total <= maxVerts {
+		return parts, total
+	}
+	b := partsBBox(parts)
+	e := b.extent()
+	size := math.Max(e[0], math.Max(e[1], e[2]))
+	if size <= 0 {
+		return parts, total
+	}
+	var best []part
+	bestN := 0
+	lo, hi := 8, 1024
+	for lo <= hi {
+		n := (lo + hi) / 2
+		out, count := clusterParts(parts, b.Min, size/float64(n))
+		if count <= maxVerts {
+			best, bestN = out, count
+			lo = n + 1
+		} else {
+			hi = n - 1
+		}
+	}
+	if best == nil {
+		best, bestN = clusterParts(parts, b.Min, size/8)
+	}
+	return best, bestN
+}
+
+func normalBucket(n vec3) int {
+	ax, ay, az := math.Abs(n[0]), math.Abs(n[1]), math.Abs(n[2])
+	switch {
+	case ax >= ay && ax >= az:
+		if n[0] < 0 {
+			return 1
+		}
+		return 0
+	case ay >= az:
+		if n[1] < 0 {
+			return 3
+		}
+		return 2
+	}
+	if n[2] < 0 {
+		return 5
+	}
+	return 4
+}
+
+func clusterParts(parts []part, origin vec3, cell float64) ([]part, int) {
+	type key struct{ x, y, z, nb int }
+	out := make([]part, 0, len(parts))
+	count := 0
+	for _, p := range parts {
+		ids := map[key]int{}
+		remap := make([]int, len(p.Pos))
+		q := part{Material: p.Material, Mesh: p.Mesh}
+		var sum []vec3
+		var nsum []vec3
+		var n []int
+		for i, v := range p.Pos {
+			d := v.sub(origin)
+			k := key{int(d[0] / cell), int(d[1] / cell), int(d[2] / cell), normalBucket(p.Nrm[i])}
+			id, ok := ids[k]
+			if !ok {
+				id = len(q.Pos)
+				ids[k] = id
+				q.Pos = append(q.Pos, vec3{})
+				q.Nrm = append(q.Nrm, vec3{})
+				q.UV = append(q.UV, p.UV[i])
+				sum = append(sum, vec3{})
+				nsum = append(nsum, vec3{})
+				n = append(n, 0)
+			}
+			sum[id] = sum[id].add(v)
+			nsum[id] = nsum[id].add(p.Nrm[i])
+			n[id]++
+			remap[i] = id
+		}
+		for id := range q.Pos {
+			q.Pos[id] = sum[id].scale(1 / float64(n[id]))
+			q.Nrm[id] = nsum[id].normalized()
+		}
+		for t := 0; t+2 < len(p.Idx); t += 3 {
+			a, b2, c := remap[p.Idx[t]], remap[p.Idx[t+1]], remap[p.Idx[t+2]]
+			if a == b2 || b2 == c || a == c {
+				continue
+			}
+			q.Idx = append(q.Idx, a, b2, c)
+		}
+		if len(q.Idx) == 0 {
+			continue
+		}
+		count += len(q.Pos)
+		out = append(out, q)
+	}
+	return out, count
 }

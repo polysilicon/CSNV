@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
+	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -54,8 +57,16 @@ func (b *modBuilder) cpParts(depot []string) ([]part, map[string]cpMaterial, err
 		if err != nil {
 			return nil, nil, fmt.Errorf("%s: %w", filepath.Base(found), err)
 		}
+		matFile := strings.TrimSuffix(found, ".glb") + ".Material.json"
+		names := submeshMaterials(matFile)
+		for i := range p {
+			// WolvenKit names every glTF material "Default"; the real one per submesh is in .Material.json
+			if idx, ok := submeshIndex(p[i].Mesh, i); ok && idx < len(names) {
+				p[i].Material = names[idx]
+			}
+		}
 		parts = append(parts, p...)
-		for k, v := range readMaterials(strings.TrimSuffix(found, ".glb") + ".Material.json") {
+		for k, v := range readMaterials(matFile) {
 			mats[k] = v
 		}
 	}
@@ -138,11 +149,12 @@ func (b *modBuilder) fittedModel(name, boModel string, depot []string, fitScale 
 	if err != nil {
 		return err
 	}
+	parts, verts := simplify(parts, maxModelVerts)
 	fitted, info, err := fitParts(parts, base, fitScale)
 	if err != nil {
 		return err
 	}
-	b.l.logf("  %s: fitted into %s (scale %.1f, muzzle %v -> %v, %d parts)", name, boModel, info.Scale, info.CPForward, base.Forward, len(fitted))
+	b.l.logf("  %s: fitted into %s (scale %.1f, muzzle %v -> %v, %d parts, %d vertices)", name, boModel, info.Scale, info.CPForward, base.Forward, len(fitted), verts)
 	for _, d := range info.Dropped {
 		b.l.logf("  %s: part %s lies outside the gun; left out", name, d)
 	}
@@ -264,6 +276,7 @@ func (b *modBuilder) model(m modelRow) error {
 		return errors.New("no Black Ops material to build it on")
 	}
 	base := &baseModel{Name: name, Nodes: []gltfNode{{Name: "tag_origin"}}, Roots: []int{0}, IBM: [][]float64{identitySlice()}, Material: boMat}
+	parts, _ = simplify(parts, maxModelVerts)
 	return b.writeModel(name, base, scaleParts(parts, m.Scale), mats)
 }
 
@@ -374,4 +387,56 @@ func (b *modBuilder) cpFile(depot string) string {
 		}
 	}
 	return ""
+}
+
+// maxModelVerts keeps every model well under Black Ops' 65535-vertex limit and near its own guns' detail.
+const maxModelVerts = 20000
+
+// submeshMaterials reads a WolvenKit .Material.json's first appearance: the material of each submesh.
+func submeshMaterials(path string) []string {
+	v, err := readJSON(path)
+	if err != nil {
+		return nil
+	}
+	var names []string
+	walk(v, func(m map[string]any) {
+		if names != nil {
+			return
+		}
+		apps, ok := m["Appearances"].(map[string]any)
+		if !ok || len(apps) == 0 {
+			return
+		}
+		keys := make([]string, 0, len(apps))
+		for k := range apps {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		pick := keys[0]
+		for _, k := range keys {
+			if strings.EqualFold(k, "default") {
+				pick = k
+			}
+		}
+		if arr, ok := apps[pick].([]any); ok {
+			for _, a := range arr {
+				names = append(names, asString(a))
+			}
+		}
+	})
+	return names
+}
+
+var submeshPrefix = regexp.MustCompile(`^(\d+)_`)
+var submeshInName = regexp.MustCompile(`submesh_(\d+)`)
+
+// submeshIndex reads the submesh number from WolvenKit's mesh name ("3_submesh_03_LOD_1"), else the order.
+func submeshIndex(meshName string, order int) (int, bool) {
+	for _, re := range []*regexp.Regexp{submeshInName, submeshPrefix} {
+		if m := re.FindStringSubmatch(meshName); m != nil {
+			n, err := strconv.Atoi(m[1])
+			return n, err == nil
+		}
+	}
+	return order, true
 }

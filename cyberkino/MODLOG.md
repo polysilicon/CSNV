@@ -51,6 +51,16 @@
 - Release 0.1.1: CyberKino-0.1.1.zip, 85118954 bytes, sha256 9c8724d2..2087, releaseId 707cea70-7f62-4bb9-9b5c-31f3a259db03.
   Test e26abf39-4f77-4cd3-9263-aa36fa138523. (Test d6e7f31b was never picked up by Melty on the PC.)
 
+## Test 2 (0.1.1, creator's PC, log received)
+- Both zones dumped (common_zombie: 79 weapons, 316 models, 624 materials; zombie_theater: 13 weapons, 925 models,
+  1244 materials). WolvenKit exported 46/46 meshes in 27 s. All 21 guns built. Hooks applied. Cloned materials load.
+- Linker failed: "Lod exceeds limit of 65535 vertices" (cpk_copperhead_view). Cyberpunk meshes are much denser.
+- Every glTF material was "Default": WolvenKit names them so; the real material per submesh is in .Material.json's
+  Appearances. So every gun was gun-metal grey.
+- Muzzle guess split -Z / +Z across guns; Cyberpunk's convention (+Y forward, Z up) is -Z in WolvenKit's glTF.
+- Fix (0.1.2): vertex-clustering simplify to 20000 vertices per model (per material and normal direction);
+  submesh materials from Appearances; Cyberpunk forward fixed at -Z. Release 0.1.2: sha256 cebf4272..0410.
+
 ## Open
 1. In-game test on the creator's PC (TESTING.md), then fixes.
 2. Real screenshot from that test.
