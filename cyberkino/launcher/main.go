@@ -368,20 +368,48 @@ func (l *launcher) build(modDir string) error {
 
 // ---------------------------------------------------------------- launch
 
+// launch starts Black Ops with the mod. Started directly, a Steam game asks Steam to restart it,
+// which drops its command line (and with it fs_game); a steam_appid.txt next to the exe tells it it's
+// already running under Steam, so it keeps the command line. If the process still exits right away
+// (it handed over to Steam anyway), the mod is started through Steam's own run link with the same arguments.
 func (l *launcher) launch(boExe string) error {
 	if l.noLaunch {
 		l.logf("Not starting Black Ops (--no-launch).")
 		return nil
 	}
+	appID := filepath.Join(l.boDir, "steam_appid.txt")
+	if _, err := os.Stat(appID); err != nil {
+		if err := os.WriteFile(appID, []byte(steamAppID), 0o644); err != nil {
+			l.logf("CyberKino warning: could not write steam_appid.txt (%v); Steam may drop the mod's launch options", err)
+		} else {
+			l.logf("Wrote steam_appid.txt (%s) so Steam keeps the mod's launch options.", steamAppID)
+		}
+	}
 	l.logf("Starting Black Ops with the mod. In the menu: Zombies > Solo > Kino der Toten.")
-	cmd := exec.Command(boExe, "+set", "fs_game", "mods/cyberkino")
+	args := []string{"+set", "fs_game", "mods/cyberkino"}
+	cmd := exec.Command(boExe, args...)
 	cmd.Dir = l.boDir
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("could not start BlackOps.exe: %w", err)
 	}
 	l.logf("Black Ops started (process %d).", cmd.Process.Pid)
+	done := make(chan error, 1)
+	go func() { done <- cmd.Wait() }()
+	select {
+	case err := <-done:
+		l.logf("Black Ops exited after a few seconds (%v): it handed over to Steam. Starting it through Steam with the mod.", err)
+		link := "steam://run/" + steamAppID + "//" + strings.Join(args, " ") + "/"
+		if err := openURL(link); err != nil {
+			return fmt.Errorf("could not start Black Ops through Steam: %w", err)
+		}
+		l.logf("Asked Steam to run %s (Steam may ask once to allow the launch options).", link)
+	case <-time.After(15 * time.Second):
+		l.logf("Black Ops is running with the mod.")
+	}
 	return nil
 }
+
+const steamAppID = "42700" // Call of Duty: Black Ops on Steam
 
 // ---------------------------------------------------------------- files
 

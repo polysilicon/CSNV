@@ -19,3 +19,7 @@ func showError(msg string) {
 	title, _ := syscall.UTF16PtrFromString("Cyberpunk Kino")
 	box.Call(0, uintptr(unsafe.Pointer(text)), uintptr(unsafe.Pointer(title)), 0x10) // MB_ICONERROR
 }
+
+func openURL(u string) error {
+	return exec.Command("rundll32", "url.dll,FileProtocolHandler", u).Start()
+}

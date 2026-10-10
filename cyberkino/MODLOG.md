@@ -70,6 +70,15 @@
   not dumped are blanked. Release 0.1.3 sha256 5ec31560..e549, releaseId 3fbe4948-f2ed-4c98-8d14-15bca734c40c,
   test 086193db-08f8-4138-8bac-d7e7572ca2ce.
 
+## Test 4 (0.1.3, creator's PC)
+- mod.ff built and Black Ops booted, but guns were the stock Black Ops ones. A loaded mod with broken scripts would
+  stop Kino with a script error, so the mod most likely wasn't loaded: a Steam game started directly restarts
+  through Steam and loses its command line (+set fs_game mods/cyberkino).
+- Fix (0.1.4): write steam_appid.txt (42700) next to BlackOps.exe so it keeps its command line; if the process
+  still exits within 15 s, start it via steam://run/42700//+set fs_game mods/cyberkino/. Release 0.1.4 sha256
+  81ecd344..dfbd, test 97debbaa-91a6-49ec-b59d-0ff9a40a3fd8.
+- Fallback check for the creator: Black Ops main menu > Mods > cyberkino loads the same mod by hand.
+
 ## Open
 1. In-game test on the creator's PC (TESTING.md), then fixes.
 2. Real screenshot from that test.
