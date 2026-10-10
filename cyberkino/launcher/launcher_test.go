@@ -245,14 +245,15 @@ func TestLinkerReadsFittedModel(t *testing.T) {
 	z.add("material", ",mc_cpk_test_0") // a reference, as a material from Black Ops' own zones would be
 	z.add("xmodel", "cpk_test_view")
 	// a weapon file edited the way the launcher edits the dumped Black Ops ones
-	weapon, err := editWeapon(`WEAPONFILE\displayName\ZOMBIE_TEST\weaponType\bullet\weaponClass\rifle\inventoryType\primary\fireType\Full Auto\gunModel\viewmodel_test\worldModel\\damage\40\minDamage\20\clipSize\30\maxAmmo\120\fireTime\0.1`,
+	weapon, err := editWeapon(`WEAPONFILE\displayName\ZOMBIE_TEST\aiVsAiAccuracyGraph\pistol.accu\aiVsPlayerAccuracyGraph\pistol.accu\weaponType\bullet\weaponClass\rifle\inventoryType\primary\fireType\Full Auto\gunModel\viewmodel_test\worldModel\\damage\40\minDamage\20\clipSize\30\maxAmmo\120\fireTime\0.1`,
 		weaponEdit{DisplayName: "CYBERKINO_W_TEST", ViewModel: "cpk_test_view", WorldModel: "cpk_test_view", DamageMult: 2, Clip: 12, MaxAmmo: 48, FireTimeMult: 1, AmmoName: "cpk_test_zm"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	os.MkdirAll(filepath.Join(raw, "weapons"), 0o755)
-	os.WriteFile(filepath.Join(raw, "weapons", "cpk_test_zm"), []byte(weapon), 0o644)
-	z.add("weapon", "cpk_test_zm")
+	b := &modBuilder{l: &launcher{}, dump: boDump{Roots: []string{filepath.Join(dir, "nodump")}}, raw: raw, zone: z}
+	if err := b.writeWeapon("cpk_test_zm", weapon); err != nil {
+		t.Fatal(err)
+	}
 	os.WriteFile(filepath.Join(dir, "zone_source", "mod.zone"), []byte(z.String()), 0o644)
 	out, err := exec.Command(linker, "-b", dir, "-v", "mod").CombinedOutput()
 	t.Logf("%s", stripANSI(string(out)))

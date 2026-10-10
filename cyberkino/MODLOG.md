@@ -61,6 +61,15 @@
 - Fix (0.1.2): vertex-clustering simplify to 20000 vertices per model (per material and normal direction);
   submesh materials from Appearances; Cyberpunk forward fixed at -Z. Release 0.1.2: sha256 cebf4272..0410.
 
+## Test 3 (0.1.2, creator's PC, log received)
+- All 21 guns built under 20000 vertices each; real Cyberpunk materials found (multilayer, BaseColor, Albedo,
+  DiffuseTexture; a few fall back to grey). All guns face -Z -> +X. Chip and Mantis built. Models and materials link.
+- Linker failed on the first weapon: missing sub asset "aivsai/pistol.accu" (accuracygraph). OAT reads accuracy graphs
+  from accuracy/aivsai|aivsplayer/<name> and flame tables from weapons/<name>.
+- Fix (0.1.3): writeWeapon copies those from the dump, or writes a flat accuracy graph (AI aim only); flame tables
+  not dumped are blanked. Release 0.1.3 sha256 5ec31560..e549, releaseId 3fbe4948-f2ed-4c98-8d14-15bca734c40c,
+  test 086193db-08f8-4138-8bac-d7e7572ca2ce.
+
 ## Open
 1. In-game test on the creator's PC (TESTING.md), then fixes.
 2. Real screenshot from that test.

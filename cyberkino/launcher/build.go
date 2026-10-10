@@ -233,12 +233,68 @@ func (b *modBuilder) weapon(w weaponRow) error {
 		if err != nil {
 			return fmt.Errorf("%s: %w", e.base, err)
 		}
-		if err := b.write("weapons/"+e.weapon, []byte(out)); err != nil {
+		if err := b.writeWeapon(e.weapon, out); err != nil {
 			return err
 		}
-		b.zone.add("weapon", e.weapon)
 	}
 	return nil
+}
+
+// writeWeapon writes a weapon file with the files it refers to that the Linker reads from disk
+// (accuracy graphs, flame tables), copied from the Black Ops dump.
+func (b *modBuilder) writeWeapon(name, text string) error {
+	s, err := parseInfoString(text)
+	if err != nil {
+		return err
+	}
+	for key, dir := range map[string]string{"aiVsAiAccuracyGraph": "aivsai", "aiVsPlayerAccuracyGraph": "aivsplayer"} {
+		graph := s.Values[key]
+		if graph == "" {
+			continue
+		}
+		if err := b.copySub("accuracy/"+dir+"/"+graph, defaultAccuracyGraph); err != nil {
+			return err
+		}
+	}
+	for _, key := range []string{"flameTableFirstPerson", "flameTableThirdPerson"} {
+		table := s.Values[key]
+		if table == "" {
+			continue
+		}
+		if b.dump.find("weapons/"+table) == "" {
+			s.Values[key] = "" // not dumped: none of these guns throw flames
+			continue
+		}
+		if err := b.copySub("weapons/"+table, ""); err != nil {
+			return err
+		}
+	}
+	if err := b.write("weapons/"+name, []byte(s.String())); err != nil {
+		return err
+	}
+	b.zone.add("weapon", name)
+	return nil
+}
+
+// defaultAccuracyGraph is a flat graph for an accuracy file the dump doesn't have (it only steers AI aim).
+const defaultAccuracyGraph = "WEAPONACCUFILE\n\n2\n0.0000 1.0000\n1.0000 1.0000\n"
+
+func (b *modBuilder) copySub(rel, fallback string) error {
+	if _, err := os.Stat(filepath.Join(b.raw, filepath.FromSlash(rel))); err == nil {
+		return nil
+	}
+	if p := b.dump.find(rel); p != "" {
+		data, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		return b.write(rel, data)
+	}
+	if fallback == "" {
+		return fmt.Errorf("%s not found in the Black Ops dump", rel)
+	}
+	b.l.logf("  %s not in the Black Ops dump; using a flat one", rel)
+	return b.write(rel, []byte(fallback))
 }
 
 func (b *modBuilder) model(m modelRow) error {
@@ -289,11 +345,7 @@ func (b *modBuilder) mantis() error {
 	if err != nil {
 		return err
 	}
-	if err := b.write("weapons/cpk_mantis_zm", []byte(out)); err != nil {
-		return err
-	}
-	b.zone.add("weapon", "cpk_mantis_zm")
-	return nil
+	return b.writeWeapon("cpk_mantis_zm", out)
 }
 
 func (b *modBuilder) scripts() error {
