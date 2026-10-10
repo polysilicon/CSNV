@@ -49,7 +49,7 @@
   WolvenKit exporting nothing is its own error; material falls back to any dumped weapon material; the error box
   lists the first three reasons.
 - Release 0.1.1: CyberKino-0.1.1.zip, 85118954 bytes, sha256 9c8724d2..2087, releaseId 707cea70-7f62-4bb9-9b5c-31f3a259db03.
-  Test e26abf39-4f77-4cd3-9263-aa36fa138523. (Test d6e7f31b was never picked up by Melty on the PC.)
+  Test e7d35709-adc7-4d31-a4eb-931f2ba0f543. (Test d6e7f31b was never picked up by Melty on the PC.)
 
 ## Test 2 (0.1.1, creator's PC, log received)
 - Both zones dumped (common_zombie: 79 weapons, 316 models, 624 materials; zombie_theater: 13 weapons, 925 models,
