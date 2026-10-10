@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -368,45 +369,85 @@ func (l *launcher) build(modDir string) error {
 
 // ---------------------------------------------------------------- launch
 
-// launch starts Black Ops with the mod. Started directly, a Steam game asks Steam to restart it,
-// which drops its command line (and with it fs_game); a steam_appid.txt next to the exe tells it it's
-// already running under Steam, so it keeps the command line. If the process still exits right away
-// (it handed over to Steam anyway), the mod is started through Steam's own run link with the same arguments.
+// launch starts Black Ops with the mod. Steam's copy of Black Ops hands itself over to Steam when
+// started directly, dropping its command line (test 5: it exited at once, steam_appid.txt or not), so
+// Steam is asked to start it with the mod's options: steam.exe -applaunch, or, if steam.exe can't be
+// found, Steam's run link with the options URL-encoded.
 func (l *launcher) launch(boExe string) error {
 	if l.noLaunch {
 		l.logf("Not starting Black Ops (--no-launch).")
 		return nil
 	}
-	appID := filepath.Join(l.boDir, "steam_appid.txt")
-	if _, err := os.Stat(appID); err != nil {
-		if err := os.WriteFile(appID, []byte(steamAppID), 0o644); err != nil {
-			l.logf("CyberKino warning: could not write steam_appid.txt (%v); Steam may drop the mod's launch options", err)
-		} else {
-			l.logf("Wrote steam_appid.txt (%s) so Steam keeps the mod's launch options.", steamAppID)
-		}
-	}
 	l.logf("Starting Black Ops with the mod. In the menu: Zombies > Solo > Kino der Toten.")
 	args := []string{"+set", "fs_game", "mods/cyberkino"}
-	cmd := exec.Command(boExe, args...)
-	cmd.Dir = l.boDir
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("could not start BlackOps.exe: %w", err)
-	}
-	l.logf("Black Ops started (process %d).", cmd.Process.Pid)
-	done := make(chan error, 1)
-	go func() { done <- cmd.Wait() }()
-	select {
-	case err := <-done:
-		l.logf("Black Ops exited after a few seconds (%v): it handed over to Steam. Starting it through Steam with the mod.", err)
-		link := "steam://run/" + steamAppID + "//" + strings.Join(args, " ") + "/"
-		if err := openURL(link); err != nil {
-			return fmt.Errorf("could not start Black Ops through Steam: %w", err)
+	if steam := findSteamExe(); steam != "" {
+		cmd := exec.Command(steam, append([]string{"-applaunch", steamAppID}, args...)...)
+		if err := cmd.Start(); err == nil {
+			l.logf("Asked Steam (%s) to start Black Ops with: %s", steam, strings.Join(args, " "))
+			return nil
+		} else {
+			l.logf("CyberKino warning: could not run %s (%v)", steam, err)
 		}
-		l.logf("Asked Steam to run %s (Steam may ask once to allow the launch options).", link)
-	case <-time.After(15 * time.Second):
-		l.logf("Black Ops is running with the mod.")
 	}
+	link := "steam://run/" + steamAppID + "//" + url.PathEscape(strings.Join(args, " ")) + "/"
+	if err := openURL(link); err != nil {
+		return fmt.Errorf("could not start Black Ops through Steam: %w", err)
+	}
+	l.logf("Asked Steam to run %s (Steam may ask once to allow the launch options).", link)
 	return nil
+}
+
+// findSteamExe reads Steam's install from the registry (the games may be in another library folder).
+func findSteamExe() string {
+	queries := [][]string{
+		{`HKCU\Software\Valve\Steam`, "SteamExe"},
+		{`HKLM\SOFTWARE\WOW6432Node\Valve\Steam`, "InstallPath"},
+		{`HKLM\SOFTWARE\Valve\Steam`, "InstallPath"},
+	}
+	for _, q := range queries {
+		v := regQuery(q[0], q[1])
+		if v == "" {
+			continue
+		}
+		v = filepath.FromSlash(v)
+		if !strings.EqualFold(filepath.Ext(v), ".exe") {
+			v = filepath.Join(v, "steam.exe")
+		}
+		if _, err := os.Stat(v); err == nil {
+			return v
+		}
+	}
+	for _, p := range []string{`C:\Program Files (x86)\Steam\steam.exe`, `C:\Program Files\Steam\steam.exe`} {
+		if _, err := os.Stat(p); err == nil {
+			return p
+		}
+	}
+	return ""
+}
+
+// regQuery returns one registry value through reg.exe ("" when missing or not on Windows).
+func regQuery(key, value string) string {
+	if runtime.GOOS != "windows" {
+		return ""
+	}
+	cmd := exec.Command("reg", "query", key, "/v", value)
+	hideWindow(cmd)
+	out, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	return parseRegValue(string(out), value)
+}
+
+func parseRegValue(out, value string) string {
+	for _, line := range strings.Split(out, "\n") {
+		f := strings.Fields(line)
+		if len(f) >= 3 && strings.EqualFold(f[0], value) && strings.HasPrefix(f[1], "REG_") {
+			i := strings.Index(line, f[1]) + len(f[1])
+			return strings.TrimSpace(line[i:])
+		}
+	}
+	return ""
 }
 
 const steamAppID = "42700" // Call of Duty: Black Ops on Steam

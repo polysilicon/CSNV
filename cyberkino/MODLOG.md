@@ -79,6 +79,13 @@
   81ecd344..dfbd, test 97debbaa-91a6-49ec-b59d-0ff9a40a3fd8.
 - Fallback check for the creator: Black Ops main menu > Mods > cyberkino loads the same mod by hand.
 
+## Test 5 (0.1.4, log received)
+- Built in 1m50s, mod written. BlackOps.exe exited at once despite steam_appid.txt (Steam's DRM hands over).
+  The fallback steam://run link had raw spaces, so Windows' URL handler most likely cut the options off.
+- Fix (0.1.5): start through steam.exe -applaunch 42700 +set fs_game mods/cyberkino (steam.exe found via the
+  registry: HKCU SteamExe, HKLM InstallPath); fallback steam://run link URL-encoded. No more steam_appid.txt
+  (the one 0.1.4 wrote stays; it is harmless). Release 0.1.5 sha256 49c1cfc5..4e6f, test 05394932-6d9f-472e-9f7e-abd893977759.
+
 ## Open
 1. In-game test on the creator's PC (TESTING.md), then fixes.
 2. Real screenshot from that test.

@@ -41,8 +41,8 @@ Each Play, `cyberkino-launch.exe`:
 4. writes the weapon files (the Black Ops gun's own file with the Cyberpunk name, model and numbers),
    adds two lines to Kino's `zombie_theater.gsc` that run `maps/cyberkino.gsc`, and links everything into
    `<Black Ops>\mods\cyberkino\mod.ff` and `cyberkino.iwd` with OpenAssetTools' Linker;
-5. starts `BlackOps.exe +set fs_game mods/cyberkino`. It puts a `steam_appid.txt` (42700) next to `BlackOps.exe`
-   so Steam doesn't restart the game without that option, and falls back to Steam's own run link if it does.
+5. asks Steam to start Black Ops with the mod (`steam.exe -applaunch 42700 +set fs_game mods/cyberkino`;
+   Steam's copy of Black Ops drops its launch options when started directly).
 
 The work files are in `%LOCALAPPDATA%\CyberKino`.
 

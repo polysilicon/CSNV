@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"math"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -358,5 +359,15 @@ func TestSubmeshMaterials(t *testing.T) {
 		if got, _ := submeshIndex(name, 7); got != want {
 			t.Errorf("%s -> %d, want %d", name, got, want)
 		}
+	}
+}
+
+func TestRegParseAndSteamLink(t *testing.T) {
+	out := "\r\nHKEY_CURRENT_USER\\Software\\Valve\\Steam\r\n    SteamExe    REG_SZ    c:/program files (x86)/steam/steam.exe\r\n\r\n"
+	if got := parseRegValue(out, "SteamExe"); got != "c:/program files (x86)/steam/steam.exe" {
+		t.Fatalf("got %q", got)
+	}
+	if got := url.PathEscape("+set fs_game mods/cyberkino"); strings.Contains(got, " ") || strings.Contains(got, "/") {
+		t.Fatalf("link not escaped: %q", got)
 	}
 }
