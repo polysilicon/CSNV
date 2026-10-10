@@ -1,0 +1,5 @@
+Cyberpunk Kino's own code, scripts and sheets: the licence has not been chosen yet (draft).
+
+The bundled programs keep their own licences: see licenses/ (OpenAssetTools and WolvenKit: GPL-3.0;
+.NET runtime: MIT, tools/dotnet/LICENSE.txt). No files from Call of Duty: Black Ops or Cyberpunk 2077
+are included.

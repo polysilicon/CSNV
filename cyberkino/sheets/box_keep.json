@@ -1,0 +1,16 @@
+{
+  "sheet": "box_keep",
+  "about": "Black Ops items that stay in the Mystery Box although they are not Cyberpunk guns (equipment, not guns). Every other stock weapon is taken out of the box.",
+  "columns": {
+    "id": "Black Ops weapon name",
+    "about": "what it is",
+    "tested_in_game": "true once seen in the box in Kino"
+  },
+  "rows": [
+    {
+      "id": "zombie_cymbal_monkey",
+      "about": "Cymbal Monkey (equipment)",
+      "tested_in_game": false
+    }
+  ]
+}

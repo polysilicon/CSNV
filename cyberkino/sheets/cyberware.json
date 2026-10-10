@@ -1,0 +1,68 @@
+{
+  "sheet": "cyberware",
+  "about": "The four cyberware chips special zombies drop. Installing one is permanent until you go down (like a perk). The chip you pick up is the next one you don't have yet, in random order.",
+  "columns": {
+    "id": "unique id",
+    "name": "in-game name",
+    "effect": "slowmo | double_jump | armor | mantis",
+    "how_to_use": "what the hint and HUD tell the player",
+    "params": "effect numbers (keys depend on effect, see the about of each)",
+    "model": "models sheet id of the model the effect shows, or none",
+    "source": "where it came from",
+    "tested_in_game": "true once picked up and used in Kino"
+  },
+  "rows": [
+    {
+      "id": "sandevistan",
+      "name": "Sandevistan",
+      "effect": "slowmo",
+      "how_to_use": "Aim and press Melee: time slows for a few seconds",
+      "params": {
+        "timescale": 0.35,
+        "duration_s": 4.0,
+        "cooldown_s": 20.0
+      },
+      "model": "none",
+      "source": "design (interview: chips 3 = Sandevistan, Reinforced Tendons, Subdermal Armor, Mantis Blades)",
+      "tested_in_game": false
+    },
+    {
+      "id": "tendons",
+      "name": "Reinforced Tendons",
+      "effect": "double_jump",
+      "how_to_use": "Press Jump again in the air",
+      "params": {
+        "jump_velocity": 330.0,
+        "min_air_s": 0.15
+      },
+      "model": "none",
+      "source": "design (interview: chips 3 = Sandevistan, Reinforced Tendons, Subdermal Armor, Mantis Blades)",
+      "tested_in_game": false
+    },
+    {
+      "id": "subdermal",
+      "name": "Subdermal Armor",
+      "effect": "armor",
+      "how_to_use": "Always on: you take more hits",
+      "params": {
+        "health_bonus": 100
+      },
+      "model": "none",
+      "source": "design (interview: chips 3 = Sandevistan, Reinforced Tendons, Subdermal Armor, Mantis Blades)",
+      "tested_in_game": false
+    },
+    {
+      "id": "mantis",
+      "name": "Mantis Blades",
+      "effect": "mantis",
+      "how_to_use": "Melee: blades replace your knife",
+      "params": {
+        "melee_damage": 1500,
+        "base": "bowie_knife_zm"
+      },
+      "model": "mantis_view",
+      "source": "design (interview: chips 3 = Sandevistan, Reinforced Tendons, Subdermal Armor, Mantis Blades)",
+      "tested_in_game": false
+    }
+  ]
+}

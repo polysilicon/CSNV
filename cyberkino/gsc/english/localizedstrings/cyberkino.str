@@ -1,0 +1,233 @@
+VERSION             "1"
+CONFIG              "C:/projects/cod/t5/bin/StringEd.cfg"
+FILENOTES           ""
+
+REFERENCE           CYBERKINO_W_UNITY
+LANG_ENGLISH        "Unity"
+
+REFERENCE           CYBERKINO_W_UNITY_UP
+LANG_ENGLISH        "Unity Iconic"
+
+REFERENCE           CYBERKINO_BUY_UNITY
+LANG_ENGLISH        "Hold [{+activate}] for Unity [Cost: &&1]"
+
+REFERENCE           CYBERKINO_W_LEXINGTON
+LANG_ENGLISH        "Lexington"
+
+REFERENCE           CYBERKINO_W_LEXINGTON_UP
+LANG_ENGLISH        "Lexington Iconic"
+
+REFERENCE           CYBERKINO_BUY_LEXINGTON
+LANG_ENGLISH        "Hold [{+activate}] for Lexington [Cost: &&1]"
+
+REFERENCE           CYBERKINO_W_OVERTURE
+LANG_ENGLISH        "Overture"
+
+REFERENCE           CYBERKINO_W_OVERTURE_UP
+LANG_ENGLISH        "Overture Iconic"
+
+REFERENCE           CYBERKINO_BUY_OVERTURE
+LANG_ENGLISH        "Hold [{+activate}] for Overture [Cost: &&1]"
+
+REFERENCE           CYBERKINO_W_SOR22
+LANG_ENGLISH        "SOR-22"
+
+REFERENCE           CYBERKINO_W_SOR22_UP
+LANG_ENGLISH        "SOR-22 Iconic"
+
+REFERENCE           CYBERKINO_BUY_SOR22
+LANG_ENGLISH        "Hold [{+activate}] for SOR-22 [Cost: &&1]"
+
+REFERENCE           CYBERKINO_W_COPPERHEAD
+LANG_ENGLISH        "Copperhead"
+
+REFERENCE           CYBERKINO_W_COPPERHEAD_UP
+LANG_ENGLISH        "Copperhead Iconic"
+
+REFERENCE           CYBERKINO_BUY_COPPERHEAD
+LANG_ENGLISH        "Hold [{+activate}] for Copperhead [Cost: &&1]"
+
+REFERENCE           CYBERKINO_W_SARATOGA
+LANG_ENGLISH        "Saratoga"
+
+REFERENCE           CYBERKINO_W_SARATOGA_UP
+LANG_ENGLISH        "Saratoga Iconic"
+
+REFERENCE           CYBERKINO_BUY_SARATOGA
+LANG_ENGLISH        "Hold [{+activate}] for Saratoga [Cost: &&1]"
+
+REFERENCE           CYBERKINO_W_PULSAR
+LANG_ENGLISH        "Pulsar"
+
+REFERENCE           CYBERKINO_W_PULSAR_UP
+LANG_ENGLISH        "Pulsar Iconic"
+
+REFERENCE           CYBERKINO_BUY_PULSAR
+LANG_ENGLISH        "Hold [{+activate}] for Pulsar [Cost: &&1]"
+
+REFERENCE           CYBERKINO_W_SHINGEN
+LANG_ENGLISH        "Shingen"
+
+REFERENCE           CYBERKINO_W_SHINGEN_UP
+LANG_ENGLISH        "Shingen Iconic"
+
+REFERENCE           CYBERKINO_BUY_SHINGEN
+LANG_ENGLISH        "Hold [{+activate}] for Shingen [Cost: &&1]"
+
+REFERENCE           CYBERKINO_W_DIAN
+LANG_ENGLISH        "Dian"
+
+REFERENCE           CYBERKINO_W_DIAN_UP
+LANG_ENGLISH        "Dian Iconic"
+
+REFERENCE           CYBERKINO_BUY_DIAN
+LANG_ENGLISH        "Hold [{+activate}] for Dian [Cost: &&1]"
+
+REFERENCE           CYBERKINO_W_CARNAGE
+LANG_ENGLISH        "Carnage"
+
+REFERENCE           CYBERKINO_W_CARNAGE_UP
+LANG_ENGLISH        "Carnage Iconic"
+
+REFERENCE           CYBERKINO_BUY_CARNAGE
+LANG_ENGLISH        "Hold [{+activate}] for Carnage [Cost: &&1]"
+
+REFERENCE           CYBERKINO_W_TACTICIAN
+LANG_ENGLISH        "Tactician"
+
+REFERENCE           CYBERKINO_W_TACTICIAN_UP
+LANG_ENGLISH        "Tactician Iconic"
+
+REFERENCE           CYBERKINO_BUY_TACTICIAN
+LANG_ENGLISH        "Hold [{+activate}] for Tactician [Cost: &&1]"
+
+REFERENCE           CYBERKINO_W_AJAX
+LANG_ENGLISH        "Ajax"
+
+REFERENCE           CYBERKINO_W_AJAX_UP
+LANG_ENGLISH        "Ajax Iconic"
+
+REFERENCE           CYBERKINO_BUY_AJAX
+LANG_ENGLISH        "Hold [{+activate}] for Ajax [Cost: &&1]"
+
+REFERENCE           CYBERKINO_W_MASAMUNE
+LANG_ENGLISH        "Masamune"
+
+REFERENCE           CYBERKINO_W_MASAMUNE_UP
+LANG_ENGLISH        "Masamune Iconic"
+
+REFERENCE           CYBERKINO_BUY_MASAMUNE
+LANG_ENGLISH        "Hold [{+activate}] for Masamune [Cost: &&1]"
+
+REFERENCE           CYBERKINO_W_SIDEWINDER
+LANG_ENGLISH        "Sidewinder"
+
+REFERENCE           CYBERKINO_W_SIDEWINDER_UP
+LANG_ENGLISH        "Sidewinder Iconic"
+
+REFERENCE           CYBERKINO_BUY_SIDEWINDER
+LANG_ENGLISH        "Hold [{+activate}] for Sidewinder [Cost: &&1]"
+
+REFERENCE           CYBERKINO_W_KYUBI
+LANG_ENGLISH        "Kyubi"
+
+REFERENCE           CYBERKINO_W_KYUBI_UP
+LANG_ENGLISH        "Kyubi Iconic"
+
+REFERENCE           CYBERKINO_BUY_KYUBI
+LANG_ENGLISH        "Hold [{+activate}] for Kyubi [Cost: &&1]"
+
+REFERENCE           CYBERKINO_W_CRUSHER
+LANG_ENGLISH        "Crusher"
+
+REFERENCE           CYBERKINO_W_CRUSHER_UP
+LANG_ENGLISH        "Crusher Iconic"
+
+REFERENCE           CYBERKINO_BUY_CRUSHER
+LANG_ENGLISH        "Hold [{+activate}] for Crusher [Cost: &&1]"
+
+REFERENCE           CYBERKINO_W_ZHUO
+LANG_ENGLISH        "Zhuo"
+
+REFERENCE           CYBERKINO_W_ZHUO_UP
+LANG_ENGLISH        "Zhuo Iconic"
+
+REFERENCE           CYBERKINO_BUY_ZHUO
+LANG_ENGLISH        "Hold [{+activate}] for Zhuo [Cost: &&1]"
+
+REFERENCE           CYBERKINO_W_GRAD
+LANG_ENGLISH        "Grad"
+
+REFERENCE           CYBERKINO_W_GRAD_UP
+LANG_ENGLISH        "Grad Iconic"
+
+REFERENCE           CYBERKINO_BUY_GRAD
+LANG_ENGLISH        "Hold [{+activate}] for Grad [Cost: &&1]"
+
+REFERENCE           CYBERKINO_W_DEFENDER
+LANG_ENGLISH        "Defender"
+
+REFERENCE           CYBERKINO_W_DEFENDER_UP
+LANG_ENGLISH        "Defender Iconic"
+
+REFERENCE           CYBERKINO_BUY_DEFENDER
+LANG_ENGLISH        "Hold [{+activate}] for Defender [Cost: &&1]"
+
+REFERENCE           CYBERKINO_W_ACHILLES
+LANG_ENGLISH        "Achilles"
+
+REFERENCE           CYBERKINO_W_ACHILLES_UP
+LANG_ENGLISH        "Achilles Iconic"
+
+REFERENCE           CYBERKINO_BUY_ACHILLES
+LANG_ENGLISH        "Hold [{+activate}] for Achilles [Cost: &&1]"
+
+REFERENCE           CYBERKINO_W_MALORIAN
+LANG_ENGLISH        "Malorian Arms 3516"
+
+REFERENCE           CYBERKINO_W_MALORIAN_UP
+LANG_ENGLISH        "Malorian Arms 3516 Iconic"
+
+REFERENCE           CYBERKINO_BUY_MALORIAN
+LANG_ENGLISH        "Hold [{+activate}] for Malorian Arms 3516 [Cost: &&1]"
+
+REFERENCE           CYBERKINO_CHIP_SANDEVISTAN
+LANG_ENGLISH        "Sandevistan installed. Aim and press Melee: time slows for a few seconds"
+
+REFERENCE           CYBERKINO_HUD_SANDEVISTAN
+LANG_ENGLISH        "Sandevistan"
+
+REFERENCE           CYBERKINO_CHIP_TENDONS
+LANG_ENGLISH        "Reinforced Tendons installed. Press Jump again in the air"
+
+REFERENCE           CYBERKINO_HUD_TENDONS
+LANG_ENGLISH        "Reinforced Tendons"
+
+REFERENCE           CYBERKINO_CHIP_SUBDERMAL
+LANG_ENGLISH        "Subdermal Armor installed. Always on: you take more hits"
+
+REFERENCE           CYBERKINO_HUD_SUBDERMAL
+LANG_ENGLISH        "Subdermal Armor"
+
+REFERENCE           CYBERKINO_CHIP_MANTIS
+LANG_ENGLISH        "Mantis Blades installed. Melee: blades replace your knife"
+
+REFERENCE           CYBERKINO_HUD_MANTIS
+LANG_ENGLISH        "Mantis Blades"
+
+REFERENCE           CYBERKINO_CHIP_HINT
+LANG_ENGLISH        "Hold [{+activate}] to install the cyberware chip"
+
+REFERENCE           CYBERKINO_ALL_INSTALLED
+LANG_ENGLISH        "All cyberware installed"
+
+REFERENCE           CYBERKINO_SANDEVISTAN_ON
+LANG_ENGLISH        "SANDEVISTAN"
+
+REFERENCE           CYBERKINO_READY
+LANG_ENGLISH        "Sandevistan ready"
+
+REFERENCE           CYBERKINO_W_MANTIS
+LANG_ENGLISH        "Mantis Blades"
+
+ENDMARKER

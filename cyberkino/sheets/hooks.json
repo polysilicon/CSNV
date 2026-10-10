@@ -1,0 +1,46 @@
+{
+  "sheet": "hooks",
+  "about": "Edits made on the player's PC, each Play, to Kino's own scripts dumped from their zombie_theater.ff. Each inserts one line at an anchor (a regular expression matched once). The edited copies go into mod.ff, which Black Ops loads over the stock ones (the way script mods for stock maps work).",
+  "columns": {
+    "id": "unique id",
+    "file": "script path inside zombie_theater.ff",
+    "anchor": "regular expression (Go syntax) that must match exactly once",
+    "action": "insert_before | insert_after (the matched text)",
+    "text": "line inserted",
+    "required": "true = stop and log if the anchor is missing",
+    "source": "where the anchor comes from",
+    "tested_in_game": "true once seen working in Kino"
+  },
+  "rows": [
+    {
+      "id": "server_pre",
+      "file": "maps/zombie_theater.gsc",
+      "anchor": "(?m)^[ \\t]*maps\\\\_zombiemode::main\\(\\s*\\);",
+      "action": "insert_before",
+      "text": "\tmaps\\cyberkino::pre_main();",
+      "required": true,
+      "source": "zombie_theater.gsc main() calls maps\\_zombiemode::main() after include_weapons()",
+      "tested_in_game": false
+    },
+    {
+      "id": "server_post",
+      "file": "maps/zombie_theater.gsc",
+      "anchor": "(?m)^[ \\t]*maps\\\\_zombiemode::main\\(\\s*\\);",
+      "action": "insert_after",
+      "text": "\tmaps\\cyberkino::post_main();",
+      "required": true,
+      "source": "same call; runs once Black Ops' weapon tables exist",
+      "tested_in_game": false
+    },
+    {
+      "id": "client_include",
+      "file": "clientscripts/zombie_theater.csc",
+      "anchor": "(?m)^include_weapons\\(\\s*\\)\\s*\\{",
+      "action": "insert_after",
+      "text": "\tclientscripts\\cyberkino::include_weapons();",
+      "required": false,
+      "source": "zombie_theater.csc mirrors the server include_weapons() for the Mystery Box display",
+      "tested_in_game": false
+    }
+  ]
+}

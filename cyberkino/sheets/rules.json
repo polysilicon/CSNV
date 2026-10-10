@@ -1,0 +1,42 @@
+{
+  "sheet": "rules",
+  "about": "Single-value rules for the special zombies and chips.",
+  "columns": {
+    "id": "rule name (used in the script as level.cpk_rules[id])",
+    "value": "number",
+    "about": "what it does",
+    "tested_in_game": "true once seen working in Kino"
+  },
+  "rows": [
+    {
+      "id": "first_round",
+      "value": 1,
+      "about": "first round with a special zombie",
+      "tested_in_game": false
+    },
+    {
+      "id": "specials_per_round",
+      "value": 1,
+      "about": "special zombies per round",
+      "tested_in_game": false
+    },
+    {
+      "id": "chip_lifetime_s",
+      "value": 30,
+      "about": "seconds a dropped chip stays before it fizzles out",
+      "tested_in_game": false
+    },
+    {
+      "id": "pickup_radius",
+      "value": 48,
+      "about": "use-trigger radius of a dropped chip, in inches",
+      "tested_in_game": false
+    },
+    {
+      "id": "lose_on_down",
+      "value": 1,
+      "about": "1 = cyberware is lost when you go down, like perks",
+      "tested_in_game": false
+    }
+  ]
+}

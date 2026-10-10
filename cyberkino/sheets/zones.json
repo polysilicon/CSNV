@@ -1,0 +1,46 @@
+{
+  "sheet": "zones",
+  "about": "Black Ops zone files the launcher reads from the player's install. load = referenced while linking (techniques, sounds, animations stay theirs); unlink = dumped to read weapon files, models, materials and Kino's scripts.",
+  "columns": {
+    "id": "zone file name",
+    "dir": "folder under the Black Ops zone folder",
+    "use": "load | unlink",
+    "required": "true = stop if missing",
+    "about": "why",
+    "tested_in_game": "true once seen working on a real install"
+  },
+  "rows": [
+    {
+      "id": "code_post_gfx.ff",
+      "dir": "Common",
+      "use": "load",
+      "required": true,
+      "about": "built-in images ($identitynormalmap) and techniques",
+      "tested_in_game": false
+    },
+    {
+      "id": "common.ff",
+      "dir": "Common",
+      "use": "load",
+      "required": false,
+      "about": "shared single-player assets",
+      "tested_in_game": false
+    },
+    {
+      "id": "common_zombie.ff",
+      "dir": "Common",
+      "use": "load",
+      "required": true,
+      "about": "shared Zombies assets",
+      "tested_in_game": false
+    },
+    {
+      "id": "zombie_theater.ff",
+      "dir": "Common",
+      "use": "unlink",
+      "required": true,
+      "about": "Kino: weapon files, view and world models, materials, scripts",
+      "tested_in_game": false
+    }
+  ]
+}

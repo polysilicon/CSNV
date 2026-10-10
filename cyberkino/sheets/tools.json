@@ -1,0 +1,46 @@
+{
+  "sheet": "tools",
+  "about": "Programs bundled in the release, each downloaded from its official source at build time and checked by SHA-256. Licences allow sharing; credits are in CREDITS.md.",
+  "columns": {
+    "id": "unique id",
+    "version": "pinned version",
+    "url": "official download",
+    "sha256": "of the download",
+    "license": "licence",
+    "bundle_dir": "folder inside the release's CyberKino/tools",
+    "used_for": "what the launcher uses it for",
+    "author": "credit"
+  },
+  "rows": [
+    {
+      "id": "oat",
+      "version": "v0.33.0",
+      "url": "https://github.com/Laupetin/OpenAssetTools/releases/download/v0.33.0/oat-windows.zip",
+      "sha256": "4bf366cec03558a4b0f20bc8f197a51f4b9dad0aa3edc52b0e40fef2dd95a4f5",
+      "license": "GPL-3.0",
+      "bundle_dir": "oat",
+      "used_for": "Unlinker reads Kino from zombie_theater.ff; ImageConverter makes .iwi textures; Linker builds mods/cyberkino/mod.ff",
+      "author": "Laupetin and OpenAssetTools contributors"
+    },
+    {
+      "id": "wolvenkit",
+      "version": "9.1.0",
+      "url": "https://github.com/WolvenKit/WolvenKit/releases/download/9.1.0/WolvenKit.Console-9.1.0.zip",
+      "sha256": "7caf49cdf0f478b484b1a5a27e5aef261b879fabea7e72e33ca60eff3b834f4f",
+      "license": "GPL-3.0",
+      "bundle_dir": "wolvenkit",
+      "used_for": "exports the Cyberpunk meshes and textures from the player's archives to glTF and PNG",
+      "author": "WolvenKit team"
+    },
+    {
+      "id": "dotnet",
+      "version": "10.0.12",
+      "url": "https://builds.dotnet.microsoft.com/dotnet/Runtime/10.0.12/dotnet-runtime-10.0.12-win-x64.zip",
+      "sha256": "da3947e6acbb5228e4e987c7585aa40ce2d7000856e3da0804e6ee3771e806dc",
+      "license": "MIT",
+      "bundle_dir": "dotnet",
+      "used_for": ".NET runtime WolvenKit runs on (no install on the player's PC)",
+      "author": "Microsoft and .NET Foundation"
+    }
+  ]
+}
