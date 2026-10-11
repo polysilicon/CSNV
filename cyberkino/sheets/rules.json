@@ -127,6 +127,18 @@
       "value": 4,
       "about": "Mystery Box uses before it moves to another box spot",
       "tested_in_game": false
+    },
+    {
+      "id": "barricade_half_width_m",
+      "value": 1.5,
+      "about": "half the width a barricade holds, along its line (m)",
+      "tested_in_game": false
+    },
+    {
+      "id": "floor_height_m",
+      "value": 2.0,
+      "about": "buys, chips and barricades only count on V's own floor: height difference under this (m)",
+      "tested_in_game": false
     }
   ]
 }

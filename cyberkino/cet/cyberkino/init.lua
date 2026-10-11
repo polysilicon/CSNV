@@ -1,6 +1,6 @@
 -- Cyberpunk Kino: Black Ops-style Zombies in Megabuilding H10.
--- Press F7 (CET binding "start") on V's floor: barricades close the corridors in rings, wall-buys go on the
--- walls, the Mystery Box in the open, and Scavenger and Maelstrom zombies come in rounds. V starts with only a
+-- Press F7 (CET binding "start"): V goes to the apartment and the arena from the layout appears (barricades bought
+-- one by one, wall-buys, the Mystery Box), and Scavenger and Maelstrom zombies come in rounds. V starts with only a
 -- Unity; everything V is carrying comes back when the match ends. Data comes from data.lua (generated from
 -- sheets/*.json by tools/build.py). Every step is written to cyberkino.log next to this file.
 
@@ -88,11 +88,8 @@ local function idKey(id)
 	return tostring(id.id.hash) .. ":" .. tostring(id.rngSeed)
 end
 
--- gives one record and returns the new item's ItemID (the one that wasn't there before)
-local function give(record, qty)
-	local before = {}
-	for _, id in ipairs(itemIDs()) do before[idKey(id)] = true end
-	Game.AddToInventory(record, qty or 1)
+-- the item of this record that wasn't in `before`
+local function newItem(record, before)
 	local want = TweakDBID.new(record).hash
 	for _, id in ipairs(itemIDs()) do
 		if not before[idKey(id)] and id.id.hash == want then
@@ -100,6 +97,15 @@ local function give(record, qty)
 		end
 	end
 	return nil
+end
+
+-- gives one record and returns the new item's ItemID, plus what was there before (some guns appear a few
+-- frames late; giveGun looks again)
+local function give(record, qty)
+	local before = {}
+	for _, id in ipairs(itemIDs()) do before[idKey(id)] = true end
+	Game.AddToInventory(record, qty or 1)
+	return newItem(record, before), before
 end
 
 local function equip(itemID, slot)
@@ -202,15 +208,37 @@ local function restoreLoadout()
 	log("put back %d items", #(S.stashed or {}))
 end
 
+local function gotGun(w, id)
+	S.given[#S.given + 1] = id
+	equip(id)
+	S.owned[w.id] = true
+end
+
 local function giveGun(w)
-	local id = give(w.record, 1)
+	local id, before = give(w.record, 1)
 	Game.AddToInventory(w.ammo, w.ammo_amount)
+	S.owned[w.id] = true
 	if id then
-		S.given[#S.given + 1] = id
-		equip(id)
-		S.owned[w.id] = true
+		gotGun(w, id)
 	else
-		log("gave %s but could not find it in the inventory", w.record)
+		S.lateGuns = S.lateGuns or {}
+		S.lateGuns[#S.lateGuns + 1] = { w = w, before = before, tries = 30 }
+	end
+end
+
+-- looks again for guns that weren't in the inventory the frame they were given
+local function checkLateGuns()
+	for i = #(S.lateGuns or {}), 1, -1 do
+		local g = S.lateGuns[i]
+		local id = newItem(g.w.record, g.before)
+		g.tries = g.tries - 1
+		if id then
+			gotGun(g.w, id)
+			table.remove(S.lateGuns, i)
+		elseif g.tries <= 0 then
+			log("gave %s but it never showed up in the inventory", g.w.record)
+			table.remove(S.lateGuns, i)
+		end
 	end
 end
 
@@ -324,14 +352,15 @@ local function rowPos(r) return v4(r.x, r.y, r.z) end
 
 local function buildArena()
 	S.zone = 1
-	S.barricades = {} -- zone -> list of {eid, pos, inside}
-	S.buys = {}       -- {kind, pos, eid, weapon|ring}
+	S.barricades = {} -- every closed barricade: {eid, pos, inside, yaw, zone}
+	S.buys = {}       -- {kind, pos, eid, weapon|bar}
+	S.doorsBought = 0
 	local maxZone = 1
 	for _, r in ipairs(rowsOf("barricade")) do
-		S.barricades[r.zone] = S.barricades[r.zone] or {}
 		local p = rowPos(r)
-		table.insert(S.barricades[r.zone], { eid = spawnProp("barricade", p, r.yaw), pos = p, inside = v4(r.inside_x, r.inside_y, r.inside_z), yaw = r.yaw })
-		S.buys[#S.buys + 1] = { kind = "door", ring = r.zone, pos = p }
+		local bar = { eid = spawnProp("barricade", p, r.yaw), pos = p, inside = v4(r.inside_x, r.inside_y, r.inside_z), yaw = r.yaw, zone = r.zone }
+		S.barricades[#S.barricades + 1] = bar
+		S.buys[#S.buys + 1] = { kind = "door", bar = bar, pos = p }
 		maxZone = math.max(maxZone, r.zone + 1)
 	end
 	S.maxZone = maxZone
@@ -370,16 +399,16 @@ local function moveBox()
 	say("The Mystery Box moved", 3)
 end
 
-local function openRing(ring)
-	for _, b in ipairs(S.barricades[ring] or {}) do despawn(b.eid) end
-	S.barricades[ring] = {}
-	S.zone = math.max(S.zone, ring + 1)
-	for i = #S.buys, 1, -1 do
-		if S.buys[i].kind == "door" and S.buys[i].ring == ring then table.remove(S.buys, i) end
-	end
+-- each barricade is its own door, as in Kino: buying one clears only it and wakes the spawns of the zone behind it
+local function openBarricade(bar)
+	despawn(bar.eid)
+	for i = #S.barricades, 1, -1 do if S.barricades[i] == bar then table.remove(S.barricades, i) end end
+	for i = #S.buys, 1, -1 do if S.buys[i].bar == bar then table.remove(S.buys, i) end end
+	S.zone = math.max(S.zone, bar.zone + 1)
+	S.doorsBought = S.doorsBought + 1
 end
 
-local function doorCost(ring) return rules.door_cost_first + (ring - 1) * rules.door_cost_step end
+local function doorCost() return rules.door_cost_first + S.doorsBought * rules.door_cost_step end
 
 -- ---------------------------------------------------------------- zombies
 
@@ -468,7 +497,7 @@ local function stopMatch(reason)
 	if not S.active then return end
 	log("match ends: %s (round %d, %d points)", reason, S.round or 0, S.points or 0)
 	for _, zb in ipairs(S.zombies or {}) do despawn(zb.eid) end
-	for _, ring in pairs(S.barricades or {}) do for _, b in ipairs(ring) do despawn(b.eid) end end
+	for _, b in ipairs(S.barricades or {}) do despawn(b.eid) end
 	for _, b in ipairs(S.buys or {}) do despawn(b.eid) end
 	for _, ch in ipairs(S.chips or {}) do despawn(ch.eid) end
 	removeCyber()
@@ -484,11 +513,11 @@ local function nearestBuy()
 	local best, bestD
 	for _, b in ipairs(S.buys) do
 		local d = flat(p, b.pos)
-		if d <= rules.buy_radius_m and (not bestD or d < bestD) then best, bestD = b, d end
+		if d <= rules.buy_radius_m and math.abs(p.z - b.pos.z) < rules.floor_height_m and (not bestD or d < bestD) then best, bestD = b, d end
 	end
 	for _, ch in ipairs(S.chips) do
 		local d = flat(p, ch.pos)
-		if d <= rules.buy_radius_m and (not bestD or d < bestD) then best, bestD = { kind = "chip", chip = ch }, d end
+		if d <= rules.buy_radius_m and math.abs(p.z - ch.pos.z) < rules.floor_height_m and (not bestD or d < bestD) then best, bestD = { kind = "chip", chip = ch }, d end
 	end
 	return best
 end
@@ -498,7 +527,7 @@ local function promptFor(b)
 		local cost = S.owned[b.weapon.id] and math.floor(b.weapon.cost / 2) or b.weapon.cost
 		return string.format("[F] %s %s (%d)", S.owned[b.weapon.id] and "Ammo for" or "Buy", b.weapon.name, cost)
 	elseif b.kind == "door" then
-		return string.format("[F] Clear the barricade (%d)", doorCost(b.ring))
+		return string.format("[F] Clear the barricade (%d)", doorCost())
 	elseif b.kind == "box" then
 		return S.boxBusy and "Mystery Box..." or string.format("[F] Mystery Box (%d)", rules.box_cost)
 	elseif b.kind == "chip" then
@@ -529,9 +558,9 @@ local function use()
 			say(w.name, 2)
 		end
 	elseif b.kind == "door" then
-		if pay(doorCost(b.ring)) then
-			openRing(b.ring)
-			say("Barricade cleared: zone " .. S.zone, 3)
+		if pay(doorCost()) then
+			openBarricade(b.bar)
+			say("Barricade cleared", 3)
 		end
 	elseif b.kind == "box" and not S.boxBusy then
 		local w = weightedBoxPick()
@@ -591,19 +620,28 @@ local function tick()
 		return
 	end
 
-	-- closed barricades hold: walking into one pushes V back to its inside, one step away
+	-- closed barricades hold: across the barricade's width, getting closer than barricade_hold_m to its line (or
+	-- past it) puts V back on the inside, one step from the line, where they were along it
 	local here = pos(p)
-	for zone, list in pairs(S.barricades) do
-		for _, bar in ipairs(list) do
-			if flat(here, bar.pos) < rules.barricade_hold_m and math.abs(here.z - bar.pos.z) < 2.5 then
-				local dx, dy = bar.inside.x - bar.pos.x, bar.inside.y - bar.pos.y
-				local len = math.max(math.sqrt(dx * dx + dy * dy), 0.01)
-				local back = v4(bar.pos.x + dx / len * (rules.barricade_hold_m + 0.3), bar.pos.y + dy / len * (rules.barricade_hold_m + 0.3), here.z)
-				try("barricade push", function() Game.GetTeleportationFacility():Teleport(p, back, EulerAngles.new(0, 0, bar.yaw + 180)) end)
-				if now > (S.pushSaid or 0) then say("Buy the barricade to get through", 2) S.pushSaid = now + 3 end
-			end
+	for _, bar in ipairs(S.barricades) do
+		local nx, ny = bar.inside.x - bar.pos.x, bar.inside.y - bar.pos.y
+		local len = math.sqrt(nx * nx + ny * ny)
+		if len < 0.01 then nx, ny, len = 0, 1, 1 end
+		nx, ny = nx / len, ny / len
+		local rx, ry = here.x - bar.pos.x, here.y - bar.pos.y
+		local depth = rx * nx + ry * ny          -- > 0 on the inside
+		local side = rx * -ny + ry * nx          -- along the barricade
+		if math.abs(side) < rules.barricade_half_width_m and depth < rules.barricade_hold_m and depth > -2.5
+			and math.abs(here.z - bar.pos.z) < rules.floor_height_m then
+			local d = rules.barricade_hold_m + 0.3
+			local back = v4(bar.pos.x + nx * d - ny * side, bar.pos.y + ny * d + nx * side, here.z)
+			try("barricade push", function() Game.GetTeleportationFacility():Teleport(p, back, EulerAngles.new(0, 0, bar.yaw + 180)) end)
+			if now > (S.pushSaid or 0) then say("Buy the barricade to get through", 2) S.pushSaid = now + 3 end
+			break
 		end
 	end
+
+	checkLateGuns()
 
 	if S.boxBusy and now >= S.boxBusy.at then
 		giveGun(S.boxBusy.w)
@@ -726,7 +764,7 @@ local function drawEditor()
 		#rowsOf("start"), #rowsOf("barricade"), #rowsOf("wallbuy"), #rowsOf("box"), #rowsOf("spawn"), #rowsOf("stash")))
 	ImGui.Separator()
 	if ImGui.Button("Match start: where V stands now") then addRow("start", 0) end
-	ImGui.Text("Zone " .. ed.zone .. " (barricades open zone " .. (ed.zone + 1) .. "; spawns wake when their zone opens)")
+	ImGui.Text("Zone " .. ed.zone .. " (a barricade here opens zone " .. (ed.zone + 1) .. "; spawns wake when their zone opens)")
 	ImGui.SameLine()
 	if ImGui.Button(" - ") then ed.zone = math.max(1, ed.zone - 1) end
 	ImGui.SameLine()

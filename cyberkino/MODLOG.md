@@ -139,7 +139,7 @@
   Release 0.2.1 sha256 9be85189..130f, test 7d7037f4-f064-46f6-99b1-4e6ea7796c95.
 
 ## Open
-1. Creator records the arena with the layout editor and sends layout.json; build it into sheets/layout.json.
+1. Play 0.3.1 on the creator's layout (TESTING.md part 2) and send cyberkino.log.
 2. Real screenshot from that test.
 3. Licence and remix choice from the creator.
 
@@ -152,3 +152,18 @@
   (sheets/layout.json ships it once recorded). Weapons are moved into V's stash during a match and back after.
   A closed barricade pushes V back where they stand, not to the start. The box moves after 4 uses.
   Simulation: 77 log lines, 0 errors. Release 0.3.0 sha256 8489d518..cf4b, test eb1b0a05-f207-4d46-a631-3edb85d506e4.
+
+## Layout from the creator (0.3.1)
+- Creator placed the arena with the editor: start, 6 barricades (all zone 1), 4 zone-1 and 3 zone-2 spawns, 6 wall-buys
+  (Tactician, SOR-22, Pulsar, Shingen, Saratoga, Carnage), 2 Mystery Box spots, V's stash (entity 16570246047455160070ULL,
+  class Stash). Two floors: z 123 and z 119. Copied into sheets/layout.json; no match played on it yet.
+- With all six barricades in zone 1, buying one would have cleared all six. 0.3.1: each barricade is bought on its own
+  (price door_cost_first + bought * door_cost_step) and wakes the spawns of the zone behind it.
+- Hold is now a rectangle along the barricade (barricade_half_width_m 1.5) that also catches walking past the line,
+  and it keeps V's place along it. Buys, chips and holds only count on V's floor (floor_height_m 2.0), since the two
+  floors stack wall-buys within 2.5 m of each other.
+- A gun missing from the inventory the frame it's given (0.2.1 log: Ajax) is looked for again for 30 frames and equipped.
+- Simulator: new edge, past-the-line, beside, other-floor, through-the-floor and one-door-only checks (90 lines, 0
+  errors); CYBERKINO_SIM_SHIPPED=1 plays the built-in layout (6 barricades, 6 wall-buys, 2 box spots, 7 spawns, 0 errors).
+- Release 0.3.1 sha256 2c7b861e..b1c2, releaseId 8dd01ae6-677e-4e8d-b1d0-0b82ef6e218c, one click yes,
+  test 825ed2a3-19ce-44ba-bbae-303aed99dd06.

@@ -14,6 +14,7 @@ and a preview prop appears where each thing goes.
 5. Press **+** for zone 2: its wall-buys, box spots and spawns, then its barricades into zone 3. And so on.
 6. **Undo last** removes the last thing placed. Close the overlay when done.
 
+The creator's layout from 2026-10-11 is built into 0.3.1, so this part is already done; it's here for changing it.
 Then send me `bin\\x64\\plugins\\cyber_engine_tweaks\\mods\\cyberkino\\layout.json`: I build it into the mod so
 every player gets your map.
 
@@ -21,7 +22,7 @@ every player gets your map.
 Press **F7**. Check, and tell me what you saw:
 - **A.** V is teleported into the apartment; "ROUND 1" and points top-left; you hold only a Unity; your weapons are
   in V's stash and your cyberware is off.
-- **B.** You can't walk past a closed barricade; "[F] Clear the barricade" opens the next zone.
+- **B.** You can't walk past a closed barricade; "[F] Clear the barricade" clears only that one, and the others stay.
 - **C.** The wall-buys and box are where you placed them; the box moves after 4 uses.
 - **D.** Zombies come from your spawn points (only from open zones); a cyberpsycho on round 5.
 - **E.** Chips drop each round; [F] installs cyberware (Z for Sandevistan).

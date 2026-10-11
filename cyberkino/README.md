@@ -7,8 +7,9 @@ Cyberpunk's guns and cyberware, and Black Ops' real Ray Gun.
   V's weapons go into V's own stash in the apartment and all of V's cyberware comes off, leaving only a **Unity**
   pistol and the cyberware the chips give; it all comes back when the match ends (F7 again, or when V goes down).
 - **A fixed map, like Kino.** The barricades, wall-buys, Mystery Box spots and zombie windows sit in fixed places
-  on H10, placed with the in-game layout editor (CET overlay > "Cyberpunk Kino layout"). Buy a barricade (F) to open
-  the next zone: 750 points, each next one 250 more. Closed barricades hold: you can't walk past them.
+  on H10, placed with the in-game layout editor (CET overlay > "Cyberpunk Kino layout"). Each barricade is bought on its
+  own (F), like Kino's doors: 750 points, each next one 250 more, and it wakes the zombie spawns behind it. Closed
+  barricades hold along their whole width: you can't walk past them.
 - **Wall-buys** on the walls: Tactician, SOR-22, Pulsar, Shingen, Saratoga, Carnage, Copperhead. Buying again
   gives ammo for half the price.
 - **The Mystery Box** (950, moves to another spot every 4 uses): Lexington, Overture, Ajax, Masamune, Sidewinder, Kyubi, Crusher, Zhuo, Grad, Defender,

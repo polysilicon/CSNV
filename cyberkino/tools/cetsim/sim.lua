@@ -138,10 +138,30 @@ Game.AddToInventory("Items.Preset_Overture_Default", 1)
 Game.AddToInventory("Items.Preset_Kenshin_Default", 1)
 local own = #inventory
 local function click(label) press = label events.onDraw() assert(press == nil, "no button " .. label) end
+-- CYBERKINO_SIM_SHIPPED=1: play the layout built into data.lua (sheets/layout.json) instead of recording one
+if os.getenv("CYBERKINO_SIM_SHIPPED") then
+	os.remove("layout.json")
+	events.onInit()
+	hotkeys.start()
+	step(3)
+	step(6)
+	for _ = 1, 3 do step(20) killAll() step(8) end
+	hotkeys.start()
+	step(0.5)
+	print = realprint
+	local f = io.open("cyberkino.log") local text = f:read("*a") f:close()
+	io.write(text)
+	local errs = 0
+	for line in text:gmatch("[^\n]+") do if line:find("failed") or line:find("error") then errs = errs + 1 end end
+	print(string.format("\nshipped-layout simulation: %d errors", errs))
+	assert(#inventory == own, "V should have exactly their own items back, has " .. #inventory)
+	os.exit(errs == 0 and 0 or 1)
+end
 local function at(x, y) V.x, V.y = x, y end
 events.onOverlayOpen()
 at(-1391.87, 1271.69) click("Match start")
 at(-1391.87, 1276) click("Barricade")            -- zone 1 -> 2, north
+at(-1380, 1276) click("Barricade")               -- a second zone 1 door, bought on its own
 click(" + ")
 at(-1391.87, 1284) click("Barricade")            -- zone 2 -> 3
 click(" - ")
@@ -174,7 +194,28 @@ for r = 1, 6 do
 	step(10)
 	-- walk into the closed zone 1 barricade: V must be pushed back south of it
 	if r == 2 then V.x, V.y = -1391.87, 1277.0 step(0.2) assert(V.y < 1276.5, "barricade did not hold") V.x, V.y = -1391.87, 1271.69 end
+	-- near its edge, and walked past it: still held, and V keeps their place along it
+	if r == 3 then
+		V.x, V.y = -1390.9, 1277.2 step(0.2) assert(V.y < 1276.5 and math.abs(V.x + 1390.9) < 0.05, "barricade edge did not hold")
+		V.x, V.y = -1391.87, 1278.5 step(0.2) assert(V.y < 1276.5, "walking past the barricade was not undone")
+		-- beside it (outside its width) and on the floor below: free
+		V.x, V.y = -1388, 1277.5 step(0.2) assert(V.y == 1277.5, "held outside the barricade's width")
+		V.x, V.y, V.z = -1391.87, 1277.5, 119 step(0.2) assert(V.y == 1277.5, "held on another floor")
+		V.z = 123 V.x, V.y = -1391.87, 1271.69
+	end
 end
+-- a wall-buy can't be bought from the floor below
+local cases = {}
+for _, e in pairs(entities) do if e.kind:find("weapon_case_small") then cases[#cases + 1] = e end end
+local before = #inventory
+V.x, V.y, V.z = cases[1].p.x, cases[1].p.y, 119 step(0.2) hotkeys.use() step(1)
+assert(#inventory == before, "bought a wall-buy through the floor")
+V.z = 123
+-- buying one barricade leaves the other zone 1 barricade standing
+local function barriers() local n = 0 for _, e in pairs(entities) do if e.kind:find("road_barrier") then n = n + 1 end end return n end
+local nb = barriers()
+V.x, V.y = -1391.87, 1276.4 step(0.2) hotkeys.use() step(0.5)
+assert(barriers() == nb - 1, "buying one barricade should clear only it (" .. nb .. " -> " .. barriers() .. ")")
 -- buy things: stand on every spawned wall case / box / barricade and press F
 for _, e in pairs(entities) do
 	if e.kind:find("weapon_case") or e.kind:find("road_barrier") then
