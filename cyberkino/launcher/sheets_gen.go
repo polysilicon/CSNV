@@ -2,7 +2,7 @@
 
 package main
 
-const modVersion = "0.3.1"
+const modVersion = "0.3.2"
 
 const cetModName = "cyberkino"
 

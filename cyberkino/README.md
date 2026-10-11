@@ -19,7 +19,8 @@ Cyberpunk's guns and cyberware, and Black Ops' real Ray Gun.
   Sandevistan (Z slows time), Reinforced Tendons (double jump), Subdermal Armor, Mantis Blades.
 - 500 points to start, 60 per kill, 100 extra for the chip carrier, 500 for a cyberpsycho. Solo.
 
-Keys: F7 start/stop, F buy/pick up, Z Sandevistan (change them in CET's Bindings tab).
+Keys: F7 start/stop, F buy/pick up, Z Sandevistan (change them in CET's Bindings tab). On a controller, hold
+Reload (X on Xbox, Square on PlayStation) at a barricade, wall-buy, Mystery Box or chip to use it, like Black Ops.
 
 You need both games: Cyberpunk 2077 and Call of Duty: Black Ops (Steam). Nothing from either game is included;
 the Ray Gun is read from your Black Ops each time it changes.

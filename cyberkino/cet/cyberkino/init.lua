@@ -444,12 +444,32 @@ local function spawnZombie(z, special)
 	return true
 end
 
+-- turns a spawned NPC on V the way Appearance Menu Mod's "hostile" toggle does: a plain AI role, the hostile
+-- attitude both ways, an aggressive reaction preset and a combat trigger against V. Spawned NPCs come up passive
+-- (0.3.1: attitude alone left them idle), and need a moment after spawning before their AI takes it.
+local function combat(e)
+	try("trigger combat", function() e.reactionComponent:TriggerCombat(player()) end)
+end
+
 local function makeHostile(zb, e)
-	try("make hostile", function()
+	local v = player()
+	try("hostile role", function()
+		local ai = e:GetAIControllerComponent()
+		ai:SetAIRole(AIRole.new())
+		ai:OnAttach()
+	end)
+	try("hostile attitude", function()
 		local aa = e:GetAttitudeAgent()
 		aa:SetAttitudeGroup(CName.new("hostile"))
-		aa:SetAttitudeTowards(player():GetAttitudeAgent(), EAIAttitude.AIA_Hostile)
+		aa:SetAttitudeTowards(v:GetAttitudeAgent(), EAIAttitude.AIA_Hostile)
 	end)
+	try("V hostile to zombie", function() v:GetAttitudeAgent():SetAttitudeTowards(e:GetAttitudeAgent(), EAIAttitude.AIA_Hostile) end)
+	pcall(function() e.isPlayerCompanionCached = false e.isPlayerCompanionCachedTimeStamp = 0 end)
+	try("hostile reaction", function()
+		e.reactionComponent:SetReactionPreset(TweakDBInterface.GetReactionPresetRecord(TweakDBID.new("ReactionPresets.Ganger_Aggressive")))
+	end)
+	combat(e)
+	if not zb.hostile then log("zombie %s set on V", zb.z.record) end
 	zb.hostile = true
 end
 
@@ -547,6 +567,9 @@ end
 
 local function use()
 	if not S.active then return end
+	local t = os.clock()
+	if t < (S.useReady or 0) then return end
+	S.useReady = t + 0.3
 	local b = nearestBuy()
 	if not b then return end
 	if b.kind == "wall" then
@@ -643,6 +666,23 @@ local function tick()
 
 	checkLateGuns()
 
+	-- V's apartment puts a no-combat restriction on V, which also keeps NPCs from fighting; lift it during a match
+	if now >= (S.restrictionCheck or 0) then
+		S.restrictionCheck = now + 1
+		local noCombat = TweakDBID.new("GameplayRestriction.NoCombat")
+		local has = try("restriction check", function() return StatusEffectSystem.ObjectHasStatusEffect(p, noCombat) end)
+		if has then
+			try("lift no-combat", function() StatusEffectHelper.RemoveStatusEffect(p, noCombat) end)
+			if not S.liftedSaid then log("lifted the apartment's no-combat restriction") S.liftedSaid = true end
+		end
+	end
+
+	-- controller: hold Reload (X / Square) at a buy, like Black Ops
+	if S.reloadDown and now - S.reloadDown >= rules.hold_buy_s then
+		S.reloadDown = nil
+		if nearestBuy() then use() end
+	end
+
 	if S.boxBusy and now >= S.boxBusy.at then
 		giveGun(S.boxBusy.w)
 		say("Mystery Box: " .. S.boxBusy.w.name, 3)
@@ -656,7 +696,12 @@ local function tick()
 		local zb = S.zombies[i]
 		local e = Game.FindEntityByID(zb.eid)
 		if e then
-			if not zb.hostile then makeHostile(zb, e) end
+			-- set on V a moment after it appears, again shortly after, then kept in combat with V
+			if not zb.hostile and now - zb.born > rules.hostile_delay_s then makeHostile(zb, e) zb.recheck = now + 2 end
+			if zb.hostile and not e:IsDead() and now >= (zb.recheck or 0) then
+				if not zb.rehostiled then makeHostile(zb, e) zb.rehostiled = true else combat(e) end
+				zb.recheck = now + rules.combat_refresh_s
+			end
 			if e:IsDead() then
 				if not zb.counted then
 					zb.counted = true
@@ -815,6 +860,17 @@ end)
 
 registerForEvent("onInit", function()
 	loadLayout()
+	-- a controller has no CET hotkeys: holding Reload (X on Xbox, Square on PlayStation, R on keyboard) buys instead
+	try("controller input", function()
+		Observe("PlayerPuppet", "OnAction", function(_, action)
+			if not S.active then return end
+			local name = Game.NameToString(action:GetName(action))
+			if name ~= "Reload" then return end
+			local kind = action:GetType(action).value
+			if kind == "BUTTON_PRESSED" then S.reloadDown = os.clock()
+			elseif kind == "BUTTON_RELEASED" then S.reloadDown = nil end
+		end)
+	end)
 	log("Cyberpunk Kino %s loaded (%d guns, %d zombie types)", data.version, #data.weapons, #data.zombies)
 end)
 

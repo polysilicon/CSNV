@@ -139,7 +139,7 @@
   Release 0.2.1 sha256 9be85189..130f, test 7d7037f4-f064-46f6-99b1-4e6ea7796c95.
 
 ## Open
-1. Play 0.3.1 on the creator's layout (TESTING.md part 2) and send cyberkino.log.
+1. Play 0.3.2 on the creator's layout (TESTING.md part 2) and send cyberkino.log.
 2. Real screenshot from that test.
 3. Licence and remix choice from the creator.
 
@@ -167,3 +167,15 @@
   errors); CYBERKINO_SIM_SHIPPED=1 plays the built-in layout (6 barricades, 6 wall-buys, 2 box spots, 7 spawns, 0 errors).
 - Release 0.3.1 sha256 2c7b861e..b1c2, releaseId 8dd01ae6-677e-4e8d-b1d0-0b82ef6e218c, one click yes,
   test 825ed2a3-19ce-44ba-bbae-303aed99dd06.
+
+## Test 12 (0.3.1, creator's report)
+- Layout works. Zombies don't target or attack V. Creator asked for a controller button for doors, chips, wall-buys and box.
+- Cause (likely): spawned NPCs come up passive; setting the attitude alone doesn't start combat. V's apartment also puts
+  GameplayRestriction.NoCombat on V.
+- 0.3.2: zombies get Appearance Menu Mod's hostile recipe (plain AIRole, hostile attitude both ways,
+  ReactionPresets.Ganger_Aggressive, reactionComponent:TriggerCombat(V)) hostile_delay_s after spawning, again 2 s
+  later, then TriggerCombat every combat_refresh_s. GameplayRestriction.NoCombat is lifted from V during a match.
+  Controller: Observe PlayerPuppet.OnAction, hold "Reload" (X / Square) for hold_buy_s at a buy uses it; F and the
+  hold share a 0.3 s guard so one press never buys twice. Both records checked in the TweakDB name list.
+- Simulator: zombies set hostile and kept in combat, restriction lifted, Reload tap doesn't buy and hold does (0 errors);
+  shipped layout 0 errors.

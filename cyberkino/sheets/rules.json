@@ -139,6 +139,24 @@
       "value": 2.0,
       "about": "buys, chips and barricades only count on V's own floor: height difference under this (m)",
       "tested_in_game": false
+    },
+    {
+      "id": "hostile_delay_s",
+      "value": 1.0,
+      "about": "seconds after a zombie appears before it is set on V (its AI needs a moment)",
+      "tested_in_game": false
+    },
+    {
+      "id": "combat_refresh_s",
+      "value": 4.0,
+      "about": "how often each zombie is pushed back into combat with V (s)",
+      "tested_in_game": false
+    },
+    {
+      "id": "hold_buy_s",
+      "value": 0.4,
+      "about": "how long Reload (controller X / Square) is held at a buy to use it (s)",
+      "tested_in_game": false
     }
   ]
 }

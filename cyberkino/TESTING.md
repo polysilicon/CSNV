@@ -24,7 +24,8 @@ Press **F7**. Check, and tell me what you saw:
   in V's stash and your cyberware is off.
 - **B.** You can't walk past a closed barricade; "[F] Clear the barricade" clears only that one, and the others stay.
 - **C.** The wall-buys and box are where you placed them; the box moves after 4 uses.
-- **D.** Zombies come from your spawn points (only from open zones); a cyberpsycho on round 5.
+- **D.** Zombies come from your spawn points (only from open zones), run at V and attack; a cyberpsycho on round 5.
+- **D2.** On a controller, holding X / Square at a buy uses it (a tap only reloads).
 - **E.** Chips drop each round; [F] installs cyberware (Z for Sandevistan).
 - **F.** F7 again: your weapons come back from the stash and your cyberware goes back on.
 

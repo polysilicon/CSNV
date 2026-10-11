@@ -57,9 +57,24 @@ local function entity(kind, p)
 	function e:IsDead() return self.dead end
 	function e:GetAttitudeAgent() local s = self return { SetAttitudeGroup = function(_, g) s.group = g end, SetAttitudeTowards = function() end } end
 	function e:GetEntityID() return self.id end
+	function e:GetAIControllerComponent() return { SetAIRole = function() end, OnAttach = function() end } end
+	e.reactionComponent = { SetReactionPreset = function() end, TriggerCombat = function(_, t) e.combat = (e.combat or 0) + 1 end }
 	return e
 end
 local playerEnt = entity("player", V)
+AIRole = { new = function() return {} end }
+TweakDBInterface = { GetReactionPresetRecord = function(id) return id end }
+local restricted = true -- V's apartment's no-combat restriction
+StatusEffectSystem = { ObjectHasStatusEffect = function(o, id) return restricted end }
+StatusEffectHelper = { RemoveStatusEffect = function(o, id) restricted = false end }
+local onAction
+function Observe(cls, fn, cb) if cls == "PlayerPuppet" and fn == "OnAction" then onAction = cb end end
+local function pad(name, kind)
+	local a = {}
+	function a:GetName() return name end
+	function a:GetType() return { value = kind } end
+	onAction(playerEnt, a)
+end
 stashInv = {}
 stashEnt = entity("stash", { x = -1393, y = 1268, z = 123 })
 stashEnt.id = 4242
@@ -70,7 +85,7 @@ entEntityID = { new = function(t) return tonumber(t.hash) end }
 RPGManager.GetItemCategory = function(id) return (id.rec or ""):find("Preset") and "Weapon" or "Other" end
 function playerEnt:GetWorldForward() return { x = 0, y = 1, z = 0 } end
 function playerEnt:GetWorldPosition() return { x = V.x, y = V.y, z = V.z } end
-playerEnt.GetAttitudeAgent = function() return {} end
+playerEnt.GetAttitudeAgent = function() return { SetAttitudeTowards = function() end } end
 
 exEntitySpawner = {
 	Spawn = function(path, t) local id = nextId nextId = nextId + 1 entities[id] = entity(path, t.p) entities[id].id = id return id end,
@@ -79,6 +94,7 @@ exEntitySpawner = {
 }
 
 Game = {
+	NameToString = function(n) return n end,
 	GetPlayer = function() return playerEnt end,
 	FindEntityByID = function(id) return entities[id] end,
 	AddToInventory = function(rec, n)
@@ -204,6 +220,20 @@ for r = 1, 6 do
 		V.z = 123 V.x, V.y = -1391.87, 1271.69
 	end
 end
+-- zombies were set on V and kept in combat; the apartment's no-combat restriction was lifted
+local fought = 0
+for _, e in pairs(entities) do if e.npc and (e.combat or 0) >= 2 and e.group == "hostile" then fought = fought + 1 end end
+assert(fought > 0, "no zombie was set on V")
+assert(not restricted, "the no-combat restriction was not lifted")
+-- controller: holding Reload at a wall-buy buys it; a tap doesn't
+local case
+for _, e in pairs(entities) do if e.kind:find("weapon_case_small") then case = e end end
+V.x, V.y = case.p.x, case.p.y step(0.2)
+local n0 = #inventory
+pad("Reload", "BUTTON_PRESSED") step(0.1) pad("Reload", "BUTTON_RELEASED") step(0.6)
+assert(#inventory == n0, "a Reload tap bought something")
+pad("Reload", "BUTTON_PRESSED") step(0.6) pad("Reload", "BUTTON_RELEASED")
+assert(#inventory > n0, "holding Reload at a wall-buy did not buy it")
 -- a wall-buy can't be bought from the floor below
 local cases = {}
 for _, e in pairs(entities) do if e.kind:find("weapon_case_small") then cases[#cases + 1] = e end end
