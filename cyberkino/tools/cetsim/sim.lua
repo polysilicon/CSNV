@@ -11,6 +11,12 @@ function registerForEvent(ev, fn) events[ev] = fn end
 local realprint = print
 print = function(s) logs[#logs + 1] = s end
 
+-- CET ships a json module; a tiny stand-in that round-trips the layout table
+json = {
+	encode = function(t) _G.__saved = t return "saved" end,
+	decode = function(s) return _G.__saved end,
+}
+
 local function stub(name)
 	return setmetatable({}, { __index = function(t, k) return function(...) return nil end end })
 end
@@ -33,8 +39,12 @@ ImGuiCond = { Always = 1 }
 ImGuiCol = { WindowBg = 2 }
 ImGuiWindowFlags = { NoTitleBar = 1, AlwaysAutoResize = 2, NoMove = 4, NoInputs = 8 }
 local drawn = {}
+local press = nil -- label prefix of the button to "click" on the next draw
 ImGui = setmetatable({ Begin = function() return true end, Text = function(t) drawn[#drawn + 1] = t end,
-	TextColored = function(r, g, b, a, t) drawn[#drawn + 1] = t end }, { __index = function() return function() end end })
+	TextColored = function(r, g, b, a, t) drawn[#drawn + 1] = t end,
+	Button = function(label) if press and label:sub(1, #press) == press then press = nil return true end return false end },
+	{ __index = function() return function() end end })
+gamedataItemCategory = { Weapon = "Weapon" }
 
 -- world: V at the origin of a 10 m x 30 m corridor running along Y
 local V = { x = 0, y = 0, z = 123 }
@@ -50,6 +60,15 @@ local function entity(kind, p)
 	return e
 end
 local playerEnt = entity("player", V)
+stashInv = {}
+stashEnt = entity("stash", { x = -1393, y = 1268, z = 123 })
+stashEnt.id = 4242
+entities[4242] = stashEnt
+function stashEnt:GetEntityID() return { hash = 4242 } end
+function stashEnt:GetClassName() return "Stash" end
+entEntityID = { new = function(t) return tonumber(t.hash) end }
+RPGManager.GetItemCategory = function(id) return (id.rec or ""):find("Preset") and "Weapon" or "Other" end
+function playerEnt:GetWorldForward() return { x = 0, y = 1, z = 0 } end
 function playerEnt:GetWorldPosition() return { x = V.x, y = V.y, z = V.z } end
 playerEnt.GetAttitudeAgent = function() return {} end
 
@@ -68,9 +87,16 @@ Game = {
 			nextSeed = nextSeed + 1
 		end
 	end,
+	GetTargetingSystem = function() return { GetLookAtObject = function() return stashEnt end } end,
 	GetTransactionSystem = function() return {
 		GetItemList = function(_, p) local l = {} for _, it in ipairs(inventory) do l[#l + 1] = { GetID = function() return it end } end return true, l end,
 		RemoveItem = function(_, p, id) for i, it in ipairs(inventory) do if it == id then table.remove(inventory, i) return end end end,
+		TransferItem = function(_, from, to, id)
+			local src = from == playerEnt and inventory or stashInv
+			local dst = to == playerEnt and inventory or stashInv
+			for i, it in ipairs(src) do if it == id then table.remove(src, i) dst[#dst + 1] = it return true end end
+			return false
+		end,
 	} end,
 	GetScriptableSystemsContainer = function() return { Get = function() return {
 		QueueRequest = function() end,
@@ -108,8 +134,31 @@ local function goTo(kind)
 	for _, line in ipairs(logs) do end
 end
 
+Game.AddToInventory("Items.Preset_Overture_Default", 1)
+Game.AddToInventory("Items.Preset_Kenshin_Default", 1)
+local own = #inventory
+local function click(label) press = label events.onDraw() assert(press == nil, "no button " .. label) end
+local function at(x, y) V.x, V.y = x, y end
+events.onOverlayOpen()
+at(-1391.87, 1271.69) click("Match start")
+at(-1391.87, 1276) click("Barricade")            -- zone 1 -> 2, north
+click(" + ")
+at(-1391.87, 1284) click("Barricade")            -- zone 2 -> 3
+click(" - ")
+at(-1388, 1270) click("Wall-buy")
+click(" > ") at(-1395, 1270) click("Wall-buy")
+at(-1390, 1268) click("Mystery Box")
+at(-1386, 1266) click("Mystery Box")
+at(-1391.87, 1262) click("Zombie spawn")
+click(" + ") at(-1391.87, 1281) click("Zombie spawn")
+click(" + ") at(-1391.87, 1290) click("Zombie spawn")
+click("V's stash")
+click("Undo last") click("V's stash")
+events.onOverlayClose()
+at(0, 0)
 hotkeys.start()
-step(3) -- teleport, then the arena after the apartment settles
+step(3)
+assert(#stashInv == 2, "V's own weapons should be in the stash, found " .. #stashInv) -- teleport, then the arena after the apartment settles
 assert(#inventory >= 1, "the Unity was not given")
 step(6) -- round 1 starts
 local rounds = 0
@@ -123,6 +172,8 @@ for r = 1, 6 do
 	end
 	V.x, V.y = -1391.87, 1271.69
 	step(10)
+	-- walk into the closed zone 1 barricade: V must be pushed back south of it
+	if r == 2 then V.x, V.y = -1391.87, 1277.0 step(0.2) assert(V.y < 1276.5, "barricade did not hold") V.x, V.y = -1391.87, 1271.69 end
 end
 -- buy things: stand on every spawned wall case / box / barricade and press F
 for _, e in pairs(entities) do
@@ -143,4 +194,6 @@ io.write(text)
 local errs = 0
 for line in text:gmatch("[^\n]+") do if line:find("failed") or line:find("error") then errs = errs + 1 end end
 print(string.format("\nsimulation: %d log lines, %d errors, %d items left in inventory", select(2, text:gsub("\n", "")), errs, #inventory))
+assert(#stashInv == 0, "weapons left in the stash")
+assert(#inventory == own, "V should have exactly their own items back, has " .. #inventory)
 os.exit(errs == 0 and 0 or 1)

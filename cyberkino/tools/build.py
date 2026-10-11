@@ -70,6 +70,7 @@ def data_lua():
         "boss": boss,
         "rules": {r["id"]: r["value"] for r in sheet("rules")},
         "props": {p["id"]: p["entity"] for p in sheet("props")},
+        "layout": strip(sheet("layout")),
         "arena": {a["id"]: {"x": a["x"], "y": a["y"], "z": a["z"], "yaw": a["yaw"]} for a in sheet("arena")},
         "cyberwareAreas": ["SystemReplacementCW", "ArmsCW", "HandsCW", "EyesCW", "FrontalCortexCW", "MusculoskeletalSystemCW",
                            "NervousSystemCW", "CardiovascularSystemCW", "ImmuneSystemCW", "IntegumentarySystemCW", "LegsCW", "FaceCW"],

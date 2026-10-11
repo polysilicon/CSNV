@@ -139,6 +139,16 @@
   Release 0.2.1 sha256 9be85189..130f, test 7d7037f4-f064-46f6-99b1-4e6ea7796c95.
 
 ## Open
-1. In-game test of 0.2.0 on the creator's PC (TESTING.md), then fixes.
+1. Creator records the arena with the layout editor and sends layout.json; build it into sheets/layout.json.
 2. Real screenshot from that test.
 3. Licence and remix choice from the creator.
+
+## Test 11 (0.2.1, creator's report)
+- Teleport works and cyberware is removed. Weapons stayed in the backpack (unequipped only).
+- Wall-buys and the box landed in random spots, zombies spawned in one place, and invisible barriers sent V back
+  to the start. Cause: the arena was built from raycasts around V, which don't understand the apartment's walls.
+- 0.3.0: fixed layout instead of raycasts. CET overlay -> "Cyberpunk Kino layout" editor records the match start,
+  V's stash, wall-buys (face the wall), Mystery Box spots, zombie spawns and barricades per zone into layout.json
+  (sheets/layout.json ships it once recorded). Weapons are moved into V's stash during a match and back after.
+  A closed barricade pushes V back where they stand, not to the start. The box moves after 4 uses.
+  Simulation: 77 log lines, 0 errors. Release 0.3.0 sha256 8489d518..cf4b, test eb1b0a05-f207-4d46-a631-3edb85d506e4.

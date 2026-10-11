@@ -8,6 +8,7 @@ local data = require("data")
 local rules = data.rules
 
 local S = { active = false }
+local layout = { rows = {} } -- the arena layout (see the layout section)
 local hud = { msg = "", msgUntil = 0, prompt = "" }
 
 -- ---------------------------------------------------------------- log
@@ -44,26 +45,6 @@ local function pos(e) local p = e:GetWorldPosition() return v4(p.x, p.y, p.z) en
 local function flat(a, b) local dx, dy = a.x - b.x, a.y - b.y return math.sqrt(dx * dx + dy * dy) end
 local function along(c, dir, d, dz) return v4(c.x + dir.x * d, c.y + dir.y * d, c.z + (dz or 0)) end
 local function yawOf(dir) return math.deg(math.atan2(dir.y, dir.x)) - 90 end
-
-local DIRS = {}
-for i = 0, 15 do
-	local a = i * math.pi / 8
-	DIRS[#DIRS + 1] = { x = math.cos(a), y = math.sin(a) }
-end
-
--- distance to the first static obstacle from c along dir (chest height), or nil within maxd
-local function rayDist(c, dir, maxd)
-	local from = v4(c.x, c.y, c.z + 1.0)
-	local to = v4(c.x + dir.x * maxd, c.y + dir.y * maxd, c.z + 1.0)
-	local hit, res = try("raycast", function()
-		return Game.GetSpatialQueriesSystem():SyncRaycastByCollisionGroup(from, to, CName.new("Static"), false, false)
-	end)
-	if hit and res and res.position then
-		local p = res.position
-		return math.sqrt((p.x - from.x) ^ 2 + (p.y - from.y) ^ 2)
-	end
-	return nil
-end
 
 local function transform(p, yaw)
 	local t = WorldTransform.new()
@@ -167,6 +148,55 @@ local function stashLoadout()
 	log("took off %d items: %s", #S.stashed, table.concat(counts, ", "))
 end
 
+-- V's weapons go into V's own stash (in the apartment, recorded in the layout) for the match, and come back
+-- after it; if the stash can't be found they are only taken off, never deleted
+local function stashEntity()
+	local r
+	for _, row in ipairs(layout.rows) do if row.kind == "stash" then r = row end end
+	if not r or not r.entity or r.entity == "none" then return nil end
+	local h = try("stash id", function() return loadstring("return " .. r.entity)() end)
+	local id = h and try("stash entity id", function() return entEntityID.new({ hash = h }) end)
+	return id and Game.FindEntityByID(id) or nil
+end
+
+local function isWeapon(id)
+	local ok, cat = pcall(function() return RPGManager.GetItemCategory(id) end)
+	if ok and cat ~= nil then return cat == gamedataItemCategory.Weapon end
+	local ok2, t = pcall(function() return TweakDBInterface.GetItemRecord(id.id):ItemCategory():Type() end)
+	return ok2 and t == gamedataItemCategory.Weapon
+end
+
+local function stashWeapons()
+	S.inStash = {}
+	local st = stashEntity()
+	if not st then
+		log("V's stash not found: weapons are only taken off")
+		return
+	end
+	local ts = Game.GetTransactionSystem()
+	for _, id in ipairs(itemIDs()) do
+		if isWeapon(id) then
+			local moved = try("move to stash", function() return ts:TransferItem(player(), st, id, 1) end)
+			if moved ~= false then S.inStash[#S.inStash + 1] = id end
+		end
+	end
+	log("moved %d weapons into V's stash", #S.inStash)
+end
+
+local function unstashWeapons()
+	if not S.inStash or #S.inStash == 0 then return end
+	local st = stashEntity()
+	if not st then
+		log("V's stash not found: weapons stay in it")
+		say("Your weapons are waiting in V's stash", 6)
+		return
+	end
+	for _, id in ipairs(S.inStash) do
+		try("back from stash", function() Game.GetTransactionSystem():TransferItem(st, player(), id, 1) end)
+	end
+	log("moved %d weapons back from V's stash", #S.inStash)
+end
+
 local function restoreLoadout()
 	for _, it in ipairs(S.stashed or {}) do equip(it.id, it.slot) end
 	log("put back %d items", #(S.stashed or {}))
@@ -250,84 +280,100 @@ local function weightedBoxPick()
 	return pool[#pool].w
 end
 
-local function zoneRadius(z) return rules.zone_radius_1 + (z - 1) * rules.zone_radius_step end
+-- ---------------------------------------------------------------- layout
+-- The arena is a fixed layout: rows (kind, x, y, z, yaw, zone, weapon, inside_x/y/z, entity) made with the
+-- in-game layout editor (CET overlay) and saved to layout.json; once sent in, it is built into data.layout.
+-- kinds: start (where F7 teleports V), barricade (closes zone -> zone + 1; inside_* is the side V stands on),
+-- wallbuy (weapon = weapons sheet id), box (Mystery Box spots, it moves between them), spawn (zombie window,
+-- active once its zone is open), stash (V's stash container, entity = its EntityID hash).
 
-local function buildArena(c)
-	S.center = c
+local LAYOUT_FILE = "layout.json"
+
+local function loadLayout()
+	local f = io.open(LAYOUT_FILE, "r")
+	if f then
+		local text = f:read("*a")
+		f:close()
+		local ok, t = pcall(json.decode, text)
+		if ok and t and t.rows then
+			layout = t
+			log("layout: %d rows from %s (your own layout)", #layout.rows, LAYOUT_FILE)
+			return
+		end
+		log("layout: %s could not be read", LAYOUT_FILE)
+	end
+	layout = { rows = data.layout or {} }
+	log("layout: %d rows built into the mod", #layout.rows)
+end
+
+local function saveLayout()
+	local f = io.open(LAYOUT_FILE, "w")
+	if not f then say("Could not save " .. LAYOUT_FILE, 4) return end
+	f:write(json.encode(layout))
+	f:close()
+	log("layout saved: %d rows", #layout.rows)
+end
+
+local function rowsOf(kind)
+	local out = {}
+	for _, r in ipairs(layout.rows) do if r.kind == kind then out[#out + 1] = r end end
+	return out
+end
+
+local function rowPos(r) return v4(r.x, r.y, r.z) end
+
+local function buildArena()
 	S.zone = 1
-	S.barricades = {} -- ring -> list of {eid, pos}
+	S.barricades = {} -- zone -> list of {eid, pos, inside}
 	S.buys = {}       -- {kind, pos, eid, weapon|ring}
-	local wallGuns = {}
-	for _, w in ipairs(data.weapons) do if w.role == "wall" then wallGuns[#wallGuns + 1] = w end end
-
-	local free = {}
-	for i, d in ipairs(DIRS) do
-		free[i] = rayDist(c, d, zoneRadius(rules.zones) + rules.spawn_max_m) or 999
+	local maxZone = 1
+	for _, r in ipairs(rowsOf("barricade")) do
+		S.barricades[r.zone] = S.barricades[r.zone] or {}
+		local p = rowPos(r)
+		table.insert(S.barricades[r.zone], { eid = spawnProp("barricade", p, r.yaw), pos = p, inside = v4(r.inside_x, r.inside_y, r.inside_z), yaw = r.yaw })
+		S.buys[#S.buys + 1] = { kind = "door", ring = r.zone, pos = p }
+		maxZone = math.max(maxZone, r.zone + 1)
 	end
-	-- barricades where a ring crosses an opening
-	for ring = 1, rules.zones - 1 do
-		local r = zoneRadius(ring)
-		S.barricades[ring] = {}
-		for i, d in ipairs(DIRS) do
-			if free[i] > r + 0.5 then
-				local p = along(c, d, r)
-				local eid = spawnProp("barricade", p, yawOf(d))
-				table.insert(S.barricades[ring], { eid = eid, pos = p })
-			end
-		end
-		if #S.barricades[ring] > 0 then
-			S.buys[#S.buys + 1] = { kind = "door", ring = ring, pos = S.barricades[ring][1].pos }
-		end
-	end
-	-- a ring with no opening needs no barricade: the zones on both sides of it are one
-	while S.zone < rules.zones and #(S.barricades[S.zone] or {}) == 0 do
-		S.zone = S.zone + 1
-	end
-	-- wall-buys on walls found inside the zones, nearest zone first
-	local spots = {}
-	for i, d in ipairs(DIRS) do
-		if free[i] < zoneRadius(rules.zones) then
-			spots[#spots + 1] = { d = d, dist = free[i] }
-		end
-	end
-	table.sort(spots, function(a, b) return a.dist < b.dist end)
-	for k, w in ipairs(wallGuns) do
-		local s = spots[k]
-		local p, yaw
-		if s then
-			p = along(c, s.d, math.max(s.dist - 0.6, 1.0))
-			yaw = yawOf(s.d)
+	S.maxZone = maxZone
+	for _, r in ipairs(rowsOf("wallbuy")) do
+		local w = data.weaponsById[r.weapon]
+		if w then
+			local p = rowPos(r)
+			S.buys[#S.buys + 1] = { kind = "wall", weapon = w, pos = p, eid = spawnProp("wallbuy", p, r.yaw) }
 		else
-			local d = DIRS[(k * 5) % #DIRS + 1]
-			p = along(c, d, math.min(3 + k, zoneRadius(1) - 1))
-			yaw = yawOf(d)
+			log("layout: wall-buy for unknown gun %s", tostring(r.weapon))
 		end
-		local eid = spawnProp("wallbuy", p, yaw)
-		S.buys[#S.buys + 1] = { kind = "wall", weapon = w, pos = p, eid = eid }
 	end
-	-- the Mystery Box in the most open direction of zone 1
-	local best, bestFree = DIRS[1], -1
-	for i, d in ipairs(DIRS) do
-		if free[i] > bestFree then best, bestFree = d, free[i] end
+	S.boxSpots = rowsOf("box")
+	S.boxUses = 0
+	S.boxSpot = math.random(math.max(#S.boxSpots, 1))
+	local spot = S.boxSpots[S.boxSpot]
+	if spot then
+		S.buys[#S.buys + 1] = { kind = "box", pos = rowPos(spot), eid = spawnProp("box", rowPos(spot), spot.yaw) }
 	end
-	local bp = along(c, best, math.min(bestFree * 0.5, zoneRadius(1) - 2))
-	S.buys[#S.buys + 1] = { kind = "box", pos = bp, eid = spawnProp("box", bp, yawOf(best)) }
-	S.free = free
-	log("arena at %.1f %.1f %.1f: openings per ring %s, %d walls found, box %.1fm out",
-		c.x, c.y, c.z, (function()
-			local t = {}
-			for ring = 1, rules.zones - 1 do t[#t + 1] = tostring(#S.barricades[ring]) end
-			return table.concat(t, "/")
-		end)(), #spots, bestFree)
+	S.spawns = rowsOf("spawn")
+	log("arena: %d barricades, %d wall-buys, %d box spots, %d zombie spawns, %d zones",
+		#rowsOf("barricade"), #rowsOf("wallbuy"), #S.boxSpots, #S.spawns, maxZone)
+end
+
+-- after a few uses the Mystery Box moves to another spot, as in Kino
+local function moveBox()
+	if #S.boxSpots < 2 then return end
+	for i, b in ipairs(S.buys) do
+		if b.kind == "box" then despawn(b.eid) table.remove(S.buys, i) break end
+	end
+	local next = S.boxSpot
+	while next == S.boxSpot do next = math.random(#S.boxSpots) end
+	S.boxSpot = next
+	local spot = S.boxSpots[next]
+	S.buys[#S.buys + 1] = { kind = "box", pos = rowPos(spot), eid = spawnProp("box", rowPos(spot), spot.yaw) }
+	say("The Mystery Box moved", 3)
 end
 
 local function openRing(ring)
 	for _, b in ipairs(S.barricades[ring] or {}) do despawn(b.eid) end
 	S.barricades[ring] = {}
 	S.zone = math.max(S.zone, ring + 1)
-	while S.zone < rules.zones and #(S.barricades[S.zone] or {}) == 0 do
-		S.zone = S.zone + 1
-	end
 	for i = #S.buys, 1, -1 do
 		if S.buys[i].kind == "door" and S.buys[i].ring == ring then table.remove(S.buys, i) end
 	end
@@ -346,17 +392,13 @@ local function zombiePool(round)
 end
 
 local function spawnPoint()
-	local c, r = S.center, zoneRadius(S.zone)
-	local tries = {}
-	for i, d in ipairs(DIRS) do
-		if S.free[i] > r + rules.spawn_min_m then tries[#tries + 1] = { d = d, max = S.free[i] } end
-	end
-	if #tries == 0 then
-		for _, d in ipairs(DIRS) do tries[#tries + 1] = { d = d, max = r + rules.spawn_max_m } end
-	end
-	local t = tries[math.random(#tries)]
-	local dist = math.min(r + rules.spawn_min_m + math.random() * (rules.spawn_max_m - rules.spawn_min_m), t.max - 1)
-	return along(c, t.d, math.max(dist, r + 1), 0.2), t.d
+	local open = {}
+	for _, r in ipairs(S.spawns) do if r.zone <= S.zone then open[#open + 1] = r end end
+	if #open == 0 then open = S.spawns end
+	local r = open[math.random(#open)]
+	-- a little spread so a crowd doesn't stack on one point
+	local a = math.random() * 2 * math.pi
+	return v4(r.x + math.cos(a) * 0.8, r.y + math.sin(a) * 0.8, r.z + 0.2), { x = math.cos(math.rad(r.yaw + 90)), y = math.sin(math.rad(r.yaw + 90)) }
 end
 
 local function spawnZombie(z, special)
@@ -408,10 +450,14 @@ local function startMatch()
 	S = { active = true, round = 0, points = rules.start_points, zombies = {}, chips = {}, given = {}, owned = {},
 		cyber = {}, mods = {}, stashed = {} }
 	math.randomseed(os.time())
-	stashLoadout()
-	local h10 = data.arena.h10
-	local target = v4(h10.x, h10.y, h10.z)
-	try("teleport", function() Game.GetTeleportationFacility():Teleport(p, target, EulerAngles.new(0, 0, h10.yaw)) end)
+	if #rowsOf("wallbuy") == 0 or #rowsOf("spawn") == 0 then
+		say("No arena layout yet: open the CET overlay and use the Cyberpunk Kino layout window to place one.", 8)
+		S.active = false
+		return
+	end
+	local start = rowsOf("start")[1] or data.arena.h10
+	local target = v4(start.x, start.y, start.z)
+	try("teleport", function() Game.GetTeleportationFacility():Teleport(p, target, EulerAngles.new(0, 0, start.yaw)) end)
 	S.state = "teleport"
 	S.settleAt = os.clock() + rules.teleport_settle_s
 	S.target = target
@@ -427,6 +473,7 @@ local function stopMatch(reason)
 	for _, ch in ipairs(S.chips or {}) do despawn(ch.eid) end
 	removeCyber()
 	for _, id in ipairs(S.given or {}) do remove(id) end
+	unstashWeapons()
 	restoreLoadout()
 	S.active = false
 	say(reason, 8)
@@ -521,8 +568,10 @@ local function tick()
 		if now < S.settleAt then return end
 		local here = pos(p)
 		log("after the teleport V is at %.2f %.2f %.2f (%.1f m from the target)", here.x, here.y, here.z, flat(here, S.target))
+		stashLoadout()
+		stashWeapons()
 		giveGun(data.weaponsById[data.startWeapon])
-		buildArena(here)
+		buildArena()
 		S.state = "break"
 		S.nextRound = now + 4
 		say("Cyberpunk Kino: survive. [F] buys, F7 ends the match.", 6)
@@ -542,22 +591,26 @@ local function tick()
 		return
 	end
 
-	-- keep V inside the open zones
+	-- closed barricades hold: walking into one pushes V back to its inside, one step away
 	local here = pos(p)
-	local r = zoneRadius(S.zone)
-	local d = flat(here, S.center)
-	if d > r + 1.5 then
-		local dir = { x = (here.x - S.center.x) / d, y = (here.y - S.center.y) / d }
-		try("keep in zone", function()
-			Game.GetTeleportationFacility():Teleport(p, along(S.center, dir, r - 0.5, here.z - S.center.z), EulerAngles.new(0, 0, yawOf(dir) + 180))
-		end)
-		say("A barricade blocks the way: buy it to go further", 2)
+	for zone, list in pairs(S.barricades) do
+		for _, bar in ipairs(list) do
+			if flat(here, bar.pos) < rules.barricade_hold_m and math.abs(here.z - bar.pos.z) < 2.5 then
+				local dx, dy = bar.inside.x - bar.pos.x, bar.inside.y - bar.pos.y
+				local len = math.max(math.sqrt(dx * dx + dy * dy), 0.01)
+				local back = v4(bar.pos.x + dx / len * (rules.barricade_hold_m + 0.3), bar.pos.y + dy / len * (rules.barricade_hold_m + 0.3), here.z)
+				try("barricade push", function() Game.GetTeleportationFacility():Teleport(p, back, EulerAngles.new(0, 0, bar.yaw + 180)) end)
+				if now > (S.pushSaid or 0) then say("Buy the barricade to get through", 2) S.pushSaid = now + 3 end
+			end
+		end
 	end
 
 	if S.boxBusy and now >= S.boxBusy.at then
 		giveGun(S.boxBusy.w)
 		say("Mystery Box: " .. S.boxBusy.w.name, 3)
 		S.boxBusy = nil
+		S.boxUses = S.boxUses + 1
+		if S.boxUses >= rules.box_moves_after then S.boxUses = 0 moveBox() end
 	end
 
 	-- zombies: hostility, deaths, points
@@ -618,6 +671,95 @@ local function tick()
 	hud.prompt = b and promptFor(b) or ""
 end
 
+-- ---------------------------------------------------------------- layout editor (CET overlay)
+
+local ed = { open = false, zone = 1, gun = 1, preview = {} }
+
+local function wallGuns()
+	local list = {}
+	for _, w in ipairs(data.weapons) do if w.role == "wall" then list[#list + 1] = w end end
+	return list
+end
+
+local function propFor(kind)
+	return ({ barricade = "barricade", wallbuy = "wallbuy", box = "box", spawn = "chip" })[kind]
+end
+
+local function facing()
+	local p = player()
+	local here = pos(p)
+	local f = try("forward", function() return p:GetWorldForward() end) or { x = 0, y = 1 }
+	local len = math.max(math.sqrt(f.x * f.x + f.y * f.y), 0.001)
+	local dir = { x = f.x / len, y = f.y / len }
+	return here, dir, yawOf(dir)
+end
+
+local function addRow(kind, ahead, extra)
+	local here, dir, yaw = facing()
+	local at = along(here, dir, ahead or 0)
+	local n = #rowsOf(kind) + 1
+	local row = { id = kind .. "_" .. n, kind = kind, x = at.x, y = at.y, z = at.z, yaw = yaw, zone = ed.zone,
+		weapon = "none", inside_x = here.x, inside_y = here.y, inside_z = here.z, entity = "none" }
+	for k, v in pairs(extra or {}) do row[k] = v end
+	if kind == "start" or kind == "stash" then
+		for i = #layout.rows, 1, -1 do if layout.rows[i].kind == kind then table.remove(layout.rows, i) end end
+	end
+	layout.rows[#layout.rows + 1] = row
+	if propFor(kind) then ed.preview[#ed.preview + 1] = { row = row, eid = spawnProp(propFor(kind), at, yaw) } end
+	saveLayout()
+	say(string.format("Placed %s (zone %d)", row.id, ed.zone), 2)
+end
+
+local function undoRow()
+	local row = table.remove(layout.rows)
+	if not row then return end
+	for i = #ed.preview, 1, -1 do
+		if ed.preview[i].row == row then despawn(ed.preview[i].eid) table.remove(ed.preview, i) end
+	end
+	saveLayout()
+	say("Removed " .. row.id, 2)
+end
+
+local function drawEditor()
+	if not ImGui.Begin("Cyberpunk Kino layout") then ImGui.End() return end
+	ImGui.Text(string.format("start %d | barricades %d | wall-buys %d | box spots %d | spawns %d | stash %d",
+		#rowsOf("start"), #rowsOf("barricade"), #rowsOf("wallbuy"), #rowsOf("box"), #rowsOf("spawn"), #rowsOf("stash")))
+	ImGui.Separator()
+	if ImGui.Button("Match start: where V stands now") then addRow("start", 0) end
+	ImGui.Text("Zone " .. ed.zone .. " (barricades open zone " .. (ed.zone + 1) .. "; spawns wake when their zone opens)")
+	ImGui.SameLine()
+	if ImGui.Button(" - ") then ed.zone = math.max(1, ed.zone - 1) end
+	ImGui.SameLine()
+	if ImGui.Button(" + ") then ed.zone = ed.zone + 1 end
+	if ImGui.Button("Barricade 1.5 m in front of V (stand on the zone " .. ed.zone .. " side)") then addRow("barricade", 1.5) end
+	local guns = wallGuns()
+	ed.gun = math.max(1, math.min(ed.gun, #guns))
+	if ImGui.Button(" < ") then ed.gun = (ed.gun - 2) % #guns + 1 end
+	ImGui.SameLine()
+	ImGui.Text(guns[ed.gun].name .. " (" .. guns[ed.gun].cost .. ")")
+	ImGui.SameLine()
+	if ImGui.Button(" > ") then ed.gun = ed.gun % #guns + 1 end
+	if ImGui.Button("Wall-buy: face the wall, 0.6 m in front of V") then addRow("wallbuy", 0.6, { weapon = guns[ed.gun].id }) end
+	if ImGui.Button("Mystery Box spot 1 m in front of V") then addRow("box", 1.0) end
+	if ImGui.Button("Zombie spawn where V stands (zone " .. ed.zone .. ")") then addRow("spawn", 0) end
+	if ImGui.Button("V's stash: look at it, then click") then
+		local obj = try("look at", function() return Game.GetTargetingSystem():GetLookAtObject(player(), false, false) end)
+		if obj then
+			local h = tostring(obj:GetEntityID().hash)
+			local op = pos(obj)
+			addRow("stash", 0, { entity = h, x = op.x, y = op.y, z = op.z })
+			log("stash recorded: %s (%s)", h, tostring(obj:GetClassName()))
+		else
+			say("Look straight at V's stash first", 3)
+		end
+	end
+	ImGui.Separator()
+	if ImGui.Button("Undo last") then undoRow() end
+	ImGui.SameLine()
+	ImGui.Text("Saved to mods\\cyberkino\\layout.json after every change.")
+	ImGui.End()
+end
+
 -- ---------------------------------------------------------------- CET
 
 registerHotkey("start", "Start / stop Zombies", function()
@@ -626,7 +768,15 @@ end)
 registerHotkey("use", "Buy / pick up", use)
 registerHotkey("sandevistan", "Sandevistan", sandevistan)
 
+registerForEvent("onOverlayOpen", function() ed.open = true end)
+registerForEvent("onOverlayClose", function()
+	ed.open = false
+	for _, pv in ipairs(ed.preview) do despawn(pv.eid) end
+	ed.preview = {}
+end)
+
 registerForEvent("onInit", function()
+	loadLayout()
 	log("Cyberpunk Kino %s loaded (%d guns, %d zombie types)", data.version, #data.weapons, #data.zombies)
 end)
 
@@ -636,6 +786,10 @@ registerForEvent("onUpdate", function()
 end)
 
 registerForEvent("onDraw", function()
+	if ed.open and not S.active then
+		local ok, err = pcall(drawEditor)
+		if not ok then log("layout editor error: %s", tostring(err)) end
+	end
 	if not S.active and os.clock() > hud.msgUntil then return end
 	ImGui.SetNextWindowPos(30, 260, ImGuiCond.Always)
 	ImGui.PushStyleColor(ImGuiCol.WindowBg, 0, 0, 0, 0.45)

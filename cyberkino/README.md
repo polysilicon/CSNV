@@ -4,13 +4,14 @@ Black Ops Zombies in Cyberpunk 2077's Megabuilding H10: round-based waves, door 
 Cyberpunk's guns and cyberware, and Black Ops' real Ray Gun.
 
 - **Press F7** anywhere: V is teleported into V's apartment in Megabuilding H10 and the match starts there.
-  V's equipped weapons and all of V's cyberware come off, leaving only a **Unity** pistol and the cyberware the
-  chips give; it all goes back on when the match ends (F7 again, or when V goes down).
-- **Zones and door buys.** Barricades close the corridors in rings around where you started. Buy one (F) to open
-  the next ring: 750 points, each next ring 250 more.
+  V's weapons go into V's own stash in the apartment and all of V's cyberware comes off, leaving only a **Unity**
+  pistol and the cyberware the chips give; it all comes back when the match ends (F7 again, or when V goes down).
+- **A fixed map, like Kino.** The barricades, wall-buys, Mystery Box spots and zombie windows sit in fixed places
+  on H10, placed with the in-game layout editor (CET overlay > "Cyberpunk Kino layout"). Buy a barricade (F) to open
+  the next zone: 750 points, each next one 250 more. Closed barricades hold: you can't walk past them.
 - **Wall-buys** on the walls: Tactician, SOR-22, Pulsar, Shingen, Saratoga, Carnage, Copperhead. Buying again
   gives ammo for half the price.
-- **The Mystery Box** (950): Lexington, Overture, Ajax, Masamune, Sidewinder, Kyubi, Crusher, Zhuo, Grad, Defender,
+- **The Mystery Box** (950, moves to another spot every 4 uses): Lexington, Overture, Ajax, Masamune, Sidewinder, Kyubi, Crusher, Zhuo, Grad, Defender,
   Dian, and rarely the Achilles or **Black Ops' Ray Gun**, its model read from your own copy of Black Ops.
 - **Zombies:** Scavengers and Maelstrom, melee only, more each round; every 5th round a **cyberpsycho**.
 - **Cyberware chips:** one zombie per round drops a chip. Pick it up (F) for the next piece you don't have:
@@ -32,10 +33,10 @@ If something goes wrong: `cyberkino-launch.log` next to the launcher (the Ray Gu
 in `bin\x64\plugins\cyber_engine_tweaks\mods\cyberkino` (each match) say what happened.
 
 ## How it works
-- `cet/cyberkino/init.lua` (Cyber Engine Tweaks, which Melty installs): the match. When F7 is pressed it casts
-  rays around V to find the walls, places barricades (Cyberpunk's road barrier prop) where each ring crosses an
-  opening, weapon cases on the walls for the wall-buys and a weapon crate as the Mystery Box, and spawns the
-  zombies from Cyberpunk's own character records. Guns and cyberware are Cyberpunk's own items and stats.
+- `cet/cyberkino/init.lua` (Cyber Engine Tweaks, which Melty installs): the match. F7 teleports V into V's
+  apartment, moves V's weapons into V's stash, takes off V's cyberware, and places the layout (`sheets/layout.json`,
+  or a player's own `layout.json` from the editor): Cyberpunk's road barrier props as barricades, weapon cases as
+  wall-buys and Mystery Box, and zombies from Cyberpunk's own character records at the spawn points of open zones.
 - `cyberkino-launch.exe` (each Play): reads `ray_gun_zm` and its world model from Black Ops'
   `zone\Common\common_zombie.ff` with OpenAssetTools' Unlinker, exports the Omaha's meshes from your Cyberpunk
   with WolvenKit, fits the Ray Gun onto the Omaha's body mesh (same length, muzzle forward, on the Omaha's rig),

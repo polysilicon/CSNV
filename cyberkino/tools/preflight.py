@@ -20,13 +20,13 @@ ENUMS = {
     ("cyberware", "effect"): {"stat", "slowmo", "item"},
     ("zombies", "pool"): {"scavenger", "maelstrom", "boss"},
     ("keys", "kind"): {"hotkey", "input"},
+    ("layout", "kind"): {"start", "barricade", "wallbuy", "box", "spawn", "stash"},
 }
 EFFECT_PARAMS = {"stat": {"stat", "value"}, "slowmo": {"key", "timescale", "duration_s", "cooldown_s"}, "item": {"record"}}
 REQUIRED_RULES = {
     "start_points", "kill_points", "special_points", "boss_points", "box_cost", "rare_weight", "door_cost_first",
-    "door_cost_step", "zone_radius_1", "zone_radius_step", "zones", "round_base", "round_step", "max_active",
-    "spawn_interval_s", "spawn_min_m", "spawn_max_m", "boss_every", "round_break_s", "end_health_pct",
-    "chip_lifetime_s", "buy_radius_m", "teleport_settle_s",
+    "door_cost_step", "round_base", "round_step", "max_active", "spawn_interval_s", "boss_every", "round_break_s",
+    "end_health_pct", "chip_lifetime_s", "buy_radius_m", "teleport_settle_s", "barricade_hold_m", "box_moves_after",
 }
 REQUIRED_KEYS = {"start", "use", "sandevistan"}
 NAME = re.compile(r"^[a-z0-9_]+$")
@@ -66,6 +66,7 @@ def main():
             if "tested_in_game" in cols and row.get("tested_in_game") is not True:
                 untested.append(f"{name}.{rid}")
 
+    notes = []
     weapons = sheets["weapons"]["rows"]
     if [w["id"] for w in weapons if w["role"] == "start"] == []:
         broken.append("weapons: no start gun")
@@ -100,13 +101,20 @@ def main():
         broken.append("zombies: nothing can appear in round 1")
     if {p["id"] for p in sheets["props"]["rows"]} != {"barricade", "wallbuy", "box", "chip"}:
         broken.append("props: the script needs barricade, wallbuy, box and chip")
+    wall_ids = {w["id"] for w in weapons if w["role"] == "wall"}
+    for r in sheets["layout"]["rows"]:
+        if r["kind"] == "wallbuy" and r["weapon"] not in wall_ids:
+            broken.append(f"layout.{r['id']}.weapon -> weapons (wall) .{r['weapon']}")
+        if r["kind"] == "stash" and not str(r["entity"]).endswith("ULL"):
+            problems.append(f"layout.{r['id']}.entity: expected a CET uint64 like 123ULL")
+    if not sheets["layout"]["rows"]:
+        notes.append("layout: no rows yet (record one with the in-game layout editor)")
     if not any(a["id"] == "h10" for a in sheets["arena"]["rows"]):
         broken.append("arena: h10 row missing")
     for t in sheets["tools"]["rows"]:
         if not re.fullmatch(r"[0-9a-f]{64}", t["sha256"]):
             problems.append(f"tools.{t['id']}.sha256: not a SHA-256")
 
-    notes = []
     tdb, tdb_path = name_list("CYBERKINO_TDB")
     if tdb:
         records = [(f"weapons.{w['id']}.record", w["record"]) for w in weapons]

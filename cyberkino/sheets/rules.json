@@ -57,24 +57,6 @@
       "tested_in_game": false
     },
     {
-      "id": "zone_radius_1",
-      "value": 10,
-      "about": "metres V can move from the start in zone 1",
-      "tested_in_game": false
-    },
-    {
-      "id": "zone_radius_step",
-      "value": 8,
-      "about": "metres each bought barricade adds",
-      "tested_in_game": false
-    },
-    {
-      "id": "zones",
-      "value": 4,
-      "about": "number of zones (barricade rings + 1)",
-      "tested_in_game": false
-    },
-    {
       "id": "round_base",
       "value": 4,
       "about": "zombies in round 1",
@@ -96,18 +78,6 @@
       "id": "spawn_interval_s",
       "value": 2.0,
       "about": "seconds between spawns",
-      "tested_in_game": false
-    },
-    {
-      "id": "spawn_min_m",
-      "value": 8,
-      "about": "spawns at least this far past the current zone edge... closest",
-      "tested_in_game": false
-    },
-    {
-      "id": "spawn_max_m",
-      "value": 18,
-      "about": "...and at most this far",
       "tested_in_game": false
     },
     {
@@ -144,6 +114,18 @@
       "id": "teleport_settle_s",
       "value": 2.5,
       "about": "seconds after the teleport before the arena is built (the apartment streams in)",
+      "tested_in_game": false
+    },
+    {
+      "id": "barricade_hold_m",
+      "value": 1.2,
+      "about": "how close to a closed barricade V can get before being pushed back to its inside",
+      "tested_in_game": false
+    },
+    {
+      "id": "box_moves_after",
+      "value": 4,
+      "about": "Mystery Box uses before it moves to another box spot",
       "tested_in_game": false
     }
   ]
