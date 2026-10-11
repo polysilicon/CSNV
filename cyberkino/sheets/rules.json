@@ -1,41 +1,149 @@
 {
   "sheet": "rules",
-  "about": "Single-value rules for the special zombies and chips.",
+  "about": "Single numbers that tune a match.",
   "columns": {
-    "id": "rule name (used in the script as level.cpk_rules[id])",
+    "id": "rule name (rules[id] in the script)",
     "value": "number",
     "about": "what it does",
-    "tested_in_game": "true once seen working in Kino"
+    "tested_in_game": "true once seen right in a match"
   },
   "rows": [
     {
-      "id": "first_round",
-      "value": 1,
-      "about": "first round with a special zombie",
+      "id": "start_points",
+      "value": 500,
+      "about": "points at the start",
       "tested_in_game": false
     },
     {
-      "id": "specials_per_round",
+      "id": "kill_points",
+      "value": 60,
+      "about": "points per kill",
+      "tested_in_game": false
+    },
+    {
+      "id": "special_points",
+      "value": 100,
+      "about": "extra points for the chip carrier",
+      "tested_in_game": false
+    },
+    {
+      "id": "boss_points",
+      "value": 500,
+      "about": "points for the boss",
+      "tested_in_game": false
+    },
+    {
+      "id": "box_cost",
+      "value": 950,
+      "about": "Mystery Box price",
+      "tested_in_game": false
+    },
+    {
+      "id": "rare_weight",
       "value": 1,
-      "about": "special zombies per round",
+      "about": "box weight of a rare gun (others 3)",
+      "tested_in_game": false
+    },
+    {
+      "id": "door_cost_first",
+      "value": 750,
+      "about": "price of the first barricade",
+      "tested_in_game": false
+    },
+    {
+      "id": "door_cost_step",
+      "value": 250,
+      "about": "each next barricade costs this much more",
+      "tested_in_game": false
+    },
+    {
+      "id": "zone_radius_1",
+      "value": 10,
+      "about": "metres V can move from the start in zone 1",
+      "tested_in_game": false
+    },
+    {
+      "id": "zone_radius_step",
+      "value": 8,
+      "about": "metres each bought barricade adds",
+      "tested_in_game": false
+    },
+    {
+      "id": "zones",
+      "value": 4,
+      "about": "number of zones (barricade rings + 1)",
+      "tested_in_game": false
+    },
+    {
+      "id": "round_base",
+      "value": 4,
+      "about": "zombies in round 1",
+      "tested_in_game": false
+    },
+    {
+      "id": "round_step",
+      "value": 2,
+      "about": "extra zombies each round",
+      "tested_in_game": false
+    },
+    {
+      "id": "max_active",
+      "value": 10,
+      "about": "zombies alive at once",
+      "tested_in_game": false
+    },
+    {
+      "id": "spawn_interval_s",
+      "value": 2.0,
+      "about": "seconds between spawns",
+      "tested_in_game": false
+    },
+    {
+      "id": "spawn_min_m",
+      "value": 8,
+      "about": "spawns at least this far past the current zone edge... closest",
+      "tested_in_game": false
+    },
+    {
+      "id": "spawn_max_m",
+      "value": 18,
+      "about": "...and at most this far",
+      "tested_in_game": false
+    },
+    {
+      "id": "boss_every",
+      "value": 5,
+      "about": "a boss joins every Nth round",
+      "tested_in_game": false
+    },
+    {
+      "id": "round_break_s",
+      "value": 8,
+      "about": "seconds between rounds",
+      "tested_in_game": false
+    },
+    {
+      "id": "end_health_pct",
+      "value": 20,
+      "about": "the match ends (V goes down) below this health %",
       "tested_in_game": false
     },
     {
       "id": "chip_lifetime_s",
       "value": 30,
-      "about": "seconds a dropped chip stays before it fizzles out",
+      "about": "seconds a dropped chip stays",
       "tested_in_game": false
     },
     {
-      "id": "pickup_radius",
-      "value": 48,
-      "about": "use-trigger radius of a dropped chip, in inches",
+      "id": "buy_radius_m",
+      "value": 2.0,
+      "about": "how close V must stand to buy",
       "tested_in_game": false
     },
     {
-      "id": "lose_on_down",
-      "value": 1,
-      "about": "1 = cyberware is lost when you go down, like perks",
+      "id": "h10_radius_m",
+      "value": 150,
+      "about": "V counts as in Megabuilding H10 within this distance of the anchor",
       "tested_in_game": false
     }
   ]

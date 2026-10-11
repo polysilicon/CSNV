@@ -1,0 +1,24 @@
+{
+  "sheet": "arena",
+  "about": "Where the match is meant to be. The arena forms around V when F7 is pressed: walls are found by raycasts, barricades close the openings in rings, wall-buys go on walls and the Mystery Box in the open.",
+  "columns": {
+    "id": "unique id",
+    "name": "place",
+    "x": "world X (metres)",
+    "y": "world Y",
+    "z": "world Z",
+    "source": "where it came from",
+    "tested_in_game": "true once confirmed in game"
+  },
+  "rows": [
+    {
+      "id": "h10",
+      "name": "Megabuilding H10, V's apartment floor",
+      "x": -1378.0,
+      "y": 1272.0,
+      "z": 123.0,
+      "source": "approximate position of V's apartment from community teleport lists; the mod logs V's real position at each start so this can be corrected",
+      "tested_in_game": false
+    }
+  ]
+}

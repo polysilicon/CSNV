@@ -116,7 +116,19 @@
   it by hand (Melty blocks that), and writing an equivalent means bypassing the game's DRM, which this project won't do.
 - Waiting on the creator's decision (see reply).
 
+## Redesign (0.2.0): Cyberpunk host
+- Creator chose: Kino-style Zombies inside Cyberpunk (Kino map can't be exported/collided), arena inside Megabuilding H10,
+  Scavengers + Maelstrom with a cyberpsycho every 5th round, Cyberpunk guns/cyberware, Black Ops' Ray Gun, F7 hotkey,
+  V starts with a Unity only.
+- CET mod (cet/cyberkino): arena from raycasts around V (barricade rings = door buys, wall-buy cases on walls, box),
+  rounds, points, chips, cyberware (stat modifiers, time dilation, Mantis Blades item), loadout stashed and restored.
+  All records checked against WolvenKit's TweakDB name list; tools/cetsim/sim.lua plays a full match with 0 errors.
+- Launcher: Ray Gun from common_zombie.ff (OAT) fitted onto the Omaha body mesh, other Omaha parts emptied, WolvenKit
+  import + pack -> archive/pc/mod/zz_cyberkino_raygun.archive; presets CET bindings (F7/F/Z); starts Cyberpunk.
+- Release 0.2.0: sha256 eb4fde3a..e87a, releaseId 13878e00-f09b-4240-82a2-eba82ae805f9, one click yes,
+  test 50dcc14a-6787-4be2-8bc1-84e7ee696a95. Untested in game.
+
 ## Open
-1. In-game test on the creator's PC (TESTING.md), then fixes.
+1. In-game test of 0.2.0 on the creator's PC (TESTING.md), then fixes.
 2. Real screenshot from that test.
 3. Licence and remix choice from the creator.

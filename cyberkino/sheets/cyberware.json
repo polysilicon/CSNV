@@ -1,67 +1,63 @@
 {
   "sheet": "cyberware",
-  "about": "The four cyberware chips special zombies drop. Installing one is permanent until you go down (like a perk). The chip you pick up is the next one you don't have yet, in random order.",
+  "about": "The four cyberware chips. One zombie per round carries a chip; picking it up installs the next one V doesn't have. All of it is removed when the match ends.",
   "columns": {
     "id": "unique id",
-    "name": "in-game name",
-    "effect": "slowmo | double_jump | armor | mantis",
-    "how_to_use": "what the hint and HUD tell the player",
-    "params": "effect numbers (keys depend on effect, see the about of each)",
-    "model": "models sheet id of the model the effect shows, or none",
+    "name": "name shown",
+    "effect": "stat (a stat modifier on V) | slowmo (time dilation on a key) | item (a Cyberpunk cyberware item equipped)",
+    "params": "effect values",
+    "how_to_use": "text shown when installed",
     "source": "where it came from",
-    "tested_in_game": "true once picked up and used in Kino"
+    "tested_in_game": "true once used in a match"
   },
   "rows": [
     {
       "id": "sandevistan",
       "name": "Sandevistan",
       "effect": "slowmo",
-      "how_to_use": "Aim and press Melee: time slows for a few seconds",
       "params": {
-        "timescale": 0.35,
-        "duration_s": 4.0,
+        "key": "sandevistan",
+        "timescale": 0.3,
+        "duration_s": 5.0,
         "cooldown_s": 20.0
       },
-      "model": "none",
-      "source": "design (interview: chips 3 = Sandevistan, Reinforced Tendons, Subdermal Armor, Mantis Blades)",
+      "how_to_use": "Press Z: time slows for a few seconds",
+      "source": "design (interview); records from WolvenKit's TweakDB name list",
       "tested_in_game": false
     },
     {
       "id": "tendons",
       "name": "Reinforced Tendons",
-      "effect": "double_jump",
-      "how_to_use": "Press Jump again in the air",
+      "effect": "stat",
       "params": {
-        "jump_velocity": 330.0,
-        "min_air_s": 0.15
+        "stat": "HasDoubleJump",
+        "value": 1
       },
-      "model": "none",
-      "source": "design (interview: chips 3 = Sandevistan, Reinforced Tendons, Subdermal Armor, Mantis Blades)",
+      "how_to_use": "Press Jump again in the air",
+      "source": "design (interview); records from WolvenKit's TweakDB name list (BaseStats.HasDoubleJump)",
       "tested_in_game": false
     },
     {
       "id": "subdermal",
       "name": "Subdermal Armor",
-      "effect": "armor",
-      "how_to_use": "Always on: you take more hits",
+      "effect": "stat",
       "params": {
-        "health_bonus": 100
+        "stat": "Armor",
+        "value": 400
       },
-      "model": "none",
-      "source": "design (interview: chips 3 = Sandevistan, Reinforced Tendons, Subdermal Armor, Mantis Blades)",
+      "how_to_use": "Always on: you take less damage",
+      "source": "design (interview); records from WolvenKit's TweakDB name list (BaseStats.Armor)",
       "tested_in_game": false
     },
     {
       "id": "mantis",
       "name": "Mantis Blades",
-      "effect": "mantis",
-      "how_to_use": "Melee: blades replace your knife",
+      "effect": "item",
       "params": {
-        "melee_damage": 1500,
-        "base": "bowie_knife_zm"
+        "record": "Items.AdvancedMantisBladesRare"
       },
-      "model": "mantis_view",
-      "source": "design (interview: chips 3 = Sandevistan, Reinforced Tendons, Subdermal Armor, Mantis Blades)",
+      "how_to_use": "Holster your gun and attack to use the blades",
+      "source": "design (interview); records from WolvenKit's TweakDB name list (Items.AdvancedMantisBladesRare)",
       "tested_in_game": false
     }
   ]

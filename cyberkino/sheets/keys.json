@@ -1,0 +1,38 @@
+{
+  "sheet": "keys",
+  "about": "CET hotkeys. The launcher writes these defaults into CET's bindings.json once (players can rebind them in CET's Bindings tab).",
+  "columns": {
+    "id": "CET binding id (registerHotkey/registerInput)",
+    "label": "shown in CET",
+    "vk": "default Windows virtual-key code",
+    "key": "key name",
+    "kind": "hotkey (press) | input (hold)",
+    "tested_in_game": "true once it worked in game"
+  },
+  "rows": [
+    {
+      "id": "start",
+      "label": "Start / stop Zombies",
+      "vk": 118,
+      "key": "F7",
+      "kind": "hotkey",
+      "tested_in_game": false
+    },
+    {
+      "id": "use",
+      "label": "Buy / pick up",
+      "vk": 70,
+      "key": "F",
+      "kind": "hotkey",
+      "tested_in_game": false
+    },
+    {
+      "id": "sandevistan",
+      "label": "Sandevistan",
+      "vk": 90,
+      "key": "Z",
+      "kind": "hotkey",
+      "tested_in_game": false
+    }
+  ]
+}

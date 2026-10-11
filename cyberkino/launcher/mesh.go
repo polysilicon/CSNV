@@ -353,6 +353,12 @@ type fitInfo struct {
 // Parts after the first whose centre lies well outside the first part's box are dropped (a part
 // exported in its own space instead of the gun's).
 func fitParts(parts []part, base *baseModel, fitScale float64) ([]part, fitInfo, error) {
+	return fitPartsFrom(parts, vec3{}, base, fitScale)
+}
+
+// fitPartsFrom is fitParts for parts whose muzzle direction is known (srcForward, ±X or ±Z); a zero
+// srcForward means Cyberpunk's own convention.
+func fitPartsFrom(parts []part, srcForward vec3, base *baseModel, fitScale float64) ([]part, fitInfo, error) {
 	if len(parts) == 0 {
 		return nil, fitInfo{}, errors.New("no parts")
 	}
@@ -370,7 +376,10 @@ func fitParts(parts []part, base *baseModel, fitScale float64) ([]part, fitInfo,
 		kept = append(kept, p)
 	}
 	cpBox := partsBBox(kept)
-	info.CPForward = cyberpunkForward(kept, cpBox)
+	info.CPForward = srcForward
+	if info.CPForward == (vec3{}) {
+		info.CPForward = cyberpunkForward(kept, cpBox)
+	}
 	rot := yRotation(info.CPForward, base.Forward)
 	axisLen := func(b bbox, f vec3) float64 {
 		if f[0] != 0 {
@@ -591,3 +600,111 @@ func clusterParts(parts []part, origin vec3, cell float64) ([]part, int) {
 	}
 	return out, count
 }
+
+// namedMesh is one glTF mesh of a written model: its name, its single material and its geometry.
+type namedMesh struct {
+	Name     string
+	Material string
+	Parts    []part
+}
+
+// tinyPart is a degenerate-size triangle: it empties a mesh that must keep existing.
+func tinyPart() part {
+	return part{
+		Pos: []vec3{{0, 0, 0}, {0.0001, 0, 0}, {0, 0.0001, 0}},
+		Nrm: []vec3{{0, 0, 1}, {0, 0, 1}, {0, 0, 1}},
+		UV:  [][2]float64{{0, 0}, {0, 0}, {0, 0}},
+		Idx: []int{0, 1, 2},
+	}
+}
+
+// writeNamedMeshesGLB writes one glTF mesh (one primitive) per namedMesh, all bound to base's skeleton,
+// keeping the names WolvenKit's import matches submeshes by.
+func writeNamedMeshesGLB(base *baseModel, meshes []namedMesh) ([]byte, error) {
+	w := newGLBWriter()
+	w.doc.Nodes = append(w.doc.Nodes, base.Nodes...)
+	ibm := -1
+	matIndex := map[string]int{}
+	var meshNodes []int
+	for _, nm := range meshes {
+		var merged part
+		for _, p := range nm.Parts {
+			off := len(merged.Pos)
+			merged.Pos = append(merged.Pos, p.Pos...)
+			merged.Nrm = append(merged.Nrm, p.Nrm...)
+			merged.UV = append(merged.UV, p.UV...)
+			for _, i := range p.Idx {
+				merged.Idx = append(merged.Idx, i+off)
+			}
+		}
+		if len(merged.Idx) == 0 {
+			merged = tinyPart()
+		}
+		mi, ok := matIndex[nm.Material]
+		if !ok {
+			w.doc.Materials = append(w.doc.Materials, gltfMaterial{Name: nm.Material})
+			mi = len(w.doc.Materials) - 1
+			matIndex[nm.Material] = mi
+		}
+		pos := make([][]float64, len(merged.Pos))
+		nrm := make([][]float64, len(merged.Pos))
+		uv := make([][]float64, len(merged.Pos))
+		joints := make([][4]int, len(merged.Pos))
+		weights := make([][]float64, len(merged.Pos))
+		for i := range merged.Pos {
+			pos[i] = []float64{merged.Pos[i][0], merged.Pos[i][1], merged.Pos[i][2]}
+			n := merged.Nrm[i].normalized()
+			nrm[i] = []float64{n[0], n[1], n[2]}
+			uv[i] = []float64{merged.UV[i][0], merged.UV[i][1]}
+			joints[i] = [4]int{base.BodyJoint, 0, 0, 0}
+			weights[i] = []float64{1, 0, 0, 0}
+		}
+		prim := gltfPrimitive{Attributes: map[string]int{
+			"POSITION":   w.addFloats(pos, "VEC3", 34962, true),
+			"NORMAL":     w.addFloats(nrm, "VEC3", 34962, false),
+			"TEXCOORD_0": w.addFloats(uv, "VEC2", 34962, false),
+			"JOINTS_0":   w.addJoints(joints),
+			"WEIGHTS_0":  w.addFloats(weights, "VEC4", 34962, false),
+		}}
+		idx := w.addIndices(merged.Idx)
+		prim.Indices = &idx
+		m := mi
+		prim.Material = &m
+		w.doc.Meshes = append(w.doc.Meshes, gltfMesh{Name: nm.Name, Primitives: []gltfPrimitive{prim}})
+		if ibm < 0 {
+			ibm = w.addFloats(base.IBM, "MAT4", 0, false)
+			joints := make([]int, len(base.Nodes))
+			for i := range joints {
+				joints[i] = i
+			}
+			w.doc.Skins = []gltfSkin{{Name: base.Name, InverseBindMatrices: &ibm, Joints: joints}}
+		}
+		meshIdx, skinIdx := len(w.doc.Meshes)-1, 0
+		w.doc.Nodes = append(w.doc.Nodes, gltfNode{Name: nm.Name, Mesh: &meshIdx, Skin: &skinIdx})
+		meshNodes = append(meshNodes, len(w.doc.Nodes)-1)
+	}
+	if len(meshes) == 0 {
+		return nil, errors.New("nothing to write")
+	}
+	scene := 0
+	w.doc.Scene = &scene
+	w.doc.Scenes = []gltfScene{{Nodes: append(append([]int{}, base.Roots...), meshNodes...)}}
+	return w.bytes()
+}
+
+// meshNames lists a glb's meshes in order with their first primitive's material name.
+func meshNames(g *glb) []namedMesh {
+	var out []namedMesh
+	for _, m := range g.Doc.Meshes {
+		mat := "default"
+		if len(m.Primitives) > 0 && m.Primitives[0].Material != nil && *m.Primitives[0].Material < len(g.Doc.Materials) {
+			mat = g.Doc.Materials[*m.Primitives[0].Material].Name
+		}
+		out = append(out, namedMesh{Name: m.Name, Material: mat})
+	}
+	return out
+}
+
+// maxModelVerts keeps a model near the detail of the games' own guns (WolvenKit and the engines are
+// happiest well below 65535 vertices per mesh).
+const maxModelVerts = 20000

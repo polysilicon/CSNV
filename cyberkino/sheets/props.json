@@ -1,0 +1,41 @@
+{
+  "sheet": "props",
+  "about": "Cyberpunk entities the mod places with CET's exEntitySpawner.",
+  "columns": {
+    "id": "unique id",
+    "entity": "Cyberpunk .ent depot path",
+    "used_for": "what it marks",
+    "source": "where it came from",
+    "tested_in_game": "true once seen in a match"
+  },
+  "rows": [
+    {
+      "id": "barricade",
+      "entity": "base\\items\\interactive\\public_utility\\int_public_utility_002__road_barrier_a_poor.ent",
+      "used_for": "door buy: closes an opening until bought",
+      "source": "WolvenKit path list",
+      "tested_in_game": false
+    },
+    {
+      "id": "wallbuy",
+      "entity": "base\\gameplay\\loot\\containers\\weapon_cases\\appearances\\weapon_case_small_neomilitary_a.ent",
+      "used_for": "wall-buy against a wall",
+      "source": "WolvenKit path list",
+      "tested_in_game": false
+    },
+    {
+      "id": "box",
+      "entity": "base\\gameplay\\loot\\containers\\weapon_cases\\appearances\\weapon_case_medium_neomilitary_a.ent",
+      "used_for": "Mystery Box",
+      "source": "WolvenKit path list",
+      "tested_in_game": false
+    },
+    {
+      "id": "chip",
+      "entity": "base\\items\\interactive\\electronics\\int_electronics_001__shard_a.ent",
+      "used_for": "dropped cyberware chip",
+      "source": "WolvenKit path list",
+      "tested_in_game": false
+    }
+  ]
+}

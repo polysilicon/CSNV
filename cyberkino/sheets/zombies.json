@@ -1,0 +1,102 @@
+{
+  "sheet": "zombies",
+  "about": "Who comes at V. Every round mixes the scavenger and maelstrom rows whose from_round has been reached; every 5th round (rules.boss_every) adds one boss.",
+  "columns": {
+    "id": "unique id",
+    "pool": "scavenger | maelstrom | boss",
+    "record": "Cyberpunk TweakDB character record spawned",
+    "from_round": "first round it can appear in",
+    "source": "where it came from",
+    "tested_in_game": "true once seen in a match"
+  },
+  "rows": [
+    {
+      "id": "scav_fists",
+      "pool": "scavenger",
+      "record": "Character.scavenger_grunt1_melee1_fists_ma",
+      "from_round": 1,
+      "source": "Character records from WolvenKit's TweakDB name list",
+      "tested_in_game": false
+    },
+    {
+      "id": "scav_wrench",
+      "pool": "scavenger",
+      "record": "Character.scavenger_grunt1_melee1_pipewrench_ma",
+      "from_round": 1,
+      "source": "Character records from WolvenKit's TweakDB name list",
+      "tested_in_game": false
+    },
+    {
+      "id": "scav_tireiron",
+      "pool": "scavenger",
+      "record": "Character.scavenger_grunt1_melee1_tireiron_wa",
+      "from_round": 1,
+      "source": "Character records from WolvenKit's TweakDB name list",
+      "tested_in_game": false
+    },
+    {
+      "id": "scav_knife",
+      "pool": "scavenger",
+      "record": "Character.scavenger_grunt2_melee2_knife_ma",
+      "from_round": 3,
+      "source": "Character records from WolvenKit's TweakDB name list",
+      "tested_in_game": false
+    },
+    {
+      "id": "scav_bat",
+      "pool": "scavenger",
+      "record": "Character.scavenger_grunt2_melee2_baseball_ma",
+      "from_round": 4,
+      "source": "Character records from WolvenKit's TweakDB name list",
+      "tested_in_game": false
+    },
+    {
+      "id": "mael_knife",
+      "pool": "maelstrom",
+      "record": "Character.maelstrom_grunt1_melee1_knife_ma",
+      "from_round": 1,
+      "source": "Character records from WolvenKit's TweakDB name list",
+      "tested_in_game": false
+    },
+    {
+      "id": "mael_wrench",
+      "pool": "maelstrom",
+      "record": "Character.maelstrom_grunt1_melee1_wrench_wa",
+      "from_round": 2,
+      "source": "Character records from WolvenKit's TweakDB name list",
+      "tested_in_game": false
+    },
+    {
+      "id": "mael_hammer",
+      "pool": "maelstrom",
+      "record": "Character.maelstrom_grunt2_melee2_hammer_ma",
+      "from_round": 4,
+      "source": "Character records from WolvenKit's TweakDB name list",
+      "tested_in_game": false
+    },
+    {
+      "id": "mael_machete",
+      "pool": "maelstrom",
+      "record": "Character.maelstrom_grunt2_melee2_machete_wa",
+      "from_round": 6,
+      "source": "Character records from WolvenKit's TweakDB name list",
+      "tested_in_game": false
+    },
+    {
+      "id": "mael_mantis",
+      "pool": "maelstrom",
+      "record": "Character.maelstrom_fast_fmelee3_mantis_wa_elite",
+      "from_round": 8,
+      "source": "Character records from WolvenKit's TweakDB name list",
+      "tested_in_game": false
+    },
+    {
+      "id": "psycho",
+      "pool": "boss",
+      "record": "Character.ma_wat_kab_08_cyberpsycho",
+      "from_round": 5,
+      "source": "Character records from WolvenKit's TweakDB name list",
+      "tested_in_game": false
+    }
+  ]
+}

@@ -1,28 +1,14 @@
 # Testing Cyberpunk Kino
 
-Open the test link from Melty on the PC that has both games. Melty installs the release the way players
-get it and starts it three times (8 minutes each).
-
-The first Play builds the mod (a minute or two, no window). Black Ops then opens with the mod loaded:
-**Zombies > Solo > Kino der Toten**. Play each run for most of its 8 minutes.
-
-## What to look at (send back each letter: OK, or what you saw)
-- **A. Start.** Does Black Ops open? If an error box appears instead, send `cyberkino-launch.log`
-  (Melty's mod folder for Cyberpunk Kino, next to `cyberkino-launch.exe`).
-- **B. Kino loads.** Does Kino der Toten load, or does Black Ops show a script error? Send the exact text.
-- **C. Start pistol.** Is your starting pistol the Unity (Cyberpunk model)? Does it sit in your hands the
-  right way round, at about the right size?
-- **D. Wall-buys.** Buy one (the Olympia spot is now the Tactician, the M14 spot the SOR-22). Right name, model and price?
-- **E. Mystery Box.** Do only Cyberpunk guns come out (and Cymbal Monkeys)?
-- **F. Special zombie.** From round 1, does one zombie per round glow, and drop a spinning shard when it dies?
-- **G. Chips.** Hold Use on the shard: which cyberware did you get? Try it:
-  Sandevistan (aim + Melee: does time slow?), Reinforced Tendons (Jump again in the air),
-  Subdermal Armor (more hits), Mantis Blades (Melee).
-- **H. Pack-a-Punch.** Does a Cyberpunk gun come out as its Iconic version?
-- **I. Screenshots.** Press F12 (Steam) during play: one holding a Cyberpunk gun, one with the glowing
-  zombie or the shard. Send them: one becomes the Melty cover.
-
-## Logs
-- `cyberkino-launch.log` next to `cyberkino-launch.exe`: every build step, which guns were built and
-  how each was fitted.
-- `%LOCALAPPDATA%\CyberKino`: the work files (the Kino dump, the exported Cyberpunk meshes, mod sources).
+1. In Melty press Play (or open the test link). The launcher builds the Ray Gun (about a minute the first time) and starts Cyberpunk.
+2. Load a save, go to V's floor in Megabuilding H10 and press **F7**.
+3. Check, and send back what you saw for each:
+   - **A.** "ROUND 1" and your points appear top-left; you hold only a Unity.
+   - **B.** Barricades appear in the corridors; standing at one shows "[F] Clear the barricade".
+   - **C.** Weapon cases on the walls show "[F] Buy <gun>"; buying gives that gun.
+   - **D.** The Mystery Box (a bigger weapon case) gives a random gun; does the Ray Gun ever come out, and does it look like Black Ops' Ray Gun?
+   - **E.** Zombies (Scavengers, Maelstrom) come at you; a cyberpsycho on round 5.
+   - **F.** A chip drops each round; [F] installs cyberware (Z for Sandevistan).
+   - **G.** F7 again: the match ends and your own guns come back.
+4. Press F12 for screenshots: one in a match with the HUD, one with the Ray Gun if you get it.
+5. Send `cyberkino-launch.log` (next to the launcher) and `cyberkino.log` (in `bin\x64\plugins\cyber_engine_tweaks\mods\cyberkino`).

@@ -3,39 +3,49 @@
   "mode": "installed",
   "games": [
     {
-      "slug": "custom-call-of-duty-black-ops",
+      "slug": "cyberpunk-2077",
       "role": "primary"
     },
     {
-      "slug": "cyberpunk-2077",
+      "slug": "custom-call-of-duty-black-ops",
       "role": "companion"
     }
   ],
   "components": [
     {
       "id": "main",
-      "fileName": "CyberKino-0.1.8.zip",
+      "fileName": "CyberKino-0.2.0.zip",
       "label": "Cyberpunk Kino",
       "kind": "main",
       "required": true
     }
   ],
-  "requirements": [],
+  "requirements": [
+    {
+      "kind": "loader",
+      "id": "cet"
+    }
+  ],
   "mappings": [
     {
       "component": "main",
       "from": "CyberKino/",
       "to": "{managed}"
+    },
+    {
+      "component": "main",
+      "from": "CET/cyberkino/",
+      "to": "{game}/bin/x64/plugins/cyber_engine_tweaks/mods/cyberkino"
     }
   ],
   "launch": {
     "kind": "exe",
     "path": "{managed}/cyberkino-launch.exe",
     "args": [
-      "--bo",
-      "{game}",
       "--cp",
-      "{game:cyberpunk-2077}"
+      "{game}",
+      "--bo",
+      "{game:custom-call-of-duty-black-ops}"
     ],
     "cwd": "{managed}"
   },

@@ -1,0 +1,28 @@
+{
+  "sheet": "raygun",
+  "about": "Black Ops' Ray Gun model, read from the player's own Black Ops (OpenAssetTools' Unlinker) and built onto the Cyberpunk Militech Omaha's meshes (WolvenKit import) on each Play. The Omaha's other parts are hidden, so the gun shows only the Ray Gun.",
+  "columns": {
+    "id": "unique id",
+    "bo_zone": "Black Ops zone (zone\\Common) holding the weapon",
+    "bo_weapon": "Black Ops weapon whose world model is used",
+    "cp_donor_mesh": "Cyberpunk mesh replaced by the Ray Gun",
+    "cp_hide_prefix": "depot path prefix of the donor's other meshes (every .mesh starting with it, except the donor, is emptied)",
+    "archive": "archive file written to archive\\pc\\mod",
+    "fit_scale": "size multiplier after fitting to the donor's length",
+    "source": "where it came from",
+    "tested_in_game": "true once seen in a match"
+  },
+  "rows": [
+    {
+      "id": "raygun",
+      "bo_zone": "common_zombie.ff",
+      "bo_weapon": "ray_gun_zm",
+      "cp_donor_mesh": "base\\weapons\\firearms\\handgun\\militech_omaha\\entities\\meshes\\w_handgun__militech_omaha__base1_01.mesh",
+      "cp_hide_prefix": "base\\weapons\\firearms\\handgun\\militech_omaha\\entities\\meshes\\w_handgun__militech_omaha__",
+      "archive": "zz_cyberkino_raygun.archive",
+      "fit_scale": 1.0,
+      "source": "ray_gun_zm and its world model weapon_usa_ray_gun seen in the player's common_zombie.ff (test logs); Omaha meshes from WolvenKit's path list",
+      "tested_in_game": false
+    }
+  ]
+}
