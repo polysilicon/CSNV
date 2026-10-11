@@ -179,3 +179,5 @@
   hold share a 0.3 s guard so one press never buys twice. Both records checked in the TweakDB name list.
 - Simulator: zombies set hostile and kept in combat, restriction lifted, Reload tap doesn't buy and hold does (0 errors);
   shipped layout 0 errors.
+- Release 0.3.2 sha256 27479950..4cb4, releaseId 63083e88-0241-4487-a987-da009fe06e59, one click yes,
+  test 376002d8-6c8b-4fac-91aa-693559767b01.
