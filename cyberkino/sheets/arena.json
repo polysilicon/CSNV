@@ -1,23 +1,25 @@
 {
   "sheet": "arena",
-  "about": "Where the match is meant to be. The arena forms around V when F7 is pressed: walls are found by raycasts, barricades close the openings in rings, wall-buys go on walls and the Mystery Box in the open.",
+  "about": "Where the match happens. F7 teleports V into V's apartment in Megabuilding H10, then the arena forms around V: walls are found by raycasts, barricades close the openings in rings, wall-buys go on walls and the Mystery Box in the open.",
   "columns": {
     "id": "unique id",
     "name": "place",
     "x": "world X (metres)",
     "y": "world Y",
     "z": "world Z",
+    "yaw": "facing in degrees after the teleport",
     "source": "where it came from",
     "tested_in_game": "true once confirmed in game"
   },
   "rows": [
     {
       "id": "h10",
-      "name": "Megabuilding H10, V's apartment floor",
-      "x": -1378.0,
-      "y": 1272.0,
-      "z": 123.0,
-      "source": "approximate position of V's apartment from community teleport lists; the mod logs V's real position at each start so this can be corrected",
+      "name": "V's apartment, Megabuilding H10",
+      "x": -1391.8707275391,
+      "y": 1271.6887207031,
+      "z": 123.08239746094,
+      "yaw": -99.250587463379,
+      "source": "Appearance Menu Mod's location database (db.sqlite3, locations: \"V's Apartment\")",
       "tested_in_game": false
     }
   ]

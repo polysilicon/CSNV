@@ -128,6 +128,16 @@
 - Release 0.2.0: sha256 eb4fde3a..e87a, releaseId 13878e00-f09b-4240-82a2-eba82ae805f9, one click yes,
   test 50dcc14a-6787-4be2-8bc1-84e7ee696a95. Untested in game.
 
+## Test 10 (0.2.0, creator's report)
+- V's inventory and cyberware stayed during the match. Cause: the mod used EquipRequest, which doesn't exist in
+  Cyberpunk (WolvenKit's RTTI classes: GameplayEquipRequest{owner,itemID,slotIndex,addToInventory,forceEquipWeapon},
+  UnequipRequest{owner,areaType,slotIndex,force}), so equipping the Unity and restoring failed.
+- Creator asked F7 to teleport to V's apartment first.
+- 0.2.1: F7 teleports to V's Apartment (-1391.87, 1271.69, 123.08, yaw -99.25 from Appearance Menu Mod's locations
+  db), waits teleport_settle_s, then builds the arena. Weapons (3 slots) and all 12 cyberware areas (4 slots each)
+  are force-unequipped and recorded; equip/restore use GameplayEquipRequest. Unequipped items stay in the backpack.
+  Release 0.2.1 sha256 9be85189..130f, test 7d7037f4-f064-46f6-99b1-4e6ea7796c95.
+
 ## Open
 1. In-game test of 0.2.0 on the creator's PC (TESTING.md), then fixes.
 2. Real screenshot from that test.

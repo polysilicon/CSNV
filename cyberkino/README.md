@@ -3,8 +3,9 @@
 Black Ops Zombies in Cyberpunk 2077's Megabuilding H10: round-based waves, door buys, wall-buys, a Mystery Box,
 Cyberpunk's guns and cyberware, and Black Ops' real Ray Gun.
 
-- **Press F7** on V's floor in Megabuilding H10 to start a match. V keeps only a **Unity** pistol; everything V
-  was carrying comes back when the match ends (F7 again, or when V goes down).
+- **Press F7** anywhere: V is teleported into V's apartment in Megabuilding H10 and the match starts there.
+  V's equipped weapons and all of V's cyberware come off, leaving only a **Unity** pistol and the cyberware the
+  chips give; it all goes back on when the match ends (F7 again, or when V goes down).
 - **Zones and door buys.** Barricades close the corridors in rings around where you started. Buy one (F) to open
   the next ring: 750 points, each next ring 250 more.
 - **Wall-buys** on the walls: Tactician, SOR-22, Pulsar, Shingen, Saratoga, Carnage, Copperhead. Buying again
@@ -23,7 +24,7 @@ the Ray Gun is read from your Black Ops each time it changes.
 
 ## Playing
 Install it from Melty and press Play. The first time, the launcher spends about a minute building the Ray Gun,
-then Cyberpunk starts. Load a save, go to V's floor in Megabuilding H10 and press F7.
+then Cyberpunk starts. Load a save and press F7.
 
 While the mod is installed, the Militech Omaha pistol looks like the Ray Gun everywhere in the game.
 

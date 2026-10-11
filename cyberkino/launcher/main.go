@@ -381,7 +381,7 @@ func (l *launcher) launch(cpExe string) error {
 		l.logf("Not starting Cyberpunk (--no-launch).")
 		return nil
 	}
-	hint := "In game, go to V's floor in Megabuilding H10 and press F7."
+	hint := "In game, press F7 to be taken to V's apartment."
 	if strings.Contains(strings.ToLower(l.cpDir), "steamapps") {
 		if steam := findSteamExe(); steam != "" {
 			if err := exec.Command(steam, "-applaunch", cyberpunkSteamID).Start(); err == nil {

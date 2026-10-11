@@ -26,7 +26,7 @@ REQUIRED_RULES = {
     "start_points", "kill_points", "special_points", "boss_points", "box_cost", "rare_weight", "door_cost_first",
     "door_cost_step", "zone_radius_1", "zone_radius_step", "zones", "round_base", "round_step", "max_active",
     "spawn_interval_s", "spawn_min_m", "spawn_max_m", "boss_every", "round_break_s", "end_health_pct",
-    "chip_lifetime_s", "buy_radius_m", "h10_radius_m",
+    "chip_lifetime_s", "buy_radius_m", "teleport_settle_s",
 }
 REQUIRED_KEYS = {"start", "use", "sandevistan"}
 NAME = re.compile(r"^[a-z0-9_]+$")

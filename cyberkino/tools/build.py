@@ -70,7 +70,9 @@ def data_lua():
         "boss": boss,
         "rules": {r["id"]: r["value"] for r in sheet("rules")},
         "props": {p["id"]: p["entity"] for p in sheet("props")},
-        "arena": {a["id"]: {"x": a["x"], "y": a["y"], "z": a["z"]} for a in sheet("arena")},
+        "arena": {a["id"]: {"x": a["x"], "y": a["y"], "z": a["z"], "yaw": a["yaw"]} for a in sheet("arena")},
+        "cyberwareAreas": ["SystemReplacementCW", "ArmsCW", "HandsCW", "EyesCW", "FrontalCortexCW", "MusculoskeletalSystemCW",
+                           "NervousSystemCW", "CardiovascularSystemCW", "ImmuneSystemCW", "IntegumentarySystemCW", "LegsCW", "FaceCW"],
     }
     body = lua(d)
     body = body.replace("weaponsById = {\n\t},", "weaponsById = {},").replace("cyberwareById = {\n\t},", "cyberwareById = {},")

@@ -121,11 +121,14 @@ local function give(record, qty)
 	return nil
 end
 
-local function equip(itemID)
+local function equip(itemID, slot)
 	try("equip", function()
-		local req = EquipRequest.new()
+		local req = GameplayEquipRequest.new()
 		req.owner = player()
 		req.itemID = itemID
+		req.addToInventory = false
+		req.forceEquipWeapon = true
+		if slot then req.slotIndex = slot end
 		equipmentSystem():QueueRequest(req)
 	end)
 end
@@ -134,28 +137,39 @@ local function remove(itemID)
 	try("remove item", function() Game.GetTransactionSystem():RemoveItem(player(), itemID, 1) end)
 end
 
--- remembers and takes off V's weapons, so the match starts with the Unity only
-local function stashWeapons()
+-- remembers and takes off V's weapons and cyberware, so a match starts with the Unity only and the
+-- chips are V's only cyberware; restoreLoadout puts it all back
+local function stashLoadout()
 	S.stashed = {}
 	local pd = try("player data", function() return equipmentSystem():GetPlayerData(player()) end)
-	for slot = 0, 2 do
-		local id = pd and try("weapon slot", function() return pd:GetItemInEquipSlot(gamedataEquipmentArea.Weapon, slot) end)
-		if id and ItemID.IsValid(id) then
-			S.stashed[#S.stashed + 1] = id
-			try("unequip", function()
-				local req = UnequipRequest.new()
-				req.owner = player()
-				req.areaType = gamedataEquipmentArea.Weapon
-				req.slotIndex = slot
-				equipmentSystem():QueueRequest(req)
-			end)
+	if not pd then return end
+	local areas = { { name = "Weapon", slots = 3 } }
+	for _, a in ipairs(data.cyberwareAreas) do areas[#areas + 1] = { name = a, slots = 4 } end
+	local counts = {}
+	for _, a in ipairs(areas) do
+		local area = gamedataEquipmentArea[a.name]
+		for slot = 0, a.slots - 1 do
+			local id = area and try("slot " .. a.name, function() return pd:GetItemInEquipSlot(area, slot) end)
+			if id and ItemID.IsValid(id) then
+				S.stashed[#S.stashed + 1] = { id = id, slot = slot, area = a.name }
+				counts[#counts + 1] = a.name .. "#" .. slot
+				try("unequip " .. a.name, function()
+					local req = UnequipRequest.new()
+					req.owner = player()
+					req.areaType = area
+					req.slotIndex = slot
+					req.force = true
+					equipmentSystem():QueueRequest(req)
+				end)
+			end
 		end
 	end
-	log("took off %d weapons", #S.stashed)
+	log("took off %d items: %s", #S.stashed, table.concat(counts, ", "))
 end
 
-local function restoreWeapons()
-	for _, id in ipairs(S.stashed or {}) do equip(id) end
+local function restoreLoadout()
+	for _, it in ipairs(S.stashed or {}) do equip(it.id, it.slot) end
+	log("put back %d items", #(S.stashed or {}))
 end
 
 local function giveGun(w)
@@ -390,21 +404,18 @@ local function startMatch()
 	local p = player()
 	if not p then return end
 	local c = pos(p)
-	local h10 = data.arena.h10
-	local away = flat(c, v4(h10.x, h10.y, h10.z))
-	log("F7 at %.2f %.2f %.2f (%.0f m from the H10 anchor)", c.x, c.y, c.z, away)
-	if away > rules.h10_radius_m then
-		say("Cyberpunk Kino is made for Megabuilding H10 (V's floor). Starting here anyway.", 6)
-	end
+	log("F7 at %.2f %.2f %.2f", c.x, c.y, c.z)
 	S = { active = true, round = 0, points = rules.start_points, zombies = {}, chips = {}, given = {}, owned = {},
 		cyber = {}, mods = {}, stashed = {} }
 	math.randomseed(os.time())
-	stashWeapons()
-	giveGun(data.weaponsById[data.startWeapon])
-	buildArena(c)
-	S.state = "break"
-	S.nextRound = os.clock() + 4
-	say("Cyberpunk Kino: survive. [F] buys, F7 ends the match.", 6)
+	stashLoadout()
+	local h10 = data.arena.h10
+	local target = v4(h10.x, h10.y, h10.z)
+	try("teleport", function() Game.GetTeleportationFacility():Teleport(p, target, EulerAngles.new(0, 0, h10.yaw)) end)
+	S.state = "teleport"
+	S.settleAt = os.clock() + rules.teleport_settle_s
+	S.target = target
+	say("Heading to V's apartment...", 3)
 end
 
 local function stopMatch(reason)
@@ -416,7 +427,7 @@ local function stopMatch(reason)
 	for _, ch in ipairs(S.chips or {}) do despawn(ch.eid) end
 	removeCyber()
 	for _, id in ipairs(S.given or {}) do remove(id) end
-	restoreWeapons()
+	restoreLoadout()
 	S.active = false
 	say(reason, 8)
 end
@@ -505,6 +516,18 @@ local function tick()
 	local p = player()
 	if not p then return end
 	local now = os.clock()
+
+	if S.state == "teleport" then
+		if now < S.settleAt then return end
+		local here = pos(p)
+		log("after the teleport V is at %.2f %.2f %.2f (%.1f m from the target)", here.x, here.y, here.z, flat(here, S.target))
+		giveGun(data.weaponsById[data.startWeapon])
+		buildArena(here)
+		S.state = "break"
+		S.nextRound = now + 4
+		say("Cyberpunk Kino: survive. [F] buys, F7 ends the match.", 6)
+		return
+	end
 
 	if S.sandeEnd and now >= S.sandeEnd then
 		S.sandeEnd = nil

@@ -141,9 +141,9 @@
       "tested_in_game": false
     },
     {
-      "id": "h10_radius_m",
-      "value": 150,
-      "about": "V counts as in Megabuilding H10 within this distance of the anchor",
+      "id": "teleport_settle_s",
+      "value": 2.5,
+      "about": "seconds after the teleport before the arena is built (the apartment streams in)",
       "tested_in_game": false
     }
   ]

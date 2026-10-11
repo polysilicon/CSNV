@@ -21,9 +21,9 @@ CName = { new = function(s) return s end }
 TweakDBID = { new = function(s) return { hash = #s * 7919 % 100003 } end }
 ItemID = { IsValid = function(id) return id ~= nil end }
 WorldTransform = { new = function() local t = {} function t:SetPosition(p) t.p = p end function t:SetOrientationEuler(e) t.e = e end return t end }
-EquipRequest = { new = function() return {} end }
+GameplayEquipRequest = { new = function() return {} end }
 UnequipRequest = { new = function() return {} end }
-gamedataEquipmentArea = { Weapon = 1 }
+gamedataEquipmentArea = setmetatable({}, { __index = function(_, k) return k end })
 gamedataStatType = setmetatable({}, { __index = function(_, k) return k end })
 gamedataStatPoolType = { Health = "Health" }
 gameStatModifierType = { Additive = 0 }
@@ -74,12 +74,13 @@ Game = {
 	} end,
 	GetScriptableSystemsContainer = function() return { Get = function() return {
 		QueueRequest = function() end,
-		GetPlayerData = function() return { GetItemInEquipSlot = function(_, area, slot) return slot == 0 and { id = { hash = 1 }, rngSeed = 999 } or nil end } end,
+		GetPlayerData = function() return { GetItemInEquipSlot = function(_, area, slot) return (slot == 0 and (area == "Weapon" or area == "LegsCW")) and { id = { hash = 1 }, rngSeed = 999 } or nil end } end,
 	} end } end,
 	GetSpatialQueriesSystem = function() return { SyncRaycastByCollisionGroup = function(_, a, b)
-		-- walls at x = ±5; open along Y
-		if b.x > 5 then local t = (5 - a.x) / (b.x - a.x) return true, { position = { x = 5, y = a.y + (b.y - a.y) * t, z = a.z } } end
-		if b.x < -5 then local t = (-5 - a.x) / (b.x - a.x) return true, { position = { x = -5, y = a.y + (b.y - a.y) * t, z = a.z } } end
+		-- a corridor 10 m wide along Y around the apartment: walls at x = ox ± 5
+		local ox = -1391.87
+		if b.x > ox + 5 then local t = (ox + 5 - a.x) / (b.x - a.x) return true, { position = { x = ox + 5, y = a.y + (b.y - a.y) * t, z = a.z } } end
+		if b.x < ox - 5 then local t = (ox - 5 - a.x) / (b.x - a.x) return true, { position = { x = ox - 5, y = a.y + (b.y - a.y) * t, z = a.z } } end
 		return false, nil
 	end } end,
 	GetStatsSystem = function() return { AddModifier = function() end, RemoveModifier = function() end } end,
@@ -108,7 +109,7 @@ local function goTo(kind)
 end
 
 hotkeys.start()
-step(1)
+step(3) -- teleport, then the arena after the apartment settles
 assert(#inventory >= 1, "the Unity was not given")
 step(6) -- round 1 starts
 local rounds = 0
@@ -120,7 +121,7 @@ for r = 1, 6 do
 	for _, e in pairs(entities) do
 		if e.kind:find("shard") then V.x, V.y = e.p.x, e.p.y hotkeys.use() end
 	end
-	V.x, V.y = 0, 0
+	V.x, V.y = -1391.87, 1271.69
 	step(10)
 end
 -- buy things: stand on every spawned wall case / box / barricade and press F
