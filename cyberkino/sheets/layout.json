@@ -1,0 +1,21 @@
+{
+  "sheet": "layout",
+  "about": "The arena in Megabuilding H10, one row per placed thing, made in game with the layout editor (CET overlay > Cyberpunk Kino layout) and copied from layout.json. A player's own layout.json overrides these rows.",
+  "columns": {
+    "id": "unique id (kind_n)",
+    "kind": "start | barricade | wallbuy | box | spawn | stash",
+    "x": "world X (m)",
+    "y": "world Y",
+    "z": "world Z",
+    "yaw": "facing (degrees)",
+    "zone": "barricade: the zone it closes (buying it opens zone+1); spawn: the zone it belongs to (active once open); others: the zone they stand in",
+    "weapon": "wallbuy: weapons sheet id; others: none",
+    "inside_x": "barricade: X of the side V stands on (where a push sends V); others: where V stood",
+    "inside_y": "see inside_x",
+    "inside_z": "see inside_x",
+    "entity": "stash: the stash's EntityID hash as CET prints it (e.g. 123ULL); others: none",
+    "source": "where it came from",
+    "tested_in_game": "true once played on"
+  },
+  "rows": []
+}
