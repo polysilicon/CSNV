@@ -51,7 +51,13 @@ prime-time raid windows, no pay-to-win.
   `optimize-explosions: true`.
 - World borders: overworld 5000×5000 (±2500), nether 2500×2500. Both pre-generated with Chunky.
 
-## 3. Prime-time raid window (America/New_York)
+## 3. Prime-time raid window (America/New_York) — currently OFF
+
+> The schedule is switched off (`raid-window.enabled: false` in `plugins/CrispyFactions/config.yml`):
+> claims can be raided at any time, and an Aegis Star simply protects for 25 real hours (it can be
+> activated any time; the 14-day cooldown and pacifism lock still apply). Set it to `true` and run
+> `/crispyfactions reload` to bring back the schedule below.
+
 | Days | Raid window |
 |---|---|
 | Mon–Fri | 18:00 – 23:00 |

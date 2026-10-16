@@ -1,5 +1,6 @@
 # Prime-time raid window: explosions only damage faction claims inside these windows.
 raid-window:
+  enabled: false              # false = raids allowed any time; Aegis Stars then count real hours
   timezone: America/New_York
   windows:
     monday:    ["18:00-23:00"]

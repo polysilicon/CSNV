@@ -43,6 +43,9 @@ public class CrispyFactions extends JavaPlugin implements Listener {
     static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("EEE MMM d, h:mm a z");
 
     RaidWindow raid;
+    boolean scheduleOn = true;
+    /** Explosions may damage claims right now (always true when the schedule is switched off). */
+    boolean raidOpen() { return !scheduleOn || raid.isOpen(); }
     NamespacedKey KEY_STAR, KEY_COLLECTOR;
     File dataFile; YamlConfiguration data;
     boolean lastOpen; final Set<Integer> warned = new HashSet<>();
@@ -60,7 +63,8 @@ public class CrispyFactions extends JavaPlugin implements Listener {
         dataFile = new File(getDataFolder(), "data.yml");
         data = YamlConfiguration.loadConfiguration(dataFile);
         raid.force = data.getString("raid-force", "auto");
-        lastOpen = raid.isOpen();
+        scheduleOn = getConfig().getBoolean("raid-window.enabled", true);
+        lastOpen = raidOpen();
         getServer().getPluginManager().registerEvents(this, this);
         Bukkit.getScheduler().runTaskTimer(this, this::tickWindow, 100L, 20L * 20);
         Bukkit.getScheduler().runTaskTimer(this, this::tickAegis, 20L * 60, 20L * 60);
@@ -85,6 +89,7 @@ public class CrispyFactions extends JavaPlugin implements Listener {
     String fmt(ZonedDateTime t) { return t == null ? "never" : t.format(FMT); }
 
     void tickWindow() {
+        if (!scheduleOn) return;
         boolean open = raid.isOpen();
         if (open != lastOpen) {
             lastOpen = open; warned.clear();
@@ -106,7 +111,7 @@ public class CrispyFactions extends JavaPlugin implements Listener {
     /** True when explosions must not touch this claim right now. */
     boolean claimProtected(Faction f) {
         if (!claimed(f)) return false;
-        return !raid.isOpen() || aegisActive(f.getId());
+        return !raidOpen() || aegisActive(f.getId());
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -193,7 +198,7 @@ public class CrispyFactions extends JavaPlugin implements Listener {
     boolean aegisActive(String fid) { return data.getLong(fpath(fid) + ".remaining", 0) > 0; }
 
     void tickAegis() {
-        if (!raid.isOpen()) return;
+        if (!raidOpen()) return;
         var sec = data.getConfigurationSection("aegis");
         if (sec == null) return;
         boolean changed = false;
@@ -221,11 +226,13 @@ public class CrispyFactions extends JavaPlugin implements Listener {
         if (fac == null || !fac.isNormal()) { msg(p, "&cYou need to be in a faction."); return; }
         if (f.getRole() != Role.LEADER && f.getRole() != Role.COLEADER) { msg(p, "&cOnly the faction Leader or a Co-Leader can activate an Aegis Star."); return; }
         if (factionAt(p.getLocation()) != fac) { msg(p, "&cStand inside your own faction's claim to activate it."); return; }
-        if (raid.isOpen()) { msg(p, "&cYou can't activate an Aegis Star during a raid window."); return; }
-        ZonedDateTime nx = raid.nextOpen(raid.now());
-        long bufH = getConfig().getLong("aegis.no-activation-hours-before-window", 6);
-        if (nx != null && Duration.between(raid.now(), nx).toMinutes() < bufH * 60) {
-            msg(p, "&cToo close to the next raid window (&e" + fmt(nx) + "&c). Aegis Stars can't be activated within " + bufH + " hours of a window opening."); return;
+        if (scheduleOn) {
+            if (raid.isOpen()) { msg(p, "&cYou can't activate an Aegis Star during a raid window."); return; }
+            ZonedDateTime nx = raid.nextOpen(raid.now());
+            long bufH = getConfig().getLong("aegis.no-activation-hours-before-window", 6);
+            if (nx != null && Duration.between(raid.now(), nx).toMinutes() < bufH * 60) {
+                msg(p, "&cToo close to the next raid window (&e" + fmt(nx) + "&c). Aegis Stars can't be activated within " + bufH + " hours of a window opening."); return;
+            }
         }
         String fid = fac.getId();
         if (aegisActive(fid)) { msg(p, "&cYour faction already has an active Aegis Star (&e" + hours(data.getLong(fpath(fid) + ".remaining")) + "&c left)."); return; }
@@ -238,7 +245,7 @@ public class CrispyFactions extends JavaPlugin implements Listener {
         p.getWorld().playSound(p.getLocation(), Sound.BLOCK_BEACON_POWER_SELECT, 1f, 1.2f);
         p.getWorld().spawnParticle(Particle.END_ROD, p.getLocation().add(0, 1, 0), 80, 1, 1, 1, 0.05);
         for (Player m : fac.getOnlinePlayers()) msg(m, "&b&l✦ Aegis Vacation Star activated by &f" + p.getName() + "&b&l! &7Your claims are protected for &b" + getConfig().getLong("aegis.raid-hours", 25)
-                + " raid-window hours&7. &cWhile active, your faction cannot raid.");
+                + (scheduleOn ? " raid-window hours" : " hours") + "&7. &cWhile active, your faction cannot raid.");
         bc("&b" + fac.getTag() + " &7is on vacation (Aegis Vacation Star).");
     }
     static String hours(long secs) { return String.format("%.1fh", secs / 3600.0); }
@@ -421,6 +428,7 @@ public class CrispyFactions extends JavaPlugin implements Listener {
     public boolean onCommand(CommandSender s, Command cmd, String label, String[] a) {
         switch (cmd.getName().toLowerCase(Locale.ROOT)) {
             case "raidwindow" -> {
+                if (!scheduleOn) { msg(s, "&cRaids are allowed at any time &7(the raid schedule is switched off)."); return true; }
                 if (a.length == 2 && a[0].equalsIgnoreCase("force") && s.hasPermission("crispy.admin")) {
                     raid.force = a[1].toLowerCase(Locale.ROOT); data.set("raid-force", raid.force); save(); tickWindow();
                     msg(s, "Raid window override: &e" + raid.force); return true;
@@ -465,6 +473,7 @@ public class CrispyFactions extends JavaPlugin implements Listener {
             case "crispyfactions" -> {
                 if (a.length > 0 && a[0].equalsIgnoreCase("reload")) {
                     reloadConfig(); raid = new RaidWindow(getConfig().getConfigurationSection("raid-window")); raid.force = data.getString("raid-force", "auto");
+                    scheduleOn = getConfig().getBoolean("raid-window.enabled", true); lastOpen = raidOpen();
                     msg(s, "Reloaded."); return true;
                 }
                 if (a.length > 0 && a[0].equalsIgnoreCase("phase2")) { unlockPhase2(); msg(s, "Phase 2 unlocked."); return true; }
