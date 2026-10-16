@@ -1,0 +1,41 @@
+# Prime-time raid window: explosions only damage faction claims inside these windows.
+raid-window:
+  timezone: America/New_York
+  windows:
+    monday:    ["18:00-23:00"]
+    tuesday:   ["18:00-23:00"]
+    wednesday: ["18:00-23:00"]
+    thursday:  ["18:00-23:00"]
+    friday:    ["18:00-23:00"]
+    saturday:  ["12:00-24:00"]
+    sunday:    ["12:00-24:00"]
+
+# Obsidian durability (5 TNT hits or 3 creeper hits). Blocks touching water/lava are immune; TNT exploding in water does nothing.
+obsidian:
+  enabled: true
+  durability: 5.0
+  tnt-damage: 1.0
+  creeper-damage: 1.6667      # charged creepers do double
+  radius: 3
+  reset-minutes: 30           # damage forgotten after this long without another hit
+  blocks: [OBSIDIAN, CRYING_OBSIDIAN]
+
+# Aegis Vacation Star
+aegis:
+  raid-hours: 25
+  no-activation-hours-before-window: 6
+  cooldown-days: 14
+  kit:
+    first-friday: "2026-10-16"   # free /kit aegis every other Friday from this date
+    min-playtime-hours: 10
+
+afk:
+  default-minutes: 30
+  rank-minutes: 120           # players with crispy.afk.extended
+
+# Phase 2: on day 11 the shop's Phase2 section (iron golem spawners, iron ingot selling) is switched on.
+phase2:
+  launch-date: "2026-10-16"
+  unlock-after-days: 10
+  iron-sell: 40
+  reload-commands: ["sreload"]
