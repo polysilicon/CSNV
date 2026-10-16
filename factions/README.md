@@ -135,10 +135,26 @@ exempt with `crispy.afk.exempt`. Give a rank: `lp user <name> parent add vip`.
 **Wraps**: gear drops normally on death, so wrapped Prot IV / Sharp V gear becomes a physical trophy.
 Install HMCWraps for the visual skins.
 
-## Still to do in-game (needs a player)
-1. `/setspawn` at the spawn build, then claim it: `/f claim safezone` (and `/f claim warzone` around it).
-2. Optional: create `/warp`s, adjust `/kit starter`.
-3. Set `phase2.launch-date` and `aegis.kit.first-friday` in `plugins/CrispyFactions/config.yml` to the
+## Spawn & PvP arena
+![spawn map](spawn_map.png)
+
+Built by `gen_spawn.py` (writes the `crispyspawn` datapack; run each `cspawn:<part>` function with the area force-loaded).
+The area x -80..79, z -176..79 was changed to the plains biome so snow doesn't settle on the build.
+
+- **Spawn hub** (centre 0,0): walled stone-brick plaza, floor y72, walls at ±40 with corner towers, beacon fountain,
+  four planters with benches, info signs. The spawn point is 0.5 73 14.5, facing north. It is set as the world spawn
+  and in Essentials `spawn.yml` (default + newbies; the newbie kit is now `starter`). There are gates on all four sides,
+  with stairs down to y65 and roads out.
+- **PvP colosseum** (centre 0,-112): sand floor y64 with r=25, eight lit pillars, a 7×7 king-of-the-hill dais with a gold
+  centre, eight tiers of seating and four tunnel entrances. A flat walled road at y64 runs from the spawn north gate to
+  the south entrance.
+- **Zones** (`apply_zones.py`, run only while the server is stopped): chunks -3..2 are the **safezone** (x/z -48..47);
+  chunks -12..11 around it are the **warzone** (x/z -192..191; PvP on, no building, TNT/creeper/fireball damage blocked).
+  The script only touches unclaimed or zone chunks.
+
+## Still to do
+1. Optional: create `/warp`s, adjust `/kit starter`.
+2. Set `phase2.launch-date` and `aegis.kit.first-friday` in `plugins/CrispyFactions/config.yml` to the
    real launch date, then `/crispyfactions reload`.
 
 ## Building CrispyFactions
