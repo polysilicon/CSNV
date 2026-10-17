@@ -26,6 +26,7 @@ prime-time raid windows, no pay-to-win.
 | LuckPerms | 5.5.87 | ranks |
 | EconomyShopGUI | 7.3.2 | `/shop` |
 | Chunky | 1.4.40 | pre-generation |
+| mcMMO | 2.3.002 | RPG skills (built from the GPL source, commit 25474dc) |
 | ViaVersion / ViaBackwards | 5.12.x | newer clients |
 | **CrispyFactions** (custom) | 1.1.0 | raid window, obsidian durability, Aegis Star, collector hopper, item bans, `/nv`, AFK, combat tag |
 | HMCWraps | — | *not installed*: download from SpigotMC/Polymart and drop into `plugins/` |
@@ -130,6 +131,13 @@ Starting balance $500.
   Kicks (restarts, AFK kick, staff) aren't punished.
 - `/combat` (`/ct`) shows your timer. `crispy.combat.bypass` exempts a player (off for everyone by default, ops included).
 - Settings are in `plugins/CrispyFactions/config.yml` → `combat-tag`; apply changes with `/crispyfactions reload`.
+
+## mcMMO (classic setup)
+- Built from source (`git checkout 25474dc && mvn package`), because the SpigotMC download is paid. Configs are in `mcmmo/`.
+- Retro 1–1000 scale, every skill capped at **1000**, scoreboard sidebar on, stats tracking and April Fools off.
+  Spawner mobs give no XP (default).
+- PvP toned down: Archery Daze max 25% (was 50), Axes Armor Impact 10% (was 25), Unarmed Disarm max 15% (was 33).
+- Blacksmith corner beside the spawn point: iron block at 7 73 13 = **Repair**, gold block at 7 73 16 = **Salvage**.
 
 ## 6. Ranks (LuckPerms, no P2W)
 | Group | Inherits | Perks |
