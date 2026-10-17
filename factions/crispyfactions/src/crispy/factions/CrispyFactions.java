@@ -53,6 +53,7 @@ public class CrispyFactions extends JavaPlugin implements Listener {
     record Dmg(double amount, long last) {}
     final Map<String, Dmg> obby = new HashMap<>();
     final Map<UUID, Long> lastActive = new HashMap<>();
+    CombatTag combat;
 
     // ------------------------------------------------------------------ lifecycle
     @Override public void onEnable() {
@@ -66,6 +67,8 @@ public class CrispyFactions extends JavaPlugin implements Listener {
         scheduleOn = getConfig().getBoolean("raid-window.enabled", true);
         lastOpen = raidOpen();
         getServer().getPluginManager().registerEvents(this, this);
+        combat = new CombatTag(this);
+        getServer().getPluginManager().registerEvents(combat, this);
         Bukkit.getScheduler().runTaskTimer(this, this::tickWindow, 100L, 20L * 20);
         Bukkit.getScheduler().runTaskTimer(this, this::tickAegis, 20L * 60, 20L * 60);
         Bukkit.getScheduler().runTaskTimer(this, this::tickAfk, 20L * 60, 20L * 60);
@@ -464,6 +467,12 @@ public class CrispyFactions extends JavaPlugin implements Listener {
                 else msg(p, "&7No Aegis active. Your faction can activate an Aegis Star during peacetime.");
                 return true;
             }
+            case "combat" -> {
+                if (!(s instanceof Player p)) return true;
+                if (combat.tagged(p)) msg(p, "&cYou are in combat for &f" + combat.left(p) + "s &cmore. Logging out now will kill you.");
+                else msg(p, "&aYou are not in combat.");
+                return true;
+            }
             case "nv" -> {
                 if (!(s instanceof Player p)) return true;
                 if (p.hasPotionEffect(PotionEffectType.NIGHT_VISION)) { p.removePotionEffect(PotionEffectType.NIGHT_VISION); msg(p, "Night vision &coff"); }
@@ -474,6 +483,7 @@ public class CrispyFactions extends JavaPlugin implements Listener {
                 if (a.length > 0 && a[0].equalsIgnoreCase("reload")) {
                     reloadConfig(); raid = new RaidWindow(getConfig().getConfigurationSection("raid-window")); raid.force = data.getString("raid-force", "auto");
                     scheduleOn = getConfig().getBoolean("raid-window.enabled", true); lastOpen = raidOpen();
+                    combat.load();
                     msg(s, "Reloaded."); return true;
                 }
                 if (a.length > 0 && a[0].equalsIgnoreCase("phase2")) { unlockPhase2(); msg(s, "Phase 2 unlocked."); return true; }

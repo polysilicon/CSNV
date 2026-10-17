@@ -30,6 +30,16 @@ aegis:
     first-friday: "2026-10-16"   # free /kit aegis every other Friday from this date
     min-playtime-hours: 10
 
+# PvP combat tag: hitting or being hit by a player tags both for this long. While tagged: no escape commands,
+# no teleporting into spawn (safezone), and logging out (or switching server) kills you. Kicks are not punished.
+combat-tag:
+  enabled: true
+  seconds: 15
+  kill-on-logout: true
+  block-safezone-entry: true
+  blocked-commands: [spawn, home, homes, back, warp, warps, tpa, tpahere, tpaccept, tpyes, tpaall, tp, tpo, tphere, top,
+    f home, f stuck, f warp, f warps, ec, echest, enderchest, ender, wild, rtp, kit, kits, fly, god, vanish, v]
+
 afk:
   default-minutes: 30
   rank-minutes: 120           # players with crispy.afk.extended

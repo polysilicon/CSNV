@@ -27,7 +27,7 @@ prime-time raid windows, no pay-to-win.
 | EconomyShopGUI | 7.3.2 | `/shop` |
 | Chunky | 1.4.40 | pre-generation |
 | ViaVersion / ViaBackwards | 5.12.x | newer clients |
-| **CrispyFactions** (custom) | 1.0.0 | raid window, obsidian durability, Aegis Star, collector hopper, item bans, `/nv`, AFK |
+| **CrispyFactions** (custom) | 1.1.0 | raid window, obsidian durability, Aegis Star, collector hopper, item bans, `/nv`, AFK, combat tag |
 | HMCWraps | — | *not installed*: download from SpigotMC/Polymart and drop into `plugins/` |
 
 `install_plugins.sh` downloads everything except HMCWraps; `configure.py` applies every setting below.
@@ -120,6 +120,17 @@ Starting balance $500.
 **Cactus Collector Hopper**: one per chunk; every cactus that drops in that chunk goes straight into it
 (no water streams, no item entities). Break it to get the collector back.
 
+## PvP combat tag (CrispyFactions 1.1.0)
+- Hitting or being hit by a player (melee, bow, snowball, rod) tags **both** players for **15 s**; the action bar counts down.
+- While tagged you can't:
+  - run escape commands: `/spawn`, `/home`, `/back`, `/warp`, `/tpa…`, `/f home`, `/f stuck`, `/echest`, `/kit`, `/fly` and more (`combat-tag.blocked-commands`);
+  - teleport by command;
+  - walk or ender-pearl into the spawn safezone.
+- **Logging out, timing out or switching server while tagged kills you**, and your items drop where you stood.
+  Kicks (restarts, AFK kick, staff) aren't punished.
+- `/combat` (`/ct`) shows your timer. `crispy.combat.bypass` exempts a player (off for everyone by default, ops included).
+- Settings are in `plugins/CrispyFactions/config.yml` → `combat-tag`; apply changes with `/crispyfactions reload`.
+
 ## 6. Ranks (LuckPerms, no P2W)
 | Group | Inherits | Perks |
 |---|---|---|
@@ -161,5 +172,5 @@ The area x -80..79, z -176..79 was changed to the plains biome so snow doesn't s
 ```
 CP=$(find <server>/libraries -name '*.jar' | tr '\n' ':')<path>/SaberFactions.jar
 javac --release 21 -proc:none -cp "$CP" -d out $(find crispyfactions/src -name '*.java')
-cp crispyfactions/res/* out/ && (cd out && jar cf ../CrispyFactions-1.0.0.jar .)
+cp crispyfactions/res/* out/ && (cd out && jar cf ../CrispyFactions-1.1.0.jar .)
 ```

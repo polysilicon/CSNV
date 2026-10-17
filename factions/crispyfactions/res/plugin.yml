@@ -1,9 +1,9 @@
 name: CrispyFactions
-version: 1.0.0
+version: 1.1.0
 main: crispy.factions.CrispyFactions
 api-version: '1.21'
 author: Crispy Network
-description: Prime-time raid window, obsidian durability, Aegis Vacation Star, cactus collector, 1.8-era item rules
+description: Prime-time raid window, obsidian durability, Aegis Vacation Star, cactus collector, 1.8-era item rules, PvP combat tag
 depend: [Factions]
 softdepend: [EconomyShopGUI, Essentials]
 commands:
@@ -12,6 +12,9 @@ commands:
     aliases: [rw, raid]
   aegis:
     description: Aegis Vacation Star status (admins - give/collector/reset)
+  combat:
+    description: Show your PvP combat-tag timer
+    aliases: [ct, combattag]
   nv:
     description: Toggle night vision
     permission: crispy.nv
@@ -21,5 +24,6 @@ commands:
 permissions:
   crispy.nv: {default: op}
   crispy.admin: {default: op}
+  crispy.combat.bypass: {default: false}
   crispy.afk.extended: {default: false}
   crispy.afk.exempt: {default: op}
