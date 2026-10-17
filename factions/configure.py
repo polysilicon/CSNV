@@ -68,7 +68,7 @@ d = ry(oc); print("OCM worlds", d["worlds"], "| offhand always:", "disable-offha
 
 # ---- Essentials: classic economy + kits ----
 ec = P + "/Essentials/config.yml"; backup(ec); s = open(ec).read()
-for k, v in (("starting-balance", "500"), ("min-money", "0"), ("teleport-delay", "3"), ("auto-afk-timeout", "-1"), ("update-check", "false"), ("spawn-on-join", "true")):
+for k, v in (("starting-balance", "500"), ("min-money", "0"), ("teleport-delay", "3"), ("auto-afk-timeout", "-1"), ("update-check", "false"), ("spawn-on-join", "false")):
     s = re.sub(rf"^{k}:.*$", f"{k}: {v}", s, count=1, flags=re.M)
 open(ec, "w").write(s)
 kits = {"kits": {
