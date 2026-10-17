@@ -50,6 +50,7 @@ prime-time raid windows, no pay-to-win.
   walls need sand+TNT hybrid cannons. Damage is forgotten after 30 min without a hit. No regen walls, no genbuckets.
 - Cannon physics: falling-block / TNT height nerfs off, TNT moves in water, `max-tnt-per-tick: 500`,
   `optimize-explosions: true`.
+- Locator bar (player dots in the XP bar) off: `gamerule minecraft:locator_bar false` in all three worlds.
 - World borders: overworld 5000×5000 (±2500), nether 2500×2500. Both pre-generated with Chunky.
 
 ## 3. Prime-time raid window (America/New_York) — currently OFF
