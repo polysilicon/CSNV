@@ -22,6 +22,11 @@ Open it with `/balatro` (aliases `/bc`, `/cards`) or the emerald in slot 4 of th
   (Sharpening Stone +30 chips, Rabbit's Foot +4 mult, Blast Furnace → Diamonds, Blaze Powder +1 rank, Silk Touch copy,
   Lava Bucket destroy, Emerald Bundle doubles money up to +$20).
 
+- **Card packs:** every shop has one pack: Standard ($4, pick 1 of 3) or Jumbo ($6, pick 2 of 5). Picked cards join
+  your deck; 30% come enchanted. The Creeper never blows the deck below 30 cards.
+- **Chat:** the 💬 book (table, shop and pack screens) shows the last 7 lobby chat lines live. Click it to type; the game
+  reopens as soon as you send your message.
+
 ## Daily run and leaderboard
 `/balatro daily`: one attempt per day (America/Chicago), same seed for everyone. `/balatro top [daily]` shows the top 10
 by blinds cleared, then best hand. Rewards are cosmetic only; nothing is paid with real money.

@@ -30,7 +30,7 @@ public class SimTest {
         check(Rules.evaluate(cards("KD", "2R", "7C")).scoring().get(0).rank == 13, "high card scores top");
 
         Random rnd = new Random(1);
-        int runs = 2000, wins = 0, maxAnte = 0; long hands = 0; Map<String, Integer> endAnte = new TreeMap<>();
+        int runs = 2000, wins = 0, maxAnte = 0; long hands = 0; int packs = 0; Map<String, Integer> endAnte = new TreeMap<>();
         for (int n = 0; n < runs; n++) {
             Run r = Run.create(rnd.nextLong(), false, "");
             int guard = 0;
@@ -39,6 +39,17 @@ public class SimTest {
                     // simple policy: buy mobs, books, tools when affordable, then next round
                     for (int i = 0; i < 2; i++) r.buyMob(i);
                     for (int i = 0; i < 2; i++) r.buyItem(i);
+                    if (r.deck.size() < 52 || rnd.nextInt(3) == 0) {
+                        int before = r.deck.size();
+                        if (r.buyPack() == null) { packs++;
+                            check(r.state == Run.State.PACK, "pack state");
+                            while (r.state == Run.State.PACK) { int i = rnd.nextInt(r.packChoices.size()); if (r.packChoices.get(i) != null) r.pickCard(i); }
+                            check(r.deck.size() > before, "pack adds cards");
+                            YamlConfiguration y = Run.toYaml(r); Run b = Run.load(YamlConfiguration.loadConfiguration(new java.io.StringReader(y.saveToString())));
+                            check(Run.toYaml(b).saveToString().equals(y.saveToString()), "roundtrip after pack");
+                        }
+                    }
+                    check(r.deck.size() >= Math.min(30, 52), "deck never below creeper floor");
                     if (r.ante > 12) { r.state = Run.State.OVER; break; }
                     r.nextRound(); continue;
                 }
@@ -77,7 +88,7 @@ public class SimTest {
             endAnte.merge(String.format("%02d", r.ante), 1, Integer::sum);
         }
         System.out.println("runs " + runs + ", hands " + hands + ", wins " + wins + ", max ante " + maxAnte);
-        System.out.println("ante reached: " + endAnte);
+        System.out.println("ante reached: " + endAnte + ", packs bought " + packs);
         // daily determinism
         Run d1 = Run.create(42, true, "x"), d2 = Run.create(42, true, "x");
         check(Run.toYaml(d1).saveToString().equals(Run.toYaml(d2).saveToString()), "same seed same start");

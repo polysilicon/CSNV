@@ -8,11 +8,11 @@ import java.util.*;
 
 /** One player's run: all state and every rule. The GUI only renders this and calls its actions. */
 final class Run {
-    enum State { ROUND, SHOP, OVER }
+    enum State { ROUND, SHOP, PACK, OVER }
     record Step(int kind, int index, String text, long chips, double mult) {}   // kind 0 = played card, 1 = mob, 2 = other
     record Result(Eval eval, List<Card> played, List<Step> steps, long total, String note) {}
 
-    static final int HAND_SIZE = 8, HANDS = 4, DISCARDS = 3, MOB_SLOTS = 5, TOOL_SLOTS = 2, MAX_SELECT = 5;
+    static final int HAND_SIZE = 8, HANDS = 4, DISCARDS = 3, MOB_SLOTS = 5, TOOL_SLOTS = 2, MAX_SELECT = 5, CREEPER_MIN_DECK = 30;
 
     long seed; boolean daily; String day = "";
     Rng rng;
@@ -29,6 +29,8 @@ final class Run {
     final List<Mob> offerMobs = new ArrayList<>();
     final List<String> offerItems = new ArrayList<>();
     int rerollCost = 5;
+    String offerPack;                               // STANDARD / JUMBO, null when bought
+    final List<Card> packChoices = new ArrayList<>(); int packPicks;
     State state = State.ROUND;
     boolean won, sortBySuit;
     long bestHand; int handsPlayed;
@@ -54,7 +56,7 @@ final class Run {
         Boss[] pool = Arrays.stream(Boss.values()).filter(b -> b != Boss.ENDER_DRAGON).toArray(Boss[]::new);
         return pool[rng.nextInt(pool.length)];
     }
-    Boss activeBoss() { return blind == 2 ? boss : null; }
+    Boss activeBoss() { return state == State.ROUND && blind == 2 ? boss : null; }
     long computeTarget() {
         double m = blind == 0 ? 1 : blind == 1 ? 1.5 : boss == Boss.ENDER_DRAGON ? 4 : 2;
         return Math.round(Rules.anteBase(ante) * m);
@@ -160,7 +162,7 @@ final class Run {
         roundScore += total; bestHand = Math.max(bestHand, total);
         lastHand = ev.hand().title + ": " + String.format("%,d", total);
         for (int i = 0; i < countEffective(Mob.CREEPER); i++) {
-            if (rng.nextInt(6) == 0 && !drawPile.isEmpty()) {
+            if (deck.size() > CREEPER_MIN_DECK && rng.nextInt(6) == 0 && !drawPile.isEmpty()) {
                 int id = drawPile.remove(rng.nextInt(drawPile.size()));
                 Card gone = card(id); deck.remove(gone);
                 news.add("&a&lSsss... BOOM! &7The Creeper blew " + gone.label() + " &7out of your deck.");
@@ -201,7 +203,36 @@ final class Run {
             if (rng.nextInt(2) == 0) offerItems.add("BOOK:" + books[rng.nextInt(books.length)].name());
             else offerItems.add("TOOL:" + Tool.values()[rng.nextInt(Tool.values().length)].name());
         }
+        offerPack = rng.nextInt(5) < 3 ? "STANDARD" : "JUMBO";
     }
+    static int packPrice(String p) { return "JUMBO".equals(p) ? 6 : 4; }
+    static int packSize(String p) { return "JUMBO".equals(p) ? 5 : 3; }
+    static int packPickCount(String p) { return "JUMBO".equals(p) ? 2 : 1; }
+    String buyPack() {
+        if (state != State.SHOP || offerPack == null) return null;
+        int price = packPrice(offerPack);
+        if (money < price) return "&cYou need $" + price + ".";
+        money -= price;
+        packChoices.clear();
+        for (int i = 0; i < packSize(offerPack); i++) {
+            Card c = new Card(-1, 2 + rng.nextInt(13), Rules.SUITS.charAt(rng.nextInt(4)), 0, 0);
+            int roll = rng.nextInt(10);
+            if (roll < 2) c.chips = 30; else if (roll < 3) c.mult = 4;     // 30% come pre-enchanted
+            packChoices.add(c);
+        }
+        packPicks = packPickCount(offerPack); offerPack = null; state = State.PACK;
+        return null;
+    }
+    String pickCard(int i) {
+        if (state != State.PACK || i >= packChoices.size() || packChoices.get(i) == null) return null;
+        Card c = packChoices.get(i);
+        Card added = new Card(nextId++, c.rank, c.suit, c.chips, c.mult);
+        deck.add(added); packChoices.set(i, null);
+        news.add("&aAdded " + added.label() + " &ato your deck &7(" + deck.size() + " cards).");
+        if (--packPicks <= 0) closePack();
+        return null;
+    }
+    void closePack() { if (state == State.PACK) { packChoices.clear(); packPicks = 0; state = State.SHOP; } }
     String reroll() {
         if (state != State.SHOP) return null;
         if (money < rerollCost) return "&cA reroll costs $" + rerollCost + ".";
@@ -268,6 +299,8 @@ final class Run {
         y.set("mobs", mobs.stream().map(Enum::name).toList()); y.set("tools", tools.stream().map(Enum::name).toList());
         y.set("offer-mobs", offerMobs.stream().map(m -> m == null ? "-" : m.name()).toList());
         y.set("offer-items", offerItems.stream().map(s -> s == null ? "-" : s).toList());
+        y.set("offer-pack", offerPack == null ? "-" : offerPack);
+        y.set("pack-choices", packChoices.stream().map(c -> c == null ? "-" : c.save()).toList()); y.set("pack-picks", packPicks);
         y.set("reroll", rerollCost); y.set("state", state.name()); y.set("won", won); y.set("sort-suit", sortBySuit);
         y.set("best-hand", bestHand); y.set("hands-played", handsPlayed); y.set("last-hand", lastHand);
     }
@@ -284,6 +317,9 @@ final class Run {
         for (String s : y.getStringList("tools")) r.tools.add(Tool.valueOf(s));
         for (String s : y.getStringList("offer-mobs")) r.offerMobs.add(s.equals("-") ? null : Mob.valueOf(s));
         for (String s : y.getStringList("offer-items")) r.offerItems.add(s.equals("-") ? null : s);
+        String op = y.getString("offer-pack", "-"); r.offerPack = op.equals("-") ? null : op;
+        for (String s : y.getStringList("pack-choices")) r.packChoices.add(s.equals("-") ? null : Card.load(s));
+        r.packPicks = y.getInt("pack-picks");
         r.rerollCost = y.getInt("reroll", 5); r.state = State.valueOf(y.getString("state", "ROUND")); r.won = y.getBoolean("won"); r.sortBySuit = y.getBoolean("sort-suit");
         r.bestHand = y.getLong("best-hand"); r.handsPlayed = y.getInt("hands-played"); r.lastHand = y.getString("last-hand", "");
         return r;

@@ -1,0 +1,12 @@
+# Lobby sidebar (DeluxeHub's own scoreboard is switched off because it crashes on Paper 26.x).
+# Placeholders: %player% %online% %online_max% %world%   Reload: /crispylobby
+sidebar:
+  enabled: true
+  refresh-seconds: 5
+  join-delay-ticks: 40
+  title: "&d&lCrispyAnarchy &7(%online%/%online_max%)"
+  lines:
+    - "&7&m----------------------"
+    - "&e&lPlayer:"
+    - "  &f%player%"
+    - "&7&m----------------------"

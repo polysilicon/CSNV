@@ -1,0 +1,12 @@
+name: CrispyLobby
+version: 1.0.0
+main: crispy.lobby.CrispyLobby
+api-version: '1.21'
+author: Crispy Network
+description: Lobby sidebar
+commands:
+  crispylobby:
+    description: Reload the lobby sidebar
+    permission: crispylobby.admin
+permissions:
+  crispylobby.admin: {default: op}

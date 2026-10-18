@@ -87,7 +87,7 @@ final class Rules {
     enum Mob {
         ZOMBIE("Zombie", "ZOMBIE_SPAWN_EGG", 4, "&c+4 &7Mult"),
         SKELETON("Skeleton", "SKELETON_SPAWN_EGG", 4, "&9+50 &7Chips"),
-        CREEPER("Creeper", "CREEPER_SPAWN_EGG", 5, "&c+20 &7Mult. &71 in 6 chance after each hand", "&7to blow a card out of your deck"),
+        CREEPER("Creeper", "CREEPER_SPAWN_EGG", 5, "&c+20 &7Mult. &71 in 6 chance after each hand", "&7to blow a card out of your deck", "&8(never below 30 cards)"),
         SPIDER("Spider", "SPIDER_SPAWN_EGG", 5, "&c+8 &7Mult if the hand", "&7contains a &fPair"),
         SLIME("Slime", "SLIME_SPAWN_EGG", 6, "&c+12 &7Mult if the hand contains", "&fThree of a Kind"),
         BLAZE("Blaze", "BLAZE_SPAWN_EGG", 6, "&c+12 &7Mult if the hand", "&7is a &fFlush"),

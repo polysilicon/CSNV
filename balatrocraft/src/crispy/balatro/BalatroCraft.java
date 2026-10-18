@@ -17,6 +17,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import io.papermc.paper.event.player.AsyncChatEvent;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemFlag;
@@ -40,6 +42,8 @@ public class BalatroCraft extends JavaPlugin implements Listener {
 
     final Map<UUID, Run> runs = new HashMap<>();
     final Set<UUID> animating = new HashSet<>();
+    final Set<UUID> chatMode = new HashSet<>();
+    final Deque<String> chatLog = new ArrayDeque<>();
     File runsDir, scoresFile; YamlConfiguration scores;
 
     @Override public void onEnable() {
@@ -181,7 +185,7 @@ public class BalatroCraft extends JavaPlugin implements Listener {
     void open(Player p) {
         Run r = run(p.getUniqueId());
         if (r == null) mainMenu(p);
-        else switch (r.state) { case ROUND -> table(p, r); case SHOP -> shop(p, r); case OVER -> over(p, r); }
+        else switch (r.state) { case ROUND -> table(p, r); case SHOP -> shop(p, r); case PACK -> pack(p, r); case OVER -> over(p, r); }
     }
 
     void fill(Inventory inv, Material m, int from, int to) { ItemStack f = item(m, " "); for (int i = from; i <= to; i++) if (inv.getItem(i) == null) inv.setItem(i, f); }
@@ -224,6 +228,49 @@ public class BalatroCraft extends JavaPlugin implements Listener {
         return item(r.blind == 0 ? Material.WHITE_BANNER : Material.YELLOW_BANNER, title, "&7Next boss: &c" + r.boss.title, "&8" + r.boss.effect, "&8Reward: $" + Rules.blindReward(r.blind));
     }
 
+    ItemStack chatItem() {
+        List<String> l = new ArrayList<>();
+        if (chatLog.isEmpty()) l.add("&8No messages yet");
+        for (String line : chatLog) l.add(line);
+        l.add(""); l.add("&eClick to type a message"); l.add("&7(the game reopens after you send it)");
+        return item(Material.WRITABLE_BOOK, "&b💬 Lobby chat", l.toArray(String[]::new));
+    }
+    void pushChat(String line) {
+        chatLog.addLast(line); while (chatLog.size() > 7) chatLog.removeFirst();
+        ItemStack ci = chatItem();
+        for (Player o : Bukkit.getOnlinePlayers()) {
+            Inventory top = o.getOpenInventory().getTopInventory();
+            if (top.getHolder() instanceof Menu m) { int slot = chatSlot(m.type); if (slot >= 0) top.setItem(slot, ci); }
+        }
+    }
+    static int chatSlot(String type) { return switch (type) { case "table" -> 16; case "shop" -> 6; case "pack" -> 18; default -> -1; }; }
+    void chatPrompt(Player p) {
+        chatMode.add(p.getUniqueId()); p.closeInventory();
+        msg(p, "&eType your message in chat. &7The game reopens when you send it (or use &f/balatro&7).");
+    }
+
+    void pack(Player p, Run r) {
+        Inventory inv = screen(p, "pack", 27, "&8Card pack &7- pick " + r.packPicks);
+        int n = r.packChoices.size(), start = n <= 3 ? 11 : 11;
+        for (int i = 0; i < n; i++) {
+            Card cd = r.packChoices.get(i);
+            int slot = n <= 3 ? 11 + 2 * i : start + i;
+            inv.setItem(slot, cd == null ? item(Material.LIGHT_GRAY_STAINED_GLASS_PANE, "&7Taken") : cardItem(r, cd));
+        }
+        inv.setItem(4, item(Material.BUNDLE, "&6Pick " + r.packPicks + " card" + (r.packPicks == 1 ? "" : "s"), "&7Chosen cards join your deck for the rest of the run.", "&7Your deck: &f" + r.deck.size() + " cards"));
+        inv.setItem(22, item(Material.BARRIER, "&7Skip the rest"));
+        inv.setItem(18, chatItem());
+        fill(inv, Material.BLACK_STAINED_GLASS_PANE, 0, 26);
+    }
+    void packClick(Player p, Run r, int s) {
+        if (r.state != Run.State.PACK) { open(p); return; }
+        int n = r.packChoices.size(), idx = -1;
+        if (n <= 3) { if (s >= 11 && s <= 15 && (s - 11) % 2 == 0) idx = (s - 11) / 2; } else if (s >= 11 && s < 11 + n) idx = s - 11;
+        if (s == 18) { chatPrompt(p); return; }
+        if (s == 22) { r.closePack(); after(p, r, null); return; }
+        if (idx >= 0 && idx < n) { p.playSound(p.getLocation(), Sound.ITEM_BUNDLE_INSERT, 1f, 1f); after(p, r, r.pickCard(idx)); }
+    }
+
     void table(Player p, Run r) {
         Inventory inv = screen(p, "table", 54, "&8Balatro Craft &7- Ante " + r.ante + (r.daily ? " &6(daily)" : ""));
         inv.setItem(0, bossItem(r));
@@ -239,6 +286,7 @@ public class BalatroCraft extends JavaPlugin implements Listener {
             inv.setItem(9 + i, i < r.mobs.size() ? mobItem(r.mobs.get(i), r.mobs.get(i) == Mob.ALLAY && r.effective(i) != null ? "&8(copying " + r.effective(i).title + ")" : null)
                     : item(Material.GRAY_STAINED_GLASS_PANE, "&7Empty mob slot"));
         inv.setItem(15, item(Material.KNOWLEDGE_BOOK, "&dHand levels", "&7Click to list them in chat"));
+        inv.setItem(16, chatItem());
         inv.setItem(17, item(Material.PAPER, "&fRun info", "&7Best hand: &f" + fmt(r.bestHand), "&7Hands played: &f" + r.handsPlayed, r.daily ? "&6Daily run " + r.day : "&7Seed: &8" + Long.toHexString(r.seed)));
         for (int i = 0; i < r.hand.size() && i < 8; i++) {
             Card cd = r.card(r.hand.get(i));
@@ -261,6 +309,11 @@ public class BalatroCraft extends JavaPlugin implements Listener {
         inv.setItem(0, item(Material.CHEST, "&6&lShop", "&7Ante " + r.ante + ", next: " + Rules.blindName(r.blind)));
         inv.setItem(4, amount(item(Material.EMERALD, "&aMoney: $" + r.money), r.money));
         inv.setItem(8, bossItem(r));
+        inv.setItem(6, chatItem());
+        inv.setItem(22, r.offerPack == null ? item(Material.LIGHT_GRAY_STAINED_GLASS_PANE, "&7Sold")
+                : glint(item(Material.BUNDLE, "&6" + ("JUMBO".equals(r.offerPack) ? "Jumbo" : "Standard") + " Card Pack",
+                        "&7Choose &f" + Run.packPickCount(r.offerPack) + " &7of &f" + Run.packSize(r.offerPack) + " &7cards to add to your deck",
+                        "&7(some come enchanted)", "&7Deck: &f" + r.deck.size() + " cards", "&aBuy: $" + Run.packPrice(r.offerPack))));
         for (int i = 0; i < r.offerMobs.size(); i++) {
             Mob m = r.offerMobs.get(i);
             inv.setItem(10 + 2 * i, m == null ? item(Material.LIGHT_GRAY_STAINED_GLASS_PANE, "&7Sold") : mobItem(m, "&aBuy: $" + m.price));
@@ -298,8 +351,16 @@ public class BalatroCraft extends JavaPlugin implements Listener {
 
     // ------------------------------------------------------------------ clicks
     @EventHandler public void onDrag(InventoryDragEvent e) { if (e.getView().getTopInventory().getHolder() instanceof Menu) e.setCancelled(true); }
+    @EventHandler public void onChat(AsyncChatEvent e) {
+        Player p = e.getPlayer();
+        String text = PlainTextComponentSerializer.plainText().serialize(e.message());
+        if (text.length() > 48) text = text.substring(0, 47) + "…";
+        String line = "&7" + p.getName() + ": &f" + text.replace("&", "＆");
+        boolean reopen = chatMode.remove(p.getUniqueId());
+        Bukkit.getScheduler().runTask(this, () -> { pushChat(line); if (reopen && p.isOnline()) open(p); });
+    }
     @EventHandler public void onQuit(PlayerQuitEvent e) {
-        UUID u = e.getPlayer().getUniqueId(); animating.remove(u);
+        UUID u = e.getPlayer().getUniqueId(); animating.remove(u); chatMode.remove(u);
         Run r = runs.remove(u); if (r != null) saveRun(u, r);
     }
 
@@ -320,6 +381,7 @@ public class BalatroCraft extends JavaPlugin implements Listener {
             }
             case "table" -> { if (r != null) tableClick(p, r, s, shift); }
             case "shop" -> { if (r != null) shopClick(p, r, s, shift); }
+            case "pack" -> { if (r != null) packClick(p, r, s); }
             default -> {}
         }
     }
@@ -334,6 +396,7 @@ public class BalatroCraft extends JavaPlugin implements Listener {
 
     void tableClick(Player p, Run r, int s, boolean shift) {
         if (r.state != Run.State.ROUND) { open(p); return; }
+        if (s == 16) { chatPrompt(p); return; }
         if ((s >= 36 && s <= 43) || (s >= 27 && s <= 34)) {
             int i = s >= 36 ? s - 36 : s - 27;
             if (i < r.hand.size()) { after(p, r, r.toggle(r.hand.get(i))); p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.8f); }
@@ -359,6 +422,8 @@ public class BalatroCraft extends JavaPlugin implements Listener {
         else if (s == 14 || s == 16) { err = r.buyItem((s - 14) / 2); buy = err == null; }
         else if (s >= 28 && s <= 32 && shift) err = r.sellMob(s - 28);
         else if (s == 45) err = r.reroll();
+        else if (s == 6) { chatPrompt(p); return; }
+        else if (s == 22) { err = r.buyPack(); if (err == null) p.playSound(p.getLocation(), Sound.ITEM_BUNDLE_DROP_CONTENTS, 1f, 1f); }
         else if (s == 49) { r.nextRound(); p.playSound(p.getLocation(), Sound.BLOCK_CHEST_OPEN, 0.6f, 1.2f); }
         else if (s == 53 && shift) { r.state = Run.State.OVER; record(p, r); msg(p, "&7Run abandoned."); }
         else return;
