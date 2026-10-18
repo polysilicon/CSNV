@@ -115,9 +115,28 @@ section("Specials", 4, "NETHER_STAR", "&b&lSpecials", [
      "lore": ["&7Right-click inside your claim as &fLeader&7/&fCo-Leader", "&7during peacetime to bank &b25 raid-window hours", "&7of explosion protection. &8Ticks only during raid windows."],
      "enchantments": ["UNBREAKING:1"], "buy": 2500000},
     {"material": "HOPPER", "name": "&a&lCactus Collector", "lore": ["&7Collects every cactus that drops in its chunk.", "&8One per chunk."], "buy": 50000}])
+# Sell prices are checked against every buy price above (and blocks that craft, smelt, scrape or break back into
+# the item) so nothing can be bought and resold at a profit. Copper (waxed/oxidised blocks scrape back to 9 ingots)
+# and emeralds (villagers pay them for cheap shop stone/sticks) are left out on purpose; iron stays Phase 2.
+# Mass-farmable drops (kelp, gold, pearls, guardians) are kept low so cactus/cane and spawners stay the main income.
 section("Farming", 20, "CACTUS", "&a&lFarm Sell", [
     {"material": "CACTUS", "sell": 10, "buy": 100}, {"material": "SUGAR_CANE", "sell": 15, "buy": 150},
-    {"material": "BLAZE_ROD", "sell": 35}, {"material": "GUNPOWDER", "sell": 20}])
+    {"material": "WHEAT", "sell": 4}, {"material": "CARROT", "sell": 2}, {"material": "POTATO", "sell": 2},
+    {"material": "BEETROOT", "sell": 3}, {"material": "PUMPKIN", "sell": 6}, {"material": "MELON_SLICE", "sell": 1},
+    {"material": "NETHER_WART", "sell": 3}, {"material": "COCOA_BEANS", "sell": 3}, {"material": "SWEET_BERRIES", "sell": 1},
+    {"material": "KELP", "sell": 1}])
+section("Ores", 19, "DIAMOND", "&b&lOre Sell", [
+    {"material": "COAL", "sell": 3}, {"material": "REDSTONE", "sell": 1}, {"material": "LAPIS_LAZULI", "sell": 2},
+    {"material": "QUARTZ", "sell": 3}, {"material": "GOLD_INGOT", "sell": 8}, {"material": "DIAMOND", "sell": 100},
+    {"material": "NETHERITE_SCRAP", "sell": 400}])
+section("Mobs", 25, "BONE", "&c&lMob Drop Sell", [
+    {"material": "BLAZE_ROD", "sell": 35}, {"material": "GUNPOWDER", "sell": 20}, {"material": "ROTTEN_FLESH", "sell": 2},
+    {"material": "BONE", "sell": 3}, {"material": "STRING", "sell": 3}, {"material": "SPIDER_EYE", "sell": 3},
+    {"material": "ENDER_PEARL", "sell": 3}, {"material": "SLIME_BALL", "sell": 4}, {"material": "MAGMA_CREAM", "sell": 3},
+    {"material": "GHAST_TEAR", "sell": 25}, {"material": "LEATHER", "sell": 3}, {"material": "RABBIT_HIDE", "sell": 2},
+    {"material": "FEATHER", "sell": 1}, {"material": "INK_SAC", "sell": 2}, {"material": "GLOW_INK_SAC", "sell": 3},
+    {"material": "PRISMARINE_SHARD", "sell": 1}, {"material": "PRISMARINE_CRYSTALS", "sell": 2},
+    {"material": "SHULKER_SHELL", "sell": 30}, {"material": "WITHER_SKELETON_SKULL", "sell": 500}])
 section("Raiding", 21, "TNT", "&c&lRaiding", [
     {"material": "OBSIDIAN", "buy": 200}, {"material": "TNT", "buy": 150}, {"material": "CREEPER_SPAWN_EGG", "buy": 15000},
     {"material": "SAND", "buy": 5}, {"material": "RED_SAND", "buy": 5}, {"material": "GRAVEL", "buy": 5}, {"material": "WATER_BUCKET", "buy": 50}])

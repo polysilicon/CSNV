@@ -84,15 +84,30 @@ Wilderness/warzone PvP and farming are unaffected. Warnings at 60/15/5/1 min, ti
 - `/aegis` shows status; admin `/aegis give <player> [n]`, `/aegis collector <player> [n]`, `/aegis reset <faction>`.
 
 ## 5. Economy (`/shop`)
-Only the farm table pays out; all other sale prices were removed from the default shop.
+Only the three sell tables (Farm, Ore, Mob Drop) pay out; all other sale prices were removed from the default shop.
+Sell with `/sellall` or `/sellgui`. Every sell price was checked against every buy price in the shop, including blocks
+that craft, smelt, scrape or break back into the item, so nothing can be bought and resold for profit.
+Left out on purpose:
+- copper: a waxed or oxidised copper block scrapes back into 9 ingots;
+- emeralds: villagers pay them for cheap shop stone and sticks;
+- iron: it stays in Phase 2.
+
+Drops that can be farmed in bulk (kelp, gold, pearls, guardians) are kept low, so cactus, cane and spawners stay the main income.
 
 **Phase 1 — sell**
-| Item | Sell |
-|---|---|
-| Cactus | $10 |
-| Sugar Cane | $15 |
-| Blaze Rod | $35 |
-| Gunpowder | $20 |
+| Farm Sell | | Ore Sell | | Mob Drop Sell | |
+|---|---|---|---|---|---|
+| Cactus | $10 | Coal | $3 | Blaze Rod | $35 |
+| Sugar Cane | $15 | Redstone | $1 | Gunpowder | $20 |
+| Wheat | $4 | Lapis | $2 | Rotten Flesh / Rabbit Hide | $2 |
+| Carrot / Potato | $2 | Quartz | $3 | Bone / String / Spider Eye / Leather | $3 |
+| Beetroot / Nether Wart / Cocoa | $3 | Gold Ingot | $8 | Ender Pearl / Magma Cream / Glow Ink | $3 |
+| Pumpkin | $6 | Diamond | $100 | Slime Ball | $4 |
+| Melon Slice / Sweet Berries / Kelp | $1 | Netherite Scrap | $400 | Ghast Tear | $25 |
+| | | | | Feather / Prismarine Shard | $1 |
+| | | | | Ink Sac / Prismarine Crystals | $2 |
+| | | | | Shulker Shell | $30 |
+| | | | | Wither Skeleton Skull | $500 |
 
 **Phase 1 — buy**
 | Item | Price |
