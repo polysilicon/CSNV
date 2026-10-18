@@ -1,3 +1,14 @@
+# Lobby spawn: every join is sent here; players above rescue-above-y (the barrier ceiling is at 319) are sent back.
+spawn:
+  on-join: true
+  world: world
+  x: 0.5
+  y: 66
+  z: 6.5
+  yaw: 0
+  pitch: 0
+  rescue-above-y: 300
+
 # Lobby sidebar (DeluxeHub's own scoreboard is switched off because it crashes on Paper 26.x).
 # Placeholders: %player% %online% %online_max% %world%   Reload: /crispylobby
 sidebar:

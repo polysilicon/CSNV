@@ -1,9 +1,9 @@
 name: CrispyLobby
-version: 1.0.0
+version: 1.1.0
 main: crispy.lobby.CrispyLobby
 api-version: '1.21'
 author: Crispy Network
-description: Lobby sidebar
+description: Lobby sidebar and spawn
 commands:
   crispylobby:
     description: Reload the lobby sidebar

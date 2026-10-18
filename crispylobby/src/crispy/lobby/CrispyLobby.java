@@ -4,6 +4,10 @@ import io.papermc.paper.scoreboard.numbers.NumberFormat;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -14,7 +18,8 @@ import org.bukkit.scoreboard.*;
 
 import java.util.*;
 
-/** Lobby sidebar (replaces DeluxeHub's scoreboard, which crashes on Paper 26.x). */
+/** Lobby sidebar (replaces DeluxeHub's scoreboard, which crashes on Paper 26.x) and lobby spawn handling:
+ *  every join lands on the spawn point, and anyone who gets above the barrier ceiling is brought back. */
 public class CrispyLobby extends JavaPlugin implements Listener {
     static final LegacyComponentSerializer AMP = LegacyComponentSerializer.legacyAmpersand();
     final Map<UUID, Objective> boards = new HashMap<>();
@@ -64,8 +69,21 @@ public class CrispyLobby extends JavaPlugin implements Listener {
         }
     }
 
+    Location spawn() {
+        World w = Bukkit.getWorld(getConfig().getString("spawn.world", "world"));
+        if (w == null) w = Bukkit.getWorlds().get(0);
+        return new Location(w, getConfig().getDouble("spawn.x", 0.5), getConfig().getDouble("spawn.y", 66), getConfig().getDouble("spawn.z", 6.5),
+                (float) getConfig().getDouble("spawn.yaw", 0), (float) getConfig().getDouble("spawn.pitch", 0));
+    }
+    @EventHandler public void onMove(PlayerMoveEvent e) {
+        if (!e.hasChangedBlock() || e.getTo().getY() < getConfig().getDouble("spawn.rescue-above-y", 300)) return;
+        if (e.getPlayer().getGameMode() == org.bukkit.GameMode.SPECTATOR || e.getPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE) return;
+        e.getPlayer().teleport(spawn(), PlayerTeleportEvent.TeleportCause.PLUGIN);
+    }
+
     @EventHandler public void onJoin(PlayerJoinEvent e) {
         Player p = e.getPlayer();
+        if (getConfig().getBoolean("spawn.on-join", true)) p.teleport(spawn(), PlayerTeleportEvent.TeleportCause.PLUGIN);
         Bukkit.getScheduler().runTaskLater(this, () -> { if (p.isOnline()) show(p); }, getConfig().getLong("sidebar.join-delay-ticks", 40));
     }
     @EventHandler public void onQuit(PlayerQuitEvent e) { boards.remove(e.getPlayer().getUniqueId()); }
