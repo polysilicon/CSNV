@@ -1,17 +1,20 @@
 name: CrispyFactions
-version: 1.1.0
+version: 1.2.0
 main: crispy.factions.CrispyFactions
 api-version: '1.21'
 author: Crispy Network
-description: Prime-time raid window, obsidian durability, Aegis Vacation Star, cactus collector, 1.8-era item rules, PvP combat tag
+description: Prime-time raid window, obsidian durability, Aegis Vacation Star, cactus collector, 1.8-era item rules, PvP combat tag, CS-style cases
 depend: [Factions]
-softdepend: [EconomyShopGUI, Essentials]
+softdepend: [EconomyShopGUI, Essentials, Vault]
 commands:
   raidwindow:
     description: Show the raid window schedule (admins - force open|closed|auto)
     aliases: [rw, raid]
   aegis:
     description: Aegis Vacation Star status (admins - give/collector/reset)
+  cases:
+    description: CS-style weapon cases (buy cases and keys, see the odds)
+    aliases: [case, crates]
   combat:
     description: Show your PvP combat-tag timer
     aliases: [ct, combattag]

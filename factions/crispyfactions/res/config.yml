@@ -50,3 +50,42 @@ phase2:
   unlock-after-days: 10
   iron-sell: 40
   reload-commands: ["sreload"]
+
+# CS2-style weapon cases (in-game money only). A Crispy Case (monster drop or /cases) + a Case Key (/cases) spins a roulette.
+# Rarity weights are CS2's odds. Each reward picks one rarity, then one reward of that rarity at random.
+# Reward fields: rarity, and one of money | item+amount | skin+item (+enchants) | special: aegis. Optional name (label).
+cases:
+  enabled: true
+  case-price: 2500
+  key-price: 15000
+  drop-chance: 0.004          # per monster killed by a player (spawner mobs never drop cases)
+  stattrak-chance: 0.10       # skins: chance of a StatTrak kill counter
+  broadcast-rarities: [covert, gold]
+  rarities:
+    milspec:    {name: "Mil-Spec Grade", color: "&9", weight: 79.92, pane: BLUE_STAINED_GLASS_PANE}
+    restricted: {name: "Restricted", color: "&5", weight: 15.98, pane: PURPLE_STAINED_GLASS_PANE}
+    classified: {name: "Classified", color: "&d", weight: 3.20, pane: MAGENTA_STAINED_GLASS_PANE}
+    covert:     {name: "Covert", color: "&c", weight: 0.64, pane: RED_STAINED_GLASS_PANE}
+    gold:       {name: "★ Rare Special Item", color: "&6", weight: 0.26, pane: YELLOW_STAINED_GLASS_PANE}
+  rewards:
+    - {rarity: milspec, money: 10000}
+    - {rarity: milspec, item: OBSIDIAN, amount: 48}
+    - {rarity: milspec, item: TNT, amount: 64}
+    - {rarity: milspec, item: ENDER_PEARL, amount: 16}
+    - {rarity: milspec, skin: "P250 | Sand Dune", item: IRON_SWORD}
+    - {rarity: milspec, skin: "Nova | Polar Mesh", item: BOW}
+    - {rarity: restricted, money: 25000}
+    - {rarity: restricted, item: OBSIDIAN, amount: 128}
+    - {rarity: restricted, item: CREEPER_SPAWN_EGG, amount: 2}
+    - {rarity: restricted, skin: "M4A4 | Desert-Strike", item: DIAMOND_SWORD}
+    - {rarity: restricted, skin: "SSG 08 | Blood in the Water", item: BOW, enchants: {power: 2}}
+    - {rarity: classified, money: 75000}
+    - {rarity: classified, item: ENCHANTED_GOLDEN_APPLE, amount: 2}
+    - {rarity: classified, skin: "AK-47 | Redline", item: DIAMOND_SWORD, enchants: {sharpness: 2}}
+    - {rarity: classified, skin: "Desert Eagle | Blaze", item: DIAMOND_AXE, enchants: {sharpness: 2}}
+    - {rarity: covert, money: 200000}
+    - {rarity: covert, skin: "AWP | Dragon Lore", item: BOW, enchants: {power: 4, punch: 1}}
+    - {rarity: covert, skin: "AK-47 | Fire Serpent", item: DIAMOND_SWORD, enchants: {sharpness: 3, fire_aspect: 1}}
+    - {rarity: gold, skin: "★ Karambit | Fade", item: DIAMOND_SWORD, enchants: {sharpness: 5, unbreaking: 3, fire_aspect: 2}}
+    - {rarity: gold, skin: "★ Butterfly Knife | Doppler", item: DIAMOND_SWORD, enchants: {sharpness: 5, unbreaking: 3, looting: 3}}
+    - {rarity: gold, special: aegis, name: "Aegis Vacation Star"}

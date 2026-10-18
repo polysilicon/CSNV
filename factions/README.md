@@ -28,7 +28,7 @@ prime-time raid windows, no pay-to-win.
 | Chunky | 1.4.40 | pre-generation |
 | mcMMO | 2.3.002 | RPG skills (built from the GPL source, commit 25474dc) |
 | ViaVersion / ViaBackwards | 5.12.x | newer clients |
-| **CrispyFactions** (custom) | 1.1.0 | raid window, obsidian durability, Aegis Star, collector hopper, item bans, `/nv`, AFK, combat tag |
+| **CrispyFactions** (custom) | 1.2.0 | raid window, obsidian durability, Aegis Star, collector hopper, item bans, `/nv`, AFK, combat tag, cases |
 | HMCWraps | — | *not installed*: download from SpigotMC/Polymart and drop into `plugins/` |
 
 `install_plugins.sh` downloads everything except HMCWraps; `configure.py` applies every setting below.
@@ -140,6 +140,19 @@ Starting balance $500.
 - PvP toned down: Archery Daze max 25% (was 50), Axes Armor Impact 10% (was 25), Unarmed Disarm max 15% (was 33).
 - Blacksmith corner beside the spawn point: iron block at 7 73 13 = **Repair**, gold block at 7 73 16 = **Salvage**.
 
+## CS-style cases (CrispyFactions 1.2.0)
+In-game money only. Cases are never sold for real money: Minecraft's commercial rules forbid paid loot boxes.
+- **Crispy Case**: buy in `/cases` ($2,500), or 0.4% drop from monsters killed by a player (never from spawner mobs).
+- **Case Key**: `/cases` ($15,000). Right-click a case, see the contents and odds, press **Unlock** (uses 1 case + 1 key).
+- A CS2-style roulette spins about 6 seconds and lands on the prize. Covert and gold pulls are broadcast.
+- Rarity odds are CS2's: Mil-Spec 79.92%, Restricted 15.98%, Classified 3.2%, Covert 0.64%, ★ Rare Special 0.26%.
+- Prizes: money ($10k–$200k), obsidian, TNT, pearls, creeper eggs, god apples, an Aegis Star (gold), and **skins**.
+  Skins are real weapons named after CS2 skins (AK-47 | Redline, AWP | Dragon Lore, ★ Karambit | Fade…). Each has a
+  random wear float (Factory New … Battle-Scarred), and 10% are StatTrak™ (the lore counts player kills).
+- Average payout is about 58% of the $17,500 case + key price, so cases also act as a money sink.
+- Everything (prices, odds, rewards) is in `plugins/CrispyFactions/config.yml` → `cases`; apply with `/crispyfactions reload`.
+  Admin: `/cases give <player> case|key [n]`.
+
 ## 6. Ranks (LuckPerms, no P2W)
 | Group | Inherits | Perks |
 |---|---|---|
@@ -181,5 +194,5 @@ The area x -80..79, z -176..79 was changed to the plains biome so snow doesn't s
 ```
 CP=$(find <server>/libraries -name '*.jar' | tr '\n' ':')<path>/SaberFactions.jar
 javac --release 21 -proc:none -cp "$CP" -d out $(find crispyfactions/src -name '*.java')
-cp crispyfactions/res/* out/ && (cd out && jar cf ../CrispyFactions-1.1.0.jar .)
+cp crispyfactions/res/* out/ && (cd out && jar cf ../CrispyFactions-1.2.0.jar .)
 ```

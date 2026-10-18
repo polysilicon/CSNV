@@ -54,6 +54,7 @@ public class CrispyFactions extends JavaPlugin implements Listener {
     final Map<String, Dmg> obby = new HashMap<>();
     final Map<UUID, Long> lastActive = new HashMap<>();
     CombatTag combat;
+    Cases cases;
 
     // ------------------------------------------------------------------ lifecycle
     @Override public void onEnable() {
@@ -69,6 +70,8 @@ public class CrispyFactions extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
         combat = new CombatTag(this);
         getServer().getPluginManager().registerEvents(combat, this);
+        cases = new Cases(this);
+        getServer().getPluginManager().registerEvents(cases, this);
         Bukkit.getScheduler().runTaskTimer(this, this::tickWindow, 100L, 20L * 20);
         Bukkit.getScheduler().runTaskTimer(this, this::tickAegis, 20L * 60, 20L * 60);
         Bukkit.getScheduler().runTaskTimer(this, this::tickAfk, 20L * 60, 20L * 60);
@@ -76,7 +79,7 @@ public class CrispyFactions extends JavaPlugin implements Listener {
         for (Player p : Bukkit.getOnlinePlayers()) lastActive.put(p.getUniqueId(), System.currentTimeMillis());
         getLogger().info("Raid window is " + (lastOpen ? "OPEN" : "closed") + " (" + raid.zone + ")");
     }
-    @Override public void onDisable() { save(); }
+    @Override public void onDisable() { if (cases != null) cases.shutdown(); save(); }
     void save() { try { data.save(dataFile); } catch (IOException e) { getLogger().warning("save failed: " + e); } }
 
     static Component c(String s) { return AMP.deserialize(s); }
@@ -467,6 +470,7 @@ public class CrispyFactions extends JavaPlugin implements Listener {
                 else msg(p, "&7No Aegis active. Your faction can activate an Aegis Star during peacetime.");
                 return true;
             }
+            case "cases" -> { cases.command(s, a); return true; }
             case "combat" -> {
                 if (!(s instanceof Player p)) return true;
                 if (combat.tagged(p)) msg(p, "&cYou are in combat for &f" + combat.left(p) + "s &cmore. Logging out now will kill you.");
@@ -483,7 +487,7 @@ public class CrispyFactions extends JavaPlugin implements Listener {
                 if (a.length > 0 && a[0].equalsIgnoreCase("reload")) {
                     reloadConfig(); raid = new RaidWindow(getConfig().getConfigurationSection("raid-window")); raid.force = data.getString("raid-force", "auto");
                     scheduleOn = getConfig().getBoolean("raid-window.enabled", true); lastOpen = raidOpen();
-                    combat.load();
+                    combat.load(); cases.load();
                     msg(s, "Reloaded."); return true;
                 }
                 if (a.length > 0 && a[0].equalsIgnoreCase("phase2")) { unlockPhase2(); msg(s, "Phase 2 unlocked."); return true; }
