@@ -110,12 +110,16 @@ public class BalatroCraft extends JavaPlugin implements Listener {
             dropRun(u); msg(s, "Cleared the run of " + a[1] + "."); return true;
         }
         if (!(s instanceof Player p)) { msg(s, "/balatro top [daily] | reset <player>"); return true; }
-        switch (sub) {
-            case "help" -> help(p);
-            case "daily" -> startDaily(p);
-            case "new" -> startNew(p);
-            default -> open(p);
-        }
+        // run on the next tick: menus (e.g. the hub selector) often run this command from inside an inventory click
+        Bukkit.getScheduler().runTask(this, () -> {
+            if (!p.isOnline()) return;
+            switch (sub) {
+                case "help" -> help(p);
+                case "daily" -> startDaily(p);
+                case "new" -> startNew(p);
+                default -> open(p);
+            }
+        });
         return true;
     }
     void help(Player p) {
