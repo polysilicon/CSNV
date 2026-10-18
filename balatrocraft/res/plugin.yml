@@ -1,0 +1,12 @@
+name: BalatroCraft
+version: 1.0.0
+main: crispy.balatro.BalatroCraft
+api-version: '1.21'
+author: Crispy Network
+description: A poker roguelike played in a chest menu (ore suits, mobs as jokers, Minecraft bosses, daily runs)
+commands:
+  balatro:
+    description: Play Balatro Craft (/balatro, /balatro daily, /balatro top [daily], /balatro help)
+    aliases: [balatrocraft, bc, cards]
+permissions:
+  balatrocraft.admin: {default: op}
