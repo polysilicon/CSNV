@@ -89,3 +89,19 @@ cases:
     - {rarity: gold, skin: "★ Karambit | Fade", item: DIAMOND_SWORD, enchants: {sharpness: 5, unbreaking: 3, fire_aspect: 2}}
     - {rarity: gold, skin: "★ Butterfly Knife | Doppler", item: DIAMOND_SWORD, enchants: {sharpness: 5, unbreaking: 3, looting: 3}}
     - {rarity: gold, special: aegis, name: "Aegis Vacation Star"}
+
+# Server-list voting (NuVotifier). Each vote: money + Crispy Case; every Nth vote a bonus Case Key; vote party for everyone online.
+# Votes for players who are offline are kept and handed out when they join. Admin: /vote test <player> [site], /vote party
+votes:
+  enabled: true
+  money: 5000
+  cases: 1
+  bonus-key-every: 5
+  party-goal: 30
+  broadcast: true
+  links:     # shown by /vote (entries still containing CHANGE_ME are hidden)
+    - {name: "PlanetMinecraft", url: "https://www.planetminecraft.com/server/CHANGE_ME/vote/"}
+    - {name: "Minecraft-Server-List", url: "https://minecraft-server-list.com/server/CHANGE_ME/vote/"}
+    - {name: "TopG", url: "https://topg.org/minecraft-servers/server-CHANGE_ME"}
+    - {name: "Minecraft-MP", url: "https://minecraft-mp.com/server/CHANGE_ME/vote/"}
+    - {name: "MinecraftServers.org", url: "https://minecraftservers.org/vote/CHANGE_ME"}

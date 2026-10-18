@@ -28,7 +28,7 @@ prime-time raid windows, no pay-to-win.
 | Chunky | 1.4.40 | pre-generation |
 | mcMMO | 2.3.002 | RPG skills (built from the GPL source, commit 25474dc) |
 | ViaVersion / ViaBackwards | 5.12.x | newer clients |
-| **CrispyFactions** (custom) | 1.2.0 | raid window, obsidian durability, Aegis Star, collector hopper, item bans, `/nv`, AFK, combat tag, cases |
+| **CrispyFactions** (custom) | 1.3.0 | raid window, obsidian durability, Aegis Star, collector hopper, item bans, `/nv`, AFK, combat tag, cases, votes |
 | HMCWraps | — | *not installed*: download from SpigotMC/Polymart and drop into `plugins/` |
 
 `install_plugins.sh` downloads everything except HMCWraps; `configure.py` applies every setting below.
@@ -153,6 +153,15 @@ In-game money only. Cases are never sold for real money: Minecraft's commercial 
 - Everything (prices, odds, rewards) is in `plugins/CrispyFactions/config.yml` → `cases`; apply with `/crispyfactions reload`.
   Admin: `/cases give <player> case|key [n]`.
 
+## Server-list voting (CrispyFactions 1.3.0 + NuVotifier 2.7.3)
+- NuVotifier listens on port **8192** on the VM (`192.168.1.37:8192`); a LocalXpose TCP tunnel to it is the address vote
+  sites send votes to. Sites need `plugins/Votifier/rsa/public.key` (public, safe to paste into the site form).
+- Each vote: **$5,000 + 1 Crispy Case**; every **5th** vote also a **Case Key**. Votes for offline players are kept and
+  handed out 3 s after they join. Every **30** server-wide votes is a **vote party**: everyone online gets a Case Key.
+- `/vote` shows the vote links (fill `votes.links` in `plugins/CrispyFactions/config.yml`, replacing `CHANGE_ME`),
+  your totals and the party progress; `/vote top` shows this month's top 10. Data: `plugins/CrispyFactions/votes.yml`.
+- Admin: `/vote test <player> [site]` simulates a vote, `/vote party` starts a party.
+
 ## 6. Ranks (LuckPerms, no P2W)
 | Group | Inherits | Perks |
 |---|---|---|
@@ -194,5 +203,5 @@ The area x -80..79, z -176..79 was changed to the plains biome so snow doesn't s
 ```
 CP=$(find <server>/libraries -name '*.jar' | tr '\n' ':')<path>/SaberFactions.jar
 javac --release 21 -proc:none -cp "$CP" -d out $(find crispyfactions/src -name '*.java')
-cp crispyfactions/res/* out/ && (cd out && jar cf ../CrispyFactions-1.2.0.jar .)
+cp crispyfactions/res/* out/ && (cd out && jar cf ../CrispyFactions-1.3.0.jar .)
 ```

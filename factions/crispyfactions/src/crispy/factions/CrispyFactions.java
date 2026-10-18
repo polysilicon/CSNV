@@ -55,6 +55,7 @@ public class CrispyFactions extends JavaPlugin implements Listener {
     final Map<UUID, Long> lastActive = new HashMap<>();
     CombatTag combat;
     Cases cases;
+    Votes votes;
 
     // ------------------------------------------------------------------ lifecycle
     @Override public void onEnable() {
@@ -72,6 +73,10 @@ public class CrispyFactions extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(combat, this);
         cases = new Cases(this);
         getServer().getPluginManager().registerEvents(cases, this);
+        votes = new Votes(this);
+        getServer().getPluginManager().registerEvents(votes, this);
+        if (getServer().getPluginManager().getPlugin("Votifier") != null) getServer().getPluginManager().registerEvents(new VoteListener(votes), this);
+        else getLogger().warning("NuVotifier (Votifier) not found: server-list votes won't be received");
         Bukkit.getScheduler().runTaskTimer(this, this::tickWindow, 100L, 20L * 20);
         Bukkit.getScheduler().runTaskTimer(this, this::tickAegis, 20L * 60, 20L * 60);
         Bukkit.getScheduler().runTaskTimer(this, this::tickAfk, 20L * 60, 20L * 60);
@@ -471,6 +476,7 @@ public class CrispyFactions extends JavaPlugin implements Listener {
                 return true;
             }
             case "cases" -> { cases.command(s, a); return true; }
+            case "vote" -> { votes.command(s, a); return true; }
             case "combat" -> {
                 if (!(s instanceof Player p)) return true;
                 if (combat.tagged(p)) msg(p, "&cYou are in combat for &f" + combat.left(p) + "s &cmore. Logging out now will kill you.");
@@ -487,7 +493,7 @@ public class CrispyFactions extends JavaPlugin implements Listener {
                 if (a.length > 0 && a[0].equalsIgnoreCase("reload")) {
                     reloadConfig(); raid = new RaidWindow(getConfig().getConfigurationSection("raid-window")); raid.force = data.getString("raid-force", "auto");
                     scheduleOn = getConfig().getBoolean("raid-window.enabled", true); lastOpen = raidOpen();
-                    combat.load(); cases.load();
+                    combat.load(); cases.load(); votes.load();
                     msg(s, "Reloaded."); return true;
                 }
                 if (a.length > 0 && a[0].equalsIgnoreCase("phase2")) { unlockPhase2(); msg(s, "Phase 2 unlocked."); return true; }
