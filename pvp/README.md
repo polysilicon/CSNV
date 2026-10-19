@@ -51,3 +51,13 @@ function pvp:admin/build                  # build_lobby (+ place_npc) and build_
 forceload remove -32 64 32 136
 ```
 `pvp:admin/place_npc` re-places just the Kit Dealer and the lobby signs. The lobby chunks stay force-loaded.
+
+## /spawn and /lobby
+`spawnmod/` is a tiny server-side Fabric mod that adds `/spawn` and `/lobby`. Both run `/trigger pvp.spawn`, so
+the 10 s combat lock still applies. Minecraft 26.x is unobfuscated, so it compiles straight against the server jar with
+Java 25:
+```
+spawnmod/build.sh <lib-dir> <path-to-javac-25>   # lib-dir: server-26.2.jar (from the official bundler), brigadier,
+                                                  # fabric-loader 0.19.5, fabric-api 0.161.0 with its nested jars unpacked
+```
+Copy `crispy-pvp-spawn-1.0.0.jar` into `mods/` and restart the server.
