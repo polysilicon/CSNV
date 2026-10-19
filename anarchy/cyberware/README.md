@@ -49,7 +49,7 @@ re-run the place commands after a reinstall.
 | Reflex Tuner | Nervous System | 4 | 24 diamonds | +10% movement speed |
 | Biomonitor | Circulatory | 3 | 16 diamonds | ≤4 hearts: Regen II 6 s + Absorption; 90 s cooldown |
 | Second Heart | Circulatory | 8 | 2 netherite | ≤2 hearts: Instant Health III, Absorption II, Fire Res; 10 min cooldown |
-| Sandevistan | Operating System | 8 | 3 netherite | double-tap sneak: Speed IV, Haste II for 6 s; Slowness III on everything within 12 blocks; 60 s cooldown |
+| Sandevistan | Operating System | 8 | 3 netherite | double-tap sneak: Speed IV, Haste II for 6 s; Slowness III on everything within 12 blocks; leaves an Edgerunners-style after-image trail; 60 s cooldown |
 | Berserk | Operating System | 7 | 2 netherite | double-tap sneak: Strength II + Resistance for 8 s (you glow); 75 s cooldown |
 
 Everything is set in the tables at the top of `build.py`:
@@ -57,6 +57,14 @@ Everything is set in the tables at the top of `build.py`:
 - the capacity limit: `CAP_LIMIT`;
 - the Neuroblocker: `NEURO`;
 - Operating System cooldowns: `OS_CD`.
+
+**Sandevistan after-images**: every 2 ticks while it runs, a mannequin copy of the player is left where they stand.
+It copies their skin, facing, armor, held items and crouch, glows in a random neon colour (teams `cy.g1`–`cy.g4`)
+and lasts 8 ticks, so a short trail follows them.
+- The skin comes from a hidden item_display (`cy.ganchor`) holding the player's head, which follows the player.
+- A copy's gear is cleared before it is removed below the world, so nothing drops and there's no death animation.
+- Leftover copies are cleaned up on load.
+- Tune it with `GHOST_TICKS`, `GHOST_LIFE` and `GHOST_COLORS`.
 
 Admins can get one of everything with `function cyber:admin/give`.
 

@@ -61,6 +61,8 @@ IMPLANTS = [
 ]
 NEURO = ("neuro", "Neuroblocker", ("diamond", 2), "honey_bottle", 1200)   # seconds of psychosis immunity
 OS_CD = {13: 1200, 14: 1500}   # ticks
+GHOST_TICKS, GHOST_LIFE = 120, 8     # Sandevistan after-images: how long they spawn, and how long each lasts (ticks)
+GHOST_COLORS = ["aqua", "green", "light_purple", "yellow"]
 BY_ID = {i[0]: i for i in IMPLANTS}
 
 
@@ -120,9 +122,14 @@ def build():
     # ------------------------------------------------------------------ load / tick / second
     objs = ["cy dummy", "cy.buy trigger", "cy.rm trigger", "cyber trigger", "cy.cap dummy", "cy.cd dummy",
             "cy.cdh dummy", "cy.hp health", "cy.death deathCount", "cy.snk dummy", "cy.tap dummy",
-            "cy.nb dummy", "cy.pcd dummy"] + [f"cy.s{s} dummy" for s in SLOTS]
+            "cy.nb dummy", "cy.pcd dummy", "cy.sv dummy", "cy.gl dummy"] + [f"cy.s{s} dummy" for s in SLOTS]
     fn("load", [f"scoreboard objectives add {o}" for o in objs] + [
-        f"scoreboard players set #limit cy {CAP_LIMIT}", "scoreboard players set #t cy 0"])
+        f"scoreboard players set #limit cy {CAP_LIMIT}", "scoreboard players set #t cy 0", "scoreboard players set #2 cy 2",
+        # Sandevistan after-image glow colours
+        *[l for n, c in enumerate(GHOST_COLORS, 1) for l in (
+            f"team add cy.g{n}", f"team modify cy.g{n} color {c}", f"team modify cy.g{n} collisionRule never",
+            f"team modify cy.g{n} nametagVisibility never")],
+        "kill @e[tag=cy.ghost]", "kill @e[tag=cy.ganchor]"])
 
     fn("tick", [
         "scoreboard players enable @a cy.buy", "scoreboard players enable @a cy.rm", "scoreboard players enable @a cyber",
@@ -141,6 +148,10 @@ def build():
         f"execute as @a[scores={{cy.s8=11,cy.hp=1..8,cy.cdh=0}}] at @s run function {NS}:fx/biomon",
         f"execute as @a[scores={{cy.s8=12,cy.hp=1..4,cy.cdh=0}}] at @s run function {NS}:fx/heart",
         "scoreboard players add #t cy 1",
+        # Sandevistan after-images
+        f"execute as @a[scores={{cy.sv=1..}}] at @s run function {NS}:ghost/player",
+        f"execute as @e[tag=cy.ghost] run function {NS}:ghost/age",
+        f"execute as @e[type=minecraft:item_display,tag=cy.ganchor] run function {NS}:ghost/age",
         f"execute if score #t cy matches 20.. run function {NS}:second",
     ])
     fn("second", [
@@ -304,7 +315,7 @@ def build():
     died += [f"execute if score @s cy.cap matches 1.. run tellraw @s {{\"text\":\"Your chrome was left where you died.\",\"color\":\"red\"}}"]
     died += [f"scoreboard players set @s cy.s{s} 0" for s in SLOTS]
     died += ["scoreboard players set @s cy.cap 0", "scoreboard players set @s cy.cd 0", "scoreboard players set @s cy.cdh 0",
-             "tag @s add cy.dead"]
+             "scoreboard players set @s cy.sv 0", "tag @s add cy.dead"]
     fn("death/died", died)
     fn("death/respawned", ["tag @s remove cy.dead"] + [f"function {NS}:implant/{i[1]}/unapply" for i in IMPLANTS if i[9]])
 
@@ -327,11 +338,50 @@ def build():
     fn("fx/sandy", [
         f"scoreboard players set @s cy.cd {OS_CD[13]}",
         "effect give @s minecraft:speed 6 3", "effect give @s minecraft:haste 6 1", "effect give @s minecraft:jump_boost 6 0",
-        "effect give @e[distance=0.01..12,type=!minecraft:armor_stand] minecraft:slowness 6 2",
+        "effect give @e[distance=0.01..12,type=!minecraft:armor_stand,tag=!cy.ghost] minecraft:slowness 6 2",
+        f"scoreboard players set @s cy.sv {GHOST_TICKS}",
+        # an item_display holding the player's head carries their skin for the after-images; it follows the player
+        "summon minecraft:item_display ~ ~ ~ {Tags:[\"cy.ganchor\",\"cy.anew\"]}",
+        f"loot replace entity @n[type=minecraft:item_display,tag=cy.anew] contents loot {NS}:head",
+        f"scoreboard players set @n[type=minecraft:item_display,tag=cy.anew] cy.gl {GHOST_TICKS + 5}",
+        "tag @e[type=minecraft:item_display,tag=cy.anew] remove cy.anew",
         "playsound minecraft:block.beacon.power_select player @a[distance=..16] ~ ~ ~ 1 2",
         "particle minecraft:electric_spark ~ ~1 ~ 2 1 2 0.5 200",
         "title @s actionbar {\"text\":\"◆ SANDEVISTAN\",\"color\":\"aqua\",\"bold\":true}",
     ])
+    # ------------------------------------------------------------------ Sandevistan after-images (Edgerunners)
+    # Every 2 ticks while active, a mannequin copy of the player (skin, facing, armor, held items, crouch) is left
+    # behind with a random neon glow; each lives GHOST_LIFE ticks, so a short trail follows the player.
+    wj(f"data/{NS}/loot_table/head.json", {"pools": [{"rolls": 1, "entries": [{"type": "minecraft:item", "name": "minecraft:player_head",
+        "functions": [{"function": "minecraft:fill_player_head", "entity": "this"}]}]}]})
+    fn("ghost/player", [
+        "scoreboard players remove @s cy.sv 1",
+        "tp @n[type=minecraft:item_display,tag=cy.ganchor,distance=..8] @s",
+        "scoreboard players operation #m cy = @s cy.sv", "scoreboard players operation #m cy %= #2 cy",
+        f"execute if score #m cy matches 0 run function {NS}:ghost/spawn",
+    ])
+    fn("ghost/spawn", [
+        "summon minecraft:mannequin ~ ~ ~ {Tags:[\"cy.ghost\",\"cy.gnew\"],NoGravity:1b,Invulnerable:1b,Silent:1b,immovable:1b,hide_description:1b,Glowing:1b}",
+        "execute rotated as @s run tp @n[type=minecraft:mannequin,tag=cy.gnew] ~ ~ ~ ~ ~",
+        "data modify entity @n[type=minecraft:mannequin,tag=cy.gnew] profile set from entity @n[type=minecraft:item_display,tag=cy.ganchor,distance=..1] item.components.\"minecraft:profile\"",
+        *[f"item replace entity @n[type=minecraft:mannequin,tag=cy.gnew] {sl} from entity @s {sl}"
+          for sl in ("armor.head", "armor.chest", "armor.legs", "armor.feet", "weapon.mainhand", "weapon.offhand")],
+        f"execute if predicate {NS}:sneaking run data modify entity @n[type=minecraft:mannequin,tag=cy.gnew] pose set value \"crouching\"",
+        f"scoreboard players set @n[type=minecraft:mannequin,tag=cy.gnew] cy.gl {GHOST_LIFE}",
+        f"execute store result score #c cy run random value 1..{len(GHOST_COLORS)}",
+        *[f"execute if score #c cy matches {n} run team join cy.g{n} @n[type=minecraft:mannequin,tag=cy.gnew]" for n in range(1, len(GHOST_COLORS) + 1)],
+        "tag @e[type=minecraft:mannequin,tag=cy.gnew] remove cy.gnew",
+    ])
+    fn("ghost/age", [
+        "scoreboard players remove @s cy.gl 1",
+        f"execute unless score @s cy.gl matches 1.. run function {NS}:ghost/remove",
+    ])
+    fn("ghost/remove", [   # empty the copied gear first so nothing drops, then vanish below the world (no death animation)
+        "data modify entity @s[type=minecraft:mannequin] equipment set value {}",
+        "execute at @s run tp @s ~ -1000 ~",
+        "kill @s",
+    ])
+
     fn("fx/berserk", [
         f"scoreboard players set @s cy.cd {OS_CD[14]}",
         "effect give @s minecraft:strength 8 1", "effect give @s minecraft:resistance 8 0", "effect give @s minecraft:glowing 8 0",
