@@ -99,10 +99,12 @@ def loot(key, comps):
         "functions": [{"function": "minecraft:set_components", "components": comps}]}]}]})
 
 
-def consume_adv(key):
+def consume_adv(key, icon):
+    # Matched on the icon, not custom_data: creative-mode clients can strip custom_data when they move an item.
+    # Every implant has its own icon, and only Ripperdoc items are consumable paper.
     wj(f"data/{NS}/advancement/use/{key}.json", {
         "criteria": {"c": {"trigger": "minecraft:consume_item", "conditions": {"item": {
-            "items": "minecraft:paper", "predicates": {"minecraft:custom_data": f'{{{NS}:"{key}"}}'}}}}},
+            "items": "minecraft:paper", "components": {"minecraft:item_model": f"minecraft:{icon}"}}}}},
         "rewards": {"function": f"{NS}:implant/{key}/use"}})
 
 
@@ -157,7 +159,7 @@ def build():
         full_lore = [f"Slot: {SLOTS[slot]}", f"Capacity: {cap}"] + lore + ["Use (hold right-click) to install."]
         loot(key, item_components(key, name, color, full_lore, icon, "epic" if price[0] != "diamond" else "rare",
                                   "bow", 2.5, "minecraft:block.anvil.use"))
-        consume_adv(key)
+        consume_adv(key, icon)
         d = f"implant/{key}"
         fn(f"{d}/apply", [f"attribute @s minecraft:{a} modifier add {NS}:{key}_{n} {v} {op}" for n, (a, v, op) in enumerate(mods)])
         fn(f"{d}/unapply", [f"attribute @s minecraft:{a} modifier remove {NS}:{key}_{n}" for n, (a, v, op) in enumerate(mods)])
@@ -193,7 +195,7 @@ def build():
     loot(nkey, item_components(nkey, nname, "dark_purple",
                                ["Suppresses cyberpsychosis for 20 minutes.", "Drink to use."], nicon, "uncommon",
                                "drink", 1.6, "minecraft:entity.generic.drink"))
-    consume_adv(nkey)
+    consume_adv(nkey, nicon)
     fn(f"implant/{nkey}/use", [
         f"advancement revoke @s only {NS}:use/{nkey}",
         f"scoreboard players set @s cy.nb {nsecs}",

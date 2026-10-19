@@ -19,7 +19,8 @@ re-run the place commands after a reinstall.
 ## How it works
 - **Ripperdoc** (right-click): buy implants with diamonds or netherite, buy Neuroblockers, or remove an implant
   (free; the item goes back to your inventory). You can only buy within 8 blocks of the Ripperdoc.
-- **Installing**: hold right-click with an implant for 2.5 s. One implant per body slot; if the slot is taken
+- **Installing**: hold right-click with an implant for 2.5 s. Implants are recognised by their icon, because creative-mode
+  clients can strip custom data from items they move. One implant per body slot; if the slot is taken
   you get the item back.
 - **Capacity**: every implant costs capacity. Going over **20** is allowed, but each second over the limit there is
   an `excess / 600` chance of a cyberpsychosis episode, at most one every 30 s. With 10 over, that's about one a
