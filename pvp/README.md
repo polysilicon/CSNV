@@ -27,6 +27,8 @@ AMP rewrites `server.properties` on start, so change game settings through AMP, 
 - Death, logout, `/spawn`, `/lobby` or `/trigger pvp.spawn` sends you back to the lobby, clearing your inventory and
   implants. `/spawn` and `/lobby` are blocked for 10 s after you take damage.
 - The PvP arena is a 61×61 neon city at night (centre 0, -60, 100).
+- **Leaderboards** on the south side of the lobby show the top 5 for Kills (`pvp.kills`), Best Kill Streak (`pvp.best`) and
+  Best Outbreak Wave (`pve.best`). The mod rewrites them every 5 s. `pvp:admin/place_leaderboard` re-places them.
 
 | Kit | Gear | Cyberware |
 |---|---|---|
@@ -125,4 +127,4 @@ Java 25:
 spawnmod/build.sh <lib-dir> <path-to-javac-25>   # lib-dir: server-26.2.jar (from the official bundler), brigadier,
                                                   # fabric-loader 0.19.5, fabric-api 0.161.0 with its nested jars unpacked
 ```
-Copy `crispy-pvp-spawn-1.2.1.jar` into `mods/` and restart the server.
+Copy `crispy-pvp-spawn-1.3.1.jar` into `mods/` and restart the server.
