@@ -20,11 +20,12 @@ import java.util.*;
 
 /** Lobby sidebar (replaces DeluxeHub's scoreboard, which crashes on Paper 26.x), lobby spawn handling
  *  (every join lands on the spawn point, anyone above the barrier ceiling is brought back) and the
- *  network stats board + /stats (NetworkStats). */
+ *  network stats board + /stats (NetworkStats) and the network vote vault + cosmetics (Votes). */
 public class CrispyLobby extends JavaPlugin implements Listener {
     static final LegacyComponentSerializer AMP = LegacyComponentSerializer.legacyAmpersand();
     final Map<UUID, Objective> boards = new HashMap<>();
     NetworkStats stats;
+    Votes votes;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -34,11 +35,17 @@ public class CrispyLobby extends JavaPlugin implements Listener {
         for (Player p : Bukkit.getOnlinePlayers()) show(p);
         stats = new NetworkStats(this);
         stats.start();
+        votes = new Votes(this);
+        getServer().getPluginManager().registerEvents(votes, this);
+        if (getServer().getPluginManager().getPlugin("Votifier") != null) getServer().getPluginManager().registerEvents(new VoteListener(votes), this);
+        else getLogger().warning("NuVotifier (Votifier) not found: server-list votes won't be received");
+        votes.start();
     }
 
-    @Override public void onDisable() { if (stats != null) stats.stop(); }
+    @Override public void onDisable() { if (stats != null) stats.stop(); if (votes != null) votes.stop(); }
 
     @Override public boolean onCommand(org.bukkit.command.CommandSender s, org.bukkit.command.Command c, String l, String[] a) {
+        if (c.getName().equalsIgnoreCase("vote") || c.getName().equalsIgnoreCase("cosmetics")) return votes.command(s, c.getName(), a);
         if (c.getName().equalsIgnoreCase("stats")) {
             String who = a.length > 0 ? a[0] : s.getName();
             stats.showStats(s, who);
@@ -52,7 +59,7 @@ public class CrispyLobby extends JavaPlugin implements Listener {
             } else s.sendMessage(AMP.deserialize("&7/crispylobby leaderboard here &8| &7/crispylobby leaderboard refresh"));
             return true;
         }
-        reloadConfig(); boards.clear(); Bukkit.getOnlinePlayers().forEach(this::show);
+        reloadConfig(); votes.load(); boards.clear(); Bukkit.getOnlinePlayers().forEach(this::show);
         s.sendMessage(AMP.deserialize("&aCrispyLobby reloaded.")); return true;
     }
 

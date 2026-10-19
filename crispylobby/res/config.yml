@@ -32,3 +32,70 @@ network-stats:
   rotate-seconds: 8
   top: 10
   location: {world: world, x: 0.5, y: 68.5, z: 12.5}
+
+# Vote rewards. Votes arrive at NuVotifier on the lobby (plugins/Votifier, port 8193). Each vote = 1 reward the player
+# sends to a server of their choice in /vote, plus points-per-vote points for cosmetics. A claimed reward waits in
+# plugins/CrispyLobby/votes.json until the player is on that server, then the commands run there over RCON (port and
+# password are read from the instance's own server.properties). Keys are the Velocity server names.
+# Admin: /vote give <player> [n], /vote points <player> <+/-n>, /vote reload.
+votes:
+  points-per-vote: 1
+  announce: true            # "X voted" on every server
+  links:
+    - {name: TopG, url: "https://topg.org/minecraft-servers/server-687311"}
+    - {name: Planet Minecraft, url: CHANGE_ME}
+  servers:                  # order = menu order; a server with no commands only gets trails
+    factions:
+      label: "&e&lCrispy Factions"
+      icon: TNT
+      instance: Factions01
+      reward: ["&a$5,000 &7+ &6Crispy Case", "&7bonus &eCase Key &7every 5th"]
+      commands: ["vote test %player% CrispyAnarchy"]   # CrispyFactions' own vote reward (also counts toward its vote party)
+    og:
+      label: "&d&lCrispy Anarchy"
+      icon: OBSIDIAN
+      instance: CrispyAnarchy01
+      reward: ["&b3 Diamonds", "&62 Golden Apples", "&a5 XP levels"]
+      commands: ["give %player% minecraft:diamond 3", "give %player% minecraft:golden_apple 2", "xp add %player% 5 levels"]
+    Vanilla:
+      label: "&a&lCrispy Vanilla"
+      icon: GRASS_BLOCK
+      instance: Vanilla01
+      reward: ["&f8 Iron Ingots", "&616 Steak", "&a5 XP levels"]
+      commands: ["give %player% minecraft:iron_ingot 8", "give %player% minecraft:cooked_beef 16", "xp add %player% 5 levels"]
+    falling:
+      label: "&e&lCrispy Falling"
+      icon: GRAVEL
+      instance: Falling01
+      reward: ["&f4 Iron Ingots", "&f16 Bone Meal", "&a2 Saplings"]
+      commands: ["give %player% minecraft:iron_ingot 4", "give %player% minecraft:bone_meal 16", "give %player% minecraft:oak_sapling 2"]
+    pvp:
+      label: "&c&lCrispy PvP"
+      icon: NETHERITE_SWORD
+      instance: CrispyPvP01
+      commands: []
+
+# Cosmetics, bought with vote points in /cosmetics (or /vote -> Cosmetics). Tags: shown after the name in the tab list
+# and on name tags network-wide by the CrispyTags proxy plugin (it reads plugins/CrispyLobby/tags.json). Trails: drawn
+# while walking; on the backends by the crispy_cosmetics datapack from the crispy.trail score (= score below), so after
+# changing trails here rebuild it: python3 crispylobby/cosmetics/build.py. args = dx dy dz speed count.
+cosmetics:
+  tags:
+    voter:       {display: "&a[Voter]", cost: 1, icon: PAPER}
+    crispy:      {display: "&6[Crispy]", cost: 3, icon: COOKIE}
+    netrunner:   {display: "&b[Netrunner]", cost: 5, icon: OBSERVER}
+    chrome:      {display: "&d[Chrome]", cost: 8, icon: IRON_INGOT}
+    anarchist:   {display: "&4[Anarchist]", cost: 10, icon: TNT}
+    cyberpsycho: {display: "&c&o[Cyberpsycho]", cost: 15, icon: REDSTONE}
+    legend:      {display: "&e&l[Legend]", cost: 25, icon: GOLD_BLOCK}
+  trails:
+    hearts:  {name: Hearts, score: 1, particle: heart, args: "0.2 0.1 0.2 0 1", cost: 3, icon: POPPY}
+    flames:  {name: Flames, score: 2, particle: flame, args: "0.1 0 0.1 0.01 2", cost: 4, icon: BLAZE_POWDER}
+    notes:   {name: Music Notes, score: 3, particle: note, args: "0.3 0.1 0.3 1 1", cost: 4, icon: NOTE_BLOCK}
+    soul:    {name: Soul Fire, score: 4, particle: soul_fire_flame, args: "0.1 0 0.1 0.01 2", cost: 5, icon: SOUL_TORCH}
+    sakura:  {name: Sakura, score: 5, particle: cherry_leaves, args: "0.3 0.2 0.3 0 2", cost: 5, icon: CHERRY_LEAVES}
+    sparks:  {name: Neon Sparks, score: 6, particle: electric_spark, args: "0.2 0.1 0.2 0.05 3", cost: 6, icon: LIGHTNING_ROD}
+    runes:   {name: Runes, score: 7, particle: enchant, args: "0.3 0.3 0.3 0.5 4", cost: 6, icon: ENCHANTING_TABLE}
+    glitch:  {name: Cyberpsychosis, score: 8, particle: witch, args: "0.2 0.1 0.2 0 2", cost: 10, icon: AMETHYST_SHARD}
+    endrod:  {name: Star Dust, score: 9, particle: end_rod, args: "0.1 0 0.1 0.01 1", cost: 8, icon: END_ROD}
+    totem:   {name: Totem, score: 10, particle: totem_of_undying, args: "0.2 0.1 0.2 0.1 3", cost: 12, icon: TOTEM_OF_UNDYING}

@@ -1,9 +1,10 @@
 name: CrispyLobby
-version: 1.3.1
+version: 1.4.0
 main: crispy.lobby.CrispyLobby
 api-version: '1.21'
 author: CrispyAnarchy
-description: Lobby sidebar, spawn and network stats
+description: Lobby sidebar, spawn, network stats, vote rewards and cosmetics
+softdepend: [Votifier]
 commands:
   crispylobby:
     description: Reload the lobby sidebar; /crispylobby leaderboard here|refresh
@@ -11,5 +12,11 @@ commands:
   stats:
     description: Your stats across the CrispyAnarchy network
     usage: /stats [player]
+  vote:
+    description: Claim vote rewards on any server, vote links, top voters
+    usage: /vote [links|top]
+    aliases: [votes, rewards]
+  cosmetics:
+    description: Tags and trails that work on every server
 permissions:
   crispylobby.admin: {default: op}

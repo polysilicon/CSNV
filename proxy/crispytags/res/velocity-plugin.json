@@ -1,0 +1,1 @@
+{"id":"crispytags","name":"CrispyTags","version":"1.0.0","description":"Vote-cosmetic tags from the lobby, shown network-wide through TAB","authors":["CrispyAnarchy"],"dependencies":[{"id":"tab","optional":false}],"main":"crispy.tags.CrispyTags"}
