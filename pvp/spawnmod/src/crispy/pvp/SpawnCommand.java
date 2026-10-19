@@ -43,8 +43,17 @@ public class SpawnCommand implements ModInitializer {
                         if (name.isEmpty() || name.length() > 32) { s.sendFailure(Component.literal("Kit names are 1-32 characters.")); return 0; }
                         int id = PvpKits.create(s.getServer(), s.getPlayerOrException(), name);
                         if (id < 0) { s.sendFailure(Component.literal("There are already " + PvpKits.MAX_KITS + " custom kits; delete one first (/pvpkit list).")); return 0; }
-                        s.sendSuccess(() -> Component.literal("Saved kit \"" + name + "\" (id " + id + ") from your inventory and cyberware. It's in the Kit Dealer and Outbreak menus.")
+                        CompoundTag saved = PvpKits.find(s.getServer(), id);
+                        ListTag implants = saved == null ? new ListTag() : saved.getListOrEmpty("implants");
+                        int items = saved == null ? 0 : saved.getListOrEmpty("items").size();
+                        StringBuilder names = new StringBuilder();
+                        for (int i = 0; i < implants.size(); i++) names.append(i == 0 ? "" : ", ").append(implants.getStringOr(i, "?"));
+                        s.sendSuccess(() -> Component.literal("Saved kit \"" + name + "\" (id " + id + "): " + items + " items, "
+                                + (implants.isEmpty() ? "no cyberware" : "cyberware: " + names) + ". It's in the Kit Dealer and Outbreak menus.")
                                 .withStyle(ChatFormatting.GREEN), true);
+                        if (implants.isEmpty())
+                            s.sendSuccess(() -> Component.literal("No implants were installed on you. To add cyberware: /function cyber:admin/give, hold right-click "
+                                    + "on each implant to install it (/trigger cyber to check), then run /pvpkit create " + name + " again.").withStyle(ChatFormatting.YELLOW), false);
                         return id;
                     })))
                     .then(Commands.literal("delete").then(Commands.argument("id", IntegerArgumentType.integer()).executes(c -> {

@@ -125,4 +125,4 @@ Java 25:
 spawnmod/build.sh <lib-dir> <path-to-javac-25>   # lib-dir: server-26.2.jar (from the official bundler), brigadier,
                                                   # fabric-loader 0.19.5, fabric-api 0.161.0 with its nested jars unpacked
 ```
-Copy `crispy-pvp-spawn-1.2.0.jar` into `mods/` and restart the server.
+Copy `crispy-pvp-spawn-1.2.1.jar` into `mods/` and restart the server.

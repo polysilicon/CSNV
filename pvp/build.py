@@ -412,7 +412,7 @@ def build_room():
                 fill.append(f"loot replace block {x} {Y + 1} {z} container.{slot} loot cyber:item/{it[1]}")
     fn("admin/build_room", b + [f"function {NS}:admin/fill_room"])
     fn("admin/fill_room", fill + [say("@s", "Admin room chests refilled.", "gold")])
-    fn("admin/room", ["tag @s add pvp.admin", "gamemode creative @s", "function cyber:admin/reset", f"tp @s 0.5 {Y + 1} 0.5 180 0",
+    fn("admin/room", ["tag @s add pvp.admin", "gamemode creative @s", f"tp @s 0.5 {Y + 1} 0.5 180 0",   # keeps your implants (for /pvpkit create)
                       say("@s", "Admin room: take what you need. /function pvp:admin/leave to go back.", "gold")])
     fn("admin/leave", ["tag @s remove pvp.admin", f"function {NS}:to_lobby"])
     # /function pvp:admin/unbreakable: every item with durability you carry (inventory, armor, offhand) becomes unbreakable;
