@@ -254,6 +254,8 @@ def build():
         "advancement revoke @a only pvp:npc", "advancement revoke @a only pvp:pvenpc", "advancement revoke @a only pvp:shopnpc",
     ])
     fn("to_lobby", [
+        "scoreboard players add @s pve.best 0",
+        "execute if entity @s[tag=pve.in] if score #state pve matches 2..3 if score #wave pve > @s pve.best run scoreboard players operation @s pve.best = #wave pve",
         "clear @s", "effect clear @s", "function cyber:admin/reset", "gamemode adventure @s",
         "attribute @s minecraft:max_health modifier remove pvp:jug",
         "tag @s remove pve.in", "tag @s remove pve.down", "tag @s remove pve.q", "tag @s remove pve.jug", "tag @s remove pve.cola", "team leave @s",
@@ -277,7 +279,7 @@ def build():
         f"function {NS}:to_lobby",
     ])
     fn("killed", [
-        "scoreboard players add @s pvp.streak 1", "scoreboard players set @s pvp.kn 0",
+        "scoreboard players add @s pvp.streak 1", "scoreboard players set @s pvp.kn 0", "scoreboard players add @s pvp.best 0",
         "execute if score @s pvp.streak > @s pvp.best run scoreboard players operation @s pvp.best = @s pvp.streak",
         "effect give @s minecraft:instant_health 1 0", "effect give @s minecraft:absorption 10 0",
         "give @s minecraft:golden_apple 1",
@@ -612,6 +614,7 @@ def build_pve():
     fn("pve/game_over", [
         "scoreboard players set #state pve 0", "kill @e[tag=pve.mob]", "bossbar set pvp:boss visible false",
         "tellraw @a[tag=pve.in] [{\"text\":\"☣ Outbreak over. You reached wave \",\"color\":\"red\"},{\"score\":{\"name\":\"#wave\",\"objective\":\"pve\"},\"color\":\"white\",\"bold\":true},{\"text\":\".\",\"color\":\"red\"}]",
+        "scoreboard players add @a[tag=pve.in] pve.best 0",   # unset scores never compare, so a first run would never count
         "execute as @a[tag=pve.in] if score #wave pve > @s pve.best run scoreboard players operation @s pve.best = #wave pve",
         "execute if score #wave pve > #record pve run tellraw @a [{\"text\":\"☣ New Outbreak record: wave \",\"color\":\"gold\"},{\"score\":{\"name\":\"#wave\",\"objective\":\"pve\"},\"color\":\"white\",\"bold\":true},"
         "{\"text\":\" by \",\"color\":\"gold\"},{\"selector\":\"@a[tag=pve.in]\",\"color\":\"yellow\"}]",
