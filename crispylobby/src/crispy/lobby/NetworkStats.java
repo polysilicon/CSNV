@@ -29,7 +29,8 @@ import java.util.regex.Pattern;
 final class NetworkStats {
     enum Cat {
         PLAYTIME("⌚ Playtime"), PLAYER_KILLS("⚔ Player Kills"), MOB_KILLS("☠ Mob Kills"), DEATHS("✝ Deaths"),
-        BLOCKS_MINED("⛏ Blocks Mined"), DISTANCE("➶ Distance Travelled"), JUMPS("⬆ Jumps"), MONEY("$ Richest (Factions)");
+        BLOCKS_MINED("⛏ Blocks Mined"), DISTANCE("➶ Distance Travelled"), JUMPS("⬆ Jumps"), MONEY("$ Richest (Factions)"),
+        BALATRO_BLINDS("🃏 Balatro: Blinds Cleared"), BALATRO_HAND("🃏 Balatro: Best Hand"), BALATRO_WINS("🃏 Balatro: Wins");
         final String title;
         Cat(String title) { this.title = title; }
     }
@@ -115,6 +116,19 @@ final class NetworkStats {
                     } catch (Exception ignored) { }
                 }
             } catch (IOException ignored) { }
+        }
+        // Balatro Craft (this lobby): scores.yml alltime.<uuid>.{name, progress = blinds cleared, best = best hand, wins}
+        java.io.File bal = new java.io.File(plugin.getDataFolder().getParentFile(), "BalatroCraft/scores.yml");
+        if (bal.isFile()) {
+            ConfigurationSection all = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(bal).getConfigurationSection("alltime");
+            if (all != null) for (String id : all.getKeys(false)) {
+                String name = all.getString(id + ".name", names.get(id));
+                if (name == null) continue;
+                Row r = out.computeIfAbsent(name.toLowerCase(Locale.ROOT), k -> new Row(name));
+                r.total[Cat.BALATRO_BLINDS.ordinal()] = Math.max(r.total[Cat.BALATRO_BLINDS.ordinal()], all.getLong(id + ".progress"));
+                r.total[Cat.BALATRO_HAND.ordinal()] = Math.max(r.total[Cat.BALATRO_HAND.ordinal()], all.getLong(id + ".best"));
+                r.total[Cat.BALATRO_WINS.ordinal()] += all.getLong(id + ".wins");
+            }
         }
         rows = out;
         updatedAt = System.currentTimeMillis();
@@ -202,7 +216,7 @@ final class NetworkStats {
         Cat c = cats[page++ % cats.length];
         int n = Math.max(1, cfg().getInt("top", 10));
         StringBuilder s = new StringBuilder("&d&lCrispy Network Stats\n&e&l").append(c.title).append("\n&7")
-                .append(c == Cat.MONEY ? "Factions" : "All servers").append("\n");
+                .append(c == Cat.MONEY ? "Factions" : c.name().startsWith("BALATRO") ? "Lobby · /balatro" : "All servers").append("\n");
         List<Row> top = top(c, n);
         if (top.isEmpty()) s.append("\n&8No data yet");
         for (int i = 0; i < top.size(); i++) {
