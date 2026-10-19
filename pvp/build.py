@@ -415,6 +415,12 @@ def build_room():
     fn("admin/room", ["tag @s add pvp.admin", "gamemode creative @s", "function cyber:admin/reset", f"tp @s 0.5 {Y + 1} 0.5 180 0",
                       say("@s", "Admin room: take what you need. /function pvp:admin/leave to go back.", "gold")])
     fn("admin/leave", ["tag @s remove pvp.admin", f"function {NS}:to_lobby"])
+    # /function pvp:admin/unbreakable: every item with durability you carry (inventory, armor, offhand) becomes unbreakable;
+    # food, potions etc. are left alone so they still stack
+    wj(f"data/{NS}/item_modifier/unbreakable.json", {"function": "minecraft:set_components", "components": {"minecraft:unbreakable": {}}})
+    fn("admin/unbreakable", [f"execute if items entity @s {sl} *[minecraft:max_damage] run item modify entity @s {sl} {NS}:unbreakable" for sl in
+                             [f"container.{i}" for i in range(36)] + ["armor.head", "armor.chest", "armor.legs", "armor.feet", "weapon.offhand"]]
+       + [say("@s", "All your gear with durability is now unbreakable.", "gold")])
 
 
 def walls(cx, cz, r, block, stripe):

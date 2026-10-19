@@ -90,6 +90,7 @@ A sealed room under the lobby (floor y 90) holds:
 /function pvp:admin/room       go in (tags you pvp.admin, creative mode, implants cleared)
 /function pvp:admin/leave      back to the lobby
 /function pvp:admin/fill_room  refill the chests
+/function pvp:admin/unbreakable  make everything you're carrying unbreakable (handy before /pvpkit create)
 ```
 The stray check leaves `pvp.admin` players alone in the room. `enchants.json` (id, max level, group) was exported from
 `crispy_enchants`; regenerate it if enchants are added.
