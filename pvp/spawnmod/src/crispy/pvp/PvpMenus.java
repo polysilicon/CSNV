@@ -52,6 +52,20 @@ public final class PvpMenus {
             box.setItem(slot, ItemStack.CODEC.parse(ops, item).result().orElse(ItemStack.EMPTY));
             cmds[slot] = entry.getStringOr("cmd", "");
         }
+        // "custom_kits":{slots:[...],cmd:"trigger pvp.kit set %d"} lists the admin-made kits (see PvpKits)
+        CompoundTag custom = menu.getCompoundOrEmpty("custom_kits");
+        if (!custom.isEmpty()) {
+            ListTag slots = custom.getListOrEmpty("slots"), kits = PvpKits.all(server);
+            String template = custom.getStringOr("cmd", "");
+            for (int i = 0; i < kits.size() && i < slots.size(); i++) {
+                CompoundTag kit = kits.getCompoundOrEmpty(i);
+                int slot = slots.getIntOr(i, -1);
+                Tag icon = kit.get("icon");
+                if (slot < 0 || slot >= rows * 9 || icon == null) continue;
+                box.setItem(slot, ItemStack.CODEC.parse(ops, icon).result().orElse(ItemStack.EMPTY));
+                cmds[slot] = template.replace("%d", String.valueOf(kit.getIntOr("id", 0)));
+            }
+        }
         Tag t = menu.get("title");
         Component title = t == null ? Component.literal(key) : ComponentSerialization.CODEC.parse(ops, t).result().orElse(Component.literal(key));
         MenuType<ChestMenu> type = TYPES[rows - 1];

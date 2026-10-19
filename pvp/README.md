@@ -58,7 +58,9 @@ All kit gear is unbreakable, and every kit also gets 16 steak and 2 golden apple
   - 100 per kill;
   - a 100 × wave bonus for everyone still standing when a wave is cleared.
 - **Arsenal**: Golden Apple 500, Med Kit 750, Ammo 250, Strength 1,000, Juggernog (+3 hearts) 2,500,
-  Speed Cola 2,000, Mystery Box 950 (one of four wonder weapons), Ray Bow 5,000.
+  Speed Cola 2,000, Mystery Box 950 (one of four wonder weapons), Ray Bow 5,000, Rations (16 steak) 100.
+  Juggernog and Speed Cola are one per life, and you aren't charged if you already have one.
+- **Food**: Rations in the Arsenal, plus 4 steak for every survivor whenever a wave is cleared.
 - **Down**: if you die you spectate above the arena and come back with your kit at the next wave. The run ends when
   everyone is down. Your best wave is saved in `pve.best`, and a new server record (`#record pve`) is announced to everyone.
 
@@ -79,14 +81,31 @@ forceload remove -24 276 24 324
 ```
 `pvp:admin/place_npc` re-places just the lobby NPCs and signs. The lobby chunks stay force-loaded.
 
+## Admin-made kits
+Set up your own inventory (hotbar, inventory, armor, offhand). If you want implants too, install them with the items
+from `/function cyber:admin/give`. Then run:
+```
+/pvpkit create <name>     save it, or replace the kit with that name (the held item becomes the menu icon)
+/pvpkit list              ids, authors, item and implant counts
+/pvpkit delete <id>
+```
+- Up to 10 custom kits.
+- They show up in the bottom two rows of both the Kit Dealer and the Outbreak menus.
+- They're given exactly as saved, with gear in the same slots and implants installed.
+- Ids start at 101.
+- They're stored in the world (`pvp:customkits`), so `/reload` and datapack updates keep them.
+- The commands need op (permission level 2).
+
 ## Server mod (spawnmod/)
 `spawnmod/` is a small server-side Fabric mod with two parts:
 - `/spawn` and `/lobby`, which run `/trigger pvp.spawn`, so the 10 s combat lock still applies.
 - `/pvpmenu <name>`, which opens a chest menu defined in storage `pvp:menus` (written by `pvp:load`). Clicking an item
-  closes the menu and runs its `cmd` as the player, always a `/trigger`. Every other click is cancelled. Minecraft 26.x is unobfuscated, so it compiles straight against the server jar with
+  closes the menu and runs its `cmd` as the player, always a `/trigger`. Every other click is cancelled. A menu's
+  `custom_kits` field adds the admin-made kits.
+- `/pvpkit`, which manages admin-made kits (see above). The datapack uses `pvpkit give <id>` to hand one out. Minecraft 26.x is unobfuscated, so it compiles straight against the server jar with
 Java 25:
 ```
 spawnmod/build.sh <lib-dir> <path-to-javac-25>   # lib-dir: server-26.2.jar (from the official bundler), brigadier,
                                                   # fabric-loader 0.19.5, fabric-api 0.161.0 with its nested jars unpacked
 ```
-Copy `crispy-pvp-spawn-1.1.0.jar` into `mods/` and restart the server.
+Copy `crispy-pvp-spawn-1.2.0.jar` into `mods/` and restart the server.

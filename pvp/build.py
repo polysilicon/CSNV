@@ -106,6 +106,7 @@ KITS = [
      + armor("netherite", 3, {"feet": {"feather_falling": 4}}), ["tendons", "titanium", "heart", "subdermal"]),
 ]
 KIT_SLOTS = [11, 12, 13, 14, 15, 20, 21, 22, 23, 24]
+CUSTOM_SLOTS = [29, 30, 31, 32, 33, 38, 39, 40, 41, 42]   # admin-made kits (/pvpkit create), ids 101+
 
 # Outbreak shop: id, name, colour, icon, cost, lore, commands (run as the buyer), one-per-life tag (checked before paying)
 SHOP = [
@@ -120,8 +121,10 @@ SHOP = [
     (7, "Mystery Box", "light_purple", "chest", 950, "A random wonder weapon", ["function pvp:pve/box"], None),
     (8, "Ray Bow", "aqua", "bow", 5000, "Power X, Flame, Infinity, Punch II", [
         f"give @s {item('bow', 'Ray Bow', 'aqua', {'power': 10, 'flame': 1, 'infinity': 1, 'punch': 2})}", "give @s minecraft:arrow 1"], None),
+    (9, "Rations", "yellow", "cooked_beef", 100, "16 steak", ["give @s minecraft:cooked_beef 16"], None),
 ]
-SHOP_SLOTS = [10, 11, 12, 13, 14, 15, 16, 22]
+SHOP_SLOTS = [10, 11, 12, 13, 14, 15, 16, 21, 23]
+WAVE_FOOD = 4   # steak for every survivor when a wave is cleared
 BOX = [   # Mystery Box rolls
     f"give @s {item('netherite_sword', 'Excalibur', 'gold', {'sharpness': 7, 'sweeping_edge': 3})}",
     f"give @s {item('trident', 'Thunderfang', 'aqua', {'impaling': 5, 'loyalty': 3})}",
@@ -180,16 +183,18 @@ def build():
     # ------------------------------------------------------------------ menus (opened by /pvpmenu)
     kit_lore = lambda k: k[5] + ["", "Click to pick"]
     menus = {
-        "kits": {"title": {"text": "⚔ Pick a kit", "color": "dark_aqua"}, "rows": 5, "fill": PANE, "items":
+        "kits": {"title": {"text": "⚔ Pick a kit", "color": "dark_aqua"}, "rows": 6, "fill": PANE,
+                 "custom_kits": {"slots": CUSTOM_SLOTS, "cmd": "trigger pvp.kit set %d"}, "items":
                  [{"slot": s, "item": icon(k[4], k[2], k[3], kit_lore(k)), "cmd": f"trigger pvp.kit set {k[0]}"} for s, k in zip(KIT_SLOTS, KITS)]
-                 + [{"slot": 40, "item": icon("zombie_head", "☣ Outbreak (PvE)", "green", ["Fight waves of mobs solo or with a team", "Click to pick your loadout"]), "cmd": "pvpmenu pve"}]},
-        "pve": {"title": {"text": "☣ Outbreak: pick your loadout", "color": "dark_green"}, "rows": 5, "fill": PANE, "items":
+                 + [{"slot": 49, "item": icon("zombie_head", "☣ Outbreak (PvE)", "green", ["Fight waves of mobs solo or with a team", "Click to pick your loadout"]), "cmd": "pvpmenu pve"}]},
+        "pve": {"title": {"text": "☣ Outbreak: pick your loadout", "color": "dark_green"}, "rows": 6, "fill": PANE,
+                "custom_kits": {"slots": CUSTOM_SLOTS, "cmd": "trigger pve.join set %d"}, "items":
                 [{"slot": s, "item": icon(k[4], k[2], k[3], k[5] + ["", "Click to queue with this kit"]), "cmd": f"trigger pve.join set {k[0]}"} for s, k in zip(KIT_SLOTS, KITS)]
-                + [{"slot": 38, "item": icon("barrier", "Leave the queue", "red", ["Stop waiting for the next Outbreak"], False), "cmd": "trigger pve.join set 99"},
-                   {"slot": 40, "item": icon("zombie_head", "How Outbreak works", "green", [
+                + [{"slot": 47, "item": icon("barrier", "Leave the queue", "red", ["Stop waiting for the next Outbreak"], False), "cmd": "trigger pve.join set 99"},
+                   {"slot": 49, "item": icon("zombie_head", "How Outbreak works", "green", [
                        "Endless waves; every 5th wave brings a boss", "100 points per kill + a bonus each wave",
                        "Spend points at the Arsenal in the arena", "Go down and you're back next wave", "Game over when the whole team is down"]), "cmd": ""},
-                   {"slot": 42, "item": icon("netherite_sword", "Back to PvP kits", "aqua", ["Fight other players instead"], False), "cmd": "pvpmenu kits"}]},
+                   {"slot": 51, "item": icon("netherite_sword", "Back to PvP kits", "aqua", ["Fight other players instead"], False), "cmd": "pvpmenu kits"}]},
         "pve_shop": {"title": {"text": "☣ Arsenal (points)", "color": "dark_green"}, "rows": 3, "fill": PANE, "items":
                      [{"slot": s, "item": icon(i[3], f"{i[1]} · {i[4]}", i[2], [i[5]]), "cmd": f"trigger pve.buy set {i[0]}"} for s, i in zip(SHOP_SLOTS, SHOP)]},
     }
@@ -280,7 +285,7 @@ def build():
     # ------------------------------------------------------------------ kits
     pick = ["scoreboard players operation #k pvp = @s pvp.kit", "scoreboard players set @s pvp.kit 0",
             f"execute unless entity @s[{LOBBY_BOX}] run return run tellraw @s {{\"text\":\"Pick a kit in the lobby (/spawn).\",\"color\":\"red\"}}",
-            "tag @s remove pve.q", "clear @s", "effect clear @s", "function cyber:admin/reset"]
+            "tag @s remove pve.q", "clear @s", "effect clear @s", "function cyber:admin/reset", "scoreboard players set #ok pvp 0"]
     give = []
     for (kid, key, name, color, ic, blurb, items, implants) in KITS:
         pick.append(f"execute if score #k pvp matches {kid} run function {NS}:kit/{key}")
@@ -290,9 +295,17 @@ def build():
             f"{{\"text\":\" (cyberware installed)\",\"color\":\"gray\"}}]",
             *(["tellraw @s {\"text\":\"Double-tap sneak to activate your Operating System implant.\",\"color\":\"dark_gray\"}"]
               if any(i in ("sandy", "berserk") for i in implants) else [])])
-    pick.append(f"execute if score #k pvp matches 1..{len(KITS)} run function {NS}:arena/enter")
+    pick += [f"execute if score #k pvp matches 1..{len(KITS)} run scoreboard players set #ok pvp 1",
+             f"execute if score #k pvp matches 101.. run function {NS}:kit/custom",
+             f"execute if score #ok pvp matches 1 run function {NS}:arena/enter",
+             f"execute unless score #ok pvp matches 1 run {say('@s', 'That kit no longer exists.', 'red')}"]
     fn("kit/pick", pick)
+    # admin-made kits are given by the mod ("pvpkit give <id>", ids 101+)
+    fn("kit/custom", ["execute store result storage pvp:tmp k int 1 run scoreboard players get #k pvp", f"function {NS}:kit/custom_give with storage pvp:tmp"])
+    fn("kit/custom_give", ["$execute store result score #ok pvp run pvpkit give $(k)"])
+    give.append(f"execute if score @s pve.kit matches 101.. run function {NS}:kit/custom_pve")
     fn("kit/give_pve", give)
+    fn("kit/custom_pve", ["execute store result storage pvp:tmp k int 1 run scoreboard players get @s pve.kit", f"function {NS}:kit/custom_give with storage pvp:tmp"])
 
     enter = ["execute store result score #r pvp run random value 1..%d" % len(SPAWNS)]
     for n, (dx, dz, yaw) in enumerate(SPAWNS, 1):
@@ -403,7 +416,7 @@ def build_pve():
         f"execute if score #j pve matches 99 run return run {say('@s', 'You left the Outbreak queue.', 'yellow')}",
         f"execute if entity @s[tag=pve.in] run return run {say('@s', 'You are already in the Outbreak.', 'red')}",
         f"execute unless entity @s[{LOBBY_BOX}] run return run {say('@s', 'Join the Outbreak from the lobby (/spawn).', 'red')}",
-        f"execute unless score #j pve matches 1..{len(KITS)} run return 0",
+        f"execute unless score #j pve matches 1..{len(KITS)} unless score #j pve matches 101..199 run return 0",
         "scoreboard players operation @s pve.kit = #j pve", "tag @s add pve.q",
         f"execute if score #state pve matches 2..3 run return run {say('@s', 'Outbreak in progress: you will drop in at the next wave break.', 'green')}",
         say("@s", "Queued for the Outbreak. More players can join during the countdown.", "green"),
@@ -474,6 +487,7 @@ def build_pve():
         "tellraw @a[tag=pve.in] [{\"text\":\"☣ Wave \",\"color\":\"green\"},{\"score\":{\"name\":\"#wave\",\"objective\":\"pve\"},\"color\":\"white\"},"
         "{\"text\":\" cleared! +\",\"color\":\"green\"},{\"score\":{\"name\":\"#b\",\"objective\":\"pve\"},\"color\":\"gold\"},{\"text\":\" points. Next wave in 10 s.\",\"color\":\"green\"}]",
         "execute as @a[tag=pve.in] at @s run playsound minecraft:ui.toast.challenge_complete player @s ~ ~ ~ 0.6 1",
+        f"give @a[tag=pve.in,tag=!pve.down] minecraft:cooked_beef {WAVE_FOOD}",
         f"execute as @a[tag=pve.q] run function {P}/enter",
     ])
 
