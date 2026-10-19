@@ -18,11 +18,13 @@ import org.bukkit.scoreboard.*;
 
 import java.util.*;
 
-/** Lobby sidebar (replaces DeluxeHub's scoreboard, which crashes on Paper 26.x) and lobby spawn handling:
- *  every join lands on the spawn point, and anyone who gets above the barrier ceiling is brought back. */
+/** Lobby sidebar (replaces DeluxeHub's scoreboard, which crashes on Paper 26.x), lobby spawn handling
+ *  (every join lands on the spawn point, anyone above the barrier ceiling is brought back) and the
+ *  network stats board + /stats (NetworkStats). */
 public class CrispyLobby extends JavaPlugin implements Listener {
     static final LegacyComponentSerializer AMP = LegacyComponentSerializer.legacyAmpersand();
     final Map<UUID, Objective> boards = new HashMap<>();
+    NetworkStats stats;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -30,9 +32,26 @@ public class CrispyLobby extends JavaPlugin implements Listener {
         long every = Math.max(1, getConfig().getLong("sidebar.refresh-seconds", 5)) * 20L;
         Bukkit.getScheduler().runTaskTimer(this, () -> Bukkit.getOnlinePlayers().forEach(this::update), every, every);
         for (Player p : Bukkit.getOnlinePlayers()) show(p);
+        stats = new NetworkStats(this);
+        stats.start();
     }
 
+    @Override public void onDisable() { if (stats != null) stats.stop(); }
+
     @Override public boolean onCommand(org.bukkit.command.CommandSender s, org.bukkit.command.Command c, String l, String[] a) {
+        if (c.getName().equalsIgnoreCase("stats")) {
+            String who = a.length > 0 ? a[0] : s.getName();
+            stats.showStats(s, who);
+            return true;
+        }
+        if (a.length >= 1 && a[0].equalsIgnoreCase("leaderboard")) {
+            if (a.length >= 2 && a[1].equalsIgnoreCase("here") && s instanceof Player p) {
+                stats.moveHere(p); s.sendMessage(AMP.deserialize("&aNetwork stats board moved here."));
+            } else if (a.length >= 2 && a[1].equalsIgnoreCase("refresh")) {
+                Bukkit.getScheduler().runTaskAsynchronously(this, stats::collect); s.sendMessage(AMP.deserialize("&aRefreshing network stats..."));
+            } else s.sendMessage(AMP.deserialize("&7/crispylobby leaderboard here &8| &7/crispylobby leaderboard refresh"));
+            return true;
+        }
         reloadConfig(); boards.clear(); Bukkit.getOnlinePlayers().forEach(this::show);
         s.sendMessage(AMP.deserialize("&aCrispyLobby reloaded.")); return true;
     }

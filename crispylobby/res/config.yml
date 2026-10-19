@@ -21,3 +21,14 @@ sidebar:
     - "&e&lPlayer:"
     - "  &f%player%"
     - "&7&m----------------------"
+
+# Network stats board + /stats: vanilla stats from every server on this machine (and Factions balances), totalled
+# per player name. Move the board with /crispylobby leaderboard here; force a re-read with /crispylobby leaderboard refresh.
+network-stats:
+  enabled: true
+  instances-dir: /AMPStorage/.ampdata/instances
+  factions-userdata: Factions01/Minecraft/plugins/Essentials/userdata
+  refresh-minutes: 5
+  rotate-seconds: 8
+  top: 10
+  location: {world: world, x: 0.5, y: 68.5, z: 12.5}
