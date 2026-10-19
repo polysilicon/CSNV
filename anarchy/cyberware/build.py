@@ -261,8 +261,9 @@ def build():
     fn("admin/place_doc", [
         "# run at the spot where the Ripperdoc should stand, e.g.",
         "# execute in crispy:market positioned -46.5 172 65.5 run function cyber:admin/place_doc",
+        "# crispy_shop: the market moves every other villager out of the world (crispy:second)",
         "kill @e[tag=cy.doc]",
-        "summon minecraft:villager ~ ~ ~ {Tags:[\"cy.doc\"],Rotation:[90f,0f],NoAI:1b,Invulnerable:1b,Silent:1b,PersistenceRequired:1b,"
+        "summon minecraft:villager ~ ~ ~ {Tags:[\"cy.doc\",\"crispy_shop\"],Rotation:[90f,0f],NoAI:1b,Invulnerable:1b,Silent:1b,PersistenceRequired:1b,"
         "CustomNameVisible:1b,CustomName:{\"text\":\"⚕ Ripperdoc ⚕\",\"color\":\"aqua\",\"bold\":true},"
         "VillagerData:{profession:\"minecraft:cleric\",level:5,type:\"minecraft:swamp\"},Offers:{Recipes:[]}}",
         "summon minecraft:interaction ~ ~ ~ {Tags:[\"cy.doc\"],width:1.2f,height:2.2f,response:1b}",

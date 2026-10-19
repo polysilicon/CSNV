@@ -12,7 +12,9 @@ execute in crispy:market run forceload add -48 56 -32 72
 execute in crispy:market positioned -46.5 172 65.5 run function cyber:admin/place_doc
 execute in crispy:market run forceload remove -48 56 -32 72
 ```
-It stands four blocks north of the Enchanter. It isn't tagged `crispy_shop`, so `crispy:market/reinstall` leaves it alone.
+It stands four blocks north of the Enchanter. Like the Enchanter it is tagged `crispy_shop`, because the market moves
+every other villager out of the world each second. That also means `crispy:market/reinstall` removes it, so
+re-run the place commands after a reinstall.
 
 ## How it works
 - **Ripperdoc** (right-click): buy implants with diamonds or netherite, buy Neuroblockers, or remove an implant
