@@ -2,7 +2,7 @@ name: CrispyFactions
 version: 1.3.0
 main: crispy.factions.CrispyFactions
 api-version: '1.21'
-author: Crispy Network
+author: CrispyAnarchy
 description: Prime-time raid window, obsidian durability, Aegis Vacation Star, cactus collector, 1.8-era item rules, PvP combat tag, CS-style cases, vote rewards
 depend: [Factions]
 softdepend: [EconomyShopGUI, Essentials, Vault, Votifier]

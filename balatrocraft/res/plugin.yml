@@ -2,7 +2,7 @@ name: BalatroCraft
 version: 1.0.0
 main: crispy.balatro.BalatroCraft
 api-version: '1.21'
-author: Crispy Network
+author: CrispyAnarchy
 description: A poker roguelike played in a chest menu (ore suits, mobs as jokers, Minecraft bosses, daily runs)
 commands:
   balatro:

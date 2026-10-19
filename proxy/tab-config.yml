@@ -5,7 +5,7 @@ header-footer:
     default:
       header:
         - ""
-        - "&d&lCrispy Network"
+        - "&d&lCrispyAnarchy"
         - "&7%online% players online"
         - ""
       footer:

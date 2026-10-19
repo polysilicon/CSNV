@@ -215,7 +215,7 @@ final class NetworkStats {
         Cat[] cats = Cat.values();
         Cat c = cats[page++ % cats.length];
         int n = Math.max(1, cfg().getInt("top", 10));
-        StringBuilder s = new StringBuilder("&d&lCrispy Network Stats\n&e&l").append(c.title).append("\n&7")
+        StringBuilder s = new StringBuilder("&d&lCrispyAnarchy Stats\n&e&l").append(c.title).append("\n&7")
                 .append(c == Cat.MONEY ? "Factions" : c.name().startsWith("BALATRO") ? "Lobby · /balatro" : "All servers").append("\n");
         List<Row> top = top(c, n);
         if (top.isEmpty()) s.append("\n&8No data yet");
