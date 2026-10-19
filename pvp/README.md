@@ -81,6 +81,22 @@ forceload remove -24 276 24 324
 ```
 `pvp:admin/place_npc` re-places just the lobby NPCs and signs. The lobby chunks stay force-loaded.
 
+## Admin room
+A sealed room under the lobby (floor y 90) holds:
+- a max-level book of every custom enchant (193 of them), in chests labelled by gear type: melee, ranged, tools, armor;
+- one of every cyberware implant, plus a Neuroblocker.
+
+```
+/function pvp:admin/room       go in (tags you pvp.admin, creative mode, implants cleared)
+/function pvp:admin/leave      back to the lobby
+/function pvp:admin/fill_room  refill the chests
+```
+The stray check leaves `pvp.admin` players alone in the room. `enchants.json` (id, max level, group) was exported from
+`crispy_enchants`; regenerate it if enchants are added.
+
+**Heads**: the Head Index mod (`headindex-1.2.1.jar`, MIT, server-side) gives ops a `/head` menu of minecraft-heads.com
+heads, for kit icons and gear. It needs a free minecraft-heads.com API key in its config.
+
 ## Admin-made kits
 Set up your own inventory (hotbar, inventory, armor, offhand). If you want implants too, install them with the items
 from `/function cyber:admin/give`. Then run:

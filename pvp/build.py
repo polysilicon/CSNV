@@ -22,6 +22,12 @@ PVE_NPC = (4.5, LOBBY_Y + 1, -6.5)
 SHOP_NPC = (PCX + 0.5, AY + 2, PCZ + 0.5)
 
 def box(cx, cz, r, y0, dy): return f"x={cx - r - 1},y={y0},z={cz - r - 1},dx={2 * r + 2},dy={dy},dz={2 * r + 2}"
+# admin room under the lobby: chests of every custom enchant (max-level books) and every cyberware item
+ROOM_Y = LOBBY_Y - 10                # room floor; interior ROOM_Y+1..ROOM_Y+4
+ROOM_BOX = f"x=-10,y={ROOM_Y},z=-5,dx=20,dy=6,dz=10"
+ENCHANTS = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "enchants.json")))   # from crispy_enchants
+IMPLANT_KEYS = ["kiroshi", "subdermal", "titanium", "lungs", "gorilla", "mantis", "tendons", "lynx", "grip", "reflex", "biomon",
+                "heart", "sandy", "berserk", "neuro"]   # cyber:item/<key> loot tables
 LOBBY_BOX = box(0, 0, LOBBY_R, LOBBY_Y - 1, 20)
 ARENA_BOX = box(ACX, ACZ, AR, AY - 1, 35)
 PVE_BOX = box(PCX, PCZ, PR, AY - 1, 35)
@@ -242,7 +248,7 @@ def build():
         f"effect give @a[{LOBBY_BOX}] minecraft:weakness 3 255 true",
         f"effect give @a[{LOBBY_BOX}] minecraft:saturation 3 0 true",
         # anyone (in adventure) outside the lobby and both arenas goes back to the lobby
-        f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[{ARENA_BOX}] unless entity @s[{PVE_BOX}] run function {NS}:to_lobby",
+        f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[{ARENA_BOX}] unless entity @s[{PVE_BOX}] unless entity @s[tag=pvp.admin,{ROOM_BOX}] run function {NS}:to_lobby",
         f"function {NS}:pve/second",
         # NPC clicks are advancements; clear any left granted so an NPC can never get stuck for a player
         "advancement revoke @a only pvp:npc", "advancement revoke @a only pvp:pvenpc", "advancement revoke @a only pvp:shopnpc",
@@ -368,7 +374,47 @@ def build():
                    f"fill {X1} {AY + 1} {mz - 1} {X1} {AY + 2} {mz + 1} minecraft:air", f"fill {X2} {AY + 1} {mz - 1} {X2} {AY + 2} {mz + 1} minecraft:air",
                    f"setblock {mx} {AY} {mz} minecraft:sea_lantern"]
     fn("admin/build_arena", ar)
-    fn("admin/build", [f"function {NS}:admin/build_lobby", f"function {NS}:admin/build_arena", f"function {NS}:admin/build_pve"])
+    fn("admin/build", [f"function {NS}:admin/build_lobby", f"function {NS}:admin/build_arena", f"function {NS}:admin/build_pve", f"function {NS}:admin/build_room"])
+    build_room()
+
+
+def build_room():
+    """Sealed admin room under the lobby. Ops: /function pvp:admin/room (in, creative), /function pvp:admin/leave."""
+    Y = ROOM_Y
+    chests = []   # (label, colour, list of item commands: ("book", id, lvl) or ("loot", key))
+    for group, color in (("Melee", "red"), ("Ranged", "green"), ("Tools", "yellow"), ("Armor", "aqua")):
+        books = [("book", e["id"], e["max"]) for e in ENCHANTS if e["group"] == group]
+        parts = [books[i:i + 27] for i in range(0, len(books), 27)]
+        for n, part in enumerate(parts, 1):
+            chests.append((f"{group} enchants" + (f" {n}/{len(parts)}" if len(parts) > 1 else ""), color, part))
+    chests.append(("Cyberware", "light_purple", [("loot", k) for k in IMPLANT_KEYS]))
+    # north wall: melee, ranged, tools; south wall: armor, cyberware
+    north = [c for c in chests if not c[0].startswith(("Armor", "Cyber"))]
+    south = [c for c in chests if c[0].startswith(("Armor", "Cyber"))]
+    spots = [(c, x, -3, "south") for c, x in zip(north, range(-(len(north) - 1), len(north), 2))] + \
+            [(c, x, 3, "north") for c, x in zip(south, range(-(len(south) - 1), len(south), 2))]
+    b = [f"fill -10 {Y} -5 10 {Y + 5} 5 minecraft:polished_deepslate hollow",
+         f"fill -9 {Y} -4 9 {Y} 4 minecraft:deepslate_tiles", f"fill -9 {Y} 0 9 {Y} 0 minecraft:cyan_concrete",
+         f"fill -9 {Y + 5} -4 9 {Y + 5} 4 minecraft:sea_lantern", "kill @e[tag=pvp.roomholo]",
+         f"summon minecraft:text_display 0.5 {Y + 3.6} 0.5 {{Tags:[\"pvp.roomholo\"],billboard:\"center\",background:0,"
+         f"text:[{{\"text\":\"ADMIN ROOM\",\"color\":\"gold\",\"bold\":true}},{{\"text\":\"\\nEvery custom enchant (max level) + all cyberware\\n/function pvp:admin/fill_room refills · /function pvp:admin/leave\",\"color\":\"gray\"}}]}}"]
+    fill = []
+    for (label, color, items), x, z, facing in spots:
+        b.append(f"setblock {x} {Y + 1} {z} minecraft:chest[facing={facing}]{{CustomName:{tj({'text': label, 'color': color})}}} replace")
+        b.append(f"summon minecraft:text_display {x + 0.5} {Y + 2.3} {z + 0.5} {{Tags:[\"pvp.roomholo\"],billboard:\"center\",background:0,"
+                 f"text:{tj({'text': label, 'color': color, 'bold': True})}}}")
+        fill.append(f"data modify block {x} {Y + 1} {z} Items set value []")
+        for slot, it in enumerate(items):
+            if it[0] == "book":
+                fill.append(f"item replace block {x} {Y + 1} {z} container.{slot} with minecraft:enchanted_book"
+                            f"[minecraft:stored_enchantments={{\"crispy_enchants:{it[1]}\":{it[2]}}}]")
+            else:
+                fill.append(f"loot replace block {x} {Y + 1} {z} container.{slot} loot cyber:item/{it[1]}")
+    fn("admin/build_room", b + [f"function {NS}:admin/fill_room"])
+    fn("admin/fill_room", fill + [say("@s", "Admin room chests refilled.", "gold")])
+    fn("admin/room", ["tag @s add pvp.admin", "gamemode creative @s", "function cyber:admin/reset", f"tp @s 0.5 {Y + 1} 0.5 180 0",
+                      say("@s", "Admin room: take what you need. /function pvp:admin/leave to go back.", "gold")])
+    fn("admin/leave", ["tag @s remove pvp.admin", f"function {NS}:to_lobby"])
 
 
 def walls(cx, cz, r, block, stripe):

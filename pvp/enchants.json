@@ -1,0 +1,1160 @@
+[
+{
+"id": "abiding",
+"max": 1,
+"group": "Tools",
+"name": "Abiding"
+},
+{
+"id": "alienimplants",
+"max": 3,
+"group": "Armor",
+"name": "Alien Implants"
+},
+{
+"id": "angelic",
+"max": 5,
+"group": "Armor",
+"name": "Angelic"
+},
+{
+"id": "annihilate",
+"max": 6,
+"group": "Melee",
+"name": "Annihilate"
+},
+{
+"id": "antigravity",
+"max": 3,
+"group": "Armor",
+"name": "Anti Gravity"
+},
+{
+"id": "aquatic",
+"max": 1,
+"group": "Armor",
+"name": "Aquatic"
+},
+{
+"id": "armored",
+"max": 4,
+"group": "Armor",
+"name": "Armored"
+},
+{
+"id": "arrowbreak",
+"max": 6,
+"group": "Melee",
+"name": "Arrow Break"
+},
+{
+"id": "arrowdeflect",
+"max": 4,
+"group": "Armor",
+"name": "Arrow Deflect"
+},
+{
+"id": "arrowlifesteal",
+"max": 5,
+"group": "Ranged",
+"name": "Arrow Lifesteal"
+},
+{
+"id": "arrowrain",
+"max": 5,
+"group": "Ranged",
+"name": "Arrow Rain"
+},
+{
+"id": "arsonist",
+"max": 3,
+"group": "Melee",
+"name": "Arsonist"
+},
+{
+"id": "assassin",
+"max": 5,
+"group": "Melee",
+"name": "Assassin"
+},
+{
+"id": "atomicdetonate",
+"max": 9,
+"group": "Tools",
+"name": "Atomic Detonate"
+},
+{
+"id": "autosmelt",
+"max": 3,
+"group": "Tools",
+"name": "Auto Smelt"
+},
+{
+"id": "balancedlanding",
+"max": 3,
+"group": "Armor",
+"name": "Balanced Landing"
+},
+{
+"id": "barbarian",
+"max": 4,
+"group": "Melee",
+"name": "Barbarian"
+},
+{
+"id": "berserk",
+"max": 5,
+"group": "Melee",
+"name": "Berserk"
+},
+{
+"id": "bewitchedhex",
+"max": 4,
+"group": "Melee",
+"name": "Bewitched Hex"
+},
+{
+"id": "bidirectionalteleportation",
+"max": 4,
+"group": "Ranged",
+"name": "Bidirectional Teleportation"
+},
+{
+"id": "blacksmith",
+"max": 5,
+"group": "Melee",
+"name": "Blacksmith"
+},
+{
+"id": "bleed",
+"max": 6,
+"group": "Melee",
+"name": "Bleed"
+},
+{
+"id": "blessed",
+"max": 4,
+"group": "Melee",
+"name": "Blessed"
+},
+{
+"id": "blind",
+"max": 3,
+"group": "Melee",
+"name": "Blind"
+},
+{
+"id": "block",
+"max": 3,
+"group": "Melee",
+"name": "Block"
+},
+{
+"id": "cactus",
+"max": 2,
+"group": "Armor",
+"name": "Cactus"
+},
+{
+"id": "chainlifesteal",
+"max": 2,
+"group": "Armor",
+"name": "Chain Lifesteal"
+},
+{
+"id": "clarity",
+"max": 3,
+"group": "Armor",
+"name": "Clarity"
+},
+{
+"id": "cleave",
+"max": 7,
+"group": "Melee",
+"name": "Cleave"
+},
+{
+"id": "confusion",
+"max": 3,
+"group": "Melee",
+"name": "Confusion"
+},
+{
+"id": "corrupt",
+"max": 4,
+"group": "Melee",
+"name": "Corrupt"
+},
+{
+"id": "creeperarmor",
+"max": 3,
+"group": "Armor",
+"name": "Creeper Armor"
+},
+{
+"id": "curse",
+"max": 5,
+"group": "Armor",
+"name": "Curse"
+},
+{
+"id": "deathbringer",
+"max": 3,
+"group": "Armor",
+"name": "Deathbringer"
+},
+{
+"id": "deathgod",
+"max": 3,
+"group": "Armor",
+"name": "Death God"
+},
+{
+"id": "decapitation",
+"max": 3,
+"group": "Melee",
+"name": "Decapitation"
+},
+{
+"id": "deepbleed",
+"max": 6,
+"group": "Melee",
+"name": "Deep Bleed"
+},
+{
+"id": "demonforged",
+"max": 4,
+"group": "Melee",
+"name": "Demonforged"
+},
+{
+"id": "demonic",
+"max": 3,
+"group": "Armor",
+"name": "Demonic"
+},
+{
+"id": "demoniclifesteal",
+"max": 5,
+"group": "Melee",
+"name": "Demonic Lifesteal"
+},
+{
+"id": "destruction",
+"max": 5,
+"group": "Armor",
+"name": "Destruction"
+},
+{
+"id": "detonate",
+"max": 9,
+"group": "Tools",
+"name": "Detonate"
+},
+{
+"id": "devour",
+"max": 4,
+"group": "Melee",
+"name": "Devour"
+},
+{
+"id": "diminish",
+"max": 6,
+"group": "Armor",
+"name": "Diminish"
+},
+{
+"id": "disappear",
+"max": 4,
+"group": "Armor",
+"name": "Disappear"
+},
+{
+"id": "disarmor",
+"max": 8,
+"group": "Melee",
+"name": "Disarmor"
+},
+{
+"id": "disintegrate",
+"max": 4,
+"group": "Melee",
+"name": "Disintegrate"
+},
+{
+"id": "distance",
+"max": 4,
+"group": "Melee",
+"name": "Distance"
+},
+{
+"id": "divineenlighted",
+"max": 3,
+"group": "Armor",
+"name": "Divine Enlighted"
+},
+{
+"id": "divineimmolation",
+"max": 4,
+"group": "Melee",
+"name": "Divine Immolation"
+},
+{
+"id": "dodge",
+"max": 5,
+"group": "Armor",
+"name": "Dodge"
+},
+{
+"id": "dominate",
+"max": 4,
+"group": "Melee",
+"name": "Dominate"
+},
+{
+"id": "doublestrike",
+"max": 3,
+"group": "Melee",
+"name": "Double Strike"
+},
+{
+"id": "drunk",
+"max": 4,
+"group": "Armor",
+"name": "Drunk"
+},
+{
+"id": "eagleeye",
+"max": 5,
+"group": "Ranged",
+"name": "Eagle Eye"
+},
+{
+"id": "endershift",
+"max": 3,
+"group": "Armor",
+"name": "EnderShift"
+},
+{
+"id": "enderslayer",
+"max": 5,
+"group": "Melee",
+"name": "Ender Slayer"
+},
+{
+"id": "enderwalker",
+"max": 5,
+"group": "Armor",
+"name": "Ender Walker"
+},
+{
+"id": "enlighted",
+"max": 3,
+"group": "Armor",
+"name": "Enlighted"
+},
+{
+"id": "enrage",
+"max": 3,
+"group": "Melee",
+"name": "Enrage"
+},
+{
+"id": "epicness",
+"max": 3,
+"group": "Melee",
+"name": "Epicness"
+},
+{
+"id": "epidemiccarrier",
+"max": 8,
+"group": "Armor",
+"name": "Epidemic Carrier"
+},
+{
+"id": "etheral",
+"max": 3,
+"group": "Melee",
+"name": "Etheral"
+},
+{
+"id": "etherealdodge",
+"max": 1,
+"group": "Armor",
+"name": "Ethereal Dodge"
+},
+{
+"id": "execute",
+"max": 7,
+"group": "Melee",
+"name": "Execute"
+},
+{
+"id": "experience",
+"max": 5,
+"group": "Tools",
+"name": "Experience"
+},
+{
+"id": "explosive",
+"max": 5,
+"group": "Ranged",
+"name": "Explosive"
+},
+{
+"id": "explosiveimmunity",
+"max": 3,
+"group": "Armor",
+"name": "Explosive immunity"
+},
+{
+"id": "exterminator",
+"max": 3,
+"group": "Armor",
+"name": "Exterminator"
+},
+{
+"id": "extremeinsanity",
+"max": 8,
+"group": "Melee",
+"name": "Insanity"
+},
+{
+"id": "famine",
+"max": 4,
+"group": "Melee",
+"name": "Famine"
+},
+{
+"id": "farcast",
+"max": 5,
+"group": "Ranged",
+"name": "Farcast"
+},
+{
+"id": "fat",
+"max": 6,
+"group": "Armor",
+"name": "Fat"
+},
+{
+"id": "featherweight",
+"max": 3,
+"group": "Melee",
+"name": "Featherweight"
+},
+{
+"id": "frozen",
+"max": 3,
+"group": "Armor",
+"name": "Frozen"
+},
+{
+"id": "gears",
+"max": 3,
+"group": "Armor",
+"name": "Gears"
+},
+{
+"id": "glowing",
+"max": 1,
+"group": "Armor",
+"name": "Glowing"
+},
+{
+"id": "godlike",
+"max": 1,
+"group": "Melee",
+"name": "Godlike"
+},
+{
+"id": "godlyoverload",
+"max": 3,
+"group": "Armor",
+"name": "Godly Overload"
+},
+{
+"id": "greatsword",
+"max": 5,
+"group": "Melee",
+"name": "Greatsword"
+},
+{
+"id": "guardians",
+"max": 10,
+"group": "Armor",
+"name": "Guardians"
+},
+{
+"id": "guidedrocketescape",
+"max": 3,
+"group": "Armor",
+"name": "Guided Rocket Escape"
+},
+{
+"id": "halloweenify",
+"max": 5,
+"group": "Melee",
+"name": "Halloweenify"
+},
+{
+"id": "hardened",
+"max": 3,
+"group": "Armor",
+"name": "Hardened"
+},
+{
+"id": "haste",
+"max": 3,
+"group": "Tools",
+"name": "Haste"
+},
+{
+"id": "headless",
+"max": 3,
+"group": "Melee",
+"name": "Headless"
+},
+{
+"id": "heavy",
+"max": 5,
+"group": "Armor",
+"name": "Heavy"
+},
+{
+"id": "hex",
+"max": 4,
+"group": "Melee",
+"name": "Hex"
+},
+{
+"id": "hijack",
+"max": 4,
+"group": "Ranged",
+"name": "Hijack"
+},
+{
+"id": "horrify",
+"max": 4,
+"group": "Armor",
+"name": "Horrify"
+},
+{
+"id": "iceaspect",
+"max": 3,
+"group": "Melee",
+"name": "Ice Aspect"
+},
+{
+"id": "immortal",
+"max": 4,
+"group": "Armor",
+"name": "Immortal"
+},
+{
+"id": "impale",
+"max": 4,
+"group": "Ranged",
+"name": "Impale"
+},
+{
+"id": "implants",
+"max": 3,
+"group": "Armor",
+"name": "Implants"
+},
+{
+"id": "infernal",
+"max": 3,
+"group": "Ranged",
+"name": "Infernal"
+},
+{
+"id": "insanity",
+"max": 8,
+"group": "Melee",
+"name": "Insanity"
+},
+{
+"id": "insomnia",
+"max": 7,
+"group": "Melee",
+"name": "Insomnia"
+},
+{
+"id": "inversion",
+"max": 4,
+"group": "Melee",
+"name": "Inversion"
+},
+{
+"id": "jellylegs",
+"max": 3,
+"group": "Armor",
+"name": "Jelly Legs"
+},
+{
+"id": "judgement",
+"max": 5,
+"group": "Armor",
+"name": "Judgement"
+},
+{
+"id": "killaura",
+"max": 5,
+"group": "Melee",
+"name": "Kill Aura"
+},
+{
+"id": "lavawalker",
+"max": 1,
+"group": "Armor",
+"name": "Lava Walker"
+},
+{
+"id": "lethalsniper",
+"max": 5,
+"group": "Ranged",
+"name": "Lethal Sniper"
+},
+{
+"id": "lifesteal",
+"max": 5,
+"group": "Melee",
+"name": "Lifesteal"
+},
+{
+"id": "lightning",
+"max": 3,
+"group": "Ranged",
+"name": "Lightning"
+},
+{
+"id": "lightningarrows",
+"max": 4,
+"group": "Ranged",
+"name": "Lightning Arrows"
+},
+{
+"id": "longbow",
+"max": 4,
+"group": "Ranged",
+"name": "Longbow"
+},
+{
+"id": "markofthebeast",
+"max": 6,
+"group": "Armor",
+"name": "Mark of the Beast"
+},
+{
+"id": "marksman",
+"max": 4,
+"group": "Armor",
+"name": "Marksman"
+},
+{
+"id": "masterblacksmith",
+"max": 5,
+"group": "Melee",
+"name": "Master Blacksmith"
+},
+{
+"id": "masterinquisitive",
+"max": 4,
+"group": "Melee",
+"name": "Master Inquisitive"
+},
+{
+"id": "megaheavy",
+"max": 5,
+"group": "Armor",
+"name": "Mega Heavy"
+},
+{
+"id": "metaphysical",
+"max": 4,
+"group": "Armor",
+"name": "Metaphysical"
+},
+{
+"id": "mightycactus",
+"max": 2,
+"group": "Armor",
+"name": "Mighty Cactus"
+},
+{
+"id": "mightycleave",
+"max": 5,
+"group": "Melee",
+"name": "Mighty Cleave"
+},
+{
+"id": "molten",
+"max": 4,
+"group": "Armor",
+"name": "Molten"
+},
+{
+"id": "natureswrath",
+"max": 4,
+"group": "Armor",
+"name": "Natures Wrath"
+},
+{
+"id": "netherslayer",
+"max": 5,
+"group": "Melee",
+"name": "Nether Slayer"
+},
+{
+"id": "neutralize",
+"max": 5,
+"group": "Melee",
+"name": "Neutralize"
+},
+{
+"id": "obliterate",
+"max": 5,
+"group": "Melee",
+"name": "Obliterate"
+},
+{
+"id": "obsidiandestroyer",
+"max": 5,
+"group": "Tools",
+"name": "Obsidian Destroyer"
+},
+{
+"id": "obsidianshield",
+"max": 1,
+"group": "Armor",
+"name": "Obsidianshield"
+},
+{
+"id": "overload",
+"max": 3,
+"group": "Armor",
+"name": "Overload"
+},
+{
+"id": "oxygenate",
+"max": 1,
+"group": "Tools",
+"name": "Oxygenate"
+},
+{
+"id": "pacify",
+"max": 4,
+"group": "Ranged",
+"name": "Pacify"
+},
+{
+"id": "paladinarmored",
+"max": 4,
+"group": "Armor",
+"name": "Paladin Armored"
+},
+{
+"id": "paradox",
+"max": 5,
+"group": "Armor",
+"name": "Paradox"
+},
+{
+"id": "paralyze",
+"max": 4,
+"group": "Melee",
+"name": "Paralyze"
+},
+{
+"id": "phoenix",
+"max": 3,
+"group": "Armor",
+"name": "Phoenix"
+},
+{
+"id": "piercing",
+"max": 5,
+"group": "Ranged",
+"name": "Piercing"
+},
+{
+"id": "plaguecarrier",
+"max": 8,
+"group": "Armor",
+"name": "Plague Carrier"
+},
+{
+"id": "planetarydeathbringer",
+"max": 3,
+"group": "Armor",
+"name": "Planetary Deathbringer"
+},
+{
+"id": "poison",
+"max": 3,
+"group": "Melee",
+"name": "Poison"
+},
+{
+"id": "poisoned",
+"max": 4,
+"group": "Armor",
+"name": "Poisoned"
+},
+{
+"id": "polymorphicmetaphysical",
+"max": 4,
+"group": "Armor",
+"name": "Polymorphic Metaphysical"
+},
+{
+"id": "protection",
+"max": 5,
+"group": "Armor",
+"name": "Protection"
+},
+{
+"id": "pummel",
+"max": 3,
+"group": "Melee",
+"name": "Pummel"
+},
+{
+"id": "quiver",
+"max": 6,
+"group": "Armor",
+"name": "Quiver"
+},
+{
+"id": "ragdoll",
+"max": 4,
+"group": "Armor",
+"name": "Ragdoll"
+},
+{
+"id": "rage",
+"max": 6,
+"group": "Melee",
+"name": "Rage"
+},
+{
+"id": "ravenous",
+"max": 4,
+"group": "Melee",
+"name": "Ravenous"
+},
+{
+"id": "reaper",
+"max": 4,
+"group": "Melee",
+"name": "Reaper"
+},
+{
+"id": "reflectiveblock",
+"max": 3,
+"group": "Melee",
+"name": "Reflective Block"
+},
+{
+"id": "reforged",
+"max": 10,
+"group": "Tools",
+"name": "Reforged"
+},
+{
+"id": "reinforced",
+"max": 4,
+"group": "Armor",
+"name": "Reinforced"
+},
+{
+"id": "reinforcedtank",
+"max": 4,
+"group": "Armor",
+"name": "Reinforced Tank"
+},
+{
+"id": "restore",
+"max": 4,
+"group": "Tools",
+"name": "Restore"
+},
+{
+"id": "rocketescape",
+"max": 3,
+"group": "Armor",
+"name": "Rocket Escape"
+},
+{
+"id": "rogue",
+"max": 3,
+"group": "Melee",
+"name": "Rogue"
+},
+{
+"id": "sabotage",
+"max": 5,
+"group": "Melee",
+"name": "Sabotage"
+},
+{
+"id": "scorch",
+"max": 3,
+"group": "Melee",
+"name": "Scorch"
+},
+{
+"id": "selfdestruct",
+"max": 3,
+"group": "Armor",
+"name": "Self Destruct"
+},
+{
+"id": "shackle",
+"max": 3,
+"group": "Melee",
+"name": "Shackle"
+},
+{
+"id": "shadowassassin",
+"max": 5,
+"group": "Melee",
+"name": "Shadow Assassin"
+},
+{
+"id": "shockwave",
+"max": 5,
+"group": "Armor",
+"name": "Shockwave"
+},
+{
+"id": "shuffle",
+"max": 3,
+"group": "Armor",
+"name": "Shuffle"
+},
+{
+"id": "silence",
+"max": 4,
+"group": "Melee",
+"name": "Silence"
+},
+{
+"id": "skillswipe",
+"max": 5,
+"group": "Melee",
+"name": "Skill Swipe"
+},
+{
+"id": "smokebomb",
+"max": 8,
+"group": "Armor",
+"name": "Smoke Bomb"
+},
+{
+"id": "snare",
+"max": 4,
+"group": "Ranged",
+"name": "Snare"
+},
+{
+"id": "sniper",
+"max": 5,
+"group": "Ranged",
+"name": "Sniper"
+},
+{
+"id": "soulbound",
+"max": 4,
+"group": "Tools",
+"name": "Soulbound"
+},
+{
+"id": "soulgrind",
+"max": 3,
+"group": "Melee",
+"name": "SoulGrind"
+},
+{
+"id": "soulhardened",
+"max": 3,
+"group": "Armor",
+"name": "Soul Hardened"
+},
+{
+"id": "soulsiphone",
+"max": 4,
+"group": "Armor",
+"name": "Soul Siphone"
+},
+{
+"id": "soultrap",
+"max": 3,
+"group": "Melee",
+"name": "Soul Trap"
+},
+{
+"id": "spirits",
+"max": 10,
+"group": "Armor",
+"name": "Spirits"
+},
+{
+"id": "springs",
+"max": 3,
+"group": "Armor",
+"name": "Springs"
+},
+{
+"id": "stormcaller",
+"max": 4,
+"group": "Armor",
+"name": "Stormcaller"
+},
+{
+"id": "stun",
+"max": 3,
+"group": "Melee",
+"name": "Stun"
+},
+{
+"id": "surprise",
+"max": 4,
+"group": "Armor",
+"name": "Surprise"
+},
+{
+"id": "sustain",
+"max": 4,
+"group": "Armor",
+"name": "Sustain"
+},
+{
+"id": "takeoff",
+"max": 1,
+"group": "Armor",
+"name": "Take Off"
+},
+{
+"id": "tank",
+"max": 4,
+"group": "Armor",
+"name": "Tank"
+},
+{
+"id": "teleblock",
+"max": 5,
+"group": "Ranged",
+"name": "Teleblock"
+},
+{
+"id": "telepathy",
+"max": 1,
+"group": "Tools",
+"name": "Telepathy"
+},
+{
+"id": "thunderingblow",
+"max": 3,
+"group": "Melee",
+"name": "Thundering Blow"
+},
+{
+"id": "timber",
+"max": 3,
+"group": "Melee",
+"name": "Timber"
+},
+{
+"id": "titantrap",
+"max": 3,
+"group": "Melee",
+"name": "Titan Trap"
+},
+{
+"id": "torrent",
+"max": 4,
+"group": "Armor",
+"name": "Torrent"
+},
+{
+"id": "trap",
+"max": 3,
+"group": "Melee",
+"name": "Trap"
+},
+{
+"id": "trickster",
+"max": 8,
+"group": "Armor",
+"name": "Trickster"
+},
+{
+"id": "undeadruse",
+"max": 10,
+"group": "Armor",
+"name": "Undead Ruse"
+},
+{
+"id": "unfocus",
+"max": 5,
+"group": "Ranged",
+"name": "Unfocus"
+},
+{
+"id": "unholy",
+"max": 5,
+"group": "Armor",
+"name": "Unholy"
+},
+{
+"id": "valor",
+"max": 5,
+"group": "Armor",
+"name": "Valor"
+},
+{
+"id": "vampire",
+"max": 3,
+"group": "Melee",
+"name": "Vampire"
+},
+{
+"id": "vengefuldiminish",
+"max": 6,
+"group": "Armor",
+"name": "Vengeful Diminish"
+},
+{
+"id": "venom",
+"max": 3,
+"group": "Ranged",
+"name": "Venom"
+},
+{
+"id": "virus",
+"max": 4,
+"group": "Ranged",
+"name": "Virus"
+},
+{
+"id": "voodoo",
+"max": 6,
+"group": "Armor",
+"name": "Voodoo"
+},
+{
+"id": "ward",
+"max": 4,
+"group": "Armor",
+"name": "Ward"
+},
+{
+"id": "wither",
+"max": 5,
+"group": "Armor",
+"name": "Wither"
+}
+]
