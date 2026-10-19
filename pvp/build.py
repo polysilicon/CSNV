@@ -107,20 +107,19 @@ KITS = [
 ]
 KIT_SLOTS = [11, 12, 13, 14, 15, 20, 21, 22, 23, 24]
 
-# Outbreak shop: id, name, colour, icon, cost, lore, commands (run as the buyer)
+# Outbreak shop: id, name, colour, icon, cost, lore, commands (run as the buyer), one-per-life tag (checked before paying)
 SHOP = [
-    (1, "Golden Apple", "gold", "golden_apple", 500, "One golden apple", ["give @s minecraft:golden_apple 1"]),
-    (2, "Med Kit", "light_purple", "splash_potion", 750, "2 Splash Healing II", [potion("splash_potion", "strong_healing", 2)]),
-    (3, "Ammo", "white", "arrow", 250, "32 arrows", ["give @s minecraft:arrow 32"]),
-    (4, "Strength", "red", "potion", 1000, "Potion of Strength (3:00)", [potion("potion", "strength")]),
+    (1, "Golden Apple", "gold", "golden_apple", 500, "One golden apple", ["give @s minecraft:golden_apple 1"], None),
+    (2, "Med Kit", "light_purple", "splash_potion", 750, "2 Splash Healing II", [potion("splash_potion", "strong_healing", 2)], None),
+    (3, "Ammo", "white", "arrow", 250, "32 arrows", ["give @s minecraft:arrow 32"], None),
+    (4, "Strength", "red", "potion", 1000, "Potion of Strength (3:00)", [potion("potion", "strength")], None),
     (5, "Juggernog", "dark_red", "honey_bottle", 2500, "+3 hearts until you go down", [
-        "execute if entity @s[tag=pve.jug] run return run tellraw @s {\"text\":\"You already have Juggernog.\",\"color\":\"red\"}",
-        "attribute @s minecraft:max_health modifier add pvp:jug 6 add_value", "tag @s add pve.jug", "effect give @s minecraft:instant_health 1 1"]),
+        "attribute @s minecraft:max_health modifier add pvp:jug 6 add_value", "effect give @s minecraft:instant_health 1 1"], "pve.jug"),
     (6, "Speed Cola", "green", "lime_dye", 2000, "Speed I + Haste II until you go down", [
-        "effect give @s minecraft:speed infinite 0 true", "effect give @s minecraft:haste infinite 1 true"]),
-    (7, "Mystery Box", "light_purple", "chest", 950, "A random wonder weapon", ["function pvp:pve/box"]),
+        "effect give @s minecraft:speed infinite 0 true", "effect give @s minecraft:haste infinite 1 true"], "pve.cola"),
+    (7, "Mystery Box", "light_purple", "chest", 950, "A random wonder weapon", ["function pvp:pve/box"], None),
     (8, "Ray Bow", "aqua", "bow", 5000, "Power X, Flame, Infinity, Punch II", [
-        f"give @s {item('bow', 'Ray Bow', 'aqua', {'power': 10, 'flame': 1, 'infinity': 1, 'punch': 2})}", "give @s minecraft:arrow 1"]),
+        f"give @s {item('bow', 'Ray Bow', 'aqua', {'power': 10, 'flame': 1, 'infinity': 1, 'punch': 2})}", "give @s minecraft:arrow 1"], None),
 ]
 SHOP_SLOTS = [10, 11, 12, 13, 14, 15, 16, 22]
 BOX = [   # Mystery Box rolls
@@ -240,11 +239,13 @@ def build():
         # anyone (in adventure) outside the lobby and both arenas goes back to the lobby
         f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[{ARENA_BOX}] unless entity @s[{PVE_BOX}] run function {NS}:to_lobby",
         f"function {NS}:pve/second",
+        # NPC clicks are advancements; clear any left granted so an NPC can never get stuck for a player
+        "advancement revoke @a only pvp:npc", "advancement revoke @a only pvp:pvenpc", "advancement revoke @a only pvp:shopnpc",
     ])
     fn("to_lobby", [
         "clear @s", "effect clear @s", "function cyber:admin/reset", "gamemode adventure @s",
         "attribute @s minecraft:max_health modifier remove pvp:jug",
-        "tag @s remove pve.in", "tag @s remove pve.down", "tag @s remove pve.q", "tag @s remove pve.jug", "team leave @s",
+        "tag @s remove pve.in", "tag @s remove pve.down", "tag @s remove pve.q", "tag @s remove pve.jug", "tag @s remove pve.cola", "team leave @s",
         f"tp @s 0.5 {LOBBY_Y + 1} 0.5 180 0",
         "scoreboard players set @s pvp.left 0", "scoreboard players set @s pvp.ct 0",
         "scoreboard players add @s pvp.streak 0", "scoreboard players add @s pvp.kills 0",
@@ -524,7 +525,7 @@ def build_pve():
 
     # going down / coming back
     fn("pve/downed", [
-        "tag @s add pve.down", "gamemode spectator @s", "attribute @s minecraft:max_health modifier remove pvp:jug", "tag @s remove pve.jug",
+        "tag @s add pve.down", "gamemode spectator @s", "attribute @s minecraft:max_health modifier remove pvp:jug", "tag @s remove pve.jug", "tag @s remove pve.cola",
         f"tp @s {PCX + 0.5} {AY + 12} {PCZ + 0.5}",
         "title @s title {\"text\":\"DOWN\",\"color\":\"dark_red\",\"bold\":true}",
         "title @s subtitle {\"text\":\"You're back at the start of the next wave\",\"color\":\"gray\"}",
@@ -548,12 +549,13 @@ def build_pve():
     # Arsenal shop
     buy = ["scoreboard players operation #n pve = @s pve.buy", "scoreboard players set @s pve.buy 0",
            f"execute unless entity @s[tag=pve.in,tag=!pve.down] run return run {say('@s', 'The Arsenal only serves Outbreak survivors.', 'red')}"]
-    for (sid, name, color, ic, cost, lore, cmds) in SHOP:
+    for (sid, name, color, ic, cost, lore, cmds, once) in SHOP:
         buy.append(f"execute if score #n pve matches {sid} run function {P}/shop/{sid}")
         fn(f"pve/shop/{sid}", [
+            f"execute if entity @s[tag={once}] run return run {say('@s', f'You already have {name}.', 'red')}" if once else None,
             f"execute if score @s pve.pts matches ..{cost - 1} run return run tellraw @s [{{\"text\":\"{name} costs {cost} points (you have \",\"color\":\"red\"}},"
             "{\"score\":{\"name\":\"@s\",\"objective\":\"pve.pts\"},\"color\":\"white\"},{\"text\":\").\",\"color\":\"red\"}]",
-            f"scoreboard players remove @s pve.pts {cost}", *cmds,
+            f"scoreboard players remove @s pve.pts {cost}", *cmds, f"tag @s add {once}" if once else None,
             f"tellraw @s [{{\"text\":\"Bought \",\"color\":\"green\"}},{{\"text\":\"{name}\",\"color\":\"{color}\"}}]",
             "playsound minecraft:entity.villager.yes neutral @s ~ ~ ~ 1 0.8"])
     fn("pve/buy", buy)
