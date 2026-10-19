@@ -10,6 +10,7 @@ cyberpsychosis episodes. Every death drops all installed implants.
 import json, os, shutil, sys
 
 NS = "cyber"
+DROP_ON_DEATH = True   # build.py --pvp: implants are just removed on death (kit servers)
 CAP_LIMIT = 20
 PACK_FORMAT = [107, 0], [107, 1]
 
@@ -200,7 +201,10 @@ def build():
             f"scoreboard players set @s cy.s{slot} 0",
             f"tellraw @s [{{\"text\":\"Removed \",\"color\":\"yellow\"}},{tj(nm)},{{\"text\":\".\",\"color\":\"yellow\"}}]",
         ])
-        fn(f"{d}/drop", [f"loot spawn ~ ~ ~ loot {NS}:item/{key}", f"function {NS}:{d}/unapply"])
+        fn(f"{d}/drop", ([f"loot spawn ~ ~ ~ loot {NS}:item/{key}"] if DROP_ON_DEATH else []) + [f"function {NS}:{d}/unapply"])
+        fn(f"{d}/kit", [   # install without an item and without chat output (kits; run admin/reset first)
+            f"scoreboard players set @s cy.s{slot} {iid}", f"scoreboard players add @s cy.cap {cap}", f"function {NS}:{d}/apply",
+            "scoreboard players set @s cy.cdh 0" if slot == 8 else "scoreboard players set @s cy.cd 0" if slot == 9 else ""])
 
     nkey, nname, nprice, nicon, nsecs = NEURO
     loot(nkey, item_components(nkey, nname, "dark_purple",
@@ -281,6 +285,8 @@ def build():
         "VillagerData:{profession:\"minecraft:cleric\",level:5,type:\"minecraft:swamp\"},Offers:{Recipes:[]}}",
         "summon minecraft:interaction ~ ~ ~ {Tags:[\"cy.doc\"],width:1.2f,height:2.2f,response:1b}",
     ])
+    fn("admin/reset", [f"function {NS}:implant/{i[1]}/unapply" for i in IMPLANTS if i[9]]
+       + [f"scoreboard players set @s cy.s{s} 0" for s in SLOTS] + ["scoreboard players set @s cy.cap 0", "scoreboard players set @s cy.sv 0"])
     fn("admin/give", [f"loot give @s loot {NS}:item/{i[1]}" for i in IMPLANTS] + [f"loot give @s loot {NS}:item/{nkey}"])
 
     # dialogs
@@ -312,7 +318,7 @@ def build():
     died = ["scoreboard players reset @s cy.death"]
     for i in IMPLANTS:
         died.append(f"execute if score @s cy.s{i[4]} matches {i[0]} run function {NS}:implant/{i[1]}/drop")
-    died += [f"execute if score @s cy.cap matches 1.. run tellraw @s {{\"text\":\"Your chrome was left where you died.\",\"color\":\"red\"}}"]
+    if DROP_ON_DEATH: died += [f"execute if score @s cy.cap matches 1.. run tellraw @s {{\"text\":\"Your chrome was left where you died.\",\"color\":\"red\"}}"]
     died += [f"scoreboard players set @s cy.s{s} 0" for s in SLOTS]
     died += ["scoreboard players set @s cy.cap 0", "scoreboard players set @s cy.cd 0", "scoreboard players set @s cy.cdh 0",
              "scoreboard players set @s cy.sv 0", "tag @s add cy.dead"]
@@ -432,6 +438,7 @@ def build():
 
 
 if __name__ == "__main__":
+    if "--pvp" in sys.argv: sys.argv.remove("--pvp"); DROP_ON_DEATH = False
     OUT = os.path.join(sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "dist"), "crispy_cyberware")
     build()
     n = sum(len(f) for _, _, f in os.walk(OUT))

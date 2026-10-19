@@ -26,7 +26,7 @@ scoreboard-teams:
   invisible-nametags: false
   # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Sorting-players-in-tablist
   sorting-types:
-    - "PLACEHOLDER:%server%:Lobby,Factions,Anarchy,Vanilla,Falling,Bending"
+    - "PLACEHOLDER:%server%:Lobby,Factions,Anarchy,Vanilla,Falling,PvP"
     - "PLACEHOLDER_A_TO_Z:%player%"
   case-sensitive-sorting: true
   can-see-friendly-invisibles: false
@@ -176,7 +176,7 @@ placeholder-output-replacements:
     "Vanilla": "Vanilla"
     "factions": "Factions"
     "falling": "Falling"
-    "bending": "Bending"
+    "pvp": "PvP"
 
 # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Conditional-placeholders
 conditions:
