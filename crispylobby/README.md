@@ -35,7 +35,7 @@ Defaults:
 |---|---|
 | Factions | `vote test %player% CrispyAnarchy`: CrispyFactions' normal vote reward ($5,000, a Crispy Case, a bonus key every 5th vote). It also counts toward Factions' vote party. |
 | Anarchy (`og`) | 3 diamonds, 2 golden apples, 5 levels |
-| Vanilla | 8 iron, 16 steak, 5 levels |
+| Vanilla | no reward (trails only) |
 | Falling | 4 iron, 16 bone meal, 2 saplings |
 | PvP | no item reward; it only gets trails |
 

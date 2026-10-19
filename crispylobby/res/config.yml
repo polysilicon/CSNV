@@ -61,8 +61,7 @@ votes:
       label: "&a&lCrispy Vanilla"
       icon: GRASS_BLOCK
       instance: Vanilla01
-      reward: ["&f8 Iron Ingots", "&616 Steak", "&a5 XP levels"]
-      commands: ["give %player% minecraft:iron_ingot 8", "give %player% minecraft:cooked_beef 16", "xp add %player% 5 levels"]
+      commands: []            # no vote rewards on Vanilla (trails only)
     falling:
       label: "&e&lCrispy Falling"
       icon: GRAVEL
