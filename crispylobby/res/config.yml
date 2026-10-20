@@ -85,12 +85,14 @@ votes:
 # (CrispyTags proxy plugin, through TAB). Name colours: code = legacy colour codes (&b, &6&l...) or rainbow.
 cosmetics:
   tags:
-    voter:       {display: "&a[Voter]", cost: 1, icon: PAPER}
+    og:          {display: "&7[OG]", cost: 1, icon: OAK_LOG}
     crispy:      {display: "&6[Crispy]", cost: 3, icon: COOKIE}
-    netrunner:   {display: "&b[Netrunner]", cost: 5, icon: OBSERVER}
-    chrome:      {display: "&d[Chrome]", cost: 8, icon: IRON_INGOT}
+    survivor:    {display: "&a[Survivor]", cost: 4, icon: TOTEM_OF_UNDYING}
+    griefer:     {display: "&c[Griefer]", cost: 6, icon: FLINT_AND_STEEL}
+    raider:      {display: "&3[Raider]", cost: 8, icon: TNT_MINECART}
     anarchist:   {display: "&4[Anarchist]", cost: 10, icon: TNT}
-    cyberpsycho: {display: "&c&o[Cyberpsycho]", cost: 15, icon: REDSTONE}
+    skillissue:  {display: "&d&o[Skill Issue]", cost: 12, icon: WOODEN_SWORD}
+    menace:      {display: "&5[Menace]", cost: 15, icon: WITHER_SKELETON_SKULL}
     legend:      {display: "&e&l[Legend]", cost: 25, icon: GOLD_BLOCK}
   name-colors:
     aqua:     {name: Aqua, code: "&b", cost: 3, icon: LIGHT_BLUE_DYE}
