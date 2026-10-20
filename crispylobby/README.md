@@ -13,7 +13,9 @@ Build with JDK 25 against `paper-api-26.2` and `nuvotifier-2.7.3.jar`. The sourc
 
 Server-list votes arrive at **NuVotifier on the lobby, port 8193**. That is the port to tunnel and give to TopG and Planet Minecraft, together with the lobby's `plugins/Votifier/rsa/public.key` or the v2 token in `plugins/Votifier/config.yml`.
 
-Factions' own NuVotifier (8192) is left as it was. Once the sites point at the lobby, remove it so votes aren't counted twice.
+Factions' own NuVotifier is disabled (`plugins/NuVotifier-2.7.3.jar.disabled`). Its vote broadcast is off, since the lobby announces votes network-wide. Its `/vote` lists the same sites.
+
+The sites are TopG, Planet Minecraft and MinecraftServers.org. A site's test vote (username in `votes.test-usernames`) is only logged.
 
 Each vote gives the player:
 

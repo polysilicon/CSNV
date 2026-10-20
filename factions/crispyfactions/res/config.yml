@@ -100,8 +100,8 @@ votes:
   party-goal: 30
   broadcast: true
   links:     # shown by /vote (entries still containing CHANGE_ME are hidden)
-    - {name: "PlanetMinecraft", url: "https://www.planetminecraft.com/server/CHANGE_ME/vote/"}
+    - {name: "PlanetMinecraft", url: "https://www.planetminecraft.com/server/crispy-anarchy-1-16-no-rules-survival/vote/"}
     - {name: "Minecraft-Server-List", url: "https://minecraft-server-list.com/server/CHANGE_ME/vote/"}
-    - {name: "TopG", url: "https://topg.org/minecraft-servers/server-CHANGE_ME"}
+    - {name: "TopG", url: "https://topg.org/minecraft-servers/server-687311"}
     - {name: "Minecraft-MP", url: "https://minecraft-mp.com/server/CHANGE_ME/vote/"}
-    - {name: "MinecraftServers.org", url: "https://minecraftservers.org/vote/CHANGE_ME"}
+    - {name: "MinecraftServers.org", url: "https://minecraftservers.org/vote/587166"}
