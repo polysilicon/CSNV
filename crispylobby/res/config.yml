@@ -85,7 +85,7 @@ votes:
 # (CrispyTags proxy plugin, through TAB). Name colours: code = legacy colour codes (&b, &6&l...) or rainbow.
 cosmetics:
   tags:
-    og:          {display: "&7[OG]", cost: 1, icon: OAK_LOG}
+    og:          {display: "&7[OG]", cost: 1, icon: OAK_LOG, joined-before: "2024-01-01"}   # see joined-sources
     crispy:      {display: "&6[Crispy]", cost: 3, icon: COOKIE}
     survivor:    {display: "&a[Survivor]", cost: 4, icon: TOTEM_OF_UNDYING}
     griefer:     {display: "&c[Griefer]", cost: 6, icon: FLINT_AND_STEEL}
@@ -94,6 +94,13 @@ cosmetics:
     skillissue:  {display: "&d&o[Skill Issue]", cost: 12, icon: WOODEN_SWORD}
     menace:      {display: "&5[Menace]", cost: 15, icon: WITHER_SKELETON_SKULL}
     legend:      {display: "&e&l[Legend]", cost: 25, icon: GOLD_BLOCK}
+  # "joined-before" tags: a player qualifies if the earliest date found here (relative to network-stats.instances-dir)
+  # is before that date: advancement timestamps, the firstPlayed time Paper left in old player files, and those files'
+  # last-saved date. extra: names that always qualify.
+  joined-sources:
+    advancements: [CrispyAnarchy01/Minecraft/world/players/advancements, Vanilla01/Minecraft/world/players/advancements]
+    player-data: [CrispyAnarchy01/Minecraft/world/players/data, Vanilla01/Minecraft/world/players/data]
+    extra: []
   name-colors:
     aqua:     {name: Aqua, code: "&b", cost: 3, icon: LIGHT_BLUE_DYE}
     lime:     {name: Lime, code: "&a", cost: 3, icon: LIME_DYE}

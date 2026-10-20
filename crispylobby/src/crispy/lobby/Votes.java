@@ -54,7 +54,7 @@ public class Votes implements Listener {
         String trail;   // pre-1.5 walking trails; refunded and cleared on load
     }
     record Server(String key, String label, Material icon, Rcon rcon, List<String> reward, List<String> commands) {}
-    record Tag(String id, String display, int cost, Material icon) {}
+    record Tag(String id, String display, int cost, Material icon, String joinedBefore) {}
     record NameColor(String id, String name, String code, int cost, Material icon) {}
     // what each retired trail cost, for the refund
     static final Map<String, Integer> TRAIL_REFUND = Map.of("hearts", 3, "flames", 4, "notes", 4, "soul", 5, "sakura", 5,
@@ -76,6 +76,7 @@ public class Votes implements Listener {
     final AtomicBoolean busy = new AtomicBoolean();
     final Set<String> inFlight = new HashSet<>();
     int pointsPerVote; boolean announce, botRelay, rconAnnounce;
+    final Map<UUID, String> firstSeen = new HashMap<>();   // uuid -> earliest known date on the network, "yyyy-MM-dd" ("9999" if none)
     Set<String> testUsers = Set.of();
 
     Votes(CrispyLobby plugin) {
@@ -128,7 +129,9 @@ public class Votes implements Listener {
         }
         ConfigurationSection ts = plugin.getConfig().getConfigurationSection("cosmetics.tags");
         if (ts != null) for (String k : ts.getKeys(false))
-            tags.put(k, new Tag(k, ts.getString(k + ".display", k), ts.getInt(k + ".cost", 5), mat(ts.getString(k + ".icon"), Material.NAME_TAG)));
+            tags.put(k, new Tag(k, ts.getString(k + ".display", k), ts.getInt(k + ".cost", 5), mat(ts.getString(k + ".icon"), Material.NAME_TAG),
+                    ts.getString(k + ".joined-before")));
+        firstSeen.clear();
         ConfigurationSection cs = plugin.getConfig().getConfigurationSection("cosmetics.name-colors");
         if (cs != null) for (String k : cs.getKeys(false))
             colors.put(k, new NameColor(k, cs.getString(k + ".name", k), cs.getString(k + ".code", "&f"), cs.getInt(k + ".cost", 5),
@@ -366,9 +369,12 @@ public class Votes implements Listener {
             if (slot % 9 == 0) slot++;
             if (slot >= 18) break;
             boolean own = pd.owned.contains("tag:" + t.id()), on = t.id().equals(pd.tag);
-            put(m, slot++, item(t.icon(), t.display(), List.of("&7Preview: &f<" + t.display() + " &f" + p.getName() + "> hi", "",
-                    on ? "&aEquipped &7- click to take off" : own ? "&eOwned &7- click to wear" : "&7Cost: &d" + t.cost() + " points",
-                    !own && pd.points < t.cost() ? "&cNot enough points" : ""), on), "tag:" + t.id());
+            List<String> lore = new ArrayList<>(List.of("&7Preview: &f<" + t.display() + " &f" + p.getName() + "> hi"));
+            if (t.joinedBefore() != null) lore.add(joinedBefore(p, t.joinedBefore()) ? "&6Exclusive: &7you joined before " + t.joinedBefore()
+                    : "&cOnly for players who joined before " + t.joinedBefore());
+            lore.addAll(List.of("", on ? "&aEquipped &7- click to take off" : own ? "&eOwned &7- click to wear" : "&7Cost: &d" + t.cost() + " points",
+                    !own && pd.points < t.cost() ? "&cNot enough points" : ""));
+            put(m, slot++, item(t.icon(), t.display(), lore, on), "tag:" + t.id());
         }
         put(m, 27, item(Material.WHITE_DYE, "&f&lName colours", List.of("&7Your name in colour in chat on", "&7every server (and in cross-chat)."), false), null);
         slot = 28;
@@ -400,10 +406,58 @@ public class Votes implements Listener {
         else if (a.startsWith("tag:") || a.startsWith("color:")) cosmetic(p, a);
     }
 
+    // ------------------------------------------------------------------ "joined before" (the OG tag)
+    /** Earliest date the network has for this player: Anarchy (or other) advancement timestamps, the firstPlayed time
+     *  Paper left in old player files, and those files' last-saved date. Configured in cosmetics.joined-sources. */
+    String firstSeen(Player p) {
+        return firstSeen.computeIfAbsent(p.getUniqueId(), u -> {
+            String best = "9999";
+            Path root = Path.of(plugin.getConfig().getString("network-stats.instances-dir", "/AMPStorage/.ampdata/instances"));
+            java.util.regex.Pattern ts = java.util.regex.Pattern.compile("\\d{4}-\\d{2}-\\d{2}(?= \\d{2}:\\d{2}:\\d{2})");
+            for (String dir : plugin.getConfig().getStringList("cosmetics.joined-sources.advancements")) {
+                try {
+                    java.util.regex.Matcher m = ts.matcher(Files.readString(root.resolve(dir).resolve(u + ".json")));
+                    while (m.find()) if (m.group().compareTo(best) < 0) best = m.group();
+                } catch (IOException ignored) {}
+            }
+            for (String dir : plugin.getConfig().getStringList("cosmetics.joined-sources.player-data")) {
+                Path f = root.resolve(dir).resolve(u + ".dat");
+                try {
+                    String mod = Files.getLastModifiedTime(f).toInstant().toString().substring(0, 10);
+                    if (mod.compareTo(best) < 0) best = mod;
+                    byte[] raw;
+                    try (var in = new java.util.zip.GZIPInputStream(Files.newInputStream(f))) { raw = in.readAllBytes(); }
+                    byte[] key = "firstPlayed".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                    outer:
+                    for (int i = 3; i + key.length + 8 <= raw.length; i++) {   // TAG_Long "firstPlayed" = 04 00 0B "firstPlayed" <8 bytes>
+                        if (raw[i - 3] != 4 || raw[i - 1] != key.length) continue;
+                        for (int j = 0; j < key.length; j++) if (raw[i + j] != key[j]) continue outer;
+                        long ms = java.nio.ByteBuffer.wrap(raw, i + key.length, 8).getLong();
+                        String d = java.time.Instant.ofEpochMilli(ms).toString().substring(0, 10);
+                        if (ms > 0 && d.compareTo(best) < 0) best = d;
+                        break;
+                    }
+                } catch (Exception ignored) {}
+            }
+            return best;
+        });
+    }
+    boolean joinedBefore(Player p, String date) {
+        if (plugin.getConfig().getStringList("cosmetics.joined-sources.extra").stream().anyMatch(n -> n.equalsIgnoreCase(p.getName()))) return true;
+        return firstSeen(p).compareTo(date) < 0;
+    }
+
     void cosmetic(Player p, String key) {
         PD pd = pd(p.getName());
         boolean isTag = key.startsWith("tag:");
         String id = key.substring(key.indexOf(':') + 1);
+        Tag lim = isTag ? tags.get(id) : null;
+        if (lim != null && lim.joinedBefore() != null && !joinedBefore(p, lim.joinedBefore())) {
+            msg(p, "&c" + lim.display() + " &cis only for players who joined before &f" + lim.joinedBefore() + "&c.");
+            p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.7f, 1f);
+            if (id.equals(pd.tag)) { pd.tag = null; writeTags(); save(); }   // no longer qualifies: take it off
+            return;
+        }
         int cost = isTag ? (tags.containsKey(id) ? tags.get(id).cost() : -1) : (colors.containsKey(id) ? colors.get(id).cost() : -1);
         if (cost < 0) return;
         if (!pd.owned.contains(key)) {
