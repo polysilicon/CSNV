@@ -97,6 +97,18 @@ A sealed room under the lobby (floor y 90) holds:
 The stray check leaves `pvp.admin` players alone in the room. `enchants.json` (id, max level, group) was exported from
 `crispy_enchants`; regenerate it if enchants are added.
 
+**Any enchant, any item, any level** (ops, from the server mod):
+```
+/forceenchant <enchantment> [level]   e.g. /fe minecraft:sharpness 50, /fe crispy_enchants:<id> 10
+/forceenchant <enchantment> 0         remove that enchant
+/forceenchant clear                   remove every enchant from the held item
+```
+It works on the held item, and on a book it sets the book's stored enchants. It ignores which items an enchant
+normally goes on, its max level (up to 255) and conflicts. It sets the exact level, so it can also lower one. With no
+level it uses the enchant's normal max. An enchant only takes effect in its own slots (a sword enchant works while
+held, an armor enchant while worn). Vanilla clients have names only up to X, so higher levels show as
+`enchantment.level.N` in the tooltip.
+
 **Heads**: the Head Index mod (`headindex-1.2.1.jar`, MIT, server-side) gives ops a `/head` menu of minecraft-heads.com
 heads, for kit icons and gear. It needs a free minecraft-heads.com API key in its config.
 

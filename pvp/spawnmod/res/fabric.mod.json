@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "id": "crispy_pvp_spawn",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "name": "Crispy PvP (spawn + menus)",
-  "description": "Adds /spawn and /lobby (run /trigger pvp.spawn) , /pvpmenu (chest menus from the crispy_pvp datapack) and /pvpkit (admin-made kits).",
+  "description": "Adds /spawn and /lobby (run /trigger pvp.spawn) , /pvpmenu (chest menus from the crispy_pvp datapack) , /pvpkit (admin-made kits) and /forceenchant (any enchant, any level, any item).",
   "environment": "server",
   "entrypoints": { "main": ["crispy.pvp.SpawnCommand"] },
   "depends": { "fabricloader": ">=0.19.0", "fabric-command-api-v2": "*", "fabric-lifecycle-events-v1": "*", "minecraft": "26.2" }

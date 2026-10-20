@@ -17,12 +17,14 @@ import net.minecraft.network.chat.Component;
  * /pvpmenu <name> opens a chest menu from storage pvp:menus (see PvpMenus).
  * Lobby leaderboards are refreshed by Leaderboards (top kills, best streak, best Outbreak wave).
  * /pvpkit create|delete|list (ops) manages admin-made kits; "pvpkit give <id>" is used by the datapack (see PvpKits).
+ * /forceenchant (/fe, ops) puts any enchantment at any level on the held item (see ForceEnchant).
  */
 public class SpawnCommand implements ModInitializer {
     @Override
     public void onInitialize() {
         ServerTickEvents.END_SERVER_TICK.register(Leaderboards::onTick);
         CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> {
+            ForceEnchant.register(dispatcher, context);
             for (String name : new String[]{"spawn", "lobby"}) {
                 dispatcher.register(Commands.literal(name).requires(CommandSourceStack::isPlayer).executes(c -> {
                     CommandSourceStack s = c.getSource();
