@@ -41,7 +41,7 @@ network-stats:
 votes:
   points-per-vote: 1
   announce: true            # "X voted" on every server
-  test-usernames: [PMC, TopG, test, Test, Votifier]   # list sites' test votes: logged, no reward
+  test-usernames: [PMC, TopG, MinecraftServers, test, Votifier]   # list sites' test votes: logged, no reward
   links:
     - {name: TopG, url: "https://topg.org/minecraft-servers/server-687311"}
     - {name: Planet Minecraft, url: "https://www.planetminecraft.com/server/crispy-anarchy-1-16-no-rules-survival/vote/"}
