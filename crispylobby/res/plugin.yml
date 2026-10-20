@@ -1,5 +1,5 @@
 name: CrispyLobby
-version: 1.4.0
+version: 1.4.1
 main: crispy.lobby.CrispyLobby
 api-version: '1.21'
 author: CrispyAnarchy

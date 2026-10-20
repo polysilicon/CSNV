@@ -45,6 +45,7 @@ Edit `votes.servers` in the live config, then run `/vote reload`.
 
 - `/vote give <player> [n]`: hand out votes (also good for testing).
 - `/vote points <player> <+/-n>`
+- `/vote reset <player>`: delete a player's vote data.
 - `/vote reload`
 
 ## Cosmetics (`/cosmetics`)

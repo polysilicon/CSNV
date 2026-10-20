@@ -75,6 +75,7 @@ public class Votes implements Listener {
     final Map<String, Integer> applied = new HashMap<>();      // "server|name" -> crispy.trail score last pushed (worker thread only)
     final Map<String, Integer> lastTick = new HashMap<>();     // lobby trail throttle
     int pointsPerVote; boolean announce;
+    Set<String> testUsers = Set.of();
 
     Votes(CrispyLobby plugin) {
         this.plugin = plugin;
@@ -101,6 +102,8 @@ public class Votes implements Listener {
         if (c == null) return;
         pointsPerVote = c.getInt("points-per-vote", 1);
         announce = c.getBoolean("announce", true);
+        testUsers = new HashSet<>();
+        for (String u : c.getStringList("test-usernames")) testUsers.add(u.toLowerCase(Locale.ROOT));
         Path root = Path.of(plugin.getConfig().getString("network-stats.instances-dir", "/AMPStorage/.ampdata/instances"));
         ConfigurationSection ss = c.getConfigurationSection("servers");
         if (ss != null) for (String k : ss.getKeys(false)) {
@@ -161,6 +164,12 @@ public class Votes implements Listener {
     // ------------------------------------------------------------------ votes in
     /** Main thread. */
     void receive(String user, String service, int n) {
+        if (testUsers.contains(user.toLowerCase(Locale.ROOT))) {   // a list site's "send test vote" button
+            plugin.getLogger().info("Test vote from " + service + " (username " + user + ") received - voting works.");
+            Bukkit.getOnlinePlayers().stream().filter(p -> p.hasPermission("crispylobby.admin"))
+                    .forEach(p -> msg(p, "&aTest vote from &f" + service + " &areceived: voting works."));
+            return;
+        }
         PD pd = pd(user);
         pd.unclaimed += n; pd.points += n * pointsPerVote; pd.total += n;
         pd.months.merge(month(), n, Integer::sum);
@@ -451,6 +460,12 @@ public class Votes implements Listener {
                 if (!admin || a.length < 3) { msg(s, "&7/vote points <player> <amount>"); return true; }
                 PD pd = pd(a[1]); pd.points = Math.max(0, pd.points + Integer.parseInt(a[2])); save();
                 msg(s, a[1] + " now has " + pd.points + " vote points.");
+            }
+            case "reset" -> {
+                if (!admin || a.length < 2) { msg(s, "&7/vote reset <player>  (deletes their vote data)"); return true; }
+                PD gone = players.remove(a[1].toLowerCase(Locale.ROOT));
+                save(); writeTags();
+                msg(s, gone == null ? "No vote data for " + a[1] + "." : "Deleted the vote data for " + a[1] + ".");
             }
             case "reload" -> { if (admin) { plugin.reloadConfig(); load(); msg(s, "Reloaded vote servers and cosmetics."); } }
             default -> { if (s instanceof Player p) open(p); else links(s); }
