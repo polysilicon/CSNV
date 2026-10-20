@@ -52,12 +52,15 @@ Edit `votes.servers` in the live config, then run `/vote reload`.
 
 ## Cosmetics (`/cosmetics`)
 
-Cosmetics are bought once with vote points and toggled on and off in the menu. They show on every server.
+Cosmetics are bought once with vote points and toggled in the menu. A player can wear one tag and one name colour at a
+time, and both show on every server.
 
-- **Tags** (`cosmetics.tags`) appear after the name in the tab list and above the head.
+- **Tags** (`cosmetics.tags`) appear before the name in chat, after it in the tab list, and on name tags.
   - The lobby writes `plugins/CrispyLobby/tags.json`.
-  - The **CrispyTags** Velocity plugin (`proxy/crispytags`, needs TAB) reads it every 3 s and sets TAB's custom suffix.
-- **Trails** (`cosmetics.trails`) are particles while walking or sprinting. They are hidden for spectators and invisible players.
-  - The lobby draws its own trails.
-  - On the backends, the `crispy_cosmetics` datapack (`cosmetics/build.py`, installed as `world/datapacks/crispy_cosmetics.zip`) draws them from the `crispy.trail` score. The lobby sets that score over RCON when it sees the player on the server.
-  - After adding or renumbering trails, rebuild the datapack and re-upload it.
+  - In chat they're added by `chattags/` (the Fabric mod and the Paper plugin), so they also reach cross-chat and Discord.
+  - The tab list and name tags come from the **CrispyTags** Velocity plugin (`proxy/crispytags`, needs TAB).
+- **Name colours** (`cosmetics.name-colors`, a colour code like `&b`, `&6&l`, or `rainbow`) colour the name in chat.
+  - The lobby writes `plugins/CrispyLobby/namecolors.json`, which the same `chattags/` readers use.
+
+Walking trails were retired in 1.5.0. Their points were refunded on the first load, and the `crispy_cosmetics`
+datapack was removed from every server.

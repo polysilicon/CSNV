@@ -1,2 +1,5 @@
-# The lobby's vote-cosmetic tags (name -> tag), written by CrispyLobby.
-tags-file: /AMPStorage/.ampdata/instances/CrispyLobby01/Minecraft/plugins/CrispyLobby/tags.json
+# Folder of the lobby's vote cosmetics (tags.json, namecolors.json), written by CrispyLobby.
+lobby-dir: /AMPStorage/.ampdata/instances/CrispyLobby01/Minecraft/plugins/CrispyLobby
+# true: tagged chat goes out as plain server messages (use where clients don't see edited signed chat, e.g. a 1.21 server
+# behind ViaVersion). false: normal signed chat with the edited line.
+system-chat: false

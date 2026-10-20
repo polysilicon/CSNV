@@ -79,10 +79,10 @@ votes:
       instance: CrispyPvP01
       commands: []
 
-# Cosmetics, bought with vote points in /cosmetics (or /vote -> Cosmetics). Tags: shown after the name in the tab list
-# and on name tags network-wide by the CrispyTags proxy plugin (it reads plugins/CrispyLobby/tags.json). Trails: drawn
-# while walking; on the backends by the crispy_cosmetics datapack from the crispy.trail score (= score below), so after
-# changing trails here rebuild it: python3 crispylobby/cosmetics/build.py. args = dx dy dz speed count.
+# Cosmetics, bought with vote points in /cosmetics (or /vote -> Cosmetics); one tag and one name colour at a time.
+# Both show on every server and in cross-chat/Discord: the chat-tags plugin/mod on each server reads the lobby's
+# plugins/CrispyLobby/tags.json and namecolors.json. Tags also show after the name in the tab list and on name tags
+# (CrispyTags proxy plugin, through TAB). Name colours: code = legacy colour codes (&b, &6&l...) or rainbow.
 cosmetics:
   tags:
     voter:       {display: "&a[Voter]", cost: 1, icon: PAPER}
@@ -92,14 +92,15 @@ cosmetics:
     anarchist:   {display: "&4[Anarchist]", cost: 10, icon: TNT}
     cyberpsycho: {display: "&c&o[Cyberpsycho]", cost: 15, icon: REDSTONE}
     legend:      {display: "&e&l[Legend]", cost: 25, icon: GOLD_BLOCK}
-  trails:
-    hearts:  {name: Hearts, score: 1, particle: heart, args: "0.2 0.1 0.2 0 1", cost: 3, icon: POPPY}
-    flames:  {name: Flames, score: 2, particle: flame, args: "0.1 0 0.1 0.01 2", cost: 4, icon: BLAZE_POWDER}
-    notes:   {name: Music Notes, score: 3, particle: note, args: "0.3 0.1 0.3 1 1", cost: 4, icon: NOTE_BLOCK}
-    soul:    {name: Soul Fire, score: 4, particle: soul_fire_flame, args: "0.1 0 0.1 0.01 2", cost: 5, icon: SOUL_TORCH}
-    sakura:  {name: Sakura, score: 5, particle: cherry_leaves, args: "0.3 0.2 0.3 0 2", cost: 5, icon: CHERRY_LEAVES}
-    sparks:  {name: Neon Sparks, score: 6, particle: electric_spark, args: "0.2 0.1 0.2 0.05 3", cost: 6, icon: LIGHTNING_ROD}
-    runes:   {name: Runes, score: 7, particle: enchant, args: "0.3 0.3 0.3 0.5 4", cost: 6, icon: ENCHANTING_TABLE}
-    glitch:  {name: Cyberpsychosis, score: 8, particle: witch, args: "0.2 0.1 0.2 0 2", cost: 10, icon: AMETHYST_SHARD}
-    endrod:  {name: Star Dust, score: 9, particle: end_rod, args: "0.1 0 0.1 0.01 1", cost: 8, icon: END_ROD}
-    totem:   {name: Totem, score: 10, particle: totem_of_undying, args: "0.2 0.1 0.2 0.1 3", cost: 12, icon: TOTEM_OF_UNDYING}
+  name-colors:
+    aqua:     {name: Aqua, code: "&b", cost: 3, icon: LIGHT_BLUE_DYE}
+    lime:     {name: Lime, code: "&a", cost: 3, icon: LIME_DYE}
+    yellow:   {name: Yellow, code: "&e", cost: 3, icon: YELLOW_DYE}
+    gold:     {name: Gold, code: "&6", cost: 4, icon: ORANGE_DYE}
+    pink:     {name: Pink, code: "&d", cost: 4, icon: PINK_DYE}
+    red:      {name: Red, code: "&c", cost: 4, icon: RED_DYE}
+    blue:     {name: Blue, code: "&9", cost: 5, icon: BLUE_DYE}
+    teal:     {name: Teal, code: "&3", cost: 5, icon: CYAN_DYE}
+    purple:   {name: Purple, code: "&5", cost: 6, icon: PURPLE_DYE}
+    bold:     {name: Bold White, code: "&f&l", cost: 8, icon: QUARTZ}
+    rainbow:  {name: Rainbow, code: rainbow, cost: 15, icon: PRISMARINE_CRYSTALS}

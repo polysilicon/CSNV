@@ -18,7 +18,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -40,8 +39,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /** Network vote vault. Votes arrive here (NuVotifier on the lobby, see VoteListener); each vote is one unclaimed
  *  reward plus vote points. In /vote the player picks the server a reward goes to; it is queued and handed over by
  *  RCON the next time they are on that server. Points buy cosmetics that work on every server: tags (shown by the
- *  CrispyTags proxy plugin through TAB, read from tags.json) and walking trails (the crispy_cosmetics datapack on
- *  each backend draws them from a crispy.trail score set here; the lobby draws its own).
+ *  CrispyTags proxy plugin through TAB, and in chat by the chat-tags plugin/mod on each server, from tags.json) and
+ *  chat name colours (namecolors.json, read by the same chat-tags plugin/mod).
  *  All data changes happen on the main thread; one worker thread does the RCON work from snapshots. */
 public class Votes implements Listener {
     static final ZoneId ZONE = ZoneId.of("America/Chicago");
@@ -51,11 +50,15 @@ public class Votes implements Listener {
         String name; int unclaimed, points, total;
         Map<String, Integer> months = new HashMap<>(), pending = new HashMap<>();
         Set<String> owned = new HashSet<>();
-        String tag, trail;
+        String tag, color;
+        String trail;   // pre-1.5 walking trails; refunded and cleared on load
     }
     record Server(String key, String label, Material icon, Rcon rcon, List<String> reward, List<String> commands) {}
     record Tag(String id, String display, int cost, Material icon) {}
-    record Trail(String id, String name, int score, String particle, double dx, double dy, double dz, double speed, int count, int cost, Material icon) {}
+    record NameColor(String id, String name, String code, int cost, Material icon) {}
+    // what each retired trail cost, for the refund
+    static final Map<String, Integer> TRAIL_REFUND = Map.of("hearts", 3, "flames", 4, "notes", 4, "soul", 5, "sakura", 5,
+            "sparks", 6, "runes", 6, "glitch", 10, "endrod", 8, "totem", 12);
     record Job(String lower, String name, int count) {}
     static final class Menu implements InventoryHolder {
         final String kind; final Map<Integer, String> actions = new HashMap<>(); Inventory inv;
@@ -64,16 +67,14 @@ public class Votes implements Listener {
     }
 
     final CrispyLobby plugin;
-    final Path file, tagsFile;
+    final Path file, tagsFile, colorsFile;
     Map<String, PD> players = new HashMap<>();
     final LinkedHashMap<String, Server> servers = new LinkedHashMap<>();
     final LinkedHashMap<String, Tag> tags = new LinkedHashMap<>();
-    final LinkedHashMap<String, Trail> trails = new LinkedHashMap<>();
+    final LinkedHashMap<String, NameColor> colors = new LinkedHashMap<>();
     final ExecutorService worker = Executors.newSingleThreadExecutor(r -> { Thread t = new Thread(r, "CrispyLobby-votes"); t.setDaemon(true); return t; });
     final AtomicBoolean busy = new AtomicBoolean();
     final Set<String> inFlight = new HashSet<>();
-    final Map<String, Integer> applied = new HashMap<>();      // "server|name" -> crispy.trail score last pushed (worker thread only)
-    final Map<String, Integer> lastTick = new HashMap<>();     // lobby trail throttle
     int pointsPerVote; boolean announce, botRelay, rconAnnounce;
     Set<String> testUsers = Set.of();
 
@@ -81,15 +82,26 @@ public class Votes implements Listener {
         this.plugin = plugin;
         file = plugin.getDataFolder().toPath().resolve("votes.json");
         tagsFile = plugin.getDataFolder().toPath().resolve("tags.json");
+        colorsFile = plugin.getDataFolder().toPath().resolve("namecolors.json");
         try (Reader r = Files.newBufferedReader(file)) {
             Map<String, PD> m = GSON.fromJson(r, new TypeToken<Map<String, PD>>() {}.getType());
             if (m != null) players = m;
         } catch (IOException ignored) {}
+        boolean migrated = false;
         for (PD pd : players.values()) {
             if (pd.months == null) pd.months = new HashMap<>();
             if (pd.pending == null) pd.pending = new HashMap<>();
             if (pd.owned == null) pd.owned = new HashSet<>();
+            int refund = 0;   // trails were retired in 1.5.0: give their points back
+            for (Iterator<String> it = pd.owned.iterator(); it.hasNext(); ) {
+                String k = it.next();
+                if (k.startsWith("trail:")) { refund += TRAIL_REFUND.getOrDefault(k.substring(6), 0); it.remove(); }
+            }
+            if (refund > 0 || pd.trail != null) migrated = true;
+            if (refund > 0) { pd.points += refund; plugin.getLogger().info("Refunded " + refund + " vote points for retired trails to " + pd.name); }
+            pd.trail = null;
         }
+        if (migrated) save();
         load();
     }
 
@@ -98,7 +110,7 @@ public class Votes implements Listener {
     void load() {
         ConfigurationSection c = cfg();
         servers.values().forEach(s -> s.rcon().close());
-        servers.clear(); tags.clear(); trails.clear();
+        servers.clear(); tags.clear(); colors.clear();
         if (c == null) return;
         pointsPerVote = c.getInt("points-per-vote", 1);
         announce = c.getBoolean("announce", true);
@@ -117,13 +129,10 @@ public class Votes implements Listener {
         ConfigurationSection ts = plugin.getConfig().getConfigurationSection("cosmetics.tags");
         if (ts != null) for (String k : ts.getKeys(false))
             tags.put(k, new Tag(k, ts.getString(k + ".display", k), ts.getInt(k + ".cost", 5), mat(ts.getString(k + ".icon"), Material.NAME_TAG)));
-        ConfigurationSection tr = plugin.getConfig().getConfigurationSection("cosmetics.trails");
-        if (tr != null) for (String k : tr.getKeys(false)) {
-            String[] a = tr.getString(k + ".args", "0.2 0.1 0.2 0 1").trim().split("\\s+");
-            trails.put(k, new Trail(k, tr.getString(k + ".name", k), tr.getInt(k + ".score"), tr.getString(k + ".particle", "heart"),
-                    Double.parseDouble(a[0]), Double.parseDouble(a[1]), Double.parseDouble(a[2]), Double.parseDouble(a[3]), Integer.parseInt(a[4]),
-                    tr.getInt(k + ".cost", 5), mat(tr.getString(k + ".icon"), Material.BLAZE_POWDER)));
-        }
+        ConfigurationSection cs = plugin.getConfig().getConfigurationSection("cosmetics.name-colors");
+        if (cs != null) for (String k : cs.getKeys(false))
+            colors.put(k, new NameColor(k, cs.getString(k + ".name", k), cs.getString(k + ".code", "&f"), cs.getInt(k + ".cost", 5),
+                    mat(cs.getString(k + ".icon"), Material.WHITE_DYE)));
         writeTags();
     }
     static Material mat(String s, Material def) { Material m = s == null ? null : Material.matchMaterial(s); return m == null ? def : m; }
@@ -152,6 +161,21 @@ public class Votes implements Listener {
             Files.writeString(tmp, GSON.toJson(out));
             Files.move(tmp, tagsFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) { plugin.getLogger().warning("tags.json write failed: " + e); }
+        Map<String, String> cols = new TreeMap<>();   // name (lowercase) -> "&b", "&6&l" or "rainbow"
+        players.forEach((k, pd) -> { NameColor c = pd.color == null ? null : colors.get(pd.color); if (c != null) cols.put(k, c.code()); });
+        try {
+            Path tmp = colorsFile.resolveSibling("namecolors.json.tmp");
+            Files.writeString(tmp, GSON.toJson(cols));
+            Files.move(tmp, colorsFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) { plugin.getLogger().warning("namecolors.json write failed: " + e); }
+    }
+    /** A preview of a name in a colour code, or rainbow. */
+    static String colored(String name, String code) {
+        if (!"rainbow".equalsIgnoreCase(code)) return code + name;
+        String[] cyc = {"&c", "&6", "&e", "&a", "&b", "&9", "&d"};
+        StringBuilder b = new StringBuilder();
+        for (int i = 0; i < name.length(); i++) b.append(cyc[i % cyc.length]).append(name.charAt(i));
+        return b.toString();
     }
 
     static String month() { return YearMonth.now(ZONE).toString(); }
@@ -232,11 +256,8 @@ public class Votes implements Listener {
     void cycle() {
         if (servers.isEmpty() || !busy.compareAndSet(false, true)) return;
         Map<String, List<Job>> jobs = new HashMap<>();
-        Map<String, Integer> trailScore = new HashMap<>();
         players.forEach((k, pd) -> {
             pd.pending.forEach((srv, n) -> { if (n > 0 && !inFlight.contains(srv + "|" + k)) { jobs.computeIfAbsent(srv, x -> new ArrayList<>()).add(new Job(k, pd.name, n)); inFlight.add(srv + "|" + k); } });
-            Trail t = pd.trail == null ? null : trails.get(pd.trail);
-            if (t != null || !pd.owned.isEmpty()) trailScore.put(k, t == null ? 0 : t.score());
         });
         List<Server> all = new ArrayList<>(servers.values());
         worker.submit(() -> {
@@ -250,12 +271,6 @@ public class Votes implements Listener {
                     for (String name : online) {
                         String k = name.toLowerCase(Locale.ROOT);
                         try {
-                            Integer want = trailScore.get(k);
-                            if (want != null && !want.equals(applied.get(s.key() + "|" + k))) {
-                                // only remember it once the crispy_cosmetics datapack is loaded there (the objective exists)
-                                if (s.rcon().cmd("scoreboard players set " + name + " crispy.trail " + want).startsWith("Set"))
-                                    applied.put(s.key() + "|" + k, want);
-                            }
                             Job j = mine.get(k);
                             if (j == null) continue;
                             for (int i = 0; i < j.count(); i++) for (String cmd : s.commands()) s.rcon().cmd(cmd.replace("%player%", name));
@@ -290,24 +305,6 @@ public class Votes implements Listener {
         List<String> names = new ArrayList<>();
         for (String n : out.substring(i + 1).split(",")) { n = n.trim(); if (!n.isEmpty() && !n.contains(" ")) names.add(n); }
         return names;
-    }
-
-    // ------------------------------------------------------------------ lobby trail (the backends use the datapack)
-    @EventHandler public void onMove(PlayerMoveEvent e) {
-        if (!e.hasChangedPosition()) return;
-        Player p = e.getPlayer();
-        if (p.getGameMode() == GameMode.SPECTATOR || p.isInvisible() || p.hasPotionEffect(org.bukkit.potion.PotionEffectType.INVISIBILITY)) return;
-        PD pd = players.get(p.getName().toLowerCase(Locale.ROOT));
-        Trail t = pd == null || pd.trail == null ? null : trails.get(pd.trail);
-        if (t == null) return;
-        int now = Bukkit.getCurrentTick();
-        Integer last = lastTick.get(p.getName());
-        if (last != null && now - last < 2) return;
-        lastTick.put(p.getName(), now);
-        try {
-            Particle part = Particle.valueOf(t.particle().toUpperCase(Locale.ROOT));
-            p.getWorld().spawnParticle(part, p.getLocation().add(0, 0.2, 0), t.count(), t.dx(), t.dy(), t.dz(), t.speed());
-        } catch (RuntimeException ignored) {}
     }
 
     // ------------------------------------------------------------------ menus
@@ -353,35 +350,35 @@ public class Votes implements Listener {
         }
         put(m, 39, item(Material.GOLD_INGOT, "&6&lTop voters", List.of("&7This month's top 10 in chat"), false), "top");
         Tag tg = pd.tag == null ? null : tags.get(pd.tag);
-        Trail tr = pd.trail == null ? null : trails.get(pd.trail);
-        put(m, 41, item(Material.AMETHYST_SHARD, "&b&lCosmetics", List.of("&7Tags and trails that show on &fevery server&7.",
+        NameColor nc = pd.color == null ? null : colors.get(pd.color);
+        put(m, 41, item(Material.AMETHYST_SHARD, "&b&lCosmetics", List.of("&7Tags and name colours that show on &fevery server&7.",
                 "&7Bought with vote points (&d" + pd.points + "&7).", "",
-                "&7Tag: " + (tg == null ? "&8none" : tg.display()), "&7Trail: " + (tr == null ? "&8none" : "&f" + tr.name()), "", "&eClick to browse"), false), "cosmetics");
+                "&7Tag: " + (tg == null ? "&8none" : tg.display()), "&7Name colour: " + (nc == null ? "&8none" : colored(nc.name(), nc.code())), "", "&eClick to browse"), false), "cosmetics");
         p.openInventory(m.inv);
     }
 
     void openCosmetics(Player p) {
         PD pd = pd(p.getName());
         Menu m = menu("cosmetics", 6, "&b&lCosmetics &8(&d" + pd.points + " points&8)");
-        put(m, 0, item(Material.NAME_TAG, "&f&lTags", List.of("&7Shown after your name in the tab", "&7list and above your head, everywhere."), false), null);
+        put(m, 0, item(Material.NAME_TAG, "&f&lTags", List.of("&7Shown with your name in chat, the tab", "&7list and above your head, everywhere."), false), null);
         int slot = 1;
         for (Tag t : tags.values()) {
             if (slot % 9 == 0) slot++;
             if (slot >= 18) break;
             boolean own = pd.owned.contains("tag:" + t.id()), on = t.id().equals(pd.tag);
-            put(m, slot++, item(t.icon(), t.display(), List.of("&7Preview: &f" + p.getName() + " " + t.display(), "",
+            put(m, slot++, item(t.icon(), t.display(), List.of("&7Preview: &f<" + t.display() + " &f" + p.getName() + "> hi", "",
                     on ? "&aEquipped &7- click to take off" : own ? "&eOwned &7- click to wear" : "&7Cost: &d" + t.cost() + " points",
                     !own && pd.points < t.cost() ? "&cNot enough points" : ""), on), "tag:" + t.id());
         }
-        put(m, 27, item(Material.BLAZE_POWDER, "&f&lTrails", List.of("&7Particles behind you while you", "&7walk, on every server."), false), null);
+        put(m, 27, item(Material.WHITE_DYE, "&f&lName colours", List.of("&7Your name in colour in chat on", "&7every server (and in cross-chat)."), false), null);
         slot = 28;
-        for (Trail t : trails.values()) {
+        for (NameColor c : colors.values()) {
             if (slot % 9 == 0) slot++;
             if (slot >= 45) break;
-            boolean own = pd.owned.contains("trail:" + t.id()), on = t.id().equals(pd.trail);
-            put(m, slot++, item(t.icon(), "&f" + t.name(), List.of("",
-                    on ? "&aEquipped &7- click to take off" : own ? "&eOwned &7- click to use" : "&7Cost: &d" + t.cost() + " points",
-                    !own && pd.points < t.cost() ? "&cNot enough points" : ""), on), "trail:" + t.id());
+            boolean own = pd.owned.contains("color:" + c.id()), on = c.id().equals(pd.color);
+            put(m, slot++, item(c.icon(), colored(c.name(), c.code()), List.of("&7Preview: &f<" + colored(p.getName(), c.code()) + "&f> hi", "",
+                    on ? "&aEquipped &7- click to take off" : own ? "&eOwned &7- click to use" : "&7Cost: &d" + c.cost() + " points",
+                    !own && pd.points < c.cost() ? "&cNot enough points" : ""), on), "color:" + c.id());
         }
         put(m, 49, item(Material.ARROW, "&7Back", List.of(), false), "back");
         p.openInventory(m.inv);
@@ -400,14 +397,14 @@ public class Votes implements Listener {
         else if (a.equals("cosmetics")) openCosmetics(p);
         else if (a.equals("back")) open(p);
         else if (a.startsWith("claim:")) claim(p, a.substring(6), e.isShiftClick());
-        else if (a.startsWith("tag:") || a.startsWith("trail:")) cosmetic(p, a);
+        else if (a.startsWith("tag:") || a.startsWith("color:")) cosmetic(p, a);
     }
 
     void cosmetic(Player p, String key) {
         PD pd = pd(p.getName());
         boolean isTag = key.startsWith("tag:");
         String id = key.substring(key.indexOf(':') + 1);
-        int cost = isTag ? (tags.containsKey(id) ? tags.get(id).cost() : -1) : (trails.containsKey(id) ? trails.get(id).cost() : -1);
+        int cost = isTag ? (tags.containsKey(id) ? tags.get(id).cost() : -1) : (colors.containsKey(id) ? colors.get(id).cost() : -1);
         if (cost < 0) return;
         if (!pd.owned.contains(key)) {
             if (pd.points < cost) { msg(p, "&cYou need &d" + cost + " &cvote points (you have &d" + pd.points + "&c)."); p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.7f, 1f); return; }
@@ -417,7 +414,7 @@ public class Votes implements Listener {
             p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.6f, 1.2f);
         } else p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 1f);
         if (isTag) { pd.tag = id.equals(pd.tag) ? null : id; writeTags(); }
-        else pd.trail = id.equals(pd.trail) ? null : id;
+        else { pd.color = id.equals(pd.color) ? null : id; writeTags(); }
         save();
         openCosmetics(p);
     }

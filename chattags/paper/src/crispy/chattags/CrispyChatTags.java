@@ -4,57 +4,91 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import io.papermc.paper.chat.ChatRenderer;
 import io.papermc.paper.event.player.AsyncChatEvent;
+import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextReplacementConfig;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
-/** Shows vote-cosmetic tags (from the lobby's tags.json) before the sender's name in chat, for every viewer and the
- *  console, so the Discord bot's relay carries them too. The tag goes into the player's display name while the message
- *  is sent (that name is what clients show for signed chat, and what EssentialsChat's {DISPLAYNAME} uses), and is put
- *  back a moment later so join/quit/death messages stay plain. A renderer pass adds it if a chat format left it out. */
+/** Shows the lobby's vote cosmetics in chat: the tag (tags.json) before the sender's name and the name in its bought
+ *  colour (namecolors.json), for every viewer and the console, so the Discord bot's relay carries the tag too.
+ *  - The tagged name goes into the player's display name while the message is sent (what clients show for signed chat
+ *    and what EssentialsChat's {DISPLAYNAME} uses), and is put back 2 s later so join/quit/death messages stay plain.
+ *  - The finished line is rewritten if a format left the tag out.
+ *  - system-chat: true sends tagged lines as plain server messages instead of signed chat, for servers where version
+ *    translation shows clients the original signed message (Factions, 1.21.11 under ViaVersion). */
 public class CrispyChatTags extends JavaPlugin implements Listener {
     static final LegacyComponentSerializer AMP = LegacyComponentSerializer.legacyAmpersand();
-    volatile Map<String, String> tags = Map.of();
-    long mtime = -1;
-    Path file;
+    static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
+    static final NamedTextColor[] RAINBOW = {NamedTextColor.RED, NamedTextColor.GOLD, NamedTextColor.YELLOW, NamedTextColor.GREEN,
+            NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.LIGHT_PURPLE};
+
+    static final class Source {
+        final Path file; volatile Map<String, String> map = Map.of(); long mtime = -1;
+        Source(Path file) { this.file = file; }
+        void reload() {
+            try {
+                long m = Files.getLastModifiedTime(file).toMillis();
+                if (m == mtime) return;
+                Map<String, String> t = new Gson().fromJson(Files.readString(file), new TypeToken<Map<String, String>>() {}.getType());
+                map = t == null ? Map.of() : t;
+                mtime = m;
+            } catch (Exception ignored) {}
+        }
+        String get(String name) { return map.get(name.toLowerCase(Locale.ROOT)); }
+    }
+
+    Source tags, colors;
+    boolean systemChat;
+    final Map<UUID, Component> original = new ConcurrentHashMap<>();
+    final Map<UUID, Integer> pending = new ConcurrentHashMap<>();
 
     @Override public void onEnable() {
         saveDefaultConfig();
-        file = Path.of(getConfig().getString("tags-file", "/AMPStorage/.ampdata/instances/CrispyLobby01/Minecraft/plugins/CrispyLobby/tags.json"));
+        Path dir = Path.of(getConfig().getString("lobby-dir", "/AMPStorage/.ampdata/instances/CrispyLobby01/Minecraft/plugins/CrispyLobby"));
+        tags = new Source(dir.resolve("tags.json"));
+        colors = new Source(dir.resolve("namecolors.json"));
+        systemChat = getConfig().getBoolean("system-chat", false);
         getServer().getPluginManager().registerEvents(this, this);
-        Bukkit.getScheduler().runTaskTimerAsynchronously(this, this::reload, 20L, 60L);
+        Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> { tags.reload(); colors.reload(); }, 20L, 60L);
     }
 
-    void reload() {
-        try {
-            long m = Files.getLastModifiedTime(file).toMillis();
-            if (m == mtime) return;
-            Map<String, String> t = new Gson().fromJson(Files.readString(file), new TypeToken<Map<String, String>>() {}.getType());
-            tags = t == null ? Map.of() : t;
-            mtime = m;
-        } catch (Exception ignored) {}
+    Component coloredName(String name) {
+        String code = colors.get(name);
+        if (code == null) return null;
+        if (!code.equalsIgnoreCase("rainbow")) return AMP.deserialize(code + name);
+        Component out = Component.empty();
+        for (int i = 0; i < name.length(); i++) out = out.append(Component.text(name.charAt(i), RAINBOW[i % RAINBOW.length]));
+        return out;
     }
-
-    final Map<java.util.UUID, Component> original = new java.util.concurrent.ConcurrentHashMap<>();
-    final Map<java.util.UUID, Integer> pending = new java.util.concurrent.ConcurrentHashMap<>();
+    /** "[Tag] " + coloured name (or the given name component), or null when the player has neither cosmetic. */
+    Component chatName(String name, Component plain) {
+        String tag = tags.get(name);
+        Component col = coloredName(name);
+        if (tag == null && col == null) return null;
+        return (tag == null ? Component.empty() : AMP.deserialize(tag).append(Component.text(" "))).append(col != null ? col : plain);
+    }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void tagName(AsyncChatEvent e) {
-        org.bukkit.entity.Player p = e.getPlayer();
-        String tag = tags.get(p.getName().toLowerCase(Locale.ROOT));
-        if (tag == null) return;
+        Player p = e.getPlayer();
         original.putIfAbsent(p.getUniqueId(), p.displayName());
-        p.displayName(AMP.deserialize(tag).append(Component.text(" ")).append(original.get(p.getUniqueId())));
+        Component tagged = chatName(p.getName(), original.get(p.getUniqueId()));
+        if (tagged == null) { original.remove(p.getUniqueId()); return; }
+        p.displayName(tagged);
         int n = pending.merge(p.getUniqueId(), 1, Integer::sum);
         Bukkit.getScheduler().runTaskLater(this, () -> {   // restore once the last message in flight has gone out
             if (pending.getOrDefault(p.getUniqueId(), 0) != n) return;
@@ -64,7 +98,7 @@ public class CrispyChatTags extends JavaPlugin implements Listener {
         }, 40L);
     }
 
-    @EventHandler public void onQuit(org.bukkit.event.player.PlayerQuitEvent e) {
+    @EventHandler public void onQuit(PlayerQuitEvent e) {
         Component o = original.remove(e.getPlayer().getUniqueId());
         pending.remove(e.getPlayer().getUniqueId());
         if (o != null) e.getPlayer().displayName(o);
@@ -72,19 +106,24 @@ public class CrispyChatTags extends JavaPlugin implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onChat(AsyncChatEvent e) {
-        String tag = tags.get(e.getPlayer().getName().toLowerCase(Locale.ROOT));
-        if (tag == null) return;
-        Component tagC = AMP.deserialize(tag);
-        String tagText = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(tagC);
         String name = e.getPlayer().getName();
+        Component tagged = chatName(name, Component.text(name));
+        if (tagged == null) return;
+        String taggedText = PLAIN.serialize(tagged);
         ChatRenderer inner = e.renderer();
-        e.renderer((source, displayName, message, viewer) -> {
+        ChatRenderer r = (source, displayName, message, viewer) -> {
             Component line = inner.render(source, displayName, message, viewer);
-            if (net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(line).contains(tagText)) return line;
+            if (PLAIN.serialize(line).contains(taggedText)) return line;   // the format already used the tagged display name
             boolean[] hit = {false};
             Component out = line.replaceText(TextReplacementConfig.builder().matchLiteral(name).once()
-                    .replacement(b -> { hit[0] = true; return tagC.append(Component.text(" ")).append(b); }).build());
-            return hit[0] ? out : tagC.append(Component.text(" ")).append(line);
-        });
+                    .replacement(b -> { hit[0] = true; return tagged; }).build());
+            return hit[0] ? out : tagged.append(Component.text(" ")).append(line);
+        };
+        if (!systemChat) { e.renderer(r); return; }
+        Set<Audience> viewers = new HashSet<>(e.viewers());
+        Player src = e.getPlayer();
+        Component dn = src.displayName(), msg = e.message();
+        e.setCancelled(true);
+        for (Audience v : viewers) v.sendMessage(r.render(src, dn, msg, v));
     }
 }

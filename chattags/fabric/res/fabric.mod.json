@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "id": "crispy_chattags",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "name": "Crispy Chat Tags",
-  "description": "Shows vote-cosmetic tags (from the lobby's tags.json) before the sender's name in chat; %crispy:tag% for Styled Chat.",
+  "description": "Vote-cosmetic tags and name colours (from the lobby) in chat; %crispy:tag% and %crispy:name% for Styled Chat.",
   "environment": "server",
   "mixins": [
     "crispy_chattags.mixins.json"
