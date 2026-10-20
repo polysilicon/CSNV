@@ -1,0 +1,6 @@
+name: CrispyChatTags
+version: 1.0.0
+main: crispy.chattags.CrispyChatTags
+api-version: '1.21'
+author: CrispyAnarchy
+description: Vote-cosmetic tags before names in chat

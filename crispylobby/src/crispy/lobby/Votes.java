@@ -74,7 +74,7 @@ public class Votes implements Listener {
     final Set<String> inFlight = new HashSet<>();
     final Map<String, Integer> applied = new HashMap<>();      // "server|name" -> crispy.trail score last pushed (worker thread only)
     final Map<String, Integer> lastTick = new HashMap<>();     // lobby trail throttle
-    int pointsPerVote; boolean announce;
+    int pointsPerVote; boolean announce, botRelay, rconAnnounce;
     Set<String> testUsers = Set.of();
 
     Votes(CrispyLobby plugin) {
@@ -102,6 +102,8 @@ public class Votes implements Listener {
         if (c == null) return;
         pointsPerVote = c.getInt("points-per-vote", 1);
         announce = c.getBoolean("announce", true);
+        botRelay = c.getBoolean("discord-relay", true);
+        rconAnnounce = c.getBoolean("rcon-announce", false);
         testUsers = new HashSet<>();
         for (String u : c.getStringList("test-usernames")) testUsers.add(u.toLowerCase(Locale.ROOT));
         Path root = Path.of(plugin.getConfig().getString("network-stats.instances-dir", "/AMPStorage/.ampdata/instances"));
@@ -177,9 +179,13 @@ public class Votes implements Listener {
         String line = "&a" + pd.name + " &7voted for CrispyAnarchy on &f" + service + "&7! &eClaim vote rewards in the lobby: &f/vote";
         if (announce) {
             Bukkit.broadcast(c(line));
-            String json = net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().serialize(CrispyLobby.AMP.deserialize(line));
-            List<Server> all = new ArrayList<>(servers.values());
-            worker.submit(() -> { for (Server s : all) try { s.rcon().cmd("tellraw @a " + json); } catch (IOException ignored) {} });
+            // the Discord bot relays "<name> text" lines from this server's log to Discord and (cross-chat) every other server
+            if (botRelay) Bukkit.getConsoleSender().sendMessage("<Votes> " + pd.name + " voted for CrispyAnarchy on " + service + "! Claim vote rewards in the lobby: /vote");
+            if (rconAnnounce) {
+                String json = net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().serialize(CrispyLobby.AMP.deserialize(line));
+                List<Server> all = new ArrayList<>(servers.values());
+                worker.submit(() -> { for (Server s : all) try { s.rcon().cmd("tellraw @a " + json); } catch (IOException ignored) {} });
+            }
         }
         Player p = Bukkit.getPlayerExact(user);
         if (p != null) {

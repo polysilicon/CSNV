@@ -40,7 +40,9 @@ network-stats:
 # Admin: /vote give <player> [n], /vote points <player> <+/-n>, /vote reload.
 votes:
   points-per-vote: 1
-  announce: true            # "X voted" on every server
+  announce: true            # "X voted" in the lobby
+  discord-relay: true       # also log it as a "<Votes> ..." chat line: the Discord bot posts it and cross-chats it to every server
+  rcon-announce: false      # tellraw it to every server directly (turn on if the bot is down; else it shows twice)
   test-usernames: [PMC, TopG, MinecraftServers, test, Votifier]   # list sites' test votes: logged, no reward
   links:
     - {name: TopG, url: "https://topg.org/minecraft-servers/server-687311"}
