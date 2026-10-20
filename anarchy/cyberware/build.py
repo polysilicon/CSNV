@@ -12,6 +12,7 @@ import json, os, shutil, sys
 NS = "cyber"
 DROP_ON_DEATH = True   # build.py --pvp: implants are just removed on death (kit servers)
 CAP_LIMIT = 20
+LAUNCH_CD, LAUNCH_SPEED, LAUNCH_POWER = 160, 1.5, 1   # Projectile Launch System: reload ticks, blocks/tick, explosion power
 PACK_FORMAT = [107, 0], [107, 1]
 
 SLOTS = {1: "Ocular", 2: "Integumentary", 3: "Skeleton", 4: "Arms", 5: "Hands", 6: "Legs",
@@ -59,6 +60,8 @@ IMPLANTS = [
       "60 second cooldown."], []),
     (14, "berserk", "Berserk", "dark_red", 9, 7, ("netherite_ingot", 2), "blaze_powder",
      ["Double-tap sneak: Strength II + Resistance", "for 8s (you glow while it runs).", "75 second cooldown."], []),
+    (16, "launcher", "Projectile Launch System", "gold", 4, 6, ("netherite_ingot", 2), "fire_charge",
+     ["Sneak + jump: fire an explosive round", "where you're looking.", f"{LAUNCH_CD // 20} second reload."], []),
 ]
 NEURO = ("neuro", "Neuroblocker", ("diamond", 2), "honey_bottle", 1200)   # seconds of psychosis immunity
 OS_CD = {13: 1200, 14: 1500}   # ticks
@@ -123,7 +126,8 @@ def build():
     # ------------------------------------------------------------------ load / tick / second
     objs = ["cy dummy", "cy.buy trigger", "cy.rm trigger", "cyber trigger", "cy.cap dummy", "cy.cd dummy",
             "cy.cdh dummy", "cy.hp health", "cy.death deathCount", "cy.snk dummy", "cy.tap dummy",
-            "cy.nb dummy", "cy.pcd dummy", "cy.sv dummy", "cy.gl dummy"] + [f"cy.s{s} dummy" for s in SLOTS]
+            "cy.nb dummy", "cy.pcd dummy", "cy.sv dummy", "cy.gl dummy",
+            "cy.jump minecraft.custom:minecraft.jump", "cy.lcd dummy"] + [f"cy.s{s} dummy" for s in SLOTS]
     fn("load", [f"scoreboard objectives add {o}" for o in objs] + [
         f"scoreboard players set #limit cy {CAP_LIMIT}", "scoreboard players set #t cy 0", "scoreboard players set #2 cy 2",
         # Sandevistan after-image glow colours
@@ -144,6 +148,10 @@ def build():
         "scoreboard players remove @a[scores={cy.cd=1..}] cy.cd 1",
         "execute as @a[scores={cy.cd=1,cy.s9=13}] run title @s actionbar {\"text\":\"◆ Sandevistan ready\",\"color\":\"aqua\"}",
         "execute as @a[scores={cy.cd=1,cy.s9=14}] run title @s actionbar {\"text\":\"◆ Berserk ready\",\"color\":\"red\"}",
+        # Projectile Launch System (arms): sneak + jump
+        f"execute as @a[scores={{cy.s4=16}}] at @s run function {NS}:arms/tick",
+        "scoreboard players remove @a[scores={cy.lcd=1..}] cy.lcd 1",
+        "execute as @a[scores={cy.lcd=1,cy.s4=16}] run title @s actionbar {\"text\":\"◆ Launcher loaded\",\"color\":\"gold\"}",
         # circulatory implants
         "scoreboard players remove @a[scores={cy.cdh=1..}] cy.cdh 1",
         f"execute as @a[scores={{cy.s8=11,cy.hp=1..8,cy.cdh=0}}] at @s run function {NS}:fx/biomon",
@@ -158,7 +166,7 @@ def build():
     fn("second", [
         "scoreboard players set #t cy 0",
         # make sure every score used in a selector exists
-        *[f"scoreboard players add @a {o} 0" for o in ["cy.cap", "cy.cd", "cy.cdh", "cy.nb", "cy.pcd"] + [f"cy.s{s}" for s in SLOTS]],
+        *[f"scoreboard players add @a {o} 0" for o in ["cy.cap", "cy.cd", "cy.cdh", "cy.nb", "cy.pcd", "cy.lcd"] + [f"cy.s{s}" for s in SLOTS]],
         "effect give @a[scores={cy.s1=1}] minecraft:night_vision 30 0 true",
         "scoreboard players remove @a[scores={cy.nb=1..}] cy.nb 1",
         "execute as @a[scores={cy.nb=1}] run tellraw @s {\"text\":\"Your Neuroblocker wore off.\",\"color\":\"dark_purple\"}",
@@ -187,6 +195,7 @@ def build():
             "particle minecraft:electric_spark ~ ~1 ~ 0.4 0.6 0.4 0.2 40",
             f"tellraw @s [{{\"text\":\"Installed \",\"color\":\"green\"}},{tj(nm)},{{\"text\":\" ({SLOTS[slot]}).\",\"color\":\"green\"}}]",
             *(["tellraw @s {\"text\":\"Double-tap sneak to activate.\",\"color\":\"gray\"}"] if slot == 9 else []),
+            *(["tellraw @s {\"text\":\"Sneak + jump to fire.\",\"color\":\"gray\"}", "scoreboard players set @s cy.lcd 0"] if key == "launcher" else []),
             f"function {NS}:capacity_msg",
         ])
         fn(f"{d}/occupied", [
@@ -386,6 +395,31 @@ def build():
         "data modify entity @s[type=minecraft:mannequin] equipment set value {}",
         "execute at @s run tp @s ~ -1000 ~",
         "kill @s",
+    ])
+
+    # ------------------------------------------------------------------ Projectile Launch System
+    fn("arms/tick", [
+        f"execute if score @s cy.jump matches 1.. if predicate {NS}:sneaking run function {NS}:arms/fire",
+        "scoreboard players set @s cy.jump 0",
+    ])
+    fn("arms/fire", [
+        "execute if score @s cy.lcd matches 1.. run return run title @s actionbar {\"text\":\"Launcher reloading\",\"color\":\"gray\"}",
+        f"scoreboard players set @s cy.lcd {LAUNCH_CD}",
+        # a ghast-style fireball from the eyes, aimed by the gap between two points along the look direction
+        f"execute anchored eyes positioned ^ ^ ^1.2 run summon minecraft:fireball ~ ~ ~ {{Tags:[\"cy.round\",\"cy.rnew\"],ExplosionPower:{LAUNCH_POWER}b}}",
+        "execute anchored eyes positioned ^ ^ ^2.2 run summon minecraft:marker ~ ~ ~ {Tags:[\"cy.aim\"]}",
+        *[l for i in range(3) for l in (
+            f"execute store result score #a cy run data get entity @n[type=minecraft:marker,tag=cy.aim] Pos[{i}] 1000",
+            f"execute store result score #b cy run data get entity @n[type=minecraft:fireball,tag=cy.rnew] Pos[{i}] 1000",
+            "scoreboard players operation #a cy -= #b cy",
+            f"execute store result entity @n[type=minecraft:fireball,tag=cy.rnew] Motion[{i}] double {LAUNCH_SPEED / 1000} run scoreboard players get #a cy")],
+        "data modify entity @n[type=minecraft:fireball,tag=cy.rnew] Owner set from entity @s UUID",
+        "kill @e[type=minecraft:marker,tag=cy.aim]",
+        "tag @e[type=minecraft:fireball,tag=cy.rnew] remove cy.rnew",
+        "playsound minecraft:entity.blaze.shoot player @a[distance=..24] ~ ~ ~ 1 0.7",
+        "playsound minecraft:item.crossbow.shoot player @a[distance=..24] ~ ~ ~ 1 0.6",
+        "particle minecraft:smoke ^-0.4 ^1.2 ^0.6 0.1 0.1 0.1 0.02 8",
+        "title @s actionbar {\"text\":\"◆ PROJECTILE LAUNCHED\",\"color\":\"gold\",\"bold\":true}",
     ])
 
     fn("fx/berserk", [

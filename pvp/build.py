@@ -27,7 +27,8 @@ ROOM_Y = LOBBY_Y - 10                # room floor; interior ROOM_Y+1..ROOM_Y+4
 ROOM_BOX = f"x=-10,y={ROOM_Y},z=-5,dx=20,dy=6,dz=10"
 ENCHANTS = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "enchants.json")))   # from crispy_enchants
 IMPLANT_KEYS = ["kiroshi", "subdermal", "titanium", "lungs", "gorilla", "mantis", "tendons", "lynx", "grip", "reflex", "biomon",
-                "heart", "sandy", "berserk", "neuro"]   # cyber:item/<key> loot tables
+                "heart", "sandy", "berserk", "launcher", "neuro"]   # cyber:item/<key> loot tables
+VELOCITY_MAX, VELOCITY_CAP = 5, 20   # Velocity enchant: +20% arrow speed per level; levels above the cap (via /fe) count as the cap
 LOBBY_BOX = box(0, 0, LOBBY_R, LOBBY_Y - 1, 20)
 ARENA_BOX = box(ACX, ACZ, AR, AY - 1, 35)
 PVE_BOX = box(PCX, PCZ, PR, AY - 1, 35)
@@ -386,6 +387,28 @@ def build():
     fn("admin/build_arena", ar)
     fn("admin/build", [f"function {NS}:admin/build_lobby", f"function {NS}:admin/build_arena", f"function {NS}:admin/build_pve", f"function {NS}:admin/build_room"])
     build_room()
+    build_velocity()
+
+
+def build_velocity():
+    """pvp:velocity - bows and crossbows: arrows leave 20% faster per level (so they also drop less and hit harder).
+    Runs on projectile_spawned; the level is read from the arrow's own copy of the weapon, so /fe levels work too."""
+    wj(f"data/{NS}/enchantment/velocity.json", {
+        "description": {"text": "Velocity", "color": "aqua"},
+        "supported_items": ["minecraft:bow", "minecraft:crossbow"], "weight": 2, "max_level": VELOCITY_MAX,
+        "min_cost": {"base": 10, "per_level_above_first": 9}, "max_cost": {"base": 40, "per_level_above_first": 9},
+        "anvil_cost": 4, "slots": ["hand"],
+        "effects": {"minecraft:projectile_spawned": [{"effect": {"type": "minecraft:run_function", "function": f"{NS}:ench/velocity"}}]}})
+    fn("ench/velocity", [   # as the arrow: Motion *= (5 + level) / 5
+        f'execute store result score #vl {NS} run data get entity @s weapon.components."minecraft:enchantments"."{NS}:velocity"',
+        f"execute if score #vl {NS} matches {VELOCITY_CAP + 1}.. run scoreboard players set #vl {NS} {VELOCITY_CAP}",
+        f"execute unless score #vl {NS} matches 1.. run return 0",
+        f"scoreboard players add #vl {NS} 5",
+        *[l for i in range(3) for l in (
+            f"execute store result score #vm {NS} run data get entity @s Motion[{i}] 10000",
+            f"scoreboard players operation #vm {NS} *= #vl {NS}",
+            f"execute store result entity @s Motion[{i}] double 0.00002 run scoreboard players get #vm {NS}")],
+    ])
 
 
 def build_room():
@@ -394,6 +417,7 @@ def build_room():
     chests = []   # (label, colour, list of item commands: ("book", id, lvl) or ("loot", key))
     for group, color in (("Melee", "red"), ("Ranged", "green"), ("Tools", "yellow"), ("Armor", "aqua")):
         books = [("book", e["id"], e["max"]) for e in ENCHANTS if e["group"] == group]
+        if group == "Ranged": books.append(("book", f"{NS}:velocity", VELOCITY_MAX))
         parts = [books[i:i + 27] for i in range(0, len(books), 27)]
         for n, part in enumerate(parts, 1):
             chests.append((f"{group} enchants" + (f" {n}/{len(parts)}" if len(parts) > 1 else ""), color, part))
@@ -417,7 +441,7 @@ def build_room():
         for slot, it in enumerate(items):
             if it[0] == "book":
                 fill.append(f"item replace block {x} {Y + 1} {z} container.{slot} with minecraft:enchanted_book"
-                            f"[minecraft:stored_enchantments={{\"crispy_enchants:{it[1]}\":{it[2]}}}]")
+                            f"[minecraft:stored_enchantments={{\"{it[1] if ':' in it[1] else 'crispy_enchants:' + it[1]}\":{it[2]}}}]")
             else:
                 fill.append(f"loot replace block {x} {Y + 1} {z} container.{slot} loot cyber:item/{it[1]}")
     fn("admin/build_room", b + [f"function {NS}:admin/fill_room"])
