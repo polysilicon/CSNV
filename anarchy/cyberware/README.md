@@ -51,6 +51,7 @@ re-run the place commands after a reinstall.
 | Second Heart | Circulatory | 8 | 2 netherite | ≤2 hearts: Instant Health III, Absorption II, Fire Res; 10 min cooldown |
 | Sandevistan | Operating System | 8 | 3 netherite | double-tap sneak: Speed IV, Haste II for 6 s; Slowness III on everything within 12 blocks; leaves an Edgerunners-style after-image trail; 60 s cooldown |
 | Berserk | Operating System | 7 | 2 netherite | double-tap sneak: Strength II + Resistance for 8 s (you glow); 75 s cooldown |
+| Projectile Launch System | Arms | 6 | 2 netherite | sneak + jump: fires an explosive round (fireball, power 1) where you look; 8 s reload. On Anarchy it can break blocks if mob griefing is on |
 
 Everything is set in the tables at the top of `build.py`:
 - implants, prices and capacity costs: `IMPLANTS`;

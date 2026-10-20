@@ -97,6 +97,9 @@ A sealed room under the lobby (floor y 90) holds:
 The stray check leaves `pvp.admin` players alone in the room. `enchants.json` (id, max level, group) was exported from
 `crispy_enchants`; regenerate it if enchants are added.
 
+**Velocity** (`pvp:velocity`, bows and crossbows, I-V, in the Ranged chest): arrows leave 20% faster per level, so they
+drop less and hit harder. Levels above V from `/fe` work up to XX (5x speed).
+
 **Any enchant, any item, any level** (ops, from the server mod):
 ```
 /forceenchant <enchantment> [level]   e.g. /fe minecraft:sharpness 50, /fe crispy_enchants:<id> 10
