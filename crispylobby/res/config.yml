@@ -100,7 +100,7 @@ cosmetics:
   joined-sources:
     advancements: [CrispyAnarchy01/Minecraft/world/players/advancements, Vanilla01/Minecraft/world/players/advancements]
     player-data: [CrispyAnarchy01/Minecraft/world/players/data, Vanilla01/Minecraft/world/players/data]
-    extra: []
+    extra: []   # names that always qualify (e.g. someone who played earlier on another account)
   name-colors:
     aqua:     {name: Aqua, code: "&b", cost: 3, icon: LIGHT_BLUE_DYE}
     lime:     {name: Lime, code: "&a", cost: 3, icon: LIME_DYE}
