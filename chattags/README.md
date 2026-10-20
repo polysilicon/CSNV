@@ -7,6 +7,12 @@ with no bot change. Both versions read the lobby's `plugins/CrispyLobby/tags.jso
 - `fabric/` is the `crispy_chattags` mod for Anarchy, Vanilla, Falling and PvP.
   - A mixin on `ServerGamePacketListenerImpl.broadcastChatMessage` swaps the chat-type name for "tag + name".
   - Join, leave and death messages keep the plain name, which the bot uses to track players.
-  - Build with `fabric/build.sh <lib-dir> <javac-25> <sponge-mixin.jar>`.
+  - Styled Chat (on Anarchy and Vanilla) formats chat itself, so the mixin doesn't apply there. Instead the mod
+    registers the Placeholder API placeholder `%crispy:tag%` (the tag plus a space, or nothing). The chat format in
+    `config/styled-chat.json` is `<%crispy:tag%${player}> ${message}`; backup in `styled-chat.json.bak-tags`.
+  - Build with `fabric/build.sh <lib-dir> <javac-25> <sponge-mixin.jar> <placeholder-api.jar>`. The Placeholder API
+    jar is nested in styled-chat's jar under `META-INF/jars/`.
 - `paper/` is the `CrispyChatTags` plugin for the Lobby and Factions.
-  - It wraps whatever chat renderer EssentialsChat set and puts the tag before the first occurrence of the player's name.
+  - It puts the tag into the player's display name while a chat message is sent, and restores it 2 s later.
+  - Clients show that name for signed chat, and EssentialsChat's `{DISPLAYNAME}` uses it.
+  - A renderer pass adds the tag if a format left it out.
