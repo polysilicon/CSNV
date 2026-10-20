@@ -445,7 +445,7 @@ public class Votes implements Listener {
     // ------------------------------------------------------------------ /vote and /cosmetics
     boolean command(CommandSender s, String label, String[] a) {
         if (label.equalsIgnoreCase("cosmetics")) {
-            if (s instanceof Player p) openCosmetics(p); return true;
+            if (s instanceof Player p) Bukkit.getScheduler().runTask(plugin, () -> openCosmetics(p)); return true;
         }
         String sub = a.length > 0 ? a[0].toLowerCase(Locale.ROOT) : "";
         boolean admin = s.hasPermission("crispylobby.admin");
@@ -471,7 +471,8 @@ public class Votes implements Listener {
                 msg(s, gone == null ? "No vote data for " + a[1] + "." : "Deleted the vote data for " + a[1] + ".");
             }
             case "reload" -> { if (admin) { plugin.reloadConfig(); load(); msg(s, "Reloaded vote servers and cosmetics."); } }
-            default -> { if (s instanceof Player p) open(p); else links(s); }
+            // a tick later: the server selector runs /vote and then closes its own window, which would close this one too
+            default -> { if (s instanceof Player p) Bukkit.getScheduler().runTask(plugin, () -> open(p)); else links(s); }
         }
         return true;
     }

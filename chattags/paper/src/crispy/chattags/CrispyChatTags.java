@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *  - The tagged name goes into the player's display name while the message is sent (what clients show for signed chat
  *    and what EssentialsChat's {DISPLAYNAME} uses), and is put back 2 s later so join/quit/death messages stay plain.
  *  - The finished line is rewritten if a format left the tag out.
+ *  - The old AsyncPlayerChatEvent is tagged too, for plugins that format chat there (SaberFactions).
  *  - system-chat: true sends tagged lines as plain server messages instead of signed chat, for servers where version
  *    translation shows clients the original signed message (Factions, 1.21.11 under ViaVersion). */
 public class CrispyChatTags extends JavaPlugin implements Listener {
@@ -82,9 +83,16 @@ public class CrispyChatTags extends JavaPlugin implements Listener {
         return (tag == null ? Component.empty() : AMP.deserialize(tag).append(Component.text(" "))).append(col != null ? col : plain);
     }
 
+    // Plugins on the old chat event (SaberFactions builds and sends every line itself to relation-colour names) run
+    // before AsyncChatEvent, so the name has to be tagged there too.
+    @SuppressWarnings("deprecation")
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    public void tagName(AsyncChatEvent e) {
-        Player p = e.getPlayer();
+    public void tagNameLegacy(org.bukkit.event.player.AsyncPlayerChatEvent e) { tagName(e.getPlayer()); }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void tagName(AsyncChatEvent e) { tagName(e.getPlayer()); }
+
+    void tagName(Player p) {
         original.putIfAbsent(p.getUniqueId(), p.displayName());
         Component tagged = chatName(p.getName(), original.get(p.getUniqueId()));
         if (tagged == null) { original.remove(p.getUniqueId()); return; }
