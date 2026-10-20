@@ -5,5 +5,5 @@ CP=$(find "$L" -name "*.jar" | tr '\n' ':')$MIX:$PAPI
 rm -rf "$D/out" && mkdir -p "$D/out"
 "$JAVAC" --release 25 -proc:none -cp "$CP" -d "$D/out" $(find "$D/src" -name "*.java")
 cp "$D"/res/*.json "$D/out/"
-(cd "$D/out" && jar cf "$D/crispy-chattags-1.2.0.jar" .)
-echo "built $D/crispy-chattags-1.2.0.jar"
+(cd "$D/out" && jar cf "$D/crispy-chattags-1.3.0.jar" .)
+echo "built $D/crispy-chattags-1.3.0.jar"

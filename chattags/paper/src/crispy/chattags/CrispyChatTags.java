@@ -7,7 +7,6 @@ import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextReplacementConfig;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
@@ -34,8 +33,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CrispyChatTags extends JavaPlugin implements Listener {
     static final LegacyComponentSerializer AMP = LegacyComponentSerializer.legacyAmpersand();
     static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
-    static final NamedTextColor[] RAINBOW = {NamedTextColor.RED, NamedTextColor.GOLD, NamedTextColor.YELLOW, NamedTextColor.GREEN,
-            NamedTextColor.AQUA, NamedTextColor.BLUE, NamedTextColor.LIGHT_PURPLE};
 
     static final class Source {
         final Path file; volatile Map<String, String> map = Map.of(); long mtime = -1;
@@ -70,9 +67,11 @@ public class CrispyChatTags extends JavaPlugin implements Listener {
     Component coloredName(String name) {
         String code = colors.get(name);
         if (code == null) return null;
-        if (!code.equalsIgnoreCase("rainbow")) return AMP.deserialize(code + name);
+        if (code.equalsIgnoreCase("rainbow")) code = "&c|&6|&e|&a|&b|&9|&d";
+        if (!code.contains("|")) return AMP.deserialize(code + name);
+        String[] seq = code.split("\\|");   // per-letter colour sequence, e.g. "&c|&6|&e"
         Component out = Component.empty();
-        for (int i = 0; i < name.length(); i++) out = out.append(Component.text(name.charAt(i), RAINBOW[i % RAINBOW.length]));
+        for (int i = 0; i < name.length(); i++) out = out.append(AMP.deserialize(seq[i % seq.length] + name.charAt(i)));
         return out;
     }
     /** "[Tag] " + coloured name (or the given name component), or null when the player has neither cosmetic. */

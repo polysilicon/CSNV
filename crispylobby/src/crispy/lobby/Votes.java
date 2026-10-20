@@ -54,7 +54,7 @@ public class Votes implements Listener {
         String trail;   // pre-1.5 walking trails; refunded and cleared on load
     }
     record Server(String key, String label, Material icon, Rcon rcon, List<String> reward, List<String> commands) {}
-    record Tag(String id, String display, int cost, Material icon, String joinedBefore) {}
+    record Tag(String id, String display, int cost, Material icon, String joinedBefore, String note) {}
     record NameColor(String id, String name, String code, int cost, Material icon) {}
     // what each retired trail cost, for the refund
     static final Map<String, Integer> TRAIL_REFUND = Map.of("hearts", 3, "flames", 4, "notes", 4, "soul", 5, "sakura", 5,
@@ -130,7 +130,7 @@ public class Votes implements Listener {
         ConfigurationSection ts = plugin.getConfig().getConfigurationSection("cosmetics.tags");
         if (ts != null) for (String k : ts.getKeys(false))
             tags.put(k, new Tag(k, ts.getString(k + ".display", k), ts.getInt(k + ".cost", 5), mat(ts.getString(k + ".icon"), Material.NAME_TAG),
-                    ts.getString(k + ".joined-before")));
+                    ts.getString(k + ".joined-before"), ts.getString(k + ".note")));
         firstSeen.clear();
         ConfigurationSection cs = plugin.getConfig().getConfigurationSection("cosmetics.name-colors");
         if (cs != null) for (String k : cs.getKeys(false))
@@ -172,10 +172,11 @@ public class Votes implements Listener {
             Files.move(tmp, colorsFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) { plugin.getLogger().warning("namecolors.json write failed: " + e); }
     }
-    /** A preview of a name in a colour code, or rainbow. */
+    /** A name in a colour code ("&b"), a per-letter sequence ("&c|&6|&e") or "rainbow". */
     static String colored(String name, String code) {
-        if (!"rainbow".equalsIgnoreCase(code)) return code + name;
-        String[] cyc = {"&c", "&6", "&e", "&a", "&b", "&9", "&d"};
+        if ("rainbow".equalsIgnoreCase(code)) code = "&c|&6|&e|&a|&b|&9|&d";
+        if (!code.contains("|")) return code + name;
+        String[] cyc = code.split("\\|");
         StringBuilder b = new StringBuilder();
         for (int i = 0; i < name.length(); i++) b.append(cyc[i % cyc.length]).append(name.charAt(i));
         return b.toString();
@@ -370,14 +371,15 @@ public class Votes implements Listener {
             if (slot >= 18) break;
             boolean own = pd.owned.contains("tag:" + t.id()), on = t.id().equals(pd.tag);
             List<String> lore = new ArrayList<>(List.of("&7Preview: &f<" + t.display() + " &f" + p.getName() + "> hi"));
+            if (t.note() != null) lore.add("&8" + t.note());
             if (t.joinedBefore() != null) lore.add(joinedBefore(p, t.joinedBefore()) ? "&6Exclusive: &7you joined before " + t.joinedBefore()
                     : "&cOnly for players who joined before " + t.joinedBefore());
             lore.addAll(List.of("", on ? "&aEquipped &7- click to take off" : own ? "&eOwned &7- click to wear" : "&7Cost: &d" + t.cost() + " points",
                     !own && pd.points < t.cost() ? "&cNot enough points" : ""));
             put(m, slot++, item(t.icon(), t.display(), lore, on), "tag:" + t.id());
         }
-        put(m, 27, item(Material.WHITE_DYE, "&f&lName colours", List.of("&7Your name in colour in chat on", "&7every server (and in cross-chat)."), false), null);
-        slot = 28;
+        put(m, 18, item(Material.WHITE_DYE, "&f&lName colours", List.of("&7Your name in colour in chat on", "&7every server (and in cross-chat)."), false), null);
+        slot = 19;   // rows 3-5: up to 24 colours
         for (NameColor c : colors.values()) {
             if (slot % 9 == 0) slot++;
             if (slot >= 45) break;

@@ -12,13 +12,11 @@ import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Map;
 
-/** Vote cosmetics from the lobby: tags.json (name -> "&a[Voter]") and namecolors.json (name -> "&b" or "rainbow"),
+/** Vote cosmetics from the lobby: tags.json (name -> "&a[Voter]") and namecolors.json (name -> "&b", a sequence "&c|&6|&e", or "rainbow"),
  *  each re-read when the file changes. */
 public final class Tags {
     static final Path DIR = Path.of(System.getProperty("crispytags.dir", "/AMPStorage/.ampdata/instances/CrispyLobby01/Minecraft/plugins/CrispyLobby"));
     static final Source TAGS = new Source(DIR.resolve("tags.json")), COLORS = new Source(DIR.resolve("namecolors.json"));
-    static final ChatFormatting[] RAINBOW = {ChatFormatting.RED, ChatFormatting.GOLD, ChatFormatting.YELLOW, ChatFormatting.GREEN,
-            ChatFormatting.AQUA, ChatFormatting.BLUE, ChatFormatting.LIGHT_PURPLE};
 
     static final class Source {
         final Path file; volatile Map<String, String> map = Map.of(); long mtime = -1, checked;
@@ -46,9 +44,11 @@ public final class Tags {
     public static MutableComponent coloredName(String name) {
         String code = COLORS.get(name);
         if (code == null) return null;
-        if (!code.equalsIgnoreCase("rainbow")) return legacy(code + name);
+        if (code.equalsIgnoreCase("rainbow")) code = "&c|&6|&e|&a|&b|&9|&d";
+        if (!code.contains("|")) return legacy(code + name);
+        String[] seq = code.split("\\|");   // per-letter colour sequence, e.g. "&c|&6|&e"
         MutableComponent out = Component.empty();
-        for (int i = 0; i < name.length(); i++) out.append(Component.literal(String.valueOf(name.charAt(i))).withStyle(RAINBOW[i % RAINBOW.length]));
+        for (int i = 0; i < name.length(); i++) out.append(legacy(seq[i % seq.length] + name.charAt(i)));
         return out;
     }
 
