@@ -115,6 +115,21 @@ KITS = [
 KIT_SLOTS = [11, 12, 13, 14, 15, 20, 21, 22, 23, 24]
 CUSTOM_SLOTS = [29, 30, 31, 32, 33, 38, 39, 40, 41, 42]   # admin-made kits (/pvpkit create), ids 101+
 
+# Upgrades (points per tier I / II / III). Pack-a-Punch works on the held weapon (the tier is stored on the item);
+# armor upgrades are per player (pve.arm). Both are lost when you go down, since your kit is handed out again.
+WEAPON_UP = [2000, 4000, 7500]
+ARMOR_UP = [1500, 3000, 6000]
+UP_BOOST = {   # per tier, added to the existing enchants; kind -> (item tag/id, enchants, extra on tier III)
+    "melee": ("#minecraft:swords", {"sharpness": 2}, {"fire_aspect": 2}),
+    "axe": ("#minecraft:axes", {"sharpness": 2}, {"fire_aspect": 2}),
+    "bow": ("minecraft:bow", {"power": 2}, {"flame": 1, "punch": 1}),
+    "crossbow": ("minecraft:crossbow", {"piercing": 1, "quick_charge": 1}, {"multishot": 1}),
+    "trident": ("minecraft:trident", {"impaling": 2}, {"channeling": 1}),
+    "mace": ("minecraft:mace", {"density": 1, "breach": 1}, {"wind_burst": 1}),
+}
+VETERAN_PER_WAVE, VETERAN_MAX = 25, 1000   # extra starting points per best wave reached
+PERK_RESET = ["attribute @s minecraft:max_health modifier remove pvp:jug", "attribute @s minecraft:max_health modifier remove pvp:arm",
+              "tag @s remove pve.jug", "tag @s remove pve.cola", "tag @s remove pve.dt", "tag @s remove pve.phd", "scoreboard players set @s pve.arm 0"]
 # Outbreak shop: id, name, colour, icon, cost, lore, commands (run as the buyer), one-per-life tag (checked before paying)
 SHOP = [
     (1, "Golden Apple", "gold", "golden_apple", 500, "One golden apple", ["give @s minecraft:golden_apple 1"], None),
@@ -129,8 +144,17 @@ SHOP = [
     (8, "Ray Bow", "aqua", "bow", 5000, "Power X, Flame, Infinity, Punch II", [
         f"give @s {item('bow', 'Ray Bow', 'aqua', {'power': 10, 'flame': 1, 'infinity': 1, 'punch': 2})}", "give @s minecraft:arrow 1"], None),
     (9, "Rations", "yellow", "cooked_beef", 100, "16 steak", ["give @s minecraft:cooked_beef 16"], None),
+    # cost None: the function charges by tier itself
+    (10, "Pack-a-Punch", "gold", "anvil", None, "Upgrade the weapon in your hand: " + " / ".join(f"{c:,}" for c in WEAPON_UP),
+     ["function pvp:pve/up/weapon"], None),
+    (11, "Armor Upgrade", "aqua", "netherite_chestplate", None, "Upgrade your armor: " + " / ".join(f"{c:,}" for c in ARMOR_UP),
+     ["function pvp:pve/up/armor"], None),
+    (12, "Double Tap", "dark_red", "blaze_powder", 3000, "Strength I until you go down",
+     ["effect give @s minecraft:strength infinite 0 true"], "pve.dt"),
+    (13, "PhD Flopper", "light_purple", "magma_cream", 1500, "Fire immunity + Jump Boost until you go down",
+     ["effect give @s minecraft:fire_resistance infinite 0 true", "effect give @s minecraft:jump_boost infinite 0 true"], "pve.phd"),
 ]
-SHOP_SLOTS = [10, 11, 12, 13, 14, 15, 16, 21, 23]
+SHOP_SLOTS = [10, 11, 12, 13, 14, 15, 16, 21, 23, 19, 20, 24, 25]
 WAVE_FOOD = 4   # steak for every survivor when a wave is cleared
 BOX = [   # Mystery Box rolls
     f"give @s {item('netherite_sword', 'Excalibur', 'gold', {'sharpness': 7, 'sweeping_edge': 3})}",
@@ -200,10 +224,10 @@ def build():
                 + [{"slot": 47, "item": icon("barrier", "Leave the queue", "red", ["Stop waiting for the next Outbreak"], False), "cmd": "trigger pve.join set 99"},
                    {"slot": 49, "item": icon("zombie_head", "How Outbreak works", "green", [
                        "Endless waves; every 5th wave brings a boss", "100 points per kill + a bonus each wave",
-                       "Spend points at the Arsenal in the arena", "Go down and you're back next wave", "Game over when the whole team is down"]), "cmd": ""},
+                       "Spend points at the Arsenal in the arena", "Pack-a-Punch weapons, upgrade armor, buy perks", "Your best wave adds starting points", "Go down and you're back next wave", "Game over when the whole team is down"]), "cmd": ""},
                    {"slot": 51, "item": icon("netherite_sword", "Back to PvP kits", "aqua", ["Fight other players instead"], False), "cmd": "pvpmenu kits"}]},
         "pve_shop": {"title": {"text": "☣ Arsenal (points)", "color": "dark_green"}, "rows": 3, "fill": PANE, "items":
-                     [{"slot": s, "item": icon(i[3], f"{i[1]} · {i[4]}", i[2], [i[5]]), "cmd": f"trigger pve.buy set {i[0]}"} for s, i in zip(SHOP_SLOTS, SHOP)]},
+                     [{"slot": s, "item": icon(i[3], f"{i[1]}" + (f" · {i[4]}" if i[4] else ""), i[2], [i[5]]), "cmd": f"trigger pve.buy set {i[0]}"} for s, i in zip(SHOP_SLOTS, SHOP)]},
     }
 
     rules = {"keep_inventory": "true", "immediate_respawn": "true", "spawn_mobs": "false", "advance_time": "false",
@@ -215,7 +239,7 @@ def build():
             "pvp dummy", "pvp.kit trigger", "pvp.spawn trigger", "pvp.kn playerKillCount", "pvp.dead deathCount",
             "pvp.left minecraft.custom:minecraft.leave_game", "pvp.streak dummy", "pvp.best dummy",
             "pvp.hurt minecraft.custom:minecraft.damage_taken", "pvp.ct dummy",
-            "pve dummy", "pve.join trigger", "pve.buy trigger", "pve.k totalKillCount", "pve.kit dummy", "pve.best dummy"]],
+            "pve dummy", "pve.join trigger", "pve.buy trigger", "pve.k totalKillCount", "pve.kit dummy", "pve.best dummy", "pve.arm dummy"]],
         'scoreboard objectives add pvp.kills playerKillCount {"text":"⚔ Kills","color":"aqua","bold":true}',
         'scoreboard objectives add pve.pts dummy {"text":"☣ Points","color":"green","bold":true}',
         "scoreboard objectives setdisplay sidebar pvp.kills",
@@ -224,7 +248,7 @@ def build():
         'bossbar add pvp:boss {"text":"Abomination","color":"dark_red"}', "bossbar set pvp:boss color red", "bossbar set pvp:boss visible false",
         *[f"gamerule {k} {v}" for k, v in rules.items()],
         "time set 18000", "weather clear", f"setworldspawn 0 {LOBBY_Y + 1} 0", "scoreboard players set #t pvp 0",
-        "scoreboard players set #100 pve 100", "scoreboard players set #5 pve 5", "scoreboard players set #20 pve 20", "scoreboard players set #4c pve 4", "scoreboard players set #2c pve 2",
+        "scoreboard players set #100 pve 100", "scoreboard players set #5 pve 5", "scoreboard players set #20 pve 20", "scoreboard players set #4c pve 4", "scoreboard players set #2c pve 2", f"scoreboard players set #vet pve {VETERAN_PER_WAVE}",
         "execute unless score #state pve matches 0.. run scoreboard players set #state pve 0",
         "execute unless score #record pve matches 0.. run scoreboard players set #record pve 0",
         *[f"data modify storage pvp:menus {k} set value {tj(v)}" for k, v in menus.items()],
@@ -258,8 +282,8 @@ def build():
         "scoreboard players add @s pve.best 0",
         "execute if entity @s[tag=pve.in] if score #state pve matches 2..3 if score #wave pve > @s pve.best run scoreboard players operation @s pve.best = #wave pve",
         "clear @s", "effect clear @s", "function cyber:admin/reset", "gamemode adventure @s",
-        "attribute @s minecraft:max_health modifier remove pvp:jug",
-        "tag @s remove pve.in", "tag @s remove pve.down", "tag @s remove pve.q", "tag @s remove pve.jug", "tag @s remove pve.cola", "team leave @s",
+        *PERK_RESET,
+        "tag @s remove pve.in", "tag @s remove pve.down", "tag @s remove pve.q", "team leave @s",
         f"tp @s 0.5 {LOBBY_Y + 1} 0.5 180 0",
         "scoreboard players set @s pvp.left 0", "scoreboard players set @s pvp.ct 0",
         "scoreboard players add @s pvp.streak 0", "scoreboard players add @s pvp.kills 0",
@@ -469,6 +493,65 @@ def walls(cx, cz, r, block, stripe):
     return out
 
 
+def afford(name, cost):
+    return (f"tellraw @s [{{\"text\":\"{name} costs {cost:,} points (you have \",\"color\":\"red\"}},"
+            "{\"score\":{\"name\":\"@s\",\"objective\":\"pve.pts\"},\"color\":\"white\"},{\"text\":\").\",\"color\":\"red\"}]")
+
+
+def build_upgrades():
+    """Pack-a-Punch (held weapon, tier on the item's custom_data) and Armor Upgrade (per player, pve.arm)."""
+    P = f"{NS}:pve/up"
+    roman = ["I", "II", "III"]
+    def em(enchants): return {"function": "minecraft:set_enchantments", "add": True,
+                              "enchantments": {(k if ":" in k else "minecraft:" + k): v for k, v in enchants.items()}}
+    # weapon: find the kind first (so nothing is charged for an item that can't be upgraded), then the tier
+    w = ["scoreboard players set #k pve 0"]
+    for n, (kind, (match, _, _)) in enumerate(UP_BOOST.items(), 1):
+        w.append(f"execute if score #k pve matches 0 if items entity @s weapon.mainhand {match} run scoreboard players set #k pve {n}")
+    w += [f"execute if score #k pve matches 0 run return run {say('@s', 'Hold a sword, axe, bow, crossbow, trident or mace to Pack-a-Punch it.', 'red')}",
+          "scoreboard players set #t pve 0",
+          *[f"execute if items entity @s weapon.mainhand *[minecraft:custom_data~{{pvp_tier:{t}}}] run scoreboard players set #t pve {t}" for t in (1, 2, 3)],
+          f"execute if score #t pve matches 3.. run return run {say('@s', 'That weapon is already fully upgraded (tier III).', 'gold')}",
+          *[f"execute if score #t pve matches {t} run return run function {P}/weapon_t{t + 1}" for t in (0, 1, 2)]]
+    fn("pve/up/weapon", w)
+    for t in (1, 2, 3):
+        cost = WEAPON_UP[t - 1]
+        lines = [f"execute if score @s pve.pts matches ..{cost - 1} run return run {afford(f'Pack-a-Punch {roman[t - 1]}', cost)}",
+                 f"scoreboard players remove @s pve.pts {cost}"]
+        for n, (kind, (match, boost, extra)) in enumerate(UP_BOOST.items(), 1):
+            mods = [em(boost)] + ([em(extra)] if t == 3 else [])
+            wj(f"data/{NS}/item_modifier/up/{kind}_t{t}.json", mods)
+            lines.append(f"execute if score #k pve matches {n} run item modify entity @s weapon.mainhand {NS}:up/{kind}_t{t}")
+        wj(f"data/{NS}/item_modifier/up/tier{t}.json", [
+            {"function": "minecraft:set_custom_data", "tag": f"{{pvp_tier:{t}}}"},
+            {"function": "minecraft:set_lore", "mode": "append",
+             "lore": [{"text": f"{'★' * t} Pack-a-Punched: tier {roman[t - 1]}", "color": "gold", "italic": False}]}])
+        lines += [f"item modify entity @s weapon.mainhand {NS}:up/tier{t}",
+                  f"title @s actionbar {tj({'text': '★' * t + ' PACK-A-PUNCH ' + roman[t - 1], 'color': 'gold', 'bold': True})}",
+                  "playsound minecraft:block.anvil.use player @s ~ ~ ~ 1 0.8", "playsound minecraft:block.beacon.power_select player @s ~ ~ ~ 1 1.4",
+                  "particle minecraft:totem_of_undying ~ ~1 ~ 0.4 0.6 0.4 0.3 30",
+                  say("@s", f"Weapon upgraded to tier {roman[t - 1]}." + (" Next: " + f"{WEAPON_UP[t]:,} points." if t < 3 else " Maxed out!"), "gold")]
+        fn(f"pve/up/weapon_t{t}", lines)
+    # armor: I = +1 Protection on every worn piece, II = Resistance I, III = +2 hearts (all until you go down)
+    wj(f"data/{NS}/item_modifier/up/armor.json", [em({"protection": 1}), em({"unbreaking": 1})])
+    arm = {1: [*[f"item modify entity @s armor.{sl} {NS}:up/armor" for sl in ("head", "chest", "legs", "feet")]],
+           2: ["effect give @s minecraft:resistance infinite 0 true"],
+           3: ["attribute @s minecraft:max_health modifier add pvp:arm 4 add_value", "effect give @s minecraft:instant_health 1 0 true"]}
+    desc = {1: "+1 Protection on all armor", 2: "Resistance I", 3: "+2 hearts"}
+    a = ["scoreboard players add @s pve.arm 0",
+         f"execute if score @s pve.arm matches 3.. run return run {say('@s', 'Your armor is fully upgraded (tier III).', 'aqua')}",
+         *[f"execute if score @s pve.arm matches {t - 1} run return run function {P}/armor_t{t}" for t in (1, 2, 3)]]
+    fn("pve/up/armor", a)
+    for t in (1, 2, 3):
+        cost = ARMOR_UP[t - 1]
+        fn(f"pve/up/armor_t{t}", [
+            f"execute if score @s pve.pts matches ..{cost - 1} run return run {afford(f'Armor Upgrade {roman[t - 1]}', cost)}",
+            f"scoreboard players remove @s pve.pts {cost}", f"scoreboard players set @s pve.arm {t}", *arm[t],
+            f"title @s actionbar {tj({'text': '◆ ARMOR ' + roman[t - 1] + ': ' + desc[t], 'color': 'aqua', 'bold': True})}",
+            "playsound minecraft:item.armor.equip_netherite player @s ~ ~ ~ 1 1", "playsound minecraft:block.smithing_table.use player @s ~ ~ ~ 1 1",
+            say("@s", f"Armor upgraded to tier {roman[t - 1]}: {desc[t]}." + (f" Next: {ARMOR_UP[t]:,} points ({desc[t + 1]})." if t < 3 else " Maxed out!"), "aqua")])
+
+
 def build_pve():
     P = f"{NS}:pve"
     state_names = "0 idle, 1 countdown, 2 wave running, 3 break between waves"
@@ -528,7 +611,12 @@ def build_pve():
     fn("pve/tp_spawn", pts_spawn)
     fn("pve/enter", [   # as a queued player: into the run with their kit and 500 points
         "tag @s remove pve.q", "tag @s add pve.in", "team join pve @s",
-        "scoreboard players set @s pve.pts 500", "scoreboard players set @s pve.k 0",
+        "scoreboard players set @s pve.pts 500", "scoreboard players set @s pve.k 0", *PERK_RESET,
+        # veteran bonus: +VETERAN_PER_WAVE starting points per best wave, up to VETERAN_MAX
+        "scoreboard players add @s pve.best 0", "scoreboard players operation #vb pve = @s pve.best", "scoreboard players operation #vb pve *= #vet pve",
+        f"execute if score #vb pve matches {VETERAN_MAX + 1}.. run scoreboard players set #vb pve {VETERAN_MAX}",
+        "scoreboard players operation @s pve.pts += #vb pve",
+        "execute if score #vb pve matches 1.. run tellraw @s [{\"text\":\"Veteran bonus: +\",\"color\":\"gold\"},{\"score\":{\"name\":\"#vb\",\"objective\":\"pve\"},\"color\":\"white\"},{\"text\":\" starting points (best wave \",\"color\":\"gold\"},{\"score\":{\"name\":\"@s\",\"objective\":\"pve.best\"},\"color\":\"white\"},{\"text\":\").\",\"color\":\"gold\"}]",
         "clear @s", "effect clear @s", "function cyber:admin/reset", "gamemode adventure @s",
         f"function {NS}:kit/give_pve", f"function {P}/tp_spawn",
         "title @s title {\"text\":\"☣ OUTBREAK\",\"color\":\"dark_green\",\"bold\":true}",
@@ -625,7 +713,7 @@ def build_pve():
 
     # going down / coming back
     fn("pve/downed", [
-        "tag @s add pve.down", "gamemode spectator @s", "attribute @s minecraft:max_health modifier remove pvp:jug", "tag @s remove pve.jug", "tag @s remove pve.cola",
+        "tag @s add pve.down", "gamemode spectator @s", *PERK_RESET,
         f"tp @s {PCX + 0.5} {AY + 12} {PCZ + 0.5}",
         "title @s title {\"text\":\"DOWN\",\"color\":\"dark_red\",\"bold\":true}",
         "title @s subtitle {\"text\":\"You're back at the start of the next wave\",\"color\":\"gray\"}",
@@ -654,11 +742,13 @@ def build_pve():
         buy.append(f"execute if score #n pve matches {sid} run function {P}/shop/{sid}")
         fn(f"pve/shop/{sid}", [
             f"execute if entity @s[tag={once}] run return run {say('@s', f'You already have {name}.', 'red')}" if once else None,
-            f"execute if score @s pve.pts matches ..{cost - 1} run return run tellraw @s [{{\"text\":\"{name} costs {cost} points (you have \",\"color\":\"red\"}},"
-            "{\"score\":{\"name\":\"@s\",\"objective\":\"pve.pts\"},\"color\":\"white\"},{\"text\":\").\",\"color\":\"red\"}]",
-            f"scoreboard players remove @s pve.pts {cost}", *cmds, f"tag @s add {once}" if once else None,
-            f"tellraw @s [{{\"text\":\"Bought \",\"color\":\"green\"}},{{\"text\":\"{name}\",\"color\":\"{color}\"}}]",
-            "playsound minecraft:entity.villager.yes neutral @s ~ ~ ~ 1 0.8"])
+            *([] if cost is None else [
+                f"execute if score @s pve.pts matches ..{cost - 1} run return run {afford(name, cost)}",
+                f"scoreboard players remove @s pve.pts {cost}"]),
+            *cmds, f"tag @s add {once}" if once else None,
+            *([] if cost is None else [f"tellraw @s [{{\"text\":\"Bought \",\"color\":\"green\"}},{{\"text\":\"{name}\",\"color\":\"{color}\"}}]",
+                                       "playsound minecraft:entity.villager.yes neutral @s ~ ~ ~ 1 0.8"])])
+    build_upgrades()
     fn("pve/buy", buy)
     box = ["execute store result score #r pve run random value 1..%d" % len(BOX),
            "playsound minecraft:block.chest.open player @s ~ ~ ~ 1 0.8"]
