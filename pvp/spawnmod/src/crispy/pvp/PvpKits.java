@@ -33,7 +33,7 @@ public final class PvpKits {
     static final int FIRST_ID = 101, MAX_KITS = 10;
     // cyberware implant ids (cy.s1..cy.s9 scores) -> keys, as in anarchy/cyberware/build.py
     private static final String[] IMPLANTS = {null, "kiroshi", "subdermal", "titanium", "lungs", "gorilla", "mantis", "tendons",
-            "lynx", "grip", "reflex", "biomon", "heart", "sandy", "berserk"};
+            "lynx", "grip", "reflex", "biomon", "heart", "sandy", "berserk", null /* 15: Neuroblocker, not an implant */, "launcher"};
 
     static ListTag all(MinecraftServer server) {
         return server.getCommandStorage().get(STORE).getListOrEmpty("kits");
@@ -86,7 +86,7 @@ public final class PvpKits {
             if (obj == null) continue;
             ReadOnlyScoreInfo info = server.getScoreboard().getPlayerScoreInfo(player, obj);
             int v = info == null ? 0 : info.value();
-            if (v >= 1 && v < IMPLANTS.length) {
+            if (v >= 1 && v < IMPLANTS.length && IMPLANTS[v] != null) {
                 implants.add(StringTag.valueOf(IMPLANTS[v]));
                 implantNames.add(Component.literal(IMPLANTS[v]).withStyle(ChatFormatting.AQUA));
             }

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "crispy_pvp_spawn",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "name": "Crispy PvP (spawn + menus)",
   "description": "Adds /spawn and /lobby (run /trigger pvp.spawn) , /pvpmenu (chest menus from the crispy_pvp datapack) , /pvpkit (admin-made kits) and /forceenchant (any enchant, any level, any item).",
   "environment": "server",
