@@ -45,6 +45,7 @@ votes:
   links:
     - {name: TopG, url: "https://topg.org/minecraft-servers/server-687311"}
     - {name: Planet Minecraft, url: "https://www.planetminecraft.com/server/crispy-anarchy-1-16-no-rules-survival/vote/"}
+    - {name: MinecraftServers.org, url: "https://minecraftservers.org/vote/587166"}
   servers:                  # order = menu order; a server with no commands only gets trails
     factions:
       label: "&e&lCrispy Factions"
