@@ -6,7 +6,12 @@ P = M + "/plugins"
 def ry(p): return yaml.safe_load(open(p))
 def wy(p, d): open(p, "w").write(yaml.safe_dump(d, sort_keys=False, allow_unicode=True, width=1000))
 def backup(p):
-    if os.path.exists(p) and not os.path.exists(p + ".orig"): shutil.copy2(p, p + ".orig")
+    # EconomyShopGUI loads every file in shops/ and sections/, so its backups go to shop-backups/ instead
+    dst = p + ".orig"
+    if "/EconomyShopGUI/shops/" in p or "/EconomyShopGUI/sections/" in p:
+        d = os.path.join(P, "EconomyShopGUI", "shop-backups"); os.makedirs(d, exist_ok=True)
+        dst = os.path.join(d, os.path.basename(os.path.dirname(p)) + "-" + os.path.basename(p) + ".orig")
+    if os.path.exists(p) and not os.path.exists(dst): shutil.copy2(p, dst)
 
 # ---- server.properties (behind Velocity; RCON on localhost for admin scripts) ----
 sp = M + "/server.properties"; backup(sp)

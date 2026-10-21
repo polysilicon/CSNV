@@ -109,6 +109,10 @@ Drops that can be farmed in bulk (kelp, gold, pearls, guardians) are kept low, s
 | | | | | Shulker Shell | $30 |
 | | | | | Wither Skeleton Skull | $500 |
 
+> **Never leave backups in `plugins/EconomyShopGUI/shops/` or `sections/`.** EconomyShopGUI loads every file
+> there, so a `Farming.yml.bak` can replace the real `Farming.yml`. Keep them in `plugins/EconomyShopGUI/shop-backups/`.
+> Reload with `sreload` (no restart needed).
+
 **Phase 1: more sell items (added 2026-10-21)**
 - **Farm:**
   - Melon $4, Bamboo $0.50, Red/Brown Mushroom $2, Chorus Fruit $2, Egg $1, Honeycomb $3, Apple $2, White Wool $2.
