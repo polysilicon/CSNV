@@ -109,6 +109,18 @@ Drops that can be farmed in bulk (kelp, gold, pearls, guardians) are kept low, s
 | | | | | Shulker Shell | $30 |
 | | | | | Wither Skeleton Skull | $500 |
 
+**Phase 1: more sell items (added 2026-10-21)**
+- **Farm:**
+  - Melon $4, Bamboo $0.50, Red/Brown Mushroom $2, Chorus Fruit $2, Egg $1, Honeycomb $3, Apple $2, White Wool $2.
+  - Raw beef/pork/chicken/mutton/rabbit/cod/salmon $2, cooked $3. The shop sells these at about $6, so there's no
+    buy-and-resell profit.
+- **Ore:**
+  - Raw Gold $7, Amethyst Shard $2, Glowstone Dust $1, Flint $1, Echo Shard $25, Ancient Debris $400, Netherite Ingot
+    $1,600 (less than its 4 scrap + 4 gold).
+  - Storage blocks at 9× their item: Coal $27, Redstone $9, Lapis $18, Gold $72, Diamond $900. Quartz Block $12 (4×).
+- **Mob Drop:** Phantom Membrane $8, Rabbit Foot $8, Armadillo Scute $4, Turtle Scute $10, Breeze Rod $15, Nautilus
+  Shell $20, Trident $75, Totem of Undying $150.
+
 **Phase 1 — buy**
 | Item | Price |
 |---|---|

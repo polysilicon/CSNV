@@ -124,11 +124,15 @@ section("Farming", 20, "CACTUS", "&a&lFarm Sell", [
     {"material": "WHEAT", "sell": 4}, {"material": "CARROT", "sell": 2}, {"material": "POTATO", "sell": 2},
     {"material": "BEETROOT", "sell": 3}, {"material": "PUMPKIN", "sell": 6}, {"material": "MELON_SLICE", "sell": 1},
     {"material": "NETHER_WART", "sell": 3}, {"material": "COCOA_BEANS", "sell": 3}, {"material": "SWEET_BERRIES", "sell": 1},
-    {"material": "KELP", "sell": 1}])
+    {"material": "KELP", "sell": 1},
+    # added 2026-10-21
+    {"material": "MELON", "sell": 4}, {"material": "BAMBOO", "sell": 0.5}, {"material": "RED_MUSHROOM", "sell": 2}, {"material": "BROWN_MUSHROOM", "sell": 2}, {"material": "CHORUS_FRUIT", "sell": 2}, {"material": "EGG", "sell": 1}, {"material": "HONEYCOMB", "sell": 3}, {"material": "APPLE", "sell": 2}, {"material": "BEEF", "sell": 2}, {"material": "PORKCHOP", "sell": 2}, {"material": "CHICKEN", "sell": 2}, {"material": "MUTTON", "sell": 2}, {"material": "RABBIT", "sell": 2}, {"material": "COD", "sell": 2}, {"material": "SALMON", "sell": 2}, {"material": "COOKED_BEEF", "sell": 3}, {"material": "COOKED_PORKCHOP", "sell": 3}, {"material": "COOKED_CHICKEN", "sell": 3}, {"material": "COOKED_MUTTON", "sell": 3}, {"material": "COOKED_COD", "sell": 3}, {"material": "COOKED_SALMON", "sell": 3}, {"material": "WHITE_WOOL", "sell": 2}])
 section("Ores", 19, "DIAMOND", "&b&lOre Sell", [
     {"material": "COAL", "sell": 3}, {"material": "REDSTONE", "sell": 1}, {"material": "LAPIS_LAZULI", "sell": 2},
     {"material": "QUARTZ", "sell": 3}, {"material": "GOLD_INGOT", "sell": 8}, {"material": "DIAMOND", "sell": 100},
-    {"material": "NETHERITE_SCRAP", "sell": 400}])
+    {"material": "NETHERITE_SCRAP", "sell": 400},
+    # added 2026-10-21
+    {"material": "RAW_GOLD", "sell": 7}, {"material": "AMETHYST_SHARD", "sell": 2}, {"material": "GLOWSTONE_DUST", "sell": 1}, {"material": "FLINT", "sell": 1}, {"material": "ECHO_SHARD", "sell": 25}, {"material": "ANCIENT_DEBRIS", "sell": 400}, {"material": "NETHERITE_INGOT", "sell": 1600}, {"material": "COAL_BLOCK", "sell": 27}, {"material": "REDSTONE_BLOCK", "sell": 9}, {"material": "LAPIS_BLOCK", "sell": 18}, {"material": "QUARTZ_BLOCK", "sell": 12}, {"material": "GOLD_BLOCK", "sell": 72}, {"material": "DIAMOND_BLOCK", "sell": 900}])
 section("Mobs", 25, "BONE", "&c&lMob Drop Sell", [
     {"material": "BLAZE_ROD", "sell": 35}, {"material": "GUNPOWDER", "sell": 20}, {"material": "ROTTEN_FLESH", "sell": 2},
     {"material": "BONE", "sell": 3}, {"material": "STRING", "sell": 3}, {"material": "SPIDER_EYE", "sell": 3},
@@ -136,7 +140,9 @@ section("Mobs", 25, "BONE", "&c&lMob Drop Sell", [
     {"material": "GHAST_TEAR", "sell": 25}, {"material": "LEATHER", "sell": 3}, {"material": "RABBIT_HIDE", "sell": 2},
     {"material": "FEATHER", "sell": 1}, {"material": "INK_SAC", "sell": 2}, {"material": "GLOW_INK_SAC", "sell": 3},
     {"material": "PRISMARINE_SHARD", "sell": 1}, {"material": "PRISMARINE_CRYSTALS", "sell": 2},
-    {"material": "SHULKER_SHELL", "sell": 30}, {"material": "WITHER_SKELETON_SKULL", "sell": 500}])
+    {"material": "SHULKER_SHELL", "sell": 30}, {"material": "WITHER_SKELETON_SKULL", "sell": 500},
+    # added 2026-10-21
+    {"material": "PHANTOM_MEMBRANE", "sell": 8}, {"material": "RABBIT_FOOT", "sell": 8}, {"material": "ARMADILLO_SCUTE", "sell": 4}, {"material": "TURTLE_SCUTE", "sell": 10}, {"material": "BREEZE_ROD", "sell": 15}, {"material": "NAUTILUS_SHELL", "sell": 20}, {"material": "TRIDENT", "sell": 75}, {"material": "TOTEM_OF_UNDYING", "sell": 150}])
 section("Raiding", 21, "TNT", "&c&lRaiding", [
     {"material": "OBSIDIAN", "buy": 200}, {"material": "TNT", "buy": 150}, {"material": "CREEPER_SPAWN_EGG", "buy": 15000},
     {"material": "SAND", "buy": 5}, {"material": "RED_SAND", "buy": 5}, {"material": "GRAVEL", "buy": 5}, {"material": "WATER_BUCKET", "buy": 50}])
