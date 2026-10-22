@@ -66,13 +66,19 @@ IMPLANTS = [
 # test-only implants: built with --pvp only, never sold at the Ripperdoc or put in a kit (admin room / admin/give only)
 SKELETON = (17, "cyberskeleton", "Militech Cyberskeleton", "dark_red", 3, 14, ("netherite_ingot", 8), "netherite_chestplate",
             ["David's full-body frame (Edgerunners).", "+10 hearts, +8 armor, +4 toughness, +6 damage,", "huge jumps, 80% knockback resistance, bigger frame.",
-             "Land from a jump: ground slam (8 damage, 4.5 blocks).", "Capacity 14: expect cyberpsychosis."],
+             "Land from a jump: ground slam (8 damage, 4.5 blocks).",
+             "Dual-wield: an offhand melee weapon adds its damage,", "an offhand bow/crossbow fires with your main one.", "Capacity 14: expect cyberpsychosis."],
             [("max_health", 20, "add_value"), ("armor", 8, "add_value"), ("armor_toughness", 4, "add_value"),
              ("attack_damage", 6, "add_value"), ("attack_knockback", 1.5, "add_value"), ("knockback_resistance", 0.8, "add_value"),
              ("jump_strength", 0.25, "add_value"), ("safe_fall_distance", 10, "add_value"), ("fall_damage_multiplier", -0.6, "add_value"),
              ("step_height", 0.6, "add_value"), ("movement_speed", 0.15, "add_multiplied_base"), ("scale", 0.15, "add_value")])
 TEST_IDS = {17}
-SLAM_FALL, SLAM_CD, SLAM_DMG = 30, 100, 8   # fall distance x10 that triggers a slam, cooldown ticks, damage
+SLAM_FALL, SLAM_CD, SLAM_DMG = 30, 100, 8
+# Cyberskeleton dual-wield: offhand melee weapon -> extra attack damage (item damage - 1, x10); offhand bow/crossbow fires too
+DUAL_MELEE = {"wooden_sword": 30, "golden_sword": 30, "stone_sword": 40, "copper_sword": 40, "iron_sword": 50, "diamond_sword": 60,
+              "netherite_sword": 70, "wooden_axe": 60, "golden_axe": 60, "stone_axe": 80, "copper_axe": 80, "iron_axe": 80,
+              "diamond_axe": 80, "netherite_axe": 90, "mace": 50, "trident": 80}
+DUAL_DELAY, DUAL_SPEED = 10, 3.0   # offhand shot: ticks after the main one (past the target's hit cooldown), blocks/tick   # fall distance x10 that triggers a slam, cooldown ticks, damage
 NEURO = ("neuro", "Neuroblocker", ("diamond", 2), "honey_bottle", 1200)   # seconds of psychosis immunity
 OS_CD = {13: 1200, 14: 1500}   # ticks
 GHOST_TICKS, GHOST_LIFE = 120, 8     # Sandevistan after-images: how long they spawn, and how long each lasts (ticks)
@@ -137,9 +143,10 @@ def build():
     objs = ["cy dummy", "cy.buy trigger", "cy.rm trigger", "cyber trigger", "cy.cap dummy", "cy.cd dummy",
             "cy.cdh dummy", "cy.hp health", "cy.death deathCount", "cy.snk dummy", "cy.tap dummy",
             "cy.nb dummy", "cy.pcd dummy", "cy.sv dummy", "cy.gl dummy",
-            "cy.jump minecraft.custom:minecraft.jump", "cy.lcd dummy", "cy.fd dummy", "cy.fdp dummy", "cy.scd dummy"] + [f"cy.s{s} dummy" for s in SLOTS]
+            "cy.jump minecraft.custom:minecraft.jump", "cy.lcd dummy", "cy.fd dummy", "cy.fdp dummy", "cy.scd dummy",
+            "cy.ohb dummy", "cy.bow minecraft.used:minecraft.bow", "cy.xbow minecraft.used:minecraft.crossbow", "cy.dwt dummy", "cy.dwd dummy"] + [f"cy.s{s} dummy" for s in SLOTS]
     fn("load", [f"scoreboard objectives add {o}" for o in objs] + [
-        f"scoreboard players set #limit cy {CAP_LIMIT}", "scoreboard players set #t cy 0", "scoreboard players set #2 cy 2",
+        f"scoreboard players set #limit cy {CAP_LIMIT}", "scoreboard players set #t cy 0", "scoreboard players set #2 cy 2", "scoreboard players set #5 cy 5",
         # Sandevistan after-image glow colours
         *[l for n, c in enumerate(GHOST_COLORS, 1) for l in (
             f"team add cy.g{n}", f"team modify cy.g{n} color {c}", f"team modify cy.g{n} collisionRule never",
@@ -195,7 +202,9 @@ def build():
         consume_adv(key, icon)
         d = f"implant/{key}"
         fn(f"{d}/apply", [f"attribute @s minecraft:{a} modifier add {NS}:{key}_{n} {v} {op}" for n, (a, v, op) in enumerate(mods)])
-        fn(f"{d}/unapply", [f"attribute @s minecraft:{a} modifier remove {NS}:{key}_{n}" for n, (a, v, op) in enumerate(mods)])
+        fn(f"{d}/unapply", [f"attribute @s minecraft:{a} modifier remove {NS}:{key}_{n}" for n, (a, v, op) in enumerate(mods)]
+           + ([f"attribute @s minecraft:attack_damage modifier remove {NS}:dualwield", "scoreboard players set @s cy.ohb 0",
+               "scoreboard players set @s cy.dwt 0"] if key == "cyberskeleton" else []))
         nm = {"text": name, "color": color}
         fn(f"{d}/use", [
             f"advancement revoke @s only {NS}:use/{key}",
@@ -209,6 +218,8 @@ def build():
             f"tellraw @s [{{\"text\":\"Installed \",\"color\":\"green\"}},{tj(nm)},{{\"text\":\" ({SLOTS[slot]}).\",\"color\":\"green\"}}]",
             *(["tellraw @s {\"text\":\"Double-tap sneak to activate.\",\"color\":\"gray\"}"] if slot == 9 else []),
             *(["tellraw @s {\"text\":\"Sneak + jump to fire.\",\"color\":\"gray\"}", "scoreboard players set @s cy.lcd 0"] if key == "launcher" else []),
+            *(["tellraw @s {\"text\":\"Jump and land to ground-slam. Hold a second weapon in your offhand to dual-wield.\",\"color\":\"gray\"}"]
+              if key == "cyberskeleton" else []),
             f"function {NS}:capacity_msg",
         ])
         fn(f"{d}/occupied", [
@@ -442,6 +453,50 @@ def build():
         "scoreboard players operation @s cy.fdp = @s cy.fd",
         "execute store result score @s cy.fd run data get entity @s fall_distance 10",
         f"execute if score @s cy.fd matches 0 if score @s cy.fdp matches {SLAM_FALL}.. if score @s cy.scd matches ..0 run function {NS}:skel/slam",
+        f"function {NS}:skel/offhand",
+        f"execute if score @s cy.bow matches 1.. run function {NS}:skel/volley",
+        f"execute if score @s cy.xbow matches 1.. run function {NS}:skel/volley",
+        "scoreboard players set @s cy.bow 0", "scoreboard players set @s cy.xbow 0",
+        "execute if score @s cy.dwt matches 1.. run scoreboard players remove @s cy.dwt 1",
+        f"execute if score @s cy.dwt matches 1 at @s run function {NS}:skel/dual_fire",
+    ])
+    # dual-wield, melee: keep an attack_damage modifier equal to the offhand weapon's damage (tenths in cy.ohb)
+    fn("skel/offhand", ["scoreboard players set #od cy 0",
+        *[f"execute if items entity @s weapon.offhand minecraft:{it} run scoreboard players set #od cy {v}" for it, v in DUAL_MELEE.items()],
+        "scoreboard players set #sh cy 0",
+        "execute if score #od cy matches 1.. store result score #sh cy run data get entity @s equipment.offhand.components.\"minecraft:enchantments\".\"minecraft:sharpness\"",
+        "execute if score #sh cy matches 1.. run scoreboard players operation #sh cy *= #5 cy",   # Sharpness: 0.5 per level + 0.5
+        "execute if score #sh cy matches 1.. run scoreboard players add #sh cy 5",
+        "scoreboard players operation #od cy += #sh cy",
+        "execute if score #od cy = @s cy.ohb run return 0",
+        "scoreboard players operation @s cy.ohb = #od cy",
+        f"attribute @s minecraft:attack_damage modifier remove {NS}:dualwield",
+        "execute if score #od cy matches 1.. store result storage cyber:tmp dw.v double 0.1 run scoreboard players get #od cy",
+        f"execute if score #od cy matches 1.. run function {NS}:skel/dw_apply with storage cyber:tmp dw",
+    ])
+    fn("skel/dw_apply", [f"$attribute @s minecraft:attack_damage modifier add {NS}:dualwield $(v) add_value"])
+    # dual-wield, ranged: a bow or crossbow in each hand -> the offhand one fires DUAL_DELAY ticks after the main shot
+    fn("skel/volley", [
+        "execute unless items entity @s weapon.offhand minecraft:bow unless items entity @s weapon.offhand minecraft:crossbow run return 0",
+        "execute unless items entity @s weapon.mainhand minecraft:bow unless items entity @s weapon.mainhand minecraft:crossbow run return 0",
+        "execute store result score @s cy.dwd run data get entity @n[type=#minecraft:arrows,distance=..4,tag=!cy.dw] damage 100",
+        "execute unless score @s cy.dwd matches 1.. run scoreboard players set @s cy.dwd 200",
+        f"scoreboard players set @s cy.dwt {DUAL_DELAY + 1}",
+    ])
+    fn("skel/dual_fire", [
+        "execute unless items entity @s weapon.offhand minecraft:bow unless items entity @s weapon.offhand minecraft:crossbow run return 0",
+        "execute anchored eyes positioned ^-0.45 ^-0.1 ^1 run summon minecraft:arrow ~ ~ ~ {Tags:[\"cy.dw\",\"cy.dwnew\"],pickup:2b,crit:1b}",
+        "execute anchored eyes positioned ^-0.45 ^-0.1 ^2 run summon minecraft:marker ~ ~ ~ {Tags:[\"cy.aim\"]}",
+        *[l for i in range(3) for l in (
+            f"execute store result score #a cy run data get entity @n[type=minecraft:marker,tag=cy.aim] Pos[{i}] 1000",
+            f"execute store result score #b cy run data get entity @n[type=minecraft:arrow,tag=cy.dwnew] Pos[{i}] 1000",
+            "scoreboard players operation #a cy -= #b cy",
+            f"execute store result entity @n[type=minecraft:arrow,tag=cy.dwnew] Motion[{i}] double {DUAL_SPEED / 1000} run scoreboard players get #a cy")],
+        "execute store result entity @n[type=minecraft:arrow,tag=cy.dwnew] damage double 0.01 run scoreboard players get @s cy.dwd",
+        "data modify entity @n[type=minecraft:arrow,tag=cy.dwnew] Owner set from entity @s UUID",
+        "kill @e[type=minecraft:marker,tag=cy.aim]",
+        "tag @e[type=minecraft:arrow,tag=cy.dwnew] remove cy.dwnew",
+        "playsound minecraft:item.crossbow.shoot player @a[distance=..24] ~ ~ ~ 1 1.2",
     ])
     hit = ("distance=0.1..4.5,type=!minecraft:item,type=!minecraft:mannequin,type=!minecraft:interaction,type=!minecraft:marker,"
            "type=!minecraft:text_display,type=!minecraft:item_display,type=!minecraft:armor_stand,type=!minecraft:villager,type=!minecraft:experience_orb")

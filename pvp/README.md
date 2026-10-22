@@ -142,6 +142,11 @@ The stray check leaves `pvp.admin` players alone in the room. `enchants.json` (i
 - Much higher jumps, +15% speed, a slightly bigger frame and less fall damage.
 - **Ground slam**: landing from 3+ blocks deals 8 damage within 4.5 blocks and knocks targets up (5 s cooldown; spares
   your Outbreak team).
+- **Dual-wield**:
+  - A sword, axe, mace or trident in the offhand adds its damage (Sharpness included) to every main-hand hit. Its other
+    enchants don't apply.
+  - With a bow or crossbow in each hand, the offhand one fires a second arrow 0.5 s after your shot, with the same
+    damage. The delay gets it past the target's hit cooldown. That arrow can't be picked up.
 - It's only built into PvP's `crispy_cyberware` (`build.py --pvp`). It isn't sold at Anarchy's Ripperdoc and isn't in
   any kit. Implant id 17 isn't in the kit mod's list, so `/pvpkit create` leaves it out of saved kits.
 
