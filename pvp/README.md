@@ -175,6 +175,17 @@ The stray check leaves `pvp.admin` players alone in the room. `enchants.json` (i
 - It's only built into PvP's `crispy_cyberware` (`build.py --pvp`). It isn't sold at Anarchy's Ripperdoc and isn't in
   any kit. Implant id 17 isn't in the kit mod's list, so `/pvpkit create` leaves it out of saved kits.
 
+**David test kit** (admin-only, never in a menu): `/function pvp:admin/test_david` in the lobby queues you for
+Outbreak with it, on the map you last picked in the Outbreak menu.
+- It tags you `pvp.tester`. `/trigger pve.join set 60` only works for testers.
+- Gear:
+  - a Sharpness V netherite sword, plus a netherite axe in the offhand (dual-wield);
+  - two Quick Charge III crossbows (put one in each hand to dual-fire) and a Power V Infinity bow, with arrows;
+  - netherite armor (Prot IV, which gets the Rib trim);
+  - 3 Neuroblocker Pills and food.
+- Implants: Cyberskeleton, Sandevistan, Kiroshi and Reflex Tuner.
+- You get it back each time you're revived.
+
 **Velocity** (`pvp:velocity`, bows and crossbows, I-V, in the Ranged chest): arrows leave 20% faster per level, so they
 drop less and hit harder. Levels above V from `/fe` work up to XX (5x speed).
 

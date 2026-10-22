@@ -139,6 +139,22 @@ KITS = [
      [f"give @s {item('mace', 'Skyhammer', 'blue', {'density': 4, 'wind_burst': 2})}", "give @s minecraft:wind_charge 16"]
      + armor("netherite", 3, {"feet": {"feather_falling": 4}}), ["tendons", "titanium", "heart", "subdermal"]),
 ]
+# Admin-only test kits: never in a menu. /function pvp:admin/test_david queues you for Outbreak with it.
+TEST_KIT_ID = 60
+TEST_KIT = [
+    f"give @s {item('netherite_sword', 'Mantis Edge', 'red', {'sharpness': 5})}",
+    f"item replace entity @s weapon.offhand with {item('netherite_axe', 'Off-hand Cleaver', 'dark_red', {'sharpness': 5})}",
+    f"give @s {item('crossbow', 'Militech Launcher L', 'gold', {'quick_charge': 3, 'piercing': 2})}",
+    f"give @s {item('crossbow', 'Militech Launcher R', 'gold', {'quick_charge': 3, 'piercing': 2})}",
+    f"give @s {item('bow', 'Smart Bow', 'aqua', {'power': 5, 'infinity': 1})}",
+    "give @s minecraft:arrow 64", "give @s minecraft:arrow 64",
+    *armor("netherite", 4),
+    "loot give @s loot cyber:item/neuro", "loot give @s loot cyber:item/neuro", "loot give @s loot cyber:item/neuro",
+    "give @s minecraft:cooked_beef 32", "give @s minecraft:golden_apple 4",
+    *[f"function cyber:implant/{k}/kit" for k in ("cyberskeleton", "sandy", "kiroshi", "reflex")],
+    "tellraw @s [{\"text\":\"Kit: \",\"color\":\"gray\"},{\"text\":\"David (test)\",\"color\":\"dark_red\",\"bold\":true},"
+    "{\"text\":\" · Cyberskeleton, Sandevistan, Kiroshi, Reflex Tuner. Swap the crossbows into both hands to dual-fire.\",\"color\":\"gray\"}]",
+]
 KIT_SLOTS = [11, 12, 13, 14, 15, 20, 21, 22, 23, 24]
 CUSTOM_SLOTS = [29, 30, 31, 32, 33, 38, 39, 40, 41, 42]   # admin-made kits (/pvpkit create), ids 101+
 
@@ -376,6 +392,11 @@ def build():
     fn("kit/custom", ["execute store result storage pvp:tmp k int 1 run scoreboard players get #k pvp", f"function {NS}:kit/custom_give with storage pvp:tmp"])
     fn("kit/custom_give", ["$execute store result score #ok pvp run pvpkit give $(k)"])
     give.append(f"execute if score @s pve.kit matches 101.. run function {NS}:kit/custom_pve")
+    give.append(f"execute if score @s pve.kit matches {TEST_KIT_ID} run function {NS}:kit/test_david")
+    fn("kit/test_david", TEST_KIT)
+    fn("admin/test_david", [   # admin-only: queue for Outbreak with the David test kit (pick a map in the menu first)
+        "tag @s add pvp.tester", f"scoreboard players set @s pve.join {TEST_KIT_ID}",
+        say("@s", "Queuing you for Outbreak with the David test kit (your last-picked map).", "dark_red")])
     fn("kit/give_pve", give)
     fn("kit/custom_pve", ["execute store result storage pvp:tmp k int 1 run scoreboard players get @s pve.kit", f"function {NS}:kit/custom_give with storage pvp:tmp"])
 
@@ -648,7 +669,8 @@ def build_pve():
         f"execute if score #j pve matches 99 run return run {say('@s', 'You left the Outbreak queue.', 'yellow')}",
         f"execute if entity @s[tag=pve.in] run return run {say('@s', 'You are already in the Outbreak.', 'red')}",
         f"execute unless entity @s[{LOBBY_BOX}] run return run {say('@s', 'Join the Outbreak from the lobby (/spawn).', 'red')}",
-        f"execute unless score #j pve matches 1..{len(KITS)} unless score #j pve matches 101..199 run return 0",
+        f"execute if score #j pve matches {TEST_KIT_ID} unless entity @s[tag=pvp.tester] run return 0",
+        f"execute unless score #j pve matches 1..{len(KITS)} unless score #j pve matches 101..199 unless score #j pve matches {TEST_KIT_ID} run return 0",
         "scoreboard players operation @s pve.kit = #j pve", "tag @s add pve.q",
         f"execute unless score @s pve.map matches 1..{len(OUTBREAK_MAPS)} run scoreboard players operation @s pve.map = #map pve",
         f"execute unless score @s pve.map matches 1..{len(OUTBREAK_MAPS)} run scoreboard players set @s pve.map 1",
