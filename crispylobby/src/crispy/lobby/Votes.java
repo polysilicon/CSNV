@@ -54,7 +54,13 @@ public class Votes implements Listener {
         String trail;   // pre-1.5 walking trails; refunded and cleared on load
     }
     record Server(String key, String label, Material icon, Rcon rcon, List<String> reward, List<String> commands) {}
-    record Tag(String id, String display, int cost, Material icon, String joinedBefore, String note) {}
+    /** A tag costs vote points, or (earned tags) has a requirement instead: an advancement, a network stat milestone
+     *  (stat + min) or a ranking (stat + top: wearable only while you hold it). stat "VOTES" = this month's votes. */
+    record Tag(String id, String display, int cost, Material icon, String joinedBefore, String note,
+               String advancement, String stat, long min, int top) {
+        boolean earned() { return advancement != null || stat != null; }
+        boolean ranked() { return stat != null && top > 0; }
+    }
     record NameColor(String id, String name, String code, int cost, Material icon) {}
     // what each retired trail cost, for the refund
     static final Map<String, Integer> TRAIL_REFUND = Map.of("hearts", 3, "flames", 4, "notes", 4, "soul", 5, "sakura", 5,
@@ -128,9 +134,15 @@ public class Votes implements Listener {
                     s.getStringList("reward"), s.getStringList("commands")));
         }
         ConfigurationSection ts = plugin.getConfig().getConfigurationSection("cosmetics.tags");
-        if (ts != null) for (String k : ts.getKeys(false))
+        if (ts != null) for (String k : ts.getKeys(false)) {
+            String stat = ts.getString(k + ".stat");
+            if (stat != null && !stat.equals("VOTES") && Arrays.stream(NetworkStats.Cat.values()).noneMatch(x -> x.name().equals(stat))) {
+                plugin.getLogger().warning("cosmetics.tags." + k + ": unknown stat " + stat + " (skipped)"); continue;
+            }
             tags.put(k, new Tag(k, ts.getString(k + ".display", k), ts.getInt(k + ".cost", 5), mat(ts.getString(k + ".icon"), Material.NAME_TAG),
-                    ts.getString(k + ".joined-before"), ts.getString(k + ".note")));
+                    ts.getString(k + ".joined-before"), ts.getString(k + ".note"), ts.getString(k + ".advancement"),
+                    ts.getString(k + ".stat"), ts.getLong(k + ".min"), ts.getInt(k + ".top")));
+        }
         firstSeen.clear();
         ConfigurationSection cs = plugin.getConfig().getConfigurationSection("cosmetics.name-colors");
         if (cs != null) for (String k : cs.getKeys(false))
@@ -376,7 +388,8 @@ public class Votes implements Listener {
         long ownTags = tags.keySet().stream().filter(k -> pd.owned.contains("tag:" + k)).count();
         long ownColors = colors.keySet().stream().filter(k -> pd.owned.contains("color:" + k)).count();
         put(m, 11, item(tg == null ? Material.NAME_TAG : tg.icon(), "&f&lTags", List.of("&7Shown with your name in chat, the tab", "&7list and above your head, everywhere.", "",
-                "&7Wearing: " + (tg == null ? "&8none" : tg.display()), "&7Owned: &f" + ownTags + "&7/" + tags.size(), "", "&eClick to browse"), tg != null), "tags");
+                "&7Wearing: " + (tg == null ? "&8none" : tg.display()), "&7Owned: &f" + ownTags + "&7/" + tags.size(), "",
+                "&7Buy them with points, or &6earn &7them", "&7with advancements and top stats.", "", "&eClick to browse"), tg != null), "tags");
         put(m, 13, pointsItem(pd), null);
         put(m, 15, item(nc == null ? Material.WHITE_DYE : nc.icon(), "&f&lName colours", List.of("&7Your name in colour in chat on", "&7every server (and in cross-chat).", "",
                 "&7Using: " + (nc == null ? "&8none" : colored(nc.name(), nc.code())), "&7Owned: &f" + ownColors + "&7/" + colors.size(), "", "&eClick to browse"), nc != null), "colors");
@@ -384,26 +397,115 @@ public class Votes implements Listener {
         p.openInventory(m.inv);
     }
 
-    void openTags(Player p) {
+    void openTags(Player p) { openTags(p, false); }
+    /** Tags, two pages: the shop (vote points) and earned tags (advancements, milestones, rankings). */
+    void openTags(Player p, boolean earned) {
         PD pd = pd(p.getName());
-        Menu m = menu("tags", 6, "&f&lTags &8(&d" + pd.points + " points&8)");
+        Menu m = menu(earned ? "etags" : "tags", 6, (earned ? "&6&lEarned tags" : "&f&lTag shop") + " &8(&d" + pd.points + " points&8)");
+        Set<String> advs = earned ? advancements(p) : Set.of();
         int i = 0;
         for (Tag t : tags.values()) {
-            if (i >= GRID.length) break;
+            if (t.earned() != earned || i >= GRID.length) continue;
             boolean own = pd.owned.contains("tag:" + t.id()), on = t.id().equals(pd.tag);
             List<String> lore = new ArrayList<>(List.of("&7Preview: &f<" + t.display() + " &f" + p.getName() + "> hi"));
-            if (t.note() != null) lore.add("&8" + t.note());
-            if (t.joinedBefore() != null) lore.add(joinedBefore(p, t.joinedBefore()) ? "&6Exclusive: &7you joined before " + t.joinedBefore()
-                    : "&cOnly for players who joined before " + t.joinedBefore());
-            lore.add("");
-            lore.add(on ? "&aWearing &7- click to take off" : own ? "&eOwned &7- click to wear" : "&7Cost: &d" + t.cost() + " points");
-            if (!own && pd.points < t.cost()) lore.add("&cNot enough points");
+            if (earned) {
+                lore.add("");
+                lore.addAll(requirement(t));
+                String lock = lockReason(p, t, advs);
+                lore.add(lock == null ? "&aRequirement met!" : lock);
+                lore.add("");
+                lore.add(on ? "&aWearing &7- click to take off" : lock == null ? (own || t.ranked() ? "&eClick to wear" : "&eClick to claim") : "&cLocked");
+            } else {
+                if (t.note() != null) lore.add("&8" + t.note());
+                if (t.joinedBefore() != null) lore.add(joinedBefore(p, t.joinedBefore()) ? "&6Exclusive: &7you joined before " + t.joinedBefore()
+                        : "&cOnly for players who joined before " + t.joinedBefore());
+                lore.add("");
+                lore.add(on ? "&aWearing &7- click to take off" : own ? "&eOwned &7- click to wear" : "&7Cost: &d" + t.cost() + " points");
+                if (!own && pd.points < t.cost()) lore.add("&cNot enough points");
+            }
             put(m, GRID[i++], item(t.icon(), t.display(), lore, on), "tag:" + t.id());
         }
+        put(m, 46, item(Material.NAME_TAG, "&f&lTag shop", List.of("&7Tags bought with vote points"), !earned), "tags");
+        put(m, 52, item(Material.EXPERIENCE_BOTTLE, "&6&lEarned tags", List.of("&7Unlocked by advancements, milestones", "&7and being top of a leaderboard"), earned), "etags");
         if (pd.tag != null) put(m, 48, item(Material.BARRIER, "&cTake off your tag", List.of(), false), "off:tag");
         put(m, 49, item(Material.ARROW, "&7Back", List.of(), false), "cosmetics");
         put(m, 50, pointsItem(pd), null);
         p.openInventory(m.inv);
+    }
+
+    // ------------------------------------------------------------------ earned tags
+    List<String> requirement(Tag t) {
+        List<String> l = new ArrayList<>();
+        if (t.advancement() != null) l.add("&7Advancement: &f" + (t.note() != null ? t.note() : t.advancement()));
+        else if ("VOTES".equals(t.stat())) l.add("&7Be the &f#1 voter &7this month");
+        else if (t.stat() != null) {
+            NetworkStats.Cat c = NetworkStats.Cat.valueOf(t.stat());
+            if (t.ranked()) l.add("&7Be " + (t.top() == 1 ? "&f#1" : "&ftop " + t.top()) + " &7in &f" + c.title);
+            else l.add("&7Reach &f" + NetworkStats.fmt(c, t.min()) + " &7in &f" + c.title);
+            if (t.note() != null) l.add("&8" + t.note());
+        }
+        if (t.ranked()) l.add("&8Only while you hold the spot (checked every few minutes)");
+        else l.add("&8Yours to keep once unlocked");
+        return l;
+    }
+    int voteRank(String name) {
+        String m = month();
+        PD me = players.get(name.toLowerCase(Locale.ROOT));
+        int v = me == null ? 0 : me.months.getOrDefault(m, 0);
+        if (v <= 0) return 0;
+        int above = 0;
+        for (PD o : players.values()) if (o.months.getOrDefault(m, 0) > v) above++;
+        return above + 1;
+    }
+    /** null if the player meets the tag's requirement, else a lore line saying where they stand. */
+    String lockReason(Player p, Tag t, Set<String> advs) {
+        if (t.advancement() != null) return advs.contains(t.advancement()) ? null : "&cNot unlocked yet";
+        if ("VOTES".equals(t.stat())) {
+            int r = voteRank(p.getName());
+            return r > 0 && r <= Math.max(1, t.top()) ? null : "&cYou're " + (r == 0 ? "not ranked yet" : "#" + r) + " this month";
+        }
+        if (t.stat() == null) return null;
+        if (!plugin.stats.loaded()) return "&8Stats are loading, try again in a minute";
+        NetworkStats.Cat c = NetworkStats.Cat.valueOf(t.stat());
+        long v = plugin.stats.value(p.getName(), c);
+        if (t.ranked()) {
+            int r = plugin.stats.rank(p.getName(), c);
+            return r > 0 && r <= t.top() ? null : "&cYou: &f" + NetworkStats.fmt(c, v) + (r > 0 ? " &8(#" + r + ")" : "");
+        }
+        return v >= t.min() ? null : "&cYou: &f" + NetworkStats.fmt(c, v) + " &8/ " + NetworkStats.fmt(c, t.min());
+    }
+    final Map<UUID, Map.Entry<Long, Set<String>>> advCache = new HashMap<>();
+    /** Every advancement this player has completed on any server (cosmetics.earned-sources.advancements), cached 30 s. */
+    Set<String> advancements(Player p) {
+        Map.Entry<Long, Set<String>> c = advCache.get(p.getUniqueId());
+        if (c != null && System.currentTimeMillis() - c.getKey() < 30_000) return c.getValue();
+        Set<String> done = new HashSet<>();
+        Path root = Path.of(plugin.getConfig().getString("network-stats.instances-dir", "/AMPStorage/.ampdata/instances"));
+        for (String dir : plugin.getConfig().getStringList("cosmetics.earned-sources.advancements")) {
+            Path f = root.resolve(dir).resolve(p.getUniqueId() + ".json");
+            if (!Files.isRegularFile(f)) continue;
+            try {
+                com.google.gson.JsonObject o = com.google.gson.JsonParser.parseString(Files.readString(f)).getAsJsonObject();
+                for (var e : o.entrySet())
+                    if (e.getValue().isJsonObject() && e.getValue().getAsJsonObject().has("done") && e.getValue().getAsJsonObject().get("done").getAsBoolean()) done.add(e.getKey());
+            } catch (Exception ignored) {}
+        }
+        advCache.put(p.getUniqueId(), Map.entry(System.currentTimeMillis(), done));
+        return done;
+    }
+    /** After each stats refresh: anyone wearing a ranking tag they no longer hold takes it off. */
+    void recheckEarned() {
+        boolean changed = false;
+        for (PD pd : players.values()) {
+            Tag t = pd.tag == null ? null : tags.get(pd.tag);
+            if (t == null || !t.ranked() || pd.name == null) continue;
+            int r = "VOTES".equals(t.stat()) ? voteRank(pd.name) : plugin.stats.rank(pd.name, NetworkStats.Cat.valueOf(t.stat()));
+            if (r > 0 && r <= t.top()) continue;
+            pd.tag = null; changed = true;
+            Player p = Bukkit.getPlayerExact(pd.name);
+            if (p != null) msg(p, "&7You're no longer " + (t.top() == 1 ? "#1" : "top " + t.top()) + " for " + t.display() + "&7, so it came off.");
+        }
+        if (changed) { writeTags(); save(); }
     }
 
     void openColors(Player p) {
@@ -435,14 +537,15 @@ public class Votes implements Listener {
         if (a.equals("links")) { p.closeInventory(); links(p); }
         else if (a.equals("top")) { p.closeInventory(); top(p); }
         else if (a.equals("cosmetics")) openCosmetics(p);
-        else if (a.equals("tags")) openTags(p);
+        else if (a.equals("tags")) openTags(p, false);
+        else if (a.equals("etags")) openTags(p, true);
         else if (a.equals("colors")) openColors(p);
         else if (a.startsWith("off:")) {
             PD pd = pd(p.getName());
             if (a.equals("off:tag")) pd.tag = null; else pd.color = null;
             writeTags(); save();
             p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 1f);
-            if (a.equals("off:tag")) openTags(p); else openColors(p);
+            if (a.equals("off:tag")) openTags(p, m.kind.equals("etags")); else openColors(p);
         }
         else if (a.equals("back")) open(p);
         else if (a.startsWith("claim:")) claim(p, a.substring(6), e.isShiftClick());
@@ -501,6 +604,23 @@ public class Votes implements Listener {
             if (id.equals(pd.tag)) { pd.tag = null; writeTags(); save(); }   // no longer qualifies: take it off
             return;
         }
+        Tag et = isTag ? tags.get(id) : null;
+        if (et != null && et.earned()) {
+            boolean wearing = id.equals(pd.tag);
+            String lock = wearing ? null : lockReason(p, et, advancements(p));
+            if (lock != null) {
+                msg(p, et.display() + " &7is locked: " + String.join(" ", requirement(et).subList(0, 1)).replace("&7", "&f"));
+                p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.7f, 1f);
+                return;
+            }
+            if (!et.ranked() && pd.owned.add(key)) {
+                msg(p, "&aUnlocked " + et.display() + "&a!");
+                p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.6f, 1.2f);
+            } else p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 1f);
+            pd.tag = wearing ? null : id; writeTags(); save();
+            openTags(p, true);
+            return;
+        }
         int cost = isTag ? (tags.containsKey(id) ? tags.get(id).cost() : -1) : (colors.containsKey(id) ? colors.get(id).cost() : -1);
         if (cost < 0) return;
         if (!pd.owned.contains(key)) {
@@ -513,7 +633,7 @@ public class Votes implements Listener {
         if (isTag) { pd.tag = id.equals(pd.tag) ? null : id; writeTags(); }
         else { pd.color = id.equals(pd.color) ? null : id; writeTags(); }
         save();
-        if (isTag) openTags(p); else openColors(p);
+        if (isTag) openTags(p, false); else openColors(p);
     }
 
     void links(CommandSender s) {

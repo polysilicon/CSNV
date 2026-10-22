@@ -30,7 +30,8 @@ final class NetworkStats {
     enum Cat {
         PLAYTIME("⌚ Playtime"), PLAYER_KILLS("⚔ Player Kills"), MOB_KILLS("☠ Mob Kills"), DEATHS("✝ Deaths"),
         BLOCKS_MINED("⛏ Blocks Mined"), DISTANCE("➶ Distance Travelled"), JUMPS("⬆ Jumps"), MONEY("$ Richest (Factions)"),
-        BALATRO_BLINDS("🃏 Balatro: Blinds Cleared"), BALATRO_HAND("🃏 Balatro: Best Hand"), BALATRO_WINS("🃏 Balatro: Wins");
+        BALATRO_BLINDS("🃏 Balatro: Blinds Cleared"), BALATRO_HAND("🃏 Balatro: Best Hand"), BALATRO_WINS("🃏 Balatro: Wins"),
+        OUTBREAK_WAVE("☣ Outbreak: Best Wave"), PVP_STREAK("⚔ PvP: Best Kill Streak"), UNO_WINS("🃏 UNO: Wins");
         final String title;
         Cat(String title) { this.title = title; }
     }
@@ -130,8 +131,66 @@ final class NetworkStats {
                 r.total[Cat.BALATRO_WINS.ordinal()] += all.getLong(id + ".wins");
             }
         }
+        // UnoCraft (this lobby): stats.yml players.<uuid>.{name, wins}
+        java.io.File uno = new java.io.File(plugin.getDataFolder().getParentFile(), "UnoCraft/stats.yml");
+        if (uno.isFile()) {
+            ConfigurationSection all = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(uno).getConfigurationSection("players");
+            if (all != null) for (String id : all.getKeys(false)) {
+                String name = all.getString(id + ".name", names.get(id));
+                if (name != null) out.computeIfAbsent(name.toLowerCase(Locale.ROOT), k -> new Row(name)).total[Cat.UNO_WINS.ordinal()] += all.getLong(id + ".wins");
+            }
+        }
+        // PvP server scoreboard: Outbreak best wave (pve.best) and best kill streak (pvp.best)
+        Path sb = root.resolve(cfg().getString("pvp-scoreboard", "CrispyPvP01/Minecraft/world/data/minecraft/scoreboard.dat"));
+        if (Files.isRegularFile(sb)) {
+            try (var in = new java.io.DataInputStream(new java.io.BufferedInputStream(new java.util.zip.GZIPInputStream(Files.newInputStream(sb))))) {
+                int type = in.readUnsignedByte(); in.readUTF();
+                Object root2 = nbt(in, type);
+                Object data = root2 instanceof Map<?, ?> m ? m.get("data") : null;
+                Object scores = data instanceof Map<?, ?> d ? d.get("PlayerScores") : null;
+                if (scores instanceof List<?> l) for (Object o : l) {
+                    if (!(o instanceof Map<?, ?> e) || !(e.get("Name") instanceof String name) || name.startsWith("#")) continue;
+                    Cat c = "pve.best".equals(e.get("Objective")) ? Cat.OUTBREAK_WAVE : "pvp.best".equals(e.get("Objective")) ? Cat.PVP_STREAK : null;
+                    if (c == null || !(e.get("Score") instanceof Number n)) continue;
+                    Row r = out.computeIfAbsent(name.toLowerCase(Locale.ROOT), k -> new Row(name));
+                    r.total[c.ordinal()] = Math.max(r.total[c.ordinal()], n.longValue());
+                }
+            } catch (Exception e) { plugin.getLogger().warning("network-stats: can't read " + sb + ": " + e); }
+        }
         rows = out;
         updatedAt = System.currentTimeMillis();
+        Bukkit.getScheduler().runTask(plugin, () -> { if (plugin.votes != null) plugin.votes.recheckEarned(); });
+    }
+
+    /** Just enough of an NBT reader for the scoreboard: compounds -> Map, lists/arrays -> List, the rest as values. */
+    private static Object nbt(java.io.DataInputStream in, int type) throws IOException {
+        switch (type) {
+            case 1: return in.readByte();
+            case 2: return in.readShort();
+            case 3: return in.readInt();
+            case 4: return in.readLong();
+            case 5: return in.readFloat();
+            case 6: return in.readDouble();
+            case 7: { byte[] b = new byte[in.readInt()]; in.readFully(b); return b; }
+            case 8: return in.readUTF();
+            case 9: { int et = in.readUnsignedByte(), n = in.readInt(); List<Object> l = new ArrayList<>(); for (int i = 0; i < n; i++) l.add(nbt(in, et)); return l; }
+            case 10: { Map<String, Object> m = new HashMap<>(); for (int t; (t = in.readUnsignedByte()) != 0; ) { String k = in.readUTF(); m.put(k, nbt(in, t)); } return m; }
+            case 11: { int n = in.readInt(); List<Object> l = new ArrayList<>(); for (int i = 0; i < n; i++) l.add(in.readInt()); return l; }
+            case 12: { int n = in.readInt(); List<Object> l = new ArrayList<>(); for (int i = 0; i < n; i++) l.add(in.readLong()); return l; }
+            default: throw new IOException("bad NBT tag " + type);
+        }
+    }
+
+    boolean loaded() { return updatedAt > 0; }
+    long value(String name, Cat c) { Row r = rows.get(name.toLowerCase(Locale.ROOT)); return r == null ? 0 : r.total[c.ordinal()]; }
+    /** 1-based rank in a category, or 0 if the player has nothing there. */
+    int rank(String name, Cat c) {
+        Row r = rows.get(name.toLowerCase(Locale.ROOT));
+        if (r == null || r.total[c.ordinal()] <= 0) return 0;
+        long v = r.total[c.ordinal()];
+        int above = 0;
+        for (Row o : rows.values()) if (o.total[c.ordinal()] > v) above++;
+        return above + 1;
     }
 
     private static void readUsercache(Path f, Map<String, String> names) {
@@ -216,7 +275,8 @@ final class NetworkStats {
         Cat c = cats[page++ % cats.length];
         int n = Math.max(1, cfg().getInt("top", 10));
         StringBuilder s = new StringBuilder("&d&lCrispyAnarchy Stats\n&e&l").append(c.title).append("\n&7")
-                .append(c == Cat.MONEY ? "Factions" : c.name().startsWith("BALATRO") ? "Lobby · /balatro" : "All servers").append("\n");
+                .append(c == Cat.MONEY ? "Factions" : c.name().startsWith("BALATRO") ? "Lobby · /balatro" : c == Cat.UNO_WINS ? "Lobby · /uno"
+                        : c == Cat.OUTBREAK_WAVE || c == Cat.PVP_STREAK ? "PvP server" : "All servers").append("\n");
         List<Row> top = top(c, n);
         if (top.isEmpty()) s.append("\n&8No data yet");
         for (int i = 0; i < top.size(); i++) {

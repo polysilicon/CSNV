@@ -62,5 +62,19 @@ time, and both show on every server.
 - **Name colours** (`cosmetics.name-colors`, a colour code like `&b`, `&6&l`, or `rainbow`) colour the name in chat.
   - The lobby writes `plugins/CrispyLobby/namecolors.json`, which the same `chattags/` readers use.
 
+**Earned tags** (1.7.0) cost nothing. They're on their own page of the Tags menu.
+- **Advancements** (permanent once claimed): Dragonslayer, Withered, Beaconator, Netherite, Monster Hunter, Wanderer,
+  Hero, Wings and UNO. Completed on any server listed in `cosmetics.earned-sources.advancements`; the files are read
+  directly.
+- **Milestones** (permanent): Veteran (100 h played), Slayer (10,000 mob kills), Excavator (100,000 blocks mined),
+  Nomad (5,000 km travelled) and Deathwish (300 deaths). All are network totals from the stats board.
+- **Rankings** (worn only while held): Warlord (#1 player kills), No-Lifer (top 3 playtime), Tycoon (#1 Factions
+  money), Patient Zero (#1 Outbreak wave), Unstoppable (#1 PvP kill streak), High Roller (#1 Balatro), Card Shark
+  (#1 UNO wins) and Top Voter (#1 voter this month). After every stats refresh (5 min), anyone who lost the spot has
+  the tag taken off and is told.
+- Config: a tag with `advancement`, or `stat` + `min`, or `stat` + `top`, is an earned tag. `stat` is a stats-board
+  category or `VOTES`. The stats board also gained Outbreak Best Wave and PvP Best Kill Streak (read from the PvP
+  server's `scoreboard.dat`) and UNO Wins.
+
 Walking trails were retired in 1.5.0. Their points were refunded on the first load, and the `crispy_cosmetics`
 datapack was removed from every server.

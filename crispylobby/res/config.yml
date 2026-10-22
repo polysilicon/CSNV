@@ -100,6 +100,30 @@ cosmetics:
     pumpkinking: {display: "&6&l[Pumpkin King]", cost: 13, icon: JACK_O_LANTERN, note: "Halloween 2026"}
     sulfur:      {display: "&e[Sulfur Miner]", cost: 7, icon: GLOWSTONE_DUST, note: "Chaos Cubed: the Sulfur Caves drop"}
     dank:        {display: "&2[Dank]", cost: 6, icon: SLIME_BALL, note: "The Great Meme Reset of 2026"}
+    # earned tags (free): advancement = unlocked on any server in earned-sources; stat + min = network-total milestone;
+    # stat + top = only while you're that high on the leaderboard (stats board categories, or VOTES = this month's votes)
+    dragonslayer: {display: "&5[Dragonslayer]", icon: DRAGON_HEAD, advancement: "minecraft:end/kill_dragon", note: "Free the End (kill the Ender Dragon)"}
+    withered:     {display: "&8[Withered]", icon: NETHER_STAR, advancement: "minecraft:nether/summon_wither", note: "Withering Heights (summon the Wither)"}
+    beaconator:   {display: "&b[Beaconator]", icon: BEACON, advancement: "minecraft:nether/create_full_beacon", note: "Beaconator (a full-power beacon)"}
+    netherite:    {display: "&8&l[Netherite]", icon: NETHERITE_CHESTPLATE, advancement: "minecraft:nether/netherite_armor", note: "Cover Me in Debris (full netherite armor)"}
+    hunter:       {display: "&4[Monster Hunter]", icon: CROSSBOW, advancement: "minecraft:adventure/kill_all_mobs", note: "Monsters Hunted (kill every hostile mob)"}
+    wanderer:     {display: "&2[Wanderer]", icon: COMPASS, advancement: "minecraft:adventure/adventuring_time", note: "Adventuring Time (visit every biome)"}
+    hero:         {display: "&a[Hero]", icon: EMERALD, advancement: "minecraft:adventure/hero_of_the_village", note: "Hero of the Village (win a raid)"}
+    wings:        {display: "&f[Wings]", icon: ELYTRA, advancement: "minecraft:end/elytra", note: "Sky's the Limit (find an elytra)"}
+    uno:          {display: "&f[&cU&eN&aO&f]", icon: RED_CONCRETE, advancement: "crispy_uno:first_game", note: "Everyone has Uno... (play UNO in the lobby)"}
+    veteran:      {display: "&6[Veteran]", icon: CLOCK, stat: PLAYTIME, min: 7200000}            # 100 h
+    slayer:       {display: "&c[Slayer]", icon: IRON_SWORD, stat: MOB_KILLS, min: 10000}
+    excavator:    {display: "&7[Excavator]", icon: DIAMOND_PICKAXE, stat: BLOCKS_MINED, min: 100000}
+    nomad:        {display: "&3[Nomad]", icon: LEATHER_BOOTS, stat: DISTANCE, min: 500000000}       # 5,000 km
+    deathwish:    {display: "&8[Deathwish]", icon: SKELETON_SKULL, stat: DEATHS, min: 300}
+    warlord:      {display: "&4&l[Warlord]", icon: NETHERITE_SWORD, stat: PLAYER_KILLS, top: 1}
+    nolifer:      {display: "&e[No-Lifer]", icon: RED_BED, stat: PLAYTIME, top: 3}
+    tycoon:       {display: "&a&l[Tycoon]", icon: EMERALD_BLOCK, stat: MONEY, top: 1}
+    patientzero:  {display: "&2&l[Patient Zero]", icon: ZOMBIE_HEAD, stat: OUTBREAK_WAVE, top: 1}
+    unstoppable:  {display: "&c[Unstoppable]", icon: BLAZE_POWDER, stat: PVP_STREAK, top: 1}
+    highroller:   {display: "&6[High Roller]", icon: GOLD_NUGGET, stat: BALATRO_BLINDS, top: 1}
+    cardshark:    {display: "&c[Card Shark]", icon: PAPER, stat: UNO_WINS, top: 1}
+    topvoter:     {display: "&d&l[Top Voter]", icon: NETHER_STAR, stat: VOTES, top: 1}
   # "joined-before" tags: a player qualifies if the earliest date found here (relative to network-stats.instances-dir)
   # is before that date: advancement timestamps, the firstPlayed time Paper left in old player files, and those files'
   # last-saved date. extra: names that always qualify.
@@ -107,6 +131,11 @@ cosmetics:
     advancements: [CrispyAnarchy01/Minecraft/world/players/advancements, Vanilla01/Minecraft/world/players/advancements]
     player-data: [CrispyAnarchy01/Minecraft/world/players/data, Vanilla01/Minecraft/world/players/data]
     extra: []   # names that always qualify (e.g. someone who played earlier on another account)
+  # where earned tags look for completed advancements (relative to network-stats.instances-dir)
+  earned-sources:
+    advancements: [CrispyAnarchy01/Minecraft/world/players/advancements, Vanilla01/Minecraft/world/players/advancements,
+                   Falling01/Minecraft/world/players/advancements, Factions01/Minecraft/world/advancements,
+                   CrispyLobby01/Minecraft/world/players/advancements]
   # code: colour codes (&b, &c&l), a per-letter sequence ("&c|&6|&e"), or rainbow
   name-colors:
     aqua:     {name: Aqua, code: "&b", cost: 3, icon: LIGHT_BLUE_DYE}
