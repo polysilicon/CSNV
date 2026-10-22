@@ -76,9 +76,10 @@ class Grid:
     def floor(self): return [(x, z) for x in range(-R, R + 1) for z in range(-R, R + 1)]
 
 
-def base(mob_points, spawns, wallfn):
+def base(mob_points, spawns, wallfn, fire="campfire"):
     """A grid with the outer wall skin (wallfn(x, y, z, t) per wall block; t = position along the wall) and barred
-    mob windows."""
+    mob windows. Behind each window, outside the wall, a lit campfire sends smoke up past the bars, and a solid
+    backing hides the world (and the other maps) beyond."""
     g = Grid(mob_points, spawns)
     for t in range(-R - 1, R + 2):
         for (x, z) in ((t, -R - 1), (t, R + 1), (-R - 1, t), (R + 1, t)):
@@ -90,6 +91,18 @@ def base(mob_points, spawns, wallfn):
         for (x, z) in cells:
             g.windows.append((x, z))
             for y in (1, 2, 3): g.b[(x, y, z)] = "iron_bars"
+        if abs(dx) == 20: s, along = (1 if dx > 0 else -1), "z"
+        else: s, along = (1 if dz > 0 else -1), "x"
+        b, c = R + 1, dz if along == "z" else dx
+        for k in range(-2, 3):
+            for y in range(WALL_H):
+                for depth in (1, 2):
+                    if depth == 1 and abs(k) <= 1 and y >= 1: continue   # the smoke chamber
+                    pos = (s * (b + depth), c + k) if along == "z" else (c + k, s * (b + depth))
+                    g.b[(pos[0], y, pos[1])] = wallfn(pos[0], y, pos[1], c + k)
+        for k in (-1, 0, 1):
+            pos = (s * (b + 1), c + k) if along == "z" else (c + k, s * (b + 1))
+            g.b[(pos[0], 1, pos[1])] = f"{fire}[lit=true]"
     return g
 
 
@@ -429,7 +442,7 @@ def hellfort(mob_points, spawns):
     """A nether keep: you start inside a walled courtyard with four arched gates and corner towers; outside are
     fenced lava pools, basalt columns, a giant ribcage and a ruined portal."""
     rnd = random.Random(14)
-    g = base(mob_points, spawns, lambda x, y, z, t: rnd.choices(["nether_bricks", "red_nether_bricks", "cracked_nether_bricks"], [6, 2, 2])[0])
+    g = base(mob_points, spawns, lambda x, y, z, t: rnd.choices(["nether_bricks", "red_nether_bricks", "cracked_nether_bricks"], [6, 2, 2])[0], "soul_campfire")
     ground, growth = Noise(9, 5), Noise(10, 4)
     for (x, z) in g.floor():
         c = max(abs(x), abs(z))

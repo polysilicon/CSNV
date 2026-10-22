@@ -578,6 +578,17 @@ def build_upgrades():
             say("@s", f"Armor upgraded to tier {roman[t - 1]}: {desc[t]}." + (f" Next: {ARMOR_UP[t]:,} points ({desc[t + 1]})." if t < 3 else " Maxed out!"), "aqua")])
 
 
+def smoke_puffs():
+    """Smoke drifting across the outside of every window of the current map, while a run is on."""
+    out = []
+    for (i, _, _, _, _, cz, _) in OUTBREAK_MAPS:
+        for (dx, dz) in MOB_POINTS:
+            if abs(dx) == 20: x, z, d = PCX + (PR + 1) * (1 if dx > 0 else -1) + 0.5 + (0.8 if dx > 0 else -0.8), cz + dz + 0.5, "0.1 0.6 0.7"
+            else: x, z, d = PCX + dx + 0.5, cz + (PR + 1) * (1 if dz > 0 else -1) + 0.5 + (0.8 if dz > 0 else -0.8), "0.7 0.6 0.1"
+            out.append(f"execute if score #state pve matches 2..3 if score #map pve matches {i} run particle minecraft:large_smoke {x} {AY + 2.5} {z} {d} 0.01 12")
+    return out
+
+
 def build_pve():
     P = f"{NS}:pve"
     state_names = "0 idle, 1 countdown, 2 wave running, 3 break between waves"
@@ -606,6 +617,9 @@ def build_pve():
         # spiders that climb the walls get pulled back down
         *[f"execute as @e[tag=pve.mob,x={PCX - PR - 1},y={AY + 8},z={z - PR - 1},dx={2 * PR + 2},dy=30,dz={2 * PR + 2}] at @s run tp @s {PCX + 0.5} {AY + 1} {z + 0.5}"
           for (_, _, _, _, _, z, _) in OUTBREAK_MAPS],
+        *smoke_puffs(),
+        # mobs only belong to a running wave; this also catches ones that come back when a chunk reloads
+        "execute unless score #state pve matches 2 run kill @e[tag=pve.mob]",
         "execute if score #dp pve matches 1.. run scoreboard players remove #dp pve 1",
         "execute if score #dp pve matches 1 run tellraw @a[tag=pve.in] {\"text\":\"Double Points has worn off.\",\"color\":\"yellow\"}",
         "execute store result bossbar pvp:boss value run data get entity @n[tag=pve.boss] Health",
@@ -652,6 +666,9 @@ def build_pve():
         *[f"execute if score #map pve matches {i} run data modify storage pvp:pve map set value {{bz:{z + 18.5}d}}"
           for (i, _, _, _, _, z, _) in OUTBREAK_MAPS],
         "scoreboard players set #wave pve 0", "kill @e[tag=pve.mob]", "kill @e[type=minecraft:item,tag=pve.pu]",
+        # keep the map loaded for the run, so mobs can always be cleared when it ends
+        *[f"execute if score #map pve matches {i} run forceload add {PCX - PR - 1} {z - PR - 1} {PCX + PR + 1} {z + PR + 1}"
+          for (i, _, _, _, _, z, _) in OUTBREAK_MAPS],
         "scoreboard players set #dp pve 0", "scoreboard players set #insta pve 0",
         "scoreboard players set #state pve 3", "scoreboard players set #timer pve 100",
         f"execute as @a[tag=pve.q] run function {P}/enter",
@@ -818,6 +835,7 @@ def build_pve():
     ])
     fn("pve/game_over", [
         "scoreboard players set #state pve 0", "kill @e[tag=pve.mob]", "kill @e[type=minecraft:item,tag=pve.pu]", "scoreboard players set #dp pve 0",
+        *[f"forceload remove {PCX - PR - 1} {z - PR - 1} {PCX + PR + 1} {z + PR + 1}" for (_, _, _, _, _, z, _) in OUTBREAK_MAPS],
         "bossbar set pvp:boss visible false",
         "tellraw @a[tag=pve.in] [{\"text\":\"☣ Outbreak over. You reached wave \",\"color\":\"red\"},{\"score\":{\"name\":\"#wave\",\"objective\":\"pve\"},\"color\":\"white\",\"bold\":true},{\"text\":\".\",\"color\":\"red\"}]",
         "scoreboard players add @a[tag=pve.in] pve.best 0",   # unset scores never compare, so a first run would never count

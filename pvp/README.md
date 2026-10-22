@@ -70,6 +70,9 @@ All kit gear is unbreakable, and every kit also gets 16 steak and 2 golden apple
   | Neon City | 0, -60, 500 | crossroads with crosswalks, kerbs and street lamps; a tower with a glowing sign, a noodle bar, a car park, an arcade with a rooftop billboard | pillagers (wave 3+), vindicators (wave 5+) |
   | Hellfort | 0, -60, 600 | you start inside a walled keep with four arched gates and corner towers; outside are fenced lava pools, basalt columns, a giant ribcage and a ruined portal | wither skeletons (wave 3+), blazes (wave 4+) |
 
+  Behind each window is a smoke vent: a campfire (soul campfire in Hellfort) outside the bars, with solid wall behind it,
+  so you can't see out to the other maps. During a run, smoke puffs also drift across the bars.
+
   The layouts are in `outbreak_maps.py`. Building checks that every mob window can still walk to the Arsenal and the
   spawns are clear, and fails if not.
   Team members are on team `pve`, so there's no friendly fire, and they see their points on the team sidebar.
@@ -93,6 +96,9 @@ All kit gear is unbreakable, and every kit also gets 16 steak and 2 golden apple
   Speed Cola 2,000, Mystery Box 950 (one of four wonder weapons), Ray Bow 5,000, Rations (16 steak) 100.
   Juggernog and Speed Cola are one per life, and you aren't charged if you already have one.
 - **Food**: Rations in the Arsenal, plus 4 steak for every survivor whenever a wave is cleared.
+- **Cleanup**: the map is force-loaded for the length of a run, so when the last player leaves or goes down every mob is
+  killed. Any `pve.mob` found while no wave is running (for example, one saved in a chunk that loads later) is
+  removed too.
 - **Down**: if you die you spectate above the arena and come back with your kit when the wave is cleared. The run ends when
   everyone is down. Your best wave is saved in `pve.best`, and a new server record (`#record pve`) is announced to everyone.
 
