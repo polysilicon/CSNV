@@ -147,6 +147,13 @@ The stray check leaves `pvp.admin` players alone in the room. `enchants.json` (i
     enchants don't apply.
   - With a bow or crossbow in each hand, the offhand one fires a second arrow 0.5 s after your shot, with the same
     damage. The delay gets it past the target's hit cooldown. That arrow can't be picked up.
+- **Look**: wearers get a frame on their body made of 9 block displays.
+  - A dark spine with a glowing red strip, a back plate with a red core, shoulder frames with struts, and a waist frame.
+  - Electric sparks come off the back.
+  - The frame turns with the player and hides while they're invisible.
+  - Players can't be ridden, so the parts ride an anchor `item_display` that is teleported to the player's head every
+    tick.
+  - Frames whose wearer is gone (death, logout, implant removed) are cleared every second.
 - It's only built into PvP's `crispy_cyberware` (`build.py --pvp`). It isn't sold at Anarchy's Ripperdoc and isn't in
   any kit. Implant id 17 isn't in the kit mod's list, so `/pvpkit create` leaves it out of saved kits.
 

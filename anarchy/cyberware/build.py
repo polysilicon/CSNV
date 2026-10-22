@@ -78,6 +78,20 @@ SLAM_FALL, SLAM_CD, SLAM_DMG = 30, 100, 8
 DUAL_MELEE = {"wooden_sword": 30, "golden_sword": 30, "stone_sword": 40, "copper_sword": 40, "iron_sword": 50, "diamond_sword": 60,
               "netherite_sword": 70, "wooden_axe": 60, "golden_axe": 60, "stone_axe": 80, "copper_axe": 80, "iron_axe": 80,
               "diamond_axe": 80, "netherite_axe": 90, "mace": 50, "trident": 80}
+# Cyberskeleton look: block displays riding an anchor (an item_display) that is teleported to the top of the player's
+# head every tick (players can't be ridden). Local -z = behind them.
+# block, scale, translation (block corner), glowing; sized for the implant's 1.15 scale
+RIG = [
+    ("netherite_block", (0.10, 0.85, 0.10), (-0.05, -1.40, -0.27), False),   # spine
+    ("red_concrete", (0.04, 0.75, 0.04), (-0.02, -1.35, -0.29), True),        # spine light
+    ("netherite_block", (0.46, 0.30, 0.07), (-0.23, -0.95, -0.24), False),   # back plate
+    ("red_concrete", (0.16, 0.16, 0.04), (-0.08, -0.88, -0.30), True),       # core
+    ("netherite_block", (0.16, 0.10, 0.38), (0.27, -0.66, -0.24), False),    # shoulder frames
+    ("netherite_block", (0.16, 0.10, 0.38), (-0.43, -0.66, -0.24), False),
+    ("iron_block", (0.06, 0.30, 0.06), (0.30, -0.95, -0.26), False),         # shoulder struts
+    ("iron_block", (0.06, 0.30, 0.06), (-0.36, -0.95, -0.26), False),
+    ("netherite_block", (0.62, 0.08, 0.34), (-0.31, -1.32, -0.18), False),   # waist frame
+]
 DUAL_DELAY, DUAL_SPEED = 10, 3.0   # offhand shot: ticks after the main one (past the target's hit cooldown), blocks/tick   # fall distance x10 that triggers a slam, cooldown ticks, damage
 NEURO = ("neuro", "Neuroblocker", ("diamond", 2), "honey_bottle", 1200)   # seconds of psychosis immunity
 OS_CD = {13: 1200, 14: 1500}   # ticks
@@ -144,7 +158,7 @@ def build():
             "cy.cdh dummy", "cy.hp health", "cy.death deathCount", "cy.snk dummy", "cy.tap dummy",
             "cy.nb dummy", "cy.pcd dummy", "cy.sv dummy", "cy.gl dummy",
             "cy.jump minecraft.custom:minecraft.jump", "cy.lcd dummy", "cy.fd dummy", "cy.fdp dummy", "cy.scd dummy",
-            "cy.ohb dummy", "cy.bow minecraft.used:minecraft.bow", "cy.xbow minecraft.used:minecraft.crossbow", "cy.dwt dummy", "cy.dwd dummy"] + [f"cy.s{s} dummy" for s in SLOTS]
+            "cy.ohb dummy", "cy.bow minecraft.used:minecraft.bow", "cy.xbow minecraft.used:minecraft.crossbow", "cy.dwt dummy", "cy.dwd dummy", "cy.id dummy"] + [f"cy.s{s} dummy" for s in SLOTS]
     fn("load", [f"scoreboard objectives add {o}" for o in objs] + [
         f"scoreboard players set #limit cy {CAP_LIMIT}", "scoreboard players set #t cy 0", "scoreboard players set #2 cy 2", "scoreboard players set #5 cy 5",
         # Sandevistan after-image glow colours
@@ -192,6 +206,12 @@ def build():
         "execute as @a[scores={cy.nb=1}] run tellraw @s {\"text\":\"Your Neuroblocker wore off.\",\"color\":\"dark_purple\"}",
         "scoreboard players remove @a[scores={cy.pcd=1..}] cy.pcd 1",
         f"execute as @a[scores={{cy.nb=0,cy.pcd=0}}] if score @s cy.cap > #limit cy at @s run function {NS}:psycho/roll",
+        # Cyberskeleton frames that lost their wearer (death, logout, implant removed) are cleared
+        "tag @e[type=minecraft:item_display,tag=cy.rroot] add cy.orph",
+        f"execute as @a[scores={{cy.s3=17}}] run function {NS}:skel/rig_claim",
+        "execute as @e[type=minecraft:item_display,tag=cy.orph] on passengers run kill @s",
+        "kill @e[type=minecraft:item_display,tag=cy.orph]",
+        "execute as @a[scores={cy.s3=17}] at @s anchored eyes run particle minecraft:electric_spark ^ ^-0.6 ^-0.35 0.15 0.3 0.05 0.05 3",
     ])
 
     # ------------------------------------------------------------------ items, install, remove
@@ -204,7 +224,7 @@ def build():
         fn(f"{d}/apply", [f"attribute @s minecraft:{a} modifier add {NS}:{key}_{n} {v} {op}" for n, (a, v, op) in enumerate(mods)])
         fn(f"{d}/unapply", [f"attribute @s minecraft:{a} modifier remove {NS}:{key}_{n}" for n, (a, v, op) in enumerate(mods)]
            + ([f"attribute @s minecraft:attack_damage modifier remove {NS}:dualwield", "scoreboard players set @s cy.ohb 0",
-               "scoreboard players set @s cy.dwt 0"] if key == "cyberskeleton" else []))
+               "scoreboard players set @s cy.dwt 0", f"function {NS}:skel/rig_remove"] if key == "cyberskeleton" else []))
         nm = {"text": name, "color": color}
         fn(f"{d}/use", [
             f"advancement revoke @s only {NS}:use/{key}",
@@ -454,6 +474,7 @@ def build():
         "execute store result score @s cy.fd run data get entity @s fall_distance 10",
         f"execute if score @s cy.fd matches 0 if score @s cy.fdp matches {SLAM_FALL}.. if score @s cy.scd matches ..0 run function {NS}:skel/slam",
         f"function {NS}:skel/offhand",
+        f"function {NS}:skel/rig",
         f"execute if score @s cy.bow matches 1.. run function {NS}:skel/volley",
         f"execute if score @s cy.xbow matches 1.. run function {NS}:skel/volley",
         "scoreboard players set @s cy.bow 0", "scoreboard players set @s cy.xbow 0",
@@ -474,6 +495,42 @@ def build():
         "execute if score #od cy matches 1.. store result storage cyber:tmp dw.v double 0.1 run scoreboard players get #od cy",
         f"execute if score #od cy matches 1.. run function {NS}:skel/dw_apply with storage cyber:tmp dw",
     ])
+    # the frame: re-attach it if it fell off (teleports can drop passengers), face it the way the player faces,
+    # hide it while they're invisible
+    wj(f"data/{NS}/predicate/invisible.json", {"condition": "minecraft:entity_properties", "entity": "this",
+                                                "predicate": {"effects": {"minecraft:invisibility": {}}}})
+    fn("skel/rig", [
+        "execute unless score @s cy.id matches 1.. store result score @s cy.id run scoreboard players add #next cy.id 1",
+        "scoreboard players operation #me cy = @s cy.id",
+        "scoreboard players set #rig cy 0",
+        "execute as @e[type=minecraft:item_display,tag=cy.rroot] if score @s cy.id = #me cy run scoreboard players set #rig cy 1",
+        f"execute if score #rig cy matches 0 at @s run function {NS}:skel/rig_spawn",
+        "data modify storage cyber:tmp yaw set from entity @s Rotation[0]",
+        "execute store result score #inv cy if predicate cyber:invisible",
+        f"execute at @s anchored eyes positioned ^ ^ ^ positioned ~ ~0.21 ~ as @e[type=minecraft:item_display,tag=cy.rroot] if score @s cy.id = #me cy run function {NS}:skel/rig_follow",
+    ])
+    fn("skel/rig_follow", [   # as the anchor, positioned at the top of its player's head
+        "tp @s ~ ~ ~",
+        "execute on passengers run data modify entity @s Rotation[0] set from storage cyber:tmp yaw",
+        "execute if score #inv cy matches 1 on passengers run data modify entity @s view_range set value 0f",
+        "execute if score #inv cy matches 0 on passengers run data modify entity @s view_range set value 1f",
+    ])
+    fn("skel/rig_claim", ["scoreboard players operation #me cy = @s cy.id",
+                          "execute as @e[type=minecraft:item_display,tag=cy.rroot] if score @s cy.id = #me cy run tag @s remove cy.orph"])
+    fn("skel/rig_remove", ["scoreboard players operation #me cy = @s cy.id",
+                           "execute as @e[type=minecraft:item_display,tag=cy.rroot] if score @s cy.id = #me cy on passengers run kill @s",
+                           "execute as @e[type=minecraft:item_display,tag=cy.rroot] if score @s cy.id = #me cy run kill @s"])
+    spawn = []
+    for (blk, sc, tr, glow) in RIG:
+        spawn += [f"summon minecraft:block_display ~ ~ ~ {{Tags:[\"cy.rig\",\"cy.rnew\"],block_state:{{Name:\"minecraft:{blk}\"}},"
+                  + ("brightness:{sky:15,block:15}," if glow else "")
+                  + f"transformation:{{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],"
+                  f"translation:[{tr[0]}f,{tr[1]}f,{tr[2]}f],scale:[{sc[0]}f,{sc[1]}f,{sc[2]}f]}}}}",
+                  "ride @n[type=minecraft:block_display,tag=cy.rnew] mount @n[type=minecraft:item_display,tag=cy.rnewroot]",
+                  "tag @e[type=minecraft:block_display,tag=cy.rnew] remove cy.rnew"]
+    fn("skel/rig_spawn", ["summon minecraft:item_display ~ ~2 ~ {Tags:[\"cy.rroot\",\"cy.rnewroot\"],teleport_duration:1}",
+                          "scoreboard players operation @n[type=minecraft:item_display,tag=cy.rnewroot] cy.id = @s cy.id"]
+       + spawn + ["tag @e[type=minecraft:item_display,tag=cy.rnewroot] remove cy.rnewroot"])
     fn("skel/dw_apply", [f"$attribute @s minecraft:attack_damage modifier add {NS}:dualwield $(v) add_value"])
     # dual-wield, ranged: a bow or crossbow in each hand -> the offhand one fires DUAL_DELAY ticks after the main shot
     fn("skel/volley", [
