@@ -157,8 +157,9 @@ The stray check leaves `pvp.admin` players alone in the room. `enchants.json` (i
     of 60, and leaves a longer after-image trail.
   - **Psychosis meter** (0–100%), shown with heat on the action bar. It replaces the random over-capacity episodes.
     - Gains: slam +8, Sandy +15, each kill +5, leap +4, throw +3, last stand +30. It falls 1 every 2 s.
-    - 40%+: nausea flashes. 70%+: heartbeat and darkness flashes.
-    - 100%: **cyberpsycho**. The server is told, and you get Strength III and Glowing, but lose 1 health per second
+    - 40%+: nausea flashes. 70%+: heartbeat, darkness flashes and short body-flicker bursts.
+    - 100%: **cyberpsycho**. The server is told, you flicker in and out of view, and you get Strength III and
+      Glowing, but lose 1 health per second
       until you take Neuroblocker pills or die.
   - **Neuroblocker Pills** (PvP only; quick swallow, Anarchy keeps the drink): besides the normal 20-minute
     immunity, they halve a Cyberskeleton's meter and end a full episode.

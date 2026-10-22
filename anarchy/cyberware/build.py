@@ -160,7 +160,7 @@ def build():
             "cy.jump minecraft.custom:minecraft.jump", "cy.lcd dummy", "cy.fd dummy", "cy.fdp dummy", "cy.scd dummy",
             "cy.ohb dummy", "cy.bow minecraft.used:minecraft.bow", "cy.xbow minecraft.used:minecraft.crossbow", "cy.dwt dummy", "cy.dwd dummy",
             "cy.psy dummy", "cy.heat dummy", "cy.ovh dummy", "cy.ls dummy", "cy.lst dummy", "cy.chg dummy", "cy.tcd dummy",
-            "cy.kc totalKillCount"] + [f"cy.s{s} dummy" for s in SLOTS]
+            "cy.kc totalKillCount", "cy.flk dummy"] + [f"cy.s{s} dummy" for s in SLOTS]
     fn("load", [f"scoreboard objectives add {o}" for o in objs] + [
         f"scoreboard players set #limit cy {CAP_LIMIT}", "scoreboard players set #t cy 0", "scoreboard players set #2 cy 2", "scoreboard players set #5 cy 5", "scoreboard players set #7 cy 7",
         # Sandevistan after-image glow colours
@@ -195,6 +195,8 @@ def build():
         "scoreboard players remove @a[scores={cy.cdh=1..}] cy.cdh 1",
         f"execute as @a[scores={{cy.s8=11,cy.hp=1..8,cy.cdh=0}}] at @s run function {NS}:fx/biomon",
         f"execute as @a[scores={{cy.s8=12,cy.hp=1..4,cy.cdh=0}}] at @s run function {NS}:fx/heart",
+        # cyberpsychosis flicker (the body glitches in and out of view)
+        f"execute as @a[scores={{cy.flk=1..}}] at @s run function {NS}:psycho/flicker",
         "scoreboard players add #t cy 1",
         # Sandevistan after-images
         f"execute as @a[scores={{cy.sv=1..}}] at @s run function {NS}:ghost/player",
@@ -390,7 +392,8 @@ def build():
     died += ["scoreboard players set @s cy.cap 0", "scoreboard players set @s cy.cd 0", "scoreboard players set @s cy.cdh 0",
              "scoreboard players set @s cy.sv 0", "tag @s add cy.dead",
              "scoreboard players set @s cy.psy 0", "scoreboard players set @s cy.heat 0", "scoreboard players set @s cy.ls 0",
-             "scoreboard players set @s cy.lst 0", "scoreboard players set @s cy.ovh 0", "tag @s remove cy.psycho"]
+             "scoreboard players set @s cy.lst 0", "scoreboard players set @s cy.ovh 0", "tag @s remove cy.psycho",
+             "scoreboard players set @s cy.flk 0", f"execute if entity @s[tag=cy.flk_on] run function {NS}:psycho/flick_on"]
     fn("death/died", died)
     fn("death/respawned", ["tag @s remove cy.dead"] + [f"function {NS}:implant/{i[1]}/unapply" for i in IMPLANTS if i[9]])
 
@@ -516,6 +519,8 @@ def build():
     ])
     wj(f"data/{NS}/predicate/sprinting.json", {"condition": "minecraft:entity_properties", "entity": "this",
                                                 "predicate": {"flags": {"is_sprinting": True, "is_on_ground": True}}})
+    wj(f"data/{NS}/predicate/invisible.json", {"condition": "minecraft:entity_properties", "entity": "this",
+                                                "predicate": {"effects": {"minecraft:invisibility": {}}}})
     wj(f"data/{NS}/predicate/grounded.json", {"condition": "minecraft:entity_properties", "entity": "this",
                                                "predicate": {"flags": {"is_on_ground": True}}})
     # keep heat and psychosis in 0..100; hitting 100 heat overheats the frame
@@ -552,6 +557,7 @@ def build():
         "execute if score @s cy.psy matches 40..99 if score #r cy matches 1 run effect give @s minecraft:nausea 4 0 true",
         "execute if score @s cy.psy matches 70..99 if score #r cy matches 2..3 run effect give @s minecraft:darkness 2 0 true",
         "execute if score @s cy.psy matches 70..99 run playsound minecraft:entity.warden.heartbeat player @s ~ ~ ~ 1 0.8",
+        "execute if score @s cy.psy matches 70..99 if score #r cy matches 4..5 run scoreboard players set @s cy.flk 12",
         f"execute if score @s cy.psy matches 100.. unless entity @s[tag=cy.psycho] run function {NS}:skel/psycho_start",
         f"execute if entity @s[tag=cy.psycho] run function {NS}:skel/psycho_tick",
         f"execute unless score @s cy.lst matches 1.. if score @s cy.ovh matches ..0 unless score @s cy.chg matches 1.. if score @s cy.heat matches 1.. run title @s actionbar {tj(hud)}",
@@ -565,7 +571,7 @@ def build():
         "playsound minecraft:entity.warden.roar player @a[distance=..48] ~ ~ ~ 1 1.2",
     ])
     fn("skel/psycho_tick", [   # big damage, everyone can see you, and the frame is eating you alive
-        "effect give @s minecraft:strength 2 2 true", "effect give @s minecraft:glowing 2 0 true",
+        "effect give @s minecraft:strength 2 2 true", "effect give @s minecraft:glowing 2 0 true", "scoreboard players set @s cy.flk 25",
         "effect give @s minecraft:nausea 3 0 true",
         "particle minecraft:dust{color:[0.8,0.0,0.0],scale:1.5} ~ ~1 ~ 0.4 0.6 0.4 0 12",
         "damage @s 1 minecraft:magic",
@@ -745,8 +751,21 @@ def build():
         "execute store result score #r cy run random value 1..600",
         f"execute if score #r cy <= #ex cy run function {NS}:psycho/episode",
     ])
+    # flicker: each tick, a 1-in-3 chance to vanish and 2-in-3 to come back, so the body blinks for a tick or two at a
+    # time. Only the invisibility it added itself (tag cy.flk_on) is ever cleared.
+    fn("psycho/flicker", [
+        "scoreboard players remove @s cy.flk 1",
+        "execute store result score #f cy run random value 1..3",
+        f"execute if score #f cy matches 1 unless entity @s[tag=cy.flk_on] unless predicate {NS}:invisible run function {NS}:psycho/flick_off",
+        f"execute if score #f cy matches 2..3 if entity @s[tag=cy.flk_on] run function {NS}:psycho/flick_on",
+        f"execute if score @s cy.flk matches ..0 if entity @s[tag=cy.flk_on] run function {NS}:psycho/flick_on",
+        "particle minecraft:dust{color:[0.9,0.05,0.05],scale:0.8} ~ ~1 ~ 0.3 0.5 0.3 0 2",
+        "execute if score #f cy matches 1 run particle minecraft:electric_spark ~ ~1 ~ 0.3 0.6 0.3 0.1 4",
+    ])
+    fn("psycho/flick_off", ["tag @s add cy.flk_on", "effect give @s minecraft:invisibility infinite 0 true"])
+    fn("psycho/flick_on", ["tag @s remove cy.flk_on", "effect clear @s minecraft:invisibility"])
     fn("psycho/episode", [
-        "scoreboard players set @s cy.pcd 30",
+        "scoreboard players set @s cy.pcd 30", "scoreboard players set @s cy.flk 120",
         "execute store result score #e cy run random value 1..5",
         "title @s title {\"text\":\"CYBERPSYCHOSIS\",\"color\":\"dark_red\",\"bold\":true}",
         "playsound minecraft:entity.warden.heartbeat player @s ~ ~ ~ 1 0.6",

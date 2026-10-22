@@ -32,6 +32,10 @@ re-run the place commands after a reinstall.
   - hunger and weakness.
 
   Nearby players see "X is showing signs of cyberpsychosis!". A **Neuroblocker** (2 diamonds) suppresses it for 20 minutes.
+- **Flicker**: during an episode the player's body glitches in and out of view for about 6 s, with red sparks, like
+  cyberpsychos in the anime. A Cyberskeleton wearer gets short bursts from 70% psychosis and flickers constantly while
+  fully cyberpsycho. Only the invisibility the flicker added itself is ever removed (tag `cy.flk_on`), so real
+  invisibility potions are kept.
 - **Death**: all installed implants drop as items where you died, so anyone can pick them up and install them.
 - `/trigger cyber` shows your installed implants, capacity, Neuroblocker time and cooldowns.
 
