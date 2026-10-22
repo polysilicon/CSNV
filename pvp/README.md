@@ -19,7 +19,8 @@ AMP rewrites `server.properties` on start, so change game settings through AMP, 
 - Players spawn in a safe neon lobby at 0 101 0, where they're immune to damage and can't deal any.
 - **Kit Dealer** (left NPC) opens a chest menu of 10 kits. Click one and you're dropped at one of 8 random PvP arena
   spawns with 3 s of spawn protection. The kit's custom enchants and cyberware are already on.
-- **Outbreak** (right NPC, or the zombie head in the kit menu) opens the PvE loadout menu. Pick a kit to queue.
+- **Outbreak** (right NPC, or the zombie head in the kit menu) opens the map menu: pick one of the four maps (or Random),
+  then pick a kit to queue.
 - PvP kills:
   - heal the killer and give 10 s of Absorption and a golden apple;
   - streaks are announced at 3, 5, 10 and so on;
@@ -60,8 +61,10 @@ All kit gear is unbreakable, and every kit also gets 16 steak and 2 golden apple
 - **Queue**: the first player to queue starts a 10 s countdown, and anyone who queues meanwhile joins the same run.
   If you queue during a run, you drop in at the next wave break.
 - **Maps**: four arenas of the same size, each with 12 barred mob windows, the player spawns and the **Arsenal** in
-  the middle, but with their own layout. **Change map** / **Random map** in the Outbreak menu (slots 45 / 53) pick the
-  next map before a run starts.
+  the middle, but with their own layout. Each player's pick is kept in `pve.map`.
+  - The first player to queue decides the run's map, and the lobby is told which map is starting.
+  - Anyone who queues after that joins the run already under way, whatever they picked, and is told so.
+  - **Back to maps** (slot 45) in the kit menu goes back to the map menu.
 
   | Map | Centre | Layout | Extra mobs |
   |---|---|---|---|

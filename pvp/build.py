@@ -48,6 +48,12 @@ OUTBREAK_MAPS = [
 PVE_BOXES = {m[0]: box(PCX, m[5], PR, AY - 1, 35) for m in OUTBREAK_MAPS}
 PVE_BOX = PVE_BOXES[1]
 BREAK_TICKS = 400        # break between waves (downed players are back at its start, so they can re-buy)
+MAP_LORE = {
+    "ruins": ["Overgrown temple courtyard", "Broken colonnade, fallen columns", "Mobs: the classic horde"],
+    "mine": ["Abandoned toxic mine", "Rock outcrops, mine-cart loop", "Sludge puddles slow you down", "Extra: cave spiders, silverfish"],
+    "neon": ["Night-time crossroads", "Tower, noodle bar, car park, arcade", "Extra: pillagers, vindicators"],
+    "hellfort": ["Nether keep with four gates", "Lava pools, basalt, a giant ribcage", "Extra: wither skeletons, blazes"],
+}
 POWERUP_CHANCE = 4       # % of kills that drop a power-up
 POWERUP_SECS = 30        # Insta-Kill / Double Points length
 POWERUPS = [  # key, item, name, colour
@@ -238,20 +244,27 @@ def build():
         "kits": {"title": {"text": "⚔ Pick a kit", "color": "dark_aqua"}, "rows": 6, "fill": PANE,
                  "custom_kits": {"slots": CUSTOM_SLOTS, "cmd": "trigger pvp.kit set %d"}, "items":
                  [{"slot": s, "item": icon(k[4], k[2], k[3], kit_lore(k)), "cmd": f"trigger pvp.kit set {k[0]}"} for s, k in zip(KIT_SLOTS, KITS)]
-                 + [{"slot": 49, "item": icon("zombie_head", "☣ Outbreak (PvE)", "green", ["Fight waves of mobs solo or with a team", "Click to pick your loadout"]), "cmd": "pvpmenu pve"}]},
+                 + [{"slot": 49, "item": icon("zombie_head", "☣ Outbreak (PvE)", "green", ["Fight waves of mobs solo or with a team", "Click to pick a map"]), "cmd": "pvpmenu pve_maps"}]},
         "pve": {"title": {"text": "☣ Outbreak: pick your loadout", "color": "dark_green"}, "rows": 6, "fill": PANE,
                 "custom_kits": {"slots": CUSTOM_SLOTS, "cmd": "trigger pve.join set %d"}, "items":
                 [{"slot": s, "item": icon(k[4], k[2], k[3], k[5] + ["", "Click to queue with this kit"]), "cmd": f"trigger pve.join set {k[0]}"} for s, k in zip(KIT_SLOTS, KITS)]
                 + [{"slot": 47, "item": icon("barrier", "Leave the queue", "red", ["Stop waiting for the next Outbreak"], False), "cmd": "trigger pve.join set 99"},
-                   {"slot": 45, "item": icon("filled_map", "Change map", "yellow", ["Maps: " + ", ".join(m[2] for m in OUTBREAK_MAPS),
-                       "Click to switch to the next map", "(only before a run starts)"]), "cmd": "trigger pve.join set 90"},
-                   {"slot": 53, "item": icon("ender_eye", "Random map", "light_purple", ["Pick a random Outbreak map", "(only before a run starts)"]), "cmd": "trigger pve.join set 91"},
+                   {"slot": 45, "item": icon("filled_map", "Back to maps", "yellow", ["Pick a different map"], False), "cmd": "pvpmenu pve_maps"},
                    {"slot": 49, "item": icon("zombie_head", "How Outbreak works", "green", [
                        f"{len(OUTBREAK_MAPS)} maps, each with its own mobs", "Endless waves; every 5th wave brings a boss", "100 points per kill + a bonus each wave",
                        "Kills can drop power-ups: Max Ammo, Insta-Kill,", "Double Points, Nuke",
                        f"{BREAK_TICKS // 20} s break between waves to re-buy gear",
                        "Spend points at the Arsenal in the arena", "Pack-a-Punch weapons, upgrade armor, buy perks", "Your best wave adds starting points", "Go down and you're back next wave", "Game over when the whole team is down"]), "cmd": ""},
                    {"slot": 51, "item": icon("netherite_sword", "Back to PvP kits", "aqua", ["Fight other players instead"], False), "cmd": "pvpmenu kits"}]},
+        "pve_maps": {"title": {"text": "☣ Outbreak: pick a map", "color": "dark_green"}, "rows": 3, "fill": PANE, "items":
+                     [{"slot": s, "item": icon(m[4], m[2], m[3], MAP_LORE[m[1]] + ["", "Click to pick your kit"]), "cmd": f"trigger pve.join set {80 + m[0]}"}
+                      for s, m in zip((10, 12, 14, 16), OUTBREAK_MAPS)]
+                     + [{"slot": 4, "item": icon("zombie_head", "Outbreak (PvE)", "green", [
+                         "Fight endless waves of mobs, solo or as a team", "1. Pick a map  2. Pick your kit",
+                         "If a run is already starting, you join that map"]), "cmd": ""},
+                        {"slot": 22, "item": icon("ender_eye", "Random map", "light_purple", ["Let fate decide", "", "Click to pick your kit"]), "cmd": "trigger pve.join set 91"},
+                        {"slot": 18, "item": icon("netherite_sword", "Back to PvP kits", "aqua", ["Fight other players instead"], False), "cmd": "pvpmenu kits"},
+                        {"slot": 26, "item": icon("barrier", "Leave the queue", "red", ["Stop waiting for the next Outbreak"], False), "cmd": "trigger pve.join set 99"}]},
         "pve_shop": {"title": {"text": "☣ Arsenal (points)", "color": "dark_green"}, "rows": 3, "fill": PANE, "items":
                      [{"slot": s, "item": icon(i[3], f"{i[1]}" + (f" · {i[4]}" if i[4] else ""), i[2], [i[5]]), "cmd": f"trigger pve.buy set {i[0]}"} for s, i in zip(SHOP_SLOTS, SHOP)]},
     }
@@ -265,7 +278,7 @@ def build():
             "pvp dummy", "pvp.kit trigger", "pvp.spawn trigger", "pvp.kn playerKillCount", "pvp.dead deathCount",
             "pvp.left minecraft.custom:minecraft.leave_game", "pvp.streak dummy", "pvp.best dummy",
             "pvp.hurt minecraft.custom:minecraft.damage_taken", "pvp.ct dummy",
-            "pve dummy", "pve.join trigger", "pve.buy trigger", "pve.k totalKillCount", "pve.kit dummy", "pve.best dummy", "pve.arm dummy"]],
+            "pve dummy", "pve.join trigger", "pve.buy trigger", "pve.k totalKillCount", "pve.kit dummy", "pve.best dummy", "pve.arm dummy", "pve.map dummy"]],
         'scoreboard objectives add pvp.kills playerKillCount {"text":"⚔ Kills","color":"aqua","bold":true}',
         'scoreboard objectives add pve.pts dummy {"text":"☣ Points","color":"green","bold":true}',
         "scoreboard objectives setdisplay sidebar pvp.kills",
@@ -375,7 +388,7 @@ def build():
     fn("arena/enter", enter)
 
     npc_adv("npc", "pvp.npc", "kits")
-    npc_adv("pvenpc", "pvp.pvenpc", "pve")
+    npc_adv("pvenpc", "pvp.pvenpc", "pve_maps")
     npc_adv("shopnpc", "pvp.shopnpc", "pve_shop")
 
     build_pve()
@@ -629,28 +642,38 @@ def build_pve():
     # joining: pve.join = kit id (99 = leave the queue)
     fn("pve/join", [
         "scoreboard players operation #j pve = @s pve.join", "scoreboard players set @s pve.join 0",
-        f"execute if score #j pve matches 90..91 run return run function {P}/pick_map",
+        f"execute if score #j pve matches 81..{80 + len(OUTBREAK_MAPS)} run return run function {P}/pick_map",
+        f"execute if score #j pve matches 91 run return run function {P}/pick_map",
         "execute if score #j pve matches 99 run tag @s remove pve.q",
         f"execute if score #j pve matches 99 run return run {say('@s', 'You left the Outbreak queue.', 'yellow')}",
         f"execute if entity @s[tag=pve.in] run return run {say('@s', 'You are already in the Outbreak.', 'red')}",
         f"execute unless entity @s[{LOBBY_BOX}] run return run {say('@s', 'Join the Outbreak from the lobby (/spawn).', 'red')}",
         f"execute unless score #j pve matches 1..{len(KITS)} unless score #j pve matches 101..199 run return 0",
         "scoreboard players operation @s pve.kit = #j pve", "tag @s add pve.q",
+        f"execute unless score @s pve.map matches 1..{len(OUTBREAK_MAPS)} run scoreboard players operation @s pve.map = #map pve",
+        f"execute unless score @s pve.map matches 1..{len(OUTBREAK_MAPS)} run scoreboard players set @s pve.map 1",
+        "execute if score #state pve matches 0 run scoreboard players operation #map pve = @s pve.map",
+        *[f"execute if score #state pve matches 1.. if score #map pve matches {i} unless score @s pve.map = #map pve run "
+          f"tellraw @s [{{\"text\":\"An Outbreak on \",\"color\":\"yellow\"}},{{\"text\":\"{n}\",\"color\":\"{c}\",\"bold\":true}},"
+          f"{{\"text\":\" is already under way, so you'll join that one.\",\"color\":\"yellow\"}}]" for (i, _, n, c, _, _, _) in OUTBREAK_MAPS],
         f"execute if score #state pve matches 2..3 run return run {say('@s', 'Outbreak in progress: you will drop in at the next wave break.', 'green')}",
         say("@s", "Queued for the Outbreak. More players can join during the countdown.", "green"),
     ])
     names = {m[0]: (m[2], m[3]) for m in OUTBREAK_MAPS}
-    fn("pve/pick_map", [   # as the clicking player; only before a run starts
-        f"execute if score #state pve matches 2..3 run return run {say('@s', 'An Outbreak is running: pick the map before the next one.', 'red')}",
-        "scoreboard players add #map pve 1",
-        f"execute if score #map pve matches {len(OUTBREAK_MAPS) + 1}.. run scoreboard players set #map pve 1",
-        f"execute if score #j pve matches 91 store result score #map pve run random value 1..{len(OUTBREAK_MAPS)}",
-        *[f"execute if score #map pve matches {i} run tellraw @a[{LOBBY_BOX}] [{{\"selector\":\"@s\",\"color\":\"white\"}},"
-          f"{{\"text\":\" set the next Outbreak map: \",\"color\":\"gray\"}},{{\"text\":\"{n}\",\"color\":\"{c}\",\"bold\":true}}]"
-          for i, (n, c) in names.items()],
+    fn("pve/pick_map", [   # as the clicking player: remember their map, then show the kit menu
+        f"execute unless entity @s[{LOBBY_BOX}] run return run {say('@s', 'Join the Outbreak from the lobby (/spawn).', 'red')}",
+        "execute if score #j pve matches 81.. run scoreboard players operation @s pve.map = #j pve",
+        "execute if score #j pve matches 81.. run scoreboard players remove @s pve.map 80",
+        f"execute if score #j pve matches 91 store result score @s pve.map run random value 1..{len(OUTBREAK_MAPS)}",
+        *[f"execute if score @s pve.map matches {i} run tellraw @s [{{\"text\":\"Map: \",\"color\":\"gray\"}},{{\"text\":\"{n}\",\"color\":\"{c}\",\"bold\":true}},"
+          f"{{\"text\":\". Now pick your kit.\",\"color\":\"gray\"}}]" for i, (n, c) in names.items()],
         "playsound minecraft:ui.button.click player @s ~ ~ ~ 1 1",
+        "pvpmenu pve",
     ])
     fn("pve/countdown_start", ["scoreboard players set #state pve 1", "scoreboard players set #timer pve 200",
+                               *[f"execute if score #map pve matches {i} run tellraw @a[{LOBBY_BOX},tag=!pve.q] [{{\"text\":\"☣ An Outbreak on \",\"color\":\"green\"}},"
+                                 f"{{\"text\":\"{n}\",\"color\":\"{c}\",\"bold\":true}},{{\"text\":\" starts in 10 s. Talk to the Outbreak NPC to join.\",\"color\":\"green\"}}]"
+                                 for i, (n, c) in names.items()],
                                "playsound minecraft:block.note_block.pling player @a[tag=pve.q] ~ ~ ~ 1 0.8"])
     fn("pve/countdown_tick", [
         "execute unless entity @a[tag=pve.q] run return run scoreboard players set #state pve 0",
