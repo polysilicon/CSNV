@@ -60,11 +60,14 @@ Everything is set in the tables at the top of `build.py`:
 - the Neuroblocker: `NEURO`;
 - Operating System cooldowns: `OS_CD`.
 
-**Sandevistan after-images**: every 2 ticks while it runs, a mannequin copy of the player is left where they stand.
-It copies their skin, facing, armor, held items and crouch, glows in a random neon colour (teams `cy.g1`–`cy.g4`)
-and lasts 8 ticks, so a short trail follows them.
-- The skin comes from a hidden item_display (`cy.ganchor`) holding the player's head, which follows the player.
-- A copy's gear is cleared before it is removed below the world, so nothing drops and there's no death animation.
+**Sandevistan after-images**: every 2 ticks while it runs, a hologram copy of the player is left where they stand,
+like the anime's trail.
+- The copy is an invisible, glowing mannequin, so only a coloured silhouette of their body shows. It copies their
+  facing, crouch and model (slim or wide arms), with a few cyan-green specks.
+- Each copy lasts 10 ticks and fades aqua → green → dark aqua (teams `cy.g1`–`cy.g3`), so a short blue-green trail
+  follows them.
+- The model comes from a hidden item_display (`cy.ganchor`) holding the player's head, which follows the player.
+- Copies are removed below the world, so there's no death animation.
 - Leftover copies are cleaned up on load.
 - Tune it with `GHOST_TICKS`, `GHOST_LIFE` and `GHOST_COLORS`.
 

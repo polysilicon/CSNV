@@ -95,8 +95,8 @@ DUAL_DELAY, DUAL_SPEED = 10, 3.0   # offhand shot: ticks after the main one (pas
 NEURO = ("neuro", "Neuroblocker", ("diamond", 2), "honey_bottle", 1200)
 PILL = False   # --pvp: the Neuroblocker is a pill (quick swallow) that also cuts a Cyberskeleton's psychosis meter   # seconds of psychosis immunity
 OS_CD = {13: 1200, 14: 1500}   # ticks
-GHOST_TICKS, GHOST_LIFE = 120, 8     # Sandevistan after-images: how long they spawn, and how long each lasts (ticks)
-GHOST_COLORS = ["aqua", "green", "light_purple", "yellow"]
+GHOST_TICKS, GHOST_LIFE = 120, 10    # Sandevistan after-images: how long they spawn, and how long each lasts (ticks)
+GHOST_COLORS = ["aqua", "green", "dark_aqua"]   # hologram fade: new -> middle -> about to vanish
 BY_ID = {i[0]: i for i in IMPLANTS}
 
 
@@ -426,8 +426,9 @@ def build():
         f"execute if score @s cy.s3 matches 17 run function {NS}:skel/sandy",
     ])
     # ------------------------------------------------------------------ Sandevistan after-images (Edgerunners)
-    # Every 2 ticks while active, a mannequin copy of the player (skin, facing, armor, held items, crouch) is left
-    # behind with a random neon glow; each lives GHOST_LIFE ticks, so a short trail follows the player.
+    # Every 2 ticks while active, a mannequin copy of the player (model, facing, crouch) is left behind, invisible and
+    # glowing so only a coloured silhouette shows (a hologram, like the anime). Each lives GHOST_LIFE ticks and fades
+    # aqua -> green -> dark aqua, so a short blue-green trail follows the player.
     wj(f"data/{NS}/loot_table/head.json", {"pools": [{"rolls": 1, "entries": [{"type": "minecraft:item", "name": "minecraft:player_head",
         "functions": [{"function": "minecraft:fill_player_head", "entity": "this"}]}]}]})
     fn("ghost/player", [
@@ -440,16 +441,18 @@ def build():
         "summon minecraft:mannequin ~ ~ ~ {Tags:[\"cy.ghost\",\"cy.gnew\"],NoGravity:1b,Invulnerable:1b,Silent:1b,immovable:1b,hide_description:1b,Glowing:1b}",
         "execute rotated as @s run tp @n[type=minecraft:mannequin,tag=cy.gnew] ~ ~ ~ ~ ~",
         "data modify entity @n[type=minecraft:mannequin,tag=cy.gnew] profile set from entity @n[type=minecraft:item_display,tag=cy.ganchor,distance=..1] item.components.\"minecraft:profile\"",
-        *[f"item replace entity @n[type=minecraft:mannequin,tag=cy.gnew] {sl} from entity @s {sl}"
-          for sl in ("armor.head", "armor.chest", "armor.legs", "armor.feet", "weapon.mainhand", "weapon.offhand")],
+        # invisible + glowing: only the coloured silhouette shows, like the anime's hologram copies
+        "effect give @n[type=minecraft:mannequin,tag=cy.gnew] minecraft:invisibility infinite 0 true",
+        "particle minecraft:dust{color:[0.2,1.0,0.85],scale:0.7} ~ ~1 ~ 0.25 0.5 0.25 0 6",
         f"execute if predicate {NS}:sneaking run data modify entity @n[type=minecraft:mannequin,tag=cy.gnew] pose set value \"crouching\"",
         f"scoreboard players set @n[type=minecraft:mannequin,tag=cy.gnew] cy.gl {GHOST_LIFE}",
-        f"execute store result score #c cy run random value 1..{len(GHOST_COLORS)}",
-        *[f"execute if score #c cy matches {n} run team join cy.g{n} @n[type=minecraft:mannequin,tag=cy.gnew]" for n in range(1, len(GHOST_COLORS) + 1)],
+        "team join cy.g1 @n[type=minecraft:mannequin,tag=cy.gnew]",
         "tag @e[type=minecraft:mannequin,tag=cy.gnew] remove cy.gnew",
     ])
     fn("ghost/age", [
         "scoreboard players remove @s cy.gl 1",
+        f"execute if score @s cy.gl matches {GHOST_LIFE * 6 // 10} run team join cy.g2 @s[type=minecraft:mannequin]",
+        f"execute if score @s cy.gl matches {GHOST_LIFE * 3 // 10} run team join cy.g3 @s[type=minecraft:mannequin]",
         f"execute unless score @s cy.gl matches 1.. run function {NS}:ghost/remove",
     ])
     fn("ghost/remove", [   # empty the copied gear first so nothing drops, then vanish below the world (no death animation)
