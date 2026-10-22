@@ -67,12 +67,22 @@ IMPLANTS = [
 SKELETON = (17, "cyberskeleton", "Militech Cyberskeleton", "dark_red", 3, 14, ("netherite_ingot", 8), "netherite_chestplate",
             ["David's full-body frame (Edgerunners).", "+10 hearts, +8 armor, +4 toughness, +6 damage,", "huge jumps, 80% knockback resistance, bigger frame.",
              "Land from a jump: ground slam (8 damage, 4.5 blocks).",
-             "Dual-wield: an offhand melee weapon adds its damage,", "an offhand bow/crossbow fires with your main one.", "Capacity 14: expect cyberpsychosis."],
+             "Dual-wield: an offhand melee weapon adds its damage,", "an offhand bow/crossbow fires with your main one.",
+             "Hold sneak 1s, then jump: charged leap.", "Sneak-attack: grab and throw.",
+             "Runs hot with the Sandevistan (longer, faster recharge).", "Abilities build heat and psychosis.",
+             "Once per life: a last stand at 3 hearts.", "Capacity 14: expect cyberpsychosis."],
             [("max_health", 20, "add_value"), ("armor", 8, "add_value"), ("armor_toughness", 4, "add_value"),
              ("attack_damage", 6, "add_value"), ("attack_knockback", 1.5, "add_value"), ("knockback_resistance", 0.8, "add_value"),
              ("jump_strength", 0.25, "add_value"), ("safe_fall_distance", 10, "add_value"), ("fall_damage_multiplier", -0.6, "add_value"),
              ("step_height", 0.6, "add_value"), ("movement_speed", 0.15, "add_multiplied_base"), ("scale", 0.15, "add_value")])
 TEST_IDS = {17}
+# Cyberskeleton, show extras: psychosis meter / heat (0-100) gained per action, last stand, leap, throw
+PSY = {"slam": 8, "sandy": 15, "kill": 5, "leap": 4, "throw": 3, "last": 30}
+HEAT = {"slam": 15, "sandy": 25, "leap": 10, "throw": 5}
+HEAT_COOL, OVERHEAT_TICKS = 4, 80        # heat lost per second; how long an overheat locks the abilities
+LAST_HP, LAST_TICKS = 6, 160             # last stand: triggers at or under this health, lasts this long
+LEAP_CHARGE, THROW_CD = 20, 40           # ticks of sneaking to charge a leap; throw cooldown
+SANDY_SKEL_CD, SANDY_SKEL_SECS = 600, 9  # Sandevistan with the Cyberskeleton: cooldown ticks, effect seconds
 SLAM_FALL, SLAM_CD, SLAM_DMG = 30, 100, 8   # fall distance x10 that triggers a slam, cooldown ticks, damage
 # Cyberskeleton dual-wield: offhand melee weapon -> extra attack damage (item damage - 1, x10); offhand bow/crossbow fires too
 DUAL_MELEE = {"wooden_sword": 30, "golden_sword": 30, "stone_sword": 40, "copper_sword": 40, "iron_sword": 50, "diamond_sword": 60,
@@ -82,7 +92,8 @@ DUAL_MELEE = {"wooden_sword": 30, "golden_sword": 30, "stone_sword": 40, "copper
 SKEL_TRIM = {"material": "minecraft:redstone", "pattern": "minecraft:rib"}
 ARMOR_SLOTS = ["head", "chest", "legs", "feet"]
 DUAL_DELAY, DUAL_SPEED = 10, 3.0   # offhand shot: ticks after the main one (past the target's hit cooldown), blocks/tick
-NEURO = ("neuro", "Neuroblocker", ("diamond", 2), "honey_bottle", 1200)   # seconds of psychosis immunity
+NEURO = ("neuro", "Neuroblocker", ("diamond", 2), "honey_bottle", 1200)
+PILL = False   # --pvp: the Neuroblocker is a pill (quick swallow) that also cuts a Cyberskeleton's psychosis meter   # seconds of psychosis immunity
 OS_CD = {13: 1200, 14: 1500}   # ticks
 GHOST_TICKS, GHOST_LIFE = 120, 8     # Sandevistan after-images: how long they spawn, and how long each lasts (ticks)
 GHOST_COLORS = ["aqua", "green", "light_purple", "yellow"]
@@ -147,9 +158,11 @@ def build():
             "cy.cdh dummy", "cy.hp health", "cy.death deathCount", "cy.snk dummy", "cy.tap dummy",
             "cy.nb dummy", "cy.pcd dummy", "cy.sv dummy", "cy.gl dummy",
             "cy.jump minecraft.custom:minecraft.jump", "cy.lcd dummy", "cy.fd dummy", "cy.fdp dummy", "cy.scd dummy",
-            "cy.ohb dummy", "cy.bow minecraft.used:minecraft.bow", "cy.xbow minecraft.used:minecraft.crossbow", "cy.dwt dummy", "cy.dwd dummy"] + [f"cy.s{s} dummy" for s in SLOTS]
+            "cy.ohb dummy", "cy.bow minecraft.used:minecraft.bow", "cy.xbow minecraft.used:minecraft.crossbow", "cy.dwt dummy", "cy.dwd dummy",
+            "cy.psy dummy", "cy.heat dummy", "cy.ovh dummy", "cy.ls dummy", "cy.lst dummy", "cy.chg dummy", "cy.tcd dummy",
+            "cy.kc totalKillCount"] + [f"cy.s{s} dummy" for s in SLOTS]
     fn("load", [f"scoreboard objectives add {o}" for o in objs] + [
-        f"scoreboard players set #limit cy {CAP_LIMIT}", "scoreboard players set #t cy 0", "scoreboard players set #2 cy 2", "scoreboard players set #5 cy 5",
+        f"scoreboard players set #limit cy {CAP_LIMIT}", "scoreboard players set #t cy 0", "scoreboard players set #2 cy 2", "scoreboard players set #5 cy 5", "scoreboard players set #7 cy 7",
         # Sandevistan after-image glow colours
         *[l for n, c in enumerate(GHOST_COLORS, 1) for l in (
             f"team add cy.g{n}", f"team modify cy.g{n} color {c}", f"team modify cy.g{n} collisionRule never",
@@ -169,6 +182,8 @@ def build():
         "scoreboard players remove @a[scores={cy.cd=1..}] cy.cd 1",
         "execute as @a[scores={cy.cd=1,cy.s9=13}] run title @s actionbar {\"text\":\"◆ Sandevistan ready\",\"color\":\"aqua\"}",
         "execute as @a[scores={cy.cd=1,cy.s9=14}] run title @s actionbar {\"text\":\"◆ Berserk ready\",\"color\":\"red\"}",
+        # Cyberskeleton charged leap (before the launcher, which also uses sneak + jump)
+        f"execute as @a[scores={{cy.s3=17}}] at @s run function {NS}:skel/leap_tick",
         # Projectile Launch System (arms): sneak + jump
         f"execute as @a[scores={{cy.s4=16}}] at @s run function {NS}:arms/tick",
         "scoreboard players remove @a[scores={cy.lcd=1..}] cy.lcd 1",
@@ -190,15 +205,15 @@ def build():
     fn("second", [
         "scoreboard players set #t cy 0",
         # make sure every score used in a selector exists
-        *[f"scoreboard players add @a {o} 0" for o in ["cy.cap", "cy.cd", "cy.cdh", "cy.nb", "cy.pcd", "cy.lcd"] + [f"cy.s{s}" for s in SLOTS]],
+        *[f"scoreboard players add @a {o} 0" for o in ["cy.cap", "cy.cd", "cy.cdh", "cy.nb", "cy.pcd", "cy.lcd", "cy.psy", "cy.heat", "cy.ovh", "cy.ls", "cy.lst", "cy.chg", "cy.tcd", "cy.scd"] + [f"cy.s{s}" for s in SLOTS]],
         "effect give @a[scores={cy.s1=1}] minecraft:night_vision 30 0 true",
         "scoreboard players remove @a[scores={cy.nb=1..}] cy.nb 1",
         "execute as @a[scores={cy.nb=1}] run tellraw @s {\"text\":\"Your Neuroblocker wore off.\",\"color\":\"dark_purple\"}",
         "scoreboard players remove @a[scores={cy.pcd=1..}] cy.pcd 1",
-        f"execute as @a[scores={{cy.nb=0,cy.pcd=0}}] if score @s cy.cap > #limit cy at @s run function {NS}:psycho/roll",
-        # Cyberskeleton: trim newly worn armor
-        f"execute as @a[scores={{cy.s3=17}}] run function {NS}:skel/trim",
-        "execute as @a[scores={cy.s3=17}] at @s anchored eyes run particle minecraft:electric_spark ^ ^-0.6 ^-0.35 0.15 0.3 0.05 0.05 3",
+        f"execute as @a[scores={{cy.nb=0,cy.pcd=0}}] unless score @s cy.s3 matches 17 if score @s cy.cap > #limit cy at @s run function {NS}:psycho/roll",
+        # Cyberskeleton: trim, heat, psychosis meter, HUD (the meter cools every other second)
+        "scoreboard players add #half cy 1", "execute if score #half cy matches 2.. run scoreboard players set #half cy 0",
+        f"execute as @a[scores={{cy.s3=17}}] at @s run function {NS}:skel/second",
     ])
 
     # ------------------------------------------------------------------ items, install, remove
@@ -208,10 +223,14 @@ def build():
                                   "bow", 2.5, "minecraft:block.anvil.use"))
         consume_adv(key, icon)
         d = f"implant/{key}"
-        fn(f"{d}/apply", [f"attribute @s minecraft:{a} modifier add {NS}:{key}_{n} {v} {op}" for n, (a, v, op) in enumerate(mods)])
+        fn(f"{d}/apply", [f"attribute @s minecraft:{a} modifier add {NS}:{key}_{n} {v} {op}" for n, (a, v, op) in enumerate(mods)]
+           + ([f"scoreboard players set @s cy.{o} 0" for o in ("psy", "heat", "ovh", "ls", "lst", "chg", "tcd", "kc")] + ["tag @s remove cy.psycho"]
+              if key == "cyberskeleton" else []))
         fn(f"{d}/unapply", [f"attribute @s minecraft:{a} modifier remove {NS}:{key}_{n}" for n, (a, v, op) in enumerate(mods)]
            + ([f"attribute @s minecraft:attack_damage modifier remove {NS}:dualwield", "scoreboard players set @s cy.ohb 0",
-               "scoreboard players set @s cy.dwt 0", f"function {NS}:skel/untrim"] if key == "cyberskeleton" else []))
+               "scoreboard players set @s cy.dwt 0", f"function {NS}:skel/untrim", "tag @s remove cy.psycho",
+               "scoreboard players set @s cy.psy 0", "scoreboard players set @s cy.heat 0", "scoreboard players set @s cy.lst 0"]
+              if key == "cyberskeleton" else []))
         nm = {"text": name, "color": color}
         fn(f"{d}/use", [
             f"advancement revoke @s only {NS}:use/{key}",
@@ -247,7 +266,13 @@ def build():
             "scoreboard players set @s cy.cdh 0" if slot == 8 else "scoreboard players set @s cy.cd 0" if slot == 9 else ""])
 
     nkey, nname, nprice, nicon, nsecs = NEURO
-    loot(nkey, item_components(nkey, nname, "dark_purple",
+    if PILL:
+        nicon = "sugar"
+        loot(nkey, item_components(nkey, nname + " Pills", "dark_purple",
+                                   ["Suppresses cyberpsychosis for 20 minutes.", "With a Cyberskeleton: halves your psychosis meter",
+                                    "and pulls you back from a full episode.", "Swallow to use."], nicon, "uncommon",
+                                   "eat", 0.4, "minecraft:entity.generic.eat"))
+    else: loot(nkey, item_components(nkey, nname, "dark_purple",
                                ["Suppresses cyberpsychosis for 20 minutes.", "Drink to use."], nicon, "uncommon",
                                "drink", 1.6, "minecraft:entity.generic.drink"))
     consume_adv(nkey, nicon)
@@ -255,6 +280,7 @@ def build():
         f"advancement revoke @s only {NS}:use/{nkey}",
         f"scoreboard players set @s cy.nb {nsecs}",
         "tellraw @s {\"text\":\"Neuroblocker active: no cyberpsychosis for 20 minutes.\",\"color\":\"dark_purple\"}",
+        f"execute if score @s cy.s3 matches 17 run function {NS}:skel/pill",
     ])
 
     fn("capacity_msg", [
@@ -362,7 +388,9 @@ def build():
     if DROP_ON_DEATH: died += [f"execute if score @s cy.cap matches 1.. run tellraw @s {{\"text\":\"Your chrome was left where you died.\",\"color\":\"red\"}}"]
     died += [f"scoreboard players set @s cy.s{s} 0" for s in SLOTS]
     died += ["scoreboard players set @s cy.cap 0", "scoreboard players set @s cy.cd 0", "scoreboard players set @s cy.cdh 0",
-             "scoreboard players set @s cy.sv 0", "tag @s add cy.dead"]
+             "scoreboard players set @s cy.sv 0", "tag @s add cy.dead",
+             "scoreboard players set @s cy.psy 0", "scoreboard players set @s cy.heat 0", "scoreboard players set @s cy.ls 0",
+             "scoreboard players set @s cy.lst 0", "scoreboard players set @s cy.ovh 0", "tag @s remove cy.psycho"]
     fn("death/died", died)
     fn("death/respawned", ["tag @s remove cy.dead"] + [f"function {NS}:implant/{i[1]}/unapply" for i in IMPLANTS if i[9]])
 
@@ -395,6 +423,7 @@ def build():
         "playsound minecraft:block.beacon.power_select player @a[distance=..16] ~ ~ ~ 1 2",
         "particle minecraft:electric_spark ~ ~1 ~ 2 1 2 0.5 200",
         "title @s actionbar {\"text\":\"◆ SANDEVISTAN\",\"color\":\"aqua\",\"bold\":true}",
+        f"execute if score @s cy.s3 matches 17 run function {NS}:skel/sandy",
     ])
     # ------------------------------------------------------------------ Sandevistan after-images (Edgerunners)
     # Every 2 ticks while active, a mannequin copy of the player (skin, facing, armor, held items, crouch) is left
@@ -459,7 +488,22 @@ def build():
     fn("skel/tick", [
         "scoreboard players operation @s cy.fdp = @s cy.fd",
         "execute store result score @s cy.fd run data get entity @s fall_distance 10",
-        f"execute if score @s cy.fd matches 0 if score @s cy.fdp matches {SLAM_FALL}.. if score @s cy.scd matches ..0 run function {NS}:skel/slam",
+        f"execute if score @s cy.fd matches 0 if score @s cy.fdp matches {SLAM_FALL}.. if score @s cy.scd matches ..0 if score @s cy.ovh matches ..0 run function {NS}:skel/slam",
+        # servo sounds: jumps, landings, heavy footsteps while sprinting
+        "execute if score @s cy.jump matches 1.. run playsound minecraft:block.piston.extend player @a[distance=..16] ~ ~ ~ 0.4 0.7",
+        "scoreboard players set @s cy.jump 0",
+        "execute if score @s cy.fd matches 0 if score @s cy.fdp matches 12.. run playsound minecraft:entity.iron_golem.step player @a[distance=..16] ~ ~ ~ 1 0.6",
+        "execute if score @s cy.fd matches 0 if score @s cy.fdp matches 12.. run playsound minecraft:block.piston.contract player @a[distance=..16] ~ ~ ~ 0.4 0.6",
+        "scoreboard players operation #m cy = #t cy", "scoreboard players operation #m cy %= #7 cy",
+        f"execute if score #m cy matches 0 if predicate {NS}:sprinting run playsound minecraft:entity.iron_golem.step player @a[distance=..16] ~ ~ ~ 0.5 0.9",
+        # kills feed the psychosis meter
+        f"execute if score @s cy.kc matches 1.. run function {NS}:skel/kills",
+        # timers: overheat, throw, last stand
+        "execute if score @s cy.ovh matches 1.. run scoreboard players remove @s cy.ovh 1",
+        "execute if score @s cy.tcd matches 1.. run scoreboard players remove @s cy.tcd 1",
+        f"execute if score @s cy.ls matches 0 if score @s cy.hp matches 1..{LAST_HP} run function {NS}:skel/last_stand",
+        "execute if score @s cy.lst matches 1.. run scoreboard players remove @s cy.lst 1",
+        f"execute if score @s cy.lst matches 1 run function {NS}:skel/last_stand_end",
         f"function {NS}:skel/offhand",
         f"execute if score @s cy.bow matches 1.. run function {NS}:skel/volley",
         f"execute if score @s cy.xbow matches 1.. run function {NS}:skel/volley",
@@ -467,6 +511,144 @@ def build():
         "execute if score @s cy.dwt matches 1.. run scoreboard players remove @s cy.dwt 1",
         f"execute if score @s cy.dwt matches 1 at @s run function {NS}:skel/dual_fire",
     ])
+    wj(f"data/{NS}/predicate/sprinting.json", {"condition": "minecraft:entity_properties", "entity": "this",
+                                                "predicate": {"flags": {"is_sprinting": True, "is_on_ground": True}}})
+    wj(f"data/{NS}/predicate/grounded.json", {"condition": "minecraft:entity_properties", "entity": "this",
+                                               "predicate": {"flags": {"is_on_ground": True}}})
+    # keep heat and psychosis in 0..100; hitting 100 heat overheats the frame
+    fn("skel/clamp", [
+        "execute if score @s cy.psy matches 101.. run scoreboard players set @s cy.psy 100",
+        f"execute if score @s cy.heat matches 100.. if score @s cy.ovh matches ..0 run function {NS}:skel/overheat",
+        "execute if score @s cy.heat matches 101.. run scoreboard players set @s cy.heat 100",
+    ])
+    fn("skel/overheat", [
+        f"scoreboard players set @s cy.ovh {OVERHEAT_TICKS}", "scoreboard players set @s cy.heat 70",
+        f"effect give @s minecraft:slowness {OVERHEAT_TICKS // 20} 1 true",
+        "execute anchored eyes run particle minecraft:cloud ^ ^-0.5 ^-0.4 0.3 0.4 0.3 0.08 40",
+        "playsound minecraft:block.fire.extinguish player @a[distance=..16] ~ ~ ~ 1 0.6",
+        f"title @s actionbar {tj({'text': '⚠ FRAME OVERHEATED: abilities offline', 'color': 'gold', 'bold': True})}",
+    ])
+    fn("skel/kills", [
+        f"scoreboard players operation #k cy = @s cy.kc", f"scoreboard players operation #k cy *= #5 cy",
+        "scoreboard players operation @s cy.psy += #k cy", "scoreboard players set @s cy.kc 0", f"function {NS}:skel/clamp",
+    ])
+    # once a second, as each wearer
+    hud = [{"text": "HEAT ", "color": "gold"}, {"score": {"name": "@s", "objective": "cy.heat"}, "color": "white"}, {"text": "%   ", "color": "gold"},
+           {"text": "PSYCHOSIS ", "color": "dark_red"}, {"score": {"name": "@s", "objective": "cy.psy"}, "color": "white"}, {"text": "%", "color": "dark_red"}]
+    fn("skel/second", [
+        f"function {NS}:skel/trim",
+        f"scoreboard players remove @s[scores={{cy.heat=1..}}] cy.heat {HEAT_COOL}",
+        "execute if score @s cy.heat matches ..-1 run scoreboard players set @s cy.heat 0",
+        "execute if score #half cy matches 0 unless entity @s[tag=cy.psycho] if score @s cy.psy matches 1.. run scoreboard players remove @s cy.psy 1",
+        "execute anchored eyes run particle minecraft:electric_spark ^ ^-0.6 ^-0.35 0.15 0.3 0.05 0.05 3",
+        "execute if score @s cy.heat matches 50.. anchored eyes run particle minecraft:cloud ^ ^-0.5 ^-0.4 0.1 0.2 0.1 0.02 4",
+        "execute if score @s cy.heat matches 80.. anchored eyes run particle minecraft:cloud ^ ^-0.5 ^-0.4 0.15 0.3 0.15 0.04 10",
+        "execute if score @s cy.heat matches 80.. run playsound minecraft:block.fire.extinguish player @a[distance=..12] ~ ~ ~ 0.2 1.4",
+        # psychosis stages
+        "execute store result score #r cy run random value 1..10",
+        "execute if score @s cy.psy matches 40..99 if score #r cy matches 1 run effect give @s minecraft:nausea 4 0 true",
+        "execute if score @s cy.psy matches 70..99 if score #r cy matches 2..3 run effect give @s minecraft:darkness 2 0 true",
+        "execute if score @s cy.psy matches 70..99 run playsound minecraft:entity.warden.heartbeat player @s ~ ~ ~ 1 0.8",
+        f"execute if score @s cy.psy matches 100.. unless entity @s[tag=cy.psycho] run function {NS}:skel/psycho_start",
+        f"execute if entity @s[tag=cy.psycho] run function {NS}:skel/psycho_tick",
+        f"execute unless score @s cy.lst matches 1.. if score @s cy.ovh matches ..0 unless score @s cy.chg matches 1.. if score @s cy.heat matches 1.. run title @s actionbar {tj(hud)}",
+        f"execute unless score @s cy.lst matches 1.. if score @s cy.ovh matches ..0 unless score @s cy.chg matches 1.. if score @s cy.heat matches 0 if score @s cy.psy matches 1.. run title @s actionbar {tj(hud)}",
+    ])
+    fn("skel/psycho_start", [
+        "tag @s add cy.psycho",
+        "tellraw @a [{\"text\":\"⚠ \",\"color\":\"dark_red\"},{\"selector\":\"@s\",\"color\":\"red\",\"bold\":true},{\"text\":\" has gone cyberpsycho!\",\"color\":\"dark_red\",\"bold\":true}]",
+        "title @s title {\"text\":\"CYBERPSYCHO\",\"color\":\"dark_red\",\"bold\":true}",
+        "title @s subtitle {\"text\":\"Take a Neuroblocker or burn out\",\"color\":\"red\"}",
+        "playsound minecraft:entity.warden.roar player @a[distance=..48] ~ ~ ~ 1 1.2",
+    ])
+    fn("skel/psycho_tick", [   # big damage, everyone can see you, and the frame is eating you alive
+        "effect give @s minecraft:strength 2 2 true", "effect give @s minecraft:glowing 2 0 true",
+        "effect give @s minecraft:nausea 3 0 true",
+        "particle minecraft:dust{color:[0.8,0.0,0.0],scale:1.5} ~ ~1 ~ 0.4 0.6 0.4 0 12",
+        "damage @s 1 minecraft:magic",
+    ])
+    fn("skel/pill", [
+        "scoreboard players operation #p cy = @s cy.psy", "scoreboard players operation #p cy /= #2 cy",
+        "scoreboard players operation @s cy.psy -= #p cy",
+        "execute if entity @s[tag=cy.psycho] run tellraw @s {\"text\":\"The pills pull you back from the edge.\",\"color\":\"dark_purple\"}",
+        "execute unless entity @s[tag=cy.psycho] run tellraw @s {\"text\":\"The pills take the edge off.\",\"color\":\"dark_purple\"}",
+        "tag @s remove cy.psycho",
+    ])
+    # 1: running the Sandevistan with the frame
+    fn("skel/sandy", [
+        f"scoreboard players set @s cy.cd {SANDY_SKEL_CD}",
+        f"effect give @s minecraft:speed {SANDY_SKEL_SECS} 3", f"effect give @s minecraft:haste {SANDY_SKEL_SECS} 1",
+        f"effect give @s minecraft:jump_boost {SANDY_SKEL_SECS} 0",
+        f"effect give @e[distance=0.01..12,type=!minecraft:armor_stand,tag=!cy.ghost] minecraft:slowness {SANDY_SKEL_SECS} 2",
+        f"scoreboard players add @s cy.sv {(SANDY_SKEL_SECS - 6) * 20}",
+        f"scoreboard players add @n[type=minecraft:item_display,tag=cy.ganchor,distance=..2] cy.gl {(SANDY_SKEL_SECS - 6) * 20}",
+        f"scoreboard players add @s cy.psy {PSY['sandy']}", f"scoreboard players add @s cy.heat {HEAT['sandy']}", f"function {NS}:skel/clamp",
+        "playsound minecraft:entity.warden.sonic_boom player @a[distance=..24] ~ ~ ~ 0.4 1.6",
+        "playsound minecraft:block.piston.extend player @a[distance=..16] ~ ~ ~ 1 0.5",
+        "title @s actionbar {\"text\":\"◆ SANDEVISTAN + CYBERSKELETON\",\"color\":\"dark_red\",\"bold\":true}",
+    ])
+    # 4: last stand, once per life
+    fn("skel/last_stand", [
+        "scoreboard players set @s cy.ls 1", f"scoreboard players set @s cy.lst {LAST_TICKS}",
+        f"effect give @s minecraft:resistance {LAST_TICKS // 20} 2", f"effect give @s minecraft:strength {LAST_TICKS // 20} 1",
+        f"scoreboard players add @s cy.psy {PSY['last']}", f"function {NS}:skel/clamp",
+        "title @s title {\"text\":\"LAST STAND\",\"color\":\"dark_red\",\"bold\":true}",
+        f"title @s subtitle {tj({'text': f'The frame keeps you moving for {LAST_TICKS // 20} seconds', 'color': 'red'})}",
+        "playsound minecraft:item.totem.use player @a[distance=..24] ~ ~ ~ 0.7 0.6",
+        "playsound minecraft:entity.warden.heartbeat player @s ~ ~ ~ 1 1.2",
+        "particle minecraft:dust{color:[1.0,0.0,0.0],scale:2.0} ~ ~1 ~ 0.5 0.8 0.5 0 40",
+        "tellraw @a[distance=..32] [{\"selector\":\"@s\",\"color\":\"red\"},{\"text\":\" refuses to go down!\",\"color\":\"dark_red\"}]",
+    ])
+    fn("skel/last_stand_end", [   # the frame gives out: down to half a heart
+        "scoreboard players operation #d cy = @s cy.hp", "scoreboard players remove #d cy 1",
+        "execute if score #d cy matches 1.. store result storage cyber:tmp ls.d float 1 run scoreboard players get #d cy",
+        f"execute if score #d cy matches 1.. run function {NS}:skel/drain with storage cyber:tmp ls",
+        "tellraw @s {\"text\":\"Your frame gives out.\",\"color\":\"dark_red\"}",
+        "playsound minecraft:block.beacon.deactivate player @s ~ ~ ~ 1 0.6",
+    ])
+    fn("skel/drain", ["$damage @s $(d) minecraft:magic"])
+    # 6: charged leap - hold sneak on the ground, then jump; a wind blast behind your feet throws you forward
+    fn("skel/leap_tick", [
+        f"execute if score @s cy.jump matches 1.. if score @s cy.chg matches {LEAP_CHARGE}.. run return run function {NS}:skel/leap",
+        f"execute if predicate {NS}:sneaking if predicate {NS}:grounded run scoreboard players add @s cy.chg 1",
+        f"execute unless predicate {NS}:sneaking run scoreboard players set @s cy.chg 0",
+        f"execute if score @s cy.chg matches {LEAP_CHARGE} run playsound minecraft:item.crossbow.loading_end player @s ~ ~ ~ 1 0.6",
+        f"execute if score @s cy.chg matches {LEAP_CHARGE} run title @s actionbar {tj({'text': '◆ LEAP CHARGED: jump!', 'color': 'dark_red', 'bold': True})}",
+    ])
+    fn("skel/leap", [
+        "scoreboard players set @s cy.chg 0", "scoreboard players set @s cy.jump 0",
+        f"execute if score @s cy.ovh matches 1.. run return run title @s actionbar {tj({'text': 'Frame overheated', 'color': 'gold'})}",
+        "execute rotated ~ 0 positioned ^ ^ ^-0.7 run summon minecraft:wind_charge ~ ~0.2 ~ {Motion:[0.0d,-2.0d,0.0d]}",
+        f"scoreboard players add @s cy.psy {PSY['leap']}", f"scoreboard players add @s cy.heat {HEAT['leap']}", f"function {NS}:skel/clamp",
+        "playsound minecraft:block.piston.extend player @a[distance=..24] ~ ~ ~ 1 0.5",
+        "playsound minecraft:entity.breeze.jump player @a[distance=..24] ~ ~ ~ 1 0.7",
+        "particle minecraft:electric_spark ~ ~0.2 ~ 0.4 0.1 0.4 0.3 30",
+    ])
+    # 5: grab and throw - a sneaking hit flings the target up and away
+    wj(f"data/{NS}/advancement/skel_throw.json", {"criteria": {"c": {"trigger": "minecraft:player_hurt_entity", "conditions": {"player": [
+        {"condition": "minecraft:entity_properties", "entity": "this", "predicate": {"flags": {"is_sneaking": True}}},
+        {"condition": "minecraft:entity_scores", "entity": "this", "scores": {"cy.s3": 17}}]}}},
+        "rewards": {"function": f"{NS}:skel/throw"}})
+    fn("skel/throw", [
+        f"advancement revoke @s only {NS}:skel_throw",
+        "execute if score @s cy.tcd matches 1.. run return 0",
+        "execute if score @s cy.ovh matches 1.. run return 0",
+        f"scoreboard players set @s cy.tcd {THROW_CD}",
+        # the throw direction as a vector: a marker at the world origin, offset along the look direction (tilted up)
+        "execute rotated as @s rotated ~ -35 positioned 0.0 0.0 0.0 run summon minecraft:marker ^ ^ ^2.2 {Tags:[\"cy.vec\"]}",
+        # the target: whatever was just hurt (HurtTime 10), else whatever is right in front of you
+        "tag @s add cy.thr",
+        "tag @e[distance=0.1..6,nbt={HurtTime:10s}] add cy.tgt",
+        "execute unless entity @e[tag=cy.tgt] anchored eyes positioned ^ ^ ^1.8 run tag @n[distance=..2.2,tag=!cy.thr,type=!minecraft:item,type=!minecraft:marker,type=!minecraft:experience_orb,type=!minecraft:interaction] add cy.tgt",
+        "execute as @e[tag=cy.tgt,type=!minecraft:player] run data modify entity @s Motion set from entity @n[type=minecraft:marker,tag=cy.vec] Pos",
+        "effect give @a[tag=cy.tgt] minecraft:levitation 1 4 true",
+        "tag @e[tag=cy.tgt] remove cy.tgt", "tag @s remove cy.thr",
+        "kill @e[type=minecraft:marker,tag=cy.vec]",
+        f"scoreboard players add @s cy.psy {PSY['throw']}", f"scoreboard players add @s cy.heat {HEAT['throw']}", f"function {NS}:skel/clamp",
+        "playsound minecraft:entity.iron_golem.attack player @a[distance=..16] ~ ~ ~ 1 0.6",
+        "playsound minecraft:item.mace.smash_air player @a[distance=..16] ~ ~ ~ 1 0.8",
+    ])
+
     # dual-wield, melee: keep an attack_damage modifier equal to the offhand weapon's damage (tenths in cy.ohb)
     fn("skel/offhand", ["scoreboard players set #od cy 0",
         *[f"execute if items entity @s weapon.offhand minecraft:{it} run scoreboard players set #od cy {v}" for it, v in DUAL_MELEE.items()],
@@ -517,9 +699,10 @@ def build():
            "type=!minecraft:text_display,type=!minecraft:item_display,type=!minecraft:armor_stand,type=!minecraft:villager,type=!minecraft:experience_orb")
     fn("skel/slam", [
         f"scoreboard players set @s cy.scd {SLAM_CD}",
+        f"scoreboard players add @s cy.psy {PSY['slam']}", f"scoreboard players add @s cy.heat {HEAT['slam']}", f"function {NS}:skel/clamp",
         "tag @s add cy.slm",
-        f"execute unless entity @s[team=pve] as @e[{hit}] run damage @s {SLAM_DMG} minecraft:player_attack by @p[tag=cy.slm]",
-        f"execute if entity @s[team=pve] as @e[{hit},team=!pve] run damage @s {SLAM_DMG} minecraft:player_attack by @p[tag=cy.slm]",
+        f"execute unless entity @s[team=pve] as @e[{hit}] run damage @s {SLAM_DMG} minecraft:player_attack by @n[tag=cy.slm]",
+        f"execute if entity @s[team=pve] as @e[{hit},team=!pve] run damage @s {SLAM_DMG} minecraft:player_attack by @n[tag=cy.slm]",
         f"execute unless entity @s[team=pve] run effect give @e[{hit}] minecraft:levitation 1 1 true",
         f"execute if entity @s[team=pve] run effect give @e[{hit},team=!pve] minecraft:levitation 1 1 true",
         "tag @s remove cy.slm",
@@ -581,7 +764,7 @@ def build():
 
 if __name__ == "__main__":
     if "--pvp" in sys.argv:
-        sys.argv.remove("--pvp"); DROP_ON_DEATH = False
+        sys.argv.remove("--pvp"); DROP_ON_DEATH = False; PILL = True
         IMPLANTS.append(SKELETON); BY_ID[SKELETON[0]] = SKELETON
     OUT = os.path.join(sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "dist"), "crispy_cyberware")
     build()

@@ -52,7 +52,7 @@ re-run the place commands after a reinstall.
 | Sandevistan | Operating System | 8 | 3 netherite | double-tap sneak: Speed IV, Haste II for 6 s; Slowness III on everything within 12 blocks; leaves an Edgerunners-style after-image trail; 60 s cooldown |
 | Berserk | Operating System | 7 | 2 netherite | double-tap sneak: Strength II + Resistance for 8 s (you glow); 75 s cooldown |
 | Projectile Launch System | Arms | 6 | 2 netherite | sneak + jump: fires an explosive round (fireball, power 1) where you look; 8 s reload. On Anarchy it can break blocks if mob griefing is on |
-| Militech Cyberskeleton (PvP test-only) | Skeleton | 14 | not sold | +10 hearts, +8 armor, +4 toughness, +6 damage, big jumps, 80% knockback resistance; landing from 3+ blocks ground-slams nearby enemies (8 damage, 5 s cooldown); dual-wield: offhand melee weapon adds its damage, offhand bow/crossbow fires a second arrow; worn armor gets a red Rib trim. Only built with `--pvp`, admin room / `cyber:admin/give` only |
+| Militech Cyberskeleton (PvP test-only) | Skeleton | 14 | not sold | +10 hearts, +8 armor, +4 toughness, +6 damage, big jumps, 80% knockback resistance; landing from 3+ blocks ground-slams nearby enemies (8 damage, 5 s cooldown); dual-wield: offhand melee weapon adds its damage, offhand bow/crossbow fires a second arrow; worn armor gets a red Rib trim; Sandevistan synergy, psychosis meter, last stand, grab & throw, charged leap, heat/overheat (see pvp/README.md). Only built with `--pvp`, admin room / `cyber:admin/give` only |
 
 Everything is set in the tables at the top of `build.py`:
 - implants, prices and capacity costs: `IMPLANTS`;

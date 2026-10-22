@@ -152,6 +152,26 @@ The stray check leaves `pvp.admin` players alone in the room. `enchants.json` (i
   - Pieces that already have a trim are left alone.
   - Taking the implant out removes only the trim it added (marked `custom_data.cy_trim`).
   - Electric sparks come off the back.
+- **Show extras** (episode 10):
+  - **Sandevistan + Cyberskeleton**: with both installed, the Sandy lasts 9 s instead of 6, recharges in 30 s instead
+    of 60, and leaves a longer after-image trail.
+  - **Psychosis meter** (0–100%), shown with heat on the action bar. It replaces the random over-capacity episodes.
+    - Gains: slam +8, Sandy +15, each kill +5, leap +4, throw +3, last stand +30. It falls 1 every 2 s.
+    - 40%+: nausea flashes. 70%+: heartbeat and darkness flashes.
+    - 100%: **cyberpsycho**. The server is told, and you get Strength III and Glowing, but lose 1 health per second
+      until you take Neuroblocker pills or die.
+  - **Neuroblocker Pills** (PvP only; quick swallow, Anarchy keeps the drink): besides the normal 20-minute
+    immunity, they halve a Cyberskeleton's meter and end a full episode.
+  - **Last stand**, once per life: dropping to 3 hearts or less gives Resistance III and Strength II for 8 s. Then
+    the frame gives out and you're left on half a heart.
+  - **Grab and throw**: a sneaking hit flings the target up and away. Mobs are thrown along your look direction;
+    players get a burst of Levitation. 2 s cooldown.
+  - **Charged leap**: hold sneak on the ground for 1 s ("LEAP CHARGED"), then jump. A wind blast behind your feet
+    throws you forward, and landing from it is a ground slam. It takes priority over the Projectile Launcher's
+    sneak + jump when charged.
+  - **Heat** (0–100%): slam +15, Sandy +25, leap +10, throw +5. It cools 4% a second, and steam vents off your back
+    from 50%. At 100% the frame overheats: Slowness II, and slam/leap/throw are offline for 4 s.
+  - **Sounds**: piston servos on jumps and landings, heavy iron-golem footsteps while sprinting.
 - It's only built into PvP's `crispy_cyberware` (`build.py --pvp`). It isn't sold at Anarchy's Ripperdoc and isn't in
   any kit. Implant id 17 isn't in the kit mod's list, so `/pvpkit create` leaves it out of saved kits.
 
