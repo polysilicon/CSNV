@@ -59,16 +59,19 @@ All kit gear is unbreakable, and every kit also gets 16 steak and 2 golden apple
   - **Veteran bonus**: you start each run with 500 points + 25 per wave of your best run (`pve.best`), capped at +1,000.
 - **Queue**: the first player to queue starts a 10 s countdown, and anyone who queues meanwhile joins the same run.
   If you queue during a run, you drop in at the next wave break.
-- **Maps**: four arenas, each the same size with 12 barred mob windows and the **Arsenal** shop in the middle.
-  **Change map** / **Random map** in the Outbreak menu (slots 45 / 53) pick the next map before a run starts.
+- **Maps**: four arenas of the same size, each with 12 barred mob windows, the player spawns and the **Arsenal** in
+  the middle, but with their own layout. **Change map** / **Random map** in the Outbreak menu (slots 45 / 53) pick the
+  next map before a run starts.
 
-  | Map | Centre | Extra mobs |
-  |---|---|---|
-  | Ruins | 0, -60, 300 | none |
-  | Toxic Mine | 0, -60, 400 | cave spiders (wave 2+), silverfish (wave 4+) |
-  | Neon City | 0, -60, 500 | pillagers (wave 3+), vindicators (wave 5+) |
-  | Hellfort | 0, -60, 600 | wither skeletons (wave 3+), blazes (wave 4+) |
+  | Map | Centre | Layout | Extra mobs |
+  |---|---|---|---|
+  | Ruins | 0, -60, 300 | overgrown courtyard: a broken colonnade with lintels around a raised dais, fallen columns, crumbling wall corners | none |
+  | Toxic Mine | 0, -60, 400 | cave: rock outcrops, stalagmites, an overhang with stalactites, a mine-cart loop under timber frames, toxic barrels, slime sludge puddles (they slow you) | cave spiders (wave 2+), silverfish (wave 4+) |
+  | Neon City | 0, -60, 500 | crossroads with crosswalks, kerbs and street lamps; a tower with a glowing sign, a noodle bar, a car park, an arcade with a rooftop billboard | pillagers (wave 3+), vindicators (wave 5+) |
+  | Hellfort | 0, -60, 600 | you start inside a walled keep with four arched gates and corner towers; outside are fenced lava pools, basalt columns, a giant ribcage and a ruined portal | wither skeletons (wave 3+), blazes (wave 4+) |
 
+  The layouts are in `outbreak_maps.py`. Building checks that every mob window can still walk to the Arsenal and the
+  spawns are clear, and fails if not.
   Team members are on team `pve`, so there's no friendly fire, and they see their points on the team sidebar.
 - **Waves**: there are 6 + 4·(wave−1) mobs, plus 3 + 2·(wave−1) for each extra player, capped at 150. At most 30 are alive at once.
   - New types unlock as you go: husks at wave 2, skeletons at 3, spiders at 4, vindicators at 6, wither skeletons at 7, creepers at 8.

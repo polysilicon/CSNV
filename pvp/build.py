@@ -7,7 +7,8 @@ Kit/arena PvP plus "Outbreak", a CoD-zombies style wave mode, both using Anarchy
 (crispy_enchants) and cyberware (crispy_cyberware built with --pvp, so implants don't drop).
 Menus are chest screens opened with /pvpmenu (crispy-pvp-spawn mod) from storage pvp:menus.
 """
-import json, os, random, shutil, sys
+import json
+import outbreak_maps, os, random, shutil, sys
 
 NS = "pvp"
 PACK_FORMAT = [107, 0], [107, 1]
@@ -856,63 +857,27 @@ def build_pve():
     fn("admin/build_pve", [f"function {NS}:admin/build_pve_{m[1]}" for m in OUTBREAK_MAPS])
 
 
-THEMES = {   # floor base, floor patches, floor lights, wall, wall stripe, cover blocks, cover top light
-    "ruins": ("deepslate_tiles", ["cracked_deepslate_tiles", "cobbled_deepslate", "mossy_cobblestone", "deepslate_tiles", "tuff_bricks", "coarse_dirt"],
-              ["ochre_froglight", "verdant_froglight"], "polished_blackstone_bricks", "cracked_polished_blackstone_bricks", None, "soul_lantern"),
-    "mine": ("tuff", ["cobbled_deepslate", "gravel", "tuff", "polished_tuff", "andesite", "coarse_dirt"],
-             ["shroomlight"], "deepslate_bricks", "stripped_dark_oak_wood", ["deepslate_iron_ore", "deepslate_gold_ore", "deepslate_redstone_ore", "deepslate_emerald_ore", "deepslate_diamond_ore", "cobbled_deepslate"], "lantern"),
-    "neon": ("black_concrete", ["black_concrete", "gray_concrete", "black_concrete", "polished_blackstone"],
-             ["sea_lantern", "pearlescent_froglight"], "black_concrete", "magenta_concrete", ["cyan_stained_glass", "magenta_stained_glass", "black_concrete", "light_blue_stained_glass", "gray_concrete", "purple_stained_glass"], "end_rod"),
-    "hellfort": ("nether_bricks", ["red_nether_bricks", "nether_bricks", "blackstone", "netherrack", "soul_soil", "cracked_nether_bricks"],
-                 ["magma_block", "shroomlight"], "nether_bricks", "red_nether_bricks", ["blackstone", "polished_blackstone_bricks", "nether_bricks", "gilded_blackstone", "basalt", "red_nether_bricks"], "soul_lantern"),
-}
+PVE_THEMES = {"ruins": ("stone_bricks", "polished_andesite"), "mine": ("stone", "polished_tuff"),   # outer wall, Arsenal platform
+              "neon": ("black_concrete", "light_blue_concrete"), "hellfort": ("nether_bricks", "polished_blackstone")}
 
 
 def build_pve_map(m):
+    """Clear the map, put up the outer wall (with barrier above) and draw the layout from outbreak_maps.py."""
     i, key, name, color, _, cz, _ = m
-    base, patches, lights, wall, stripe, cover, toplight = THEMES[key]
-    rnd = random.Random(7 + i)
+    wall, plat = PVE_THEMES[key]
+    g = outbreak_maps.MAPS[key](MOB_POINTS, PVE_SPAWNS)
+    outbreak_maps.check(g, name)
     x1, x2, z1, z2 = PCX - PR, PCX + PR, cz - PR, cz + PR
     a = [f"fill {x1} {AY + 1 + k} {z1} {x2} {AY + 5 + k} {z2} minecraft:air" for k in range(0, 30, 5)]
-    a.append(f"fill {x1} {AY} {z1} {x2} {AY} {z2} minecraft:{base}")
-    for px in range(x1, x2 + 1, 5):
-        for pz in range(z1, z2 + 1, 5):
-            a.append(f"fill {px} {AY} {pz} {min(px + 4, x2)} {AY} {min(pz + 4, z2)} minecraft:{rnd.choice(patches)}")
-    for di in range(-PR + 2, PR - 1, 9):
-        for dj in range(-PR + 2, PR - 1, 9):
-            a.append(f"setblock {PCX + di} {AY} {cz + dj} minecraft:{rnd.choice(lights)}")
-    if key == "neon":   # glowing lane lines
-        a += [f"fill {x1} {AY} {cz} {x2} {AY} {cz} minecraft:cyan_concrete", f"fill {PCX} {AY} {z1} {PCX} {AY} {z2} minecraft:magenta_concrete"]
-    if key == "mine":   # rails across the floor
-        a += [f"fill {x1 + 1} {AY + 1} {cz + 6} {x2 - 1} {AY + 1} {cz + 6} minecraft:rail", f"fill {PCX - 6} {AY + 1} {z1 + 1} {PCX - 6} {AY + 1} {z2 - 1} minecraft:rail",
-              f"setblock {PCX - 6} {AY + 1} {cz + 6} minecraft:air"]
-    a += walls(PCX, cz, PR, wall, stripe)
-    for (dx, dz) in MOB_POINTS:   # barred windows behind every mob spawn
-        wx, wz = PCX + dx, cz + dz
-        if abs(dx) == 20: wx = PCX + (PR + 1) * (1 if dx > 0 else -1); a.append(f"fill {wx} {AY + 1} {wz - 1} {wx} {AY + 3} {wz + 1} minecraft:iron_bars")
-        else: wz = cz + (PR + 1) * (1 if dz > 0 else -1); a.append(f"fill {wx - 1} {AY + 1} {wz} {wx + 1} {AY + 3} {wz} minecraft:iron_bars")
-    for (rx1, rz1, rx2, rz2, h, blk) in RUINS:   # same cover layout on every map, in the map's own blocks
-        b = blk if cover is None else rnd.choice(cover)
-        a.append(f"fill {PCX + rx1} {AY + 1} {cz + rz1} {PCX + rx2} {AY + h} {cz + rz2} minecraft:{b}")
-        a.append(f"setblock {PCX + rx1} {AY + h + 1} {cz + rz1} minecraft:{toplight}")
-        if key in ("ruins", "hellfort"):
-            a.append(f"setblock {PCX + rx2} {AY + h} {cz + rz2} minecraft:air")   # broken corner
-    if key == "mine":   # timber supports in the corners
-        for sx in (x1 + 3, x2 - 3):
-            for sz in (z1 + 3, z2 - 3):
-                a += [f"fill {sx} {AY + 1} {sz} {sx} {AY + 4} {sz} minecraft:stripped_spruce_log", f"setblock {sx} {AY + 5} {sz} minecraft:lantern"]
-    if key == "hellfort":   # fire pits in the corners
-        for sx in (x1 + 3, x2 - 3):
-            for sz in (z1 + 3, z2 - 3):
-                a += [f"setblock {sx} {AY} {sz} minecraft:netherrack", f"setblock {sx} {AY + 1} {sz} minecraft:fire"]
-    plat = {"ruins": "polished_andesite", "mine": "polished_deepslate", "neon": "light_blue_concrete", "hellfort": "polished_blackstone"}[key]
+    a.append(f"fill {x1} {AY - 1} {z1} {x2} {AY} {z2} minecraft:{wall}")
+    a += walls(PCX, cz, PR, wall, wall)
+    a += outbreak_maps.commands(g, PCX, AY, cz)
     a += [f"fill {PCX - 1} {AY + 1} {cz - 1} {PCX + 1} {AY + 1} {cz + 1} minecraft:{plat}",   # Arsenal platform
           f"setblock {PCX} {AY + 1} {cz} minecraft:lodestone"]
     sx, sy, _ = SHOP_NPC
     body = npc("pvp.shopnpc", (sx, sy, cz + 0.5), "☣ Arsenal ☣", "green", "", "", 180, mannequin=True)
     a += [f"kill @e[tag=pvp.shopnpc,x={sx},y={sy},z={cz + 0.5},distance=..4]"] + body[1:]   # only this map's Arsenal
     return a
-
 
 if __name__ == "__main__":
     OUT = os.path.join(sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "dist"), "crispy_pvp")
