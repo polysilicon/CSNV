@@ -361,34 +361,66 @@ public class Votes implements Listener {
         p.openInventory(m.inv);
     }
 
+    static final int[] GRID = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
+    ItemStack pointsItem(PD pd) {
+        return item(Material.AMETHYST_SHARD, "&d&l" + pd.points + " vote point" + (pd.points == 1 ? "" : "s"),
+                List.of("&7You get &d" + pointsPerVote + " &7per vote. &f/vote &7for the links."), false);
+    }
+
+    /** Cosmetics hub: one button each for tags and name colours. */
     void openCosmetics(Player p) {
         PD pd = pd(p.getName());
-        Menu m = menu("cosmetics", 6, "&b&lCosmetics &8(&d" + pd.points + " points&8)");
-        put(m, 0, item(Material.NAME_TAG, "&f&lTags", List.of("&7Shown with your name in chat, the tab", "&7list and above your head, everywhere."), false), null);
-        int slot = 1;
+        Menu m = menu("cosmetics", 3, "&b&lCosmetics");
+        Tag tg = pd.tag == null ? null : tags.get(pd.tag);
+        NameColor nc = pd.color == null ? null : colors.get(pd.color);
+        long ownTags = tags.keySet().stream().filter(k -> pd.owned.contains("tag:" + k)).count();
+        long ownColors = colors.keySet().stream().filter(k -> pd.owned.contains("color:" + k)).count();
+        put(m, 11, item(tg == null ? Material.NAME_TAG : tg.icon(), "&f&lTags", List.of("&7Shown with your name in chat, the tab", "&7list and above your head, everywhere.", "",
+                "&7Wearing: " + (tg == null ? "&8none" : tg.display()), "&7Owned: &f" + ownTags + "&7/" + tags.size(), "", "&eClick to browse"), tg != null), "tags");
+        put(m, 13, pointsItem(pd), null);
+        put(m, 15, item(nc == null ? Material.WHITE_DYE : nc.icon(), "&f&lName colours", List.of("&7Your name in colour in chat on", "&7every server (and in cross-chat).", "",
+                "&7Using: " + (nc == null ? "&8none" : colored(nc.name(), nc.code())), "&7Owned: &f" + ownColors + "&7/" + colors.size(), "", "&eClick to browse"), nc != null), "colors");
+        put(m, 22, item(Material.ARROW, "&7Back to vote rewards", List.of(), false), "back");
+        p.openInventory(m.inv);
+    }
+
+    void openTags(Player p) {
+        PD pd = pd(p.getName());
+        Menu m = menu("tags", 6, "&f&lTags &8(&d" + pd.points + " points&8)");
+        int i = 0;
         for (Tag t : tags.values()) {
-            if (slot % 9 == 0) slot++;
-            if (slot >= 18) break;
+            if (i >= GRID.length) break;
             boolean own = pd.owned.contains("tag:" + t.id()), on = t.id().equals(pd.tag);
             List<String> lore = new ArrayList<>(List.of("&7Preview: &f<" + t.display() + " &f" + p.getName() + "> hi"));
             if (t.note() != null) lore.add("&8" + t.note());
             if (t.joinedBefore() != null) lore.add(joinedBefore(p, t.joinedBefore()) ? "&6Exclusive: &7you joined before " + t.joinedBefore()
                     : "&cOnly for players who joined before " + t.joinedBefore());
-            lore.addAll(List.of("", on ? "&aEquipped &7- click to take off" : own ? "&eOwned &7- click to wear" : "&7Cost: &d" + t.cost() + " points",
-                    !own && pd.points < t.cost() ? "&cNot enough points" : ""));
-            put(m, slot++, item(t.icon(), t.display(), lore, on), "tag:" + t.id());
+            lore.add("");
+            lore.add(on ? "&aWearing &7- click to take off" : own ? "&eOwned &7- click to wear" : "&7Cost: &d" + t.cost() + " points");
+            if (!own && pd.points < t.cost()) lore.add("&cNot enough points");
+            put(m, GRID[i++], item(t.icon(), t.display(), lore, on), "tag:" + t.id());
         }
-        put(m, 18, item(Material.WHITE_DYE, "&f&lName colours", List.of("&7Your name in colour in chat on", "&7every server (and in cross-chat)."), false), null);
-        slot = 19;   // rows 3-5: up to 24 colours
+        if (pd.tag != null) put(m, 48, item(Material.BARRIER, "&cTake off your tag", List.of(), false), "off:tag");
+        put(m, 49, item(Material.ARROW, "&7Back", List.of(), false), "cosmetics");
+        put(m, 50, pointsItem(pd), null);
+        p.openInventory(m.inv);
+    }
+
+    void openColors(Player p) {
+        PD pd = pd(p.getName());
+        Menu m = menu("colors", 6, "&f&lName colours &8(&d" + pd.points + " points&8)");
+        int i = 0;
         for (NameColor c : colors.values()) {
-            if (slot % 9 == 0) slot++;
-            if (slot >= 45) break;
+            if (i >= GRID.length) break;
             boolean own = pd.owned.contains("color:" + c.id()), on = c.id().equals(pd.color);
-            put(m, slot++, item(c.icon(), colored(c.name(), c.code()), List.of("&7Preview: &f<" + colored(p.getName(), c.code()) + "&f> hi", "",
-                    on ? "&aEquipped &7- click to take off" : own ? "&eOwned &7- click to use" : "&7Cost: &d" + c.cost() + " points",
-                    !own && pd.points < c.cost() ? "&cNot enough points" : ""), on), "color:" + c.id());
+            List<String> lore = new ArrayList<>(List.of("&7Preview: &f<" + colored(p.getName(), c.code()) + "&f> hi", "",
+                    on ? "&aUsing &7- click to take off" : own ? "&eOwned &7- click to use" : "&7Cost: &d" + c.cost() + " points"));
+            if (!own && pd.points < c.cost()) lore.add("&cNot enough points");
+            put(m, GRID[i++], item(c.icon(), colored(c.name(), c.code()), lore, on), "color:" + c.id());
         }
-        put(m, 49, item(Material.ARROW, "&7Back", List.of(), false), "back");
+        if (pd.color != null) put(m, 48, item(Material.BARRIER, "&cGo back to a plain name", List.of(), false), "off:color");
+        put(m, 49, item(Material.ARROW, "&7Back", List.of(), false), "cosmetics");
+        put(m, 50, pointsItem(pd), null);
         p.openInventory(m.inv);
     }
 
@@ -403,6 +435,15 @@ public class Votes implements Listener {
         if (a.equals("links")) { p.closeInventory(); links(p); }
         else if (a.equals("top")) { p.closeInventory(); top(p); }
         else if (a.equals("cosmetics")) openCosmetics(p);
+        else if (a.equals("tags")) openTags(p);
+        else if (a.equals("colors")) openColors(p);
+        else if (a.startsWith("off:")) {
+            PD pd = pd(p.getName());
+            if (a.equals("off:tag")) pd.tag = null; else pd.color = null;
+            writeTags(); save();
+            p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 1f);
+            if (a.equals("off:tag")) openTags(p); else openColors(p);
+        }
         else if (a.equals("back")) open(p);
         else if (a.startsWith("claim:")) claim(p, a.substring(6), e.isShiftClick());
         else if (a.startsWith("tag:") || a.startsWith("color:")) cosmetic(p, a);
@@ -472,7 +513,7 @@ public class Votes implements Listener {
         if (isTag) { pd.tag = id.equals(pd.tag) ? null : id; writeTags(); }
         else { pd.color = id.equals(pd.color) ? null : id; writeTags(); }
         save();
-        openCosmetics(p);
+        if (isTag) openTags(p); else openColors(p);
     }
 
     void links(CommandSender s) {

@@ -52,7 +52,7 @@ Edit `votes.servers` in the live config, then run `/vote reload`.
 
 ## Cosmetics (`/cosmetics`)
 
-Cosmetics are bought once with vote points and toggled in the menu. A player can wear one tag and one name colour at a
+Cosmetics are bought once with vote points. `/cosmetics` (or Cosmetics in `/vote`) opens a hub with two buttons, **Tags** and **Name colours**. Each has its own menu, where you buy, wear or take off (or use the barrier button). A player can wear one tag and one name colour at a
 time, and both show on every server.
 
 - **Tags** (`cosmetics.tags`) appear before the name in chat, after it in the tab list, and on name tags.
