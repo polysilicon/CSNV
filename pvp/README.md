@@ -136,6 +136,15 @@ A sealed room under the lobby (floor y 90) holds:
 The stray check leaves `pvp.admin` players alone in the room. `enchants.json` (id, max level, group) was exported from
 `crispy_enchants`; regenerate it if enchants are added.
 
+**Militech Cyberskeleton** (test-only, Cyberware chest): David's full-body frame from the last episode of Edgerunners.
+- Skeleton slot, capacity 14, so expect cyberpsychosis.
+- +10 hearts, +8 armor, +4 toughness, +6 attack damage, +1.5 knockback, 80% knockback resistance.
+- Much higher jumps, +15% speed, a slightly bigger frame and less fall damage.
+- **Ground slam**: landing from 3+ blocks deals 8 damage within 4.5 blocks and knocks targets up (5 s cooldown; spares
+  your Outbreak team).
+- It's only built into PvP's `crispy_cyberware` (`build.py --pvp`). It isn't sold at Anarchy's Ripperdoc and isn't in
+  any kit. Implant id 17 isn't in the kit mod's list, so `/pvpkit create` leaves it out of saved kits.
+
 **Velocity** (`pvp:velocity`, bows and crossbows, I-V, in the Ranged chest): arrows leave 20% faster per level, so they
 drop less and hit harder. Levels above V from `/fe` work up to XX (5x speed).
 

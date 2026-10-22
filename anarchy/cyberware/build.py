@@ -63,6 +63,16 @@ IMPLANTS = [
     (16, "launcher", "Projectile Launch System", "gold", 4, 6, ("netherite_ingot", 2), "fire_charge",
      ["Sneak + jump: fire an explosive round", "where you're looking.", f"{LAUNCH_CD // 20} second reload."], []),
 ]
+# test-only implants: built with --pvp only, never sold at the Ripperdoc or put in a kit (admin room / admin/give only)
+SKELETON = (17, "cyberskeleton", "Militech Cyberskeleton", "dark_red", 3, 14, ("netherite_ingot", 8), "netherite_chestplate",
+            ["David's full-body frame (Edgerunners).", "+10 hearts, +8 armor, +4 toughness, +6 damage,", "huge jumps, 80% knockback resistance, bigger frame.",
+             "Land from a jump: ground slam (8 damage, 4.5 blocks).", "Capacity 14: expect cyberpsychosis."],
+            [("max_health", 20, "add_value"), ("armor", 8, "add_value"), ("armor_toughness", 4, "add_value"),
+             ("attack_damage", 6, "add_value"), ("attack_knockback", 1.5, "add_value"), ("knockback_resistance", 0.8, "add_value"),
+             ("jump_strength", 0.25, "add_value"), ("safe_fall_distance", 10, "add_value"), ("fall_damage_multiplier", -0.6, "add_value"),
+             ("step_height", 0.6, "add_value"), ("movement_speed", 0.15, "add_multiplied_base"), ("scale", 0.15, "add_value")])
+TEST_IDS = {17}
+SLAM_FALL, SLAM_CD, SLAM_DMG = 30, 100, 8   # fall distance x10 that triggers a slam, cooldown ticks, damage
 NEURO = ("neuro", "Neuroblocker", ("diamond", 2), "honey_bottle", 1200)   # seconds of psychosis immunity
 OS_CD = {13: 1200, 14: 1500}   # ticks
 GHOST_TICKS, GHOST_LIFE = 120, 8     # Sandevistan after-images: how long they spawn, and how long each lasts (ticks)
@@ -127,7 +137,7 @@ def build():
     objs = ["cy dummy", "cy.buy trigger", "cy.rm trigger", "cyber trigger", "cy.cap dummy", "cy.cd dummy",
             "cy.cdh dummy", "cy.hp health", "cy.death deathCount", "cy.snk dummy", "cy.tap dummy",
             "cy.nb dummy", "cy.pcd dummy", "cy.sv dummy", "cy.gl dummy",
-            "cy.jump minecraft.custom:minecraft.jump", "cy.lcd dummy"] + [f"cy.s{s} dummy" for s in SLOTS]
+            "cy.jump minecraft.custom:minecraft.jump", "cy.lcd dummy", "cy.fd dummy", "cy.fdp dummy", "cy.scd dummy"] + [f"cy.s{s} dummy" for s in SLOTS]
     fn("load", [f"scoreboard objectives add {o}" for o in objs] + [
         f"scoreboard players set #limit cy {CAP_LIMIT}", "scoreboard players set #t cy 0", "scoreboard players set #2 cy 2",
         # Sandevistan after-image glow colours
@@ -152,6 +162,9 @@ def build():
         f"execute as @a[scores={{cy.s4=16}}] at @s run function {NS}:arms/tick",
         "scoreboard players remove @a[scores={cy.lcd=1..}] cy.lcd 1",
         "execute as @a[scores={cy.lcd=1,cy.s4=16}] run title @s actionbar {\"text\":\"◆ Launcher loaded\",\"color\":\"gold\"}",
+        # Militech Cyberskeleton: ground slam on landing
+        f"execute as @a[scores={{cy.s3=17}}] at @s run function {NS}:skel/tick",
+        "scoreboard players remove @a[scores={cy.scd=1..}] cy.scd 1",
         # circulatory implants
         "scoreboard players remove @a[scores={cy.cdh=1..}] cy.cdh 1",
         f"execute as @a[scores={{cy.s8=11,cy.hp=1..8,cy.cdh=0}}] at @s run function {NS}:fx/biomon",
@@ -248,7 +261,7 @@ def build():
     # ------------------------------------------------------------------ Ripperdoc: buy / remove
     near = f"execute unless entity @e[type=minecraft:villager,tag=cy.doc,distance=..8] run return run tellraw @s {{\"text\":\"Visit the Ripperdoc in the market (/trigger market).\",\"color\":\"red\"}}"
     buy = ["scoreboard players operation #b cy = @s cy.buy", "scoreboard players set @s cy.buy 0", near]
-    for (iid, key, name, color, slot, cap, price, *_ ) in IMPLANTS + [(15, nkey, nname, "dark_purple", 0, 0, nprice)]:
+    for (iid, key, name, color, slot, cap, price, *_ ) in [i for i in IMPLANTS if i[0] not in TEST_IDS] + [(15, nkey, nname, "dark_purple", 0, 0, nprice)]:
         buy.append(f"execute if score #b cy matches {iid} if function {NS}:pay/{key} run function {NS}:doc/got/{key}")
         item, n = price
         fn(f"pay/{key}", [
@@ -304,6 +317,7 @@ def build():
                 "action": {"type": "minecraft:run_command", "command": cmd}}
     acts = []
     for (iid, key, name, color, slot, cap, price, icon, lore, mods) in IMPLANTS:
+        if iid in TEST_IDS: continue
         acts.append(btn(name, color, f"{SLOTS[slot]} · capacity {cap} · {price_text(price)}\n" + " ".join(lore), f"trigger cy.buy set {iid}"))
     acts.append(btn(nname, "dark_purple", f"No cyberpsychosis for 20 minutes · {price_text(nprice)}", "trigger cy.buy set 15"))
     acts.append(btn("Remove an implant…", "yellow", "Take an installed implant out and get the item back (free).", "trigger cy.buy set 99"))
@@ -422,6 +436,30 @@ def build():
         "title @s actionbar {\"text\":\"◆ PROJECTILE LAUNCHED\",\"color\":\"gold\",\"bold\":true}",
     ])
 
+    # ------------------------------------------------------------------ Militech Cyberskeleton: ground slam
+    # fall_distance resets to 0 on landing, so a landing is "last tick >= SLAM_FALL, this tick 0"
+    fn("skel/tick", [
+        "scoreboard players operation @s cy.fdp = @s cy.fd",
+        "execute store result score @s cy.fd run data get entity @s fall_distance 10",
+        f"execute if score @s cy.fd matches 0 if score @s cy.fdp matches {SLAM_FALL}.. if score @s cy.scd matches ..0 run function {NS}:skel/slam",
+    ])
+    hit = ("distance=0.1..4.5,type=!minecraft:item,type=!minecraft:mannequin,type=!minecraft:interaction,type=!minecraft:marker,"
+           "type=!minecraft:text_display,type=!minecraft:item_display,type=!minecraft:armor_stand,type=!minecraft:villager,type=!minecraft:experience_orb")
+    fn("skel/slam", [
+        f"scoreboard players set @s cy.scd {SLAM_CD}",
+        "tag @s add cy.slm",
+        f"execute unless entity @s[team=pve] as @e[{hit}] run damage @s {SLAM_DMG} minecraft:player_attack by @p[tag=cy.slm]",
+        f"execute if entity @s[team=pve] as @e[{hit},team=!pve] run damage @s {SLAM_DMG} minecraft:player_attack by @p[tag=cy.slm]",
+        f"execute unless entity @s[team=pve] run effect give @e[{hit}] minecraft:levitation 1 1 true",
+        f"execute if entity @s[team=pve] run effect give @e[{hit},team=!pve] minecraft:levitation 1 1 true",
+        "tag @s remove cy.slm",
+        "particle minecraft:explosion ~ ~ ~ 1.5 0.2 1.5 0 6",
+        "particle minecraft:block{block_state:\"minecraft:cobblestone\"} ~ ~0.2 ~ 2 0.1 2 0.2 60",
+        "playsound minecraft:item.mace.smash_ground_heavy player @a[distance=..24] ~ ~ ~ 1 0.7",
+        "playsound minecraft:entity.generic.explode player @a[distance=..24] ~ ~ ~ 0.5 1.4",
+        "title @s actionbar {\"text\":\"◆ GROUND SLAM\",\"color\":\"dark_red\",\"bold\":true}",
+    ])
+
     fn("fx/berserk", [
         f"scoreboard players set @s cy.cd {OS_CD[14]}",
         "effect give @s minecraft:strength 8 1", "effect give @s minecraft:resistance 8 0", "effect give @s minecraft:glowing 8 0",
@@ -472,7 +510,9 @@ def build():
 
 
 if __name__ == "__main__":
-    if "--pvp" in sys.argv: sys.argv.remove("--pvp"); DROP_ON_DEATH = False
+    if "--pvp" in sys.argv:
+        sys.argv.remove("--pvp"); DROP_ON_DEATH = False
+        IMPLANTS.append(SKELETON); BY_ID[SKELETON[0]] = SKELETON
     OUT = os.path.join(sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "dist"), "crispy_cyberware")
     build()
     n = sum(len(f) for _, _, f in os.walk(OUT))
