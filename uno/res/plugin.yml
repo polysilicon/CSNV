@@ -1,0 +1,10 @@
+name: UnoCraft
+version: 1.0.0
+main: crispy.uno.UnoCraft
+api-version: '1.21'
+author: CrispyAnarchy
+description: UNO in the lobby, played in a chest menu (2-8 players, bots can fill seats)
+commands:
+  uno:
+    description: Play UNO (/uno, /uno join <table>, /uno leave, /uno top, /uno help)
+    aliases: [unocraft]
