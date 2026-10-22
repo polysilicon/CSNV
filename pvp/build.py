@@ -31,7 +31,27 @@ IMPLANT_KEYS = ["kiroshi", "subdermal", "titanium", "lungs", "gorilla", "mantis"
 VELOCITY_MAX, VELOCITY_CAP = 5, 20   # Velocity enchant: +20% arrow speed per level; levels above the cap (via /fe) count as the cap
 LOBBY_BOX = box(0, 0, LOBBY_R, LOBBY_Y - 1, 20)
 ARENA_BOX = box(ACX, ACZ, AR, AY - 1, 35)
-PVE_BOX = box(PCX, PCZ, PR, AY - 1, 35)
+# Outbreak maps: same size and layout (spawns, mob windows, Arsenal in the middle), 100 blocks apart along z.
+# id, key, name, colour, menu icon, centre z, extra mobs (min wave, roll <=, type, extra NBT) tried before the normal pool
+OUTBREAK_MAPS = [
+    (1, "ruins", "Ruins", "green", "mossy_stone_bricks", 300, []),
+    (2, "mine", "Toxic Mine", "yellow", "rail", 400,
+     [(2, 14, "cave_spider", ""), (4, 20, "silverfish", "")]),
+    (3, "neon", "Neon City", "light_purple", "magenta_stained_glass", 500,
+     [(3, 14, "pillager", ',equipment:{mainhand:{id:"minecraft:crossbow",count:1}},drop_chances:{mainhand:0.0f}'),
+      (5, 22, "vindicator", ',equipment:{mainhand:{id:"minecraft:iron_axe",count:1}},drop_chances:{mainhand:0.0f}')]),
+    (4, "hellfort", "Hellfort", "red", "nether_bricks", 600,
+     [(3, 12, "wither_skeleton", ',equipment:{mainhand:{id:"minecraft:stone_sword",count:1}},drop_chances:{mainhand:0.0f}'),
+      (4, 20, "blaze", "")]),
+]
+PVE_BOXES = {m[0]: box(PCX, m[5], PR, AY - 1, 35) for m in OUTBREAK_MAPS}
+PVE_BOX = PVE_BOXES[1]
+BREAK_TICKS = 400        # break between waves (downed players are back at its start, so they can re-buy)
+POWERUP_CHANCE = 4       # % of kills that drop a power-up
+POWERUP_SECS = 30        # Insta-Kill / Double Points length
+POWERUPS = [  # key, item, name, colour
+    ("ammo", "spectral_arrow", "MAX AMMO", "aqua"), ("insta", "wither_skeleton_skull", "INSTA-KILL", "red"),
+    ("double", "experience_bottle", "DOUBLE POINTS", "yellow"), ("nuke", "tnt", "NUKE", "gold")]
 
 # PvP spawn points: offset from the centre, yaw facing the centre
 SPAWNS = [(24, 0, 90), (-24, 0, -90), (0, -24, 0), (0, 24, 180), (20, -20, 45), (-20, -20, -45), (20, 20, 135), (-20, 20, -135)]
@@ -222,8 +242,13 @@ def build():
                 "custom_kits": {"slots": CUSTOM_SLOTS, "cmd": "trigger pve.join set %d"}, "items":
                 [{"slot": s, "item": icon(k[4], k[2], k[3], k[5] + ["", "Click to queue with this kit"]), "cmd": f"trigger pve.join set {k[0]}"} for s, k in zip(KIT_SLOTS, KITS)]
                 + [{"slot": 47, "item": icon("barrier", "Leave the queue", "red", ["Stop waiting for the next Outbreak"], False), "cmd": "trigger pve.join set 99"},
+                   {"slot": 45, "item": icon("filled_map", "Change map", "yellow", ["Maps: " + ", ".join(m[2] for m in OUTBREAK_MAPS),
+                       "Click to switch to the next map", "(only before a run starts)"]), "cmd": "trigger pve.join set 90"},
+                   {"slot": 53, "item": icon("ender_eye", "Random map", "light_purple", ["Pick a random Outbreak map", "(only before a run starts)"]), "cmd": "trigger pve.join set 91"},
                    {"slot": 49, "item": icon("zombie_head", "How Outbreak works", "green", [
-                       "Endless waves; every 5th wave brings a boss", "100 points per kill + a bonus each wave",
+                       f"{len(OUTBREAK_MAPS)} maps, each with its own mobs", "Endless waves; every 5th wave brings a boss", "100 points per kill + a bonus each wave",
+                       "Kills can drop power-ups: Max Ammo, Insta-Kill,", "Double Points, Nuke",
+                       f"{BREAK_TICKS // 20} s break between waves to re-buy gear",
                        "Spend points at the Arsenal in the arena", "Pack-a-Punch weapons, upgrade armor, buy perks", "Your best wave adds starting points", "Go down and you're back next wave", "Game over when the whole team is down"]), "cmd": ""},
                    {"slot": 51, "item": icon("netherite_sword", "Back to PvP kits", "aqua", ["Fight other players instead"], False), "cmd": "pvpmenu kits"}]},
         "pve_shop": {"title": {"text": "☣ Arsenal (points)", "color": "dark_green"}, "rows": 3, "fill": PANE, "items":
@@ -273,7 +298,7 @@ def build():
         f"effect give @a[{LOBBY_BOX}] minecraft:weakness 3 255 true",
         f"effect give @a[{LOBBY_BOX}] minecraft:saturation 3 0 true",
         # anyone (in adventure) outside the lobby and both arenas goes back to the lobby
-        f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[{ARENA_BOX}] unless entity @s[{PVE_BOX}] unless entity @s[tag=pvp.admin,{ROOM_BOX}] run function {NS}:to_lobby",
+        f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[{ARENA_BOX}] {" ".join(f"unless entity @s[{b}]" for b in PVE_BOXES.values())} unless entity @s[tag=pvp.admin,{ROOM_BOX}] run function {NS}:to_lobby",
         f"function {NS}:pve/second",
         # NPC clicks are advancements; clear any left granted so an NPC can never get stuck for a player
         "advancement revoke @a only pvp:npc", "advancement revoke @a only pvp:pvenpc", "advancement revoke @a only pvp:shopnpc",
@@ -560,7 +585,9 @@ def build_pve():
         "scoreboard players enable @a pve.join", "scoreboard players enable @a pve.buy",
         f"execute as @a[scores={{pve.join=1..}}] at @s run function {P}/join",
         f"execute as @a[scores={{pve.buy=1..}}] at @s run function {P}/buy",
-        f"execute as @a[tag=pve.in,scores={{pve.k=1..}}] run function {P}/points",
+        f"execute as @a[tag=pve.in,scores={{pve.k=1..}}] at @s run function {P}/points",
+        *[f"execute as @a[tag=pve.in,tag=!pve.down] if items entity @s container.* *[minecraft:custom_data~{{pvp_pu:\"{k}\"}}] run function {P}/pu/{k}"
+          for (k, _, _, _) in POWERUPS],
         f"execute if score #state pve matches 0 if entity @a[tag=pve.q] run function {P}/countdown_start",
         f"execute if score #state pve matches 1 run function {P}/countdown_tick",
         f"execute if score #state pve matches 2 run function {P}/wave_tick",
@@ -570,10 +597,16 @@ def build_pve():
         "scoreboard players set @a[tag=!pve.in] pve.k 0",
         f"execute if score #state pve matches 2..3 unless entity @a[tag=pve.in,tag=!pve.down] run function {P}/game_over",
         # downed spectators stay above the arena
-        f"execute as @a[tag=pve.down] unless entity @s[{PVE_BOX}] run tp @s {PCX + 0.5} {AY + 12} {PCZ + 0.5}",
-        f"kill @e[type=minecraft:item,{PVE_BOX}]", f"kill @e[type=minecraft:experience_orb,{PVE_BOX}]",
+        *[f"execute if score #map pve matches {i} as @a[tag=pve.down] unless entity @s[{b}] run tp @s {PCX + 0.5} {AY + 12} {z + 0.5}"
+          for (i, _, _, _, _, z, _), b in zip(OUTBREAK_MAPS, PVE_BOXES.values())],
+        # items players throw stay (they despawn normally after 5 minutes); anything else (mob leftovers) is cleared
+        *[f"execute as @e[type=minecraft:item,{b},tag=!pve.pu] unless data entity @s Thrower run kill @s" for b in PVE_BOXES.values()],
+        *[f"kill @e[type=minecraft:experience_orb,{b}]" for b in PVE_BOXES.values()],
         # spiders that climb the walls get pulled back down
-        f"execute as @e[tag=pve.mob,x={PCX - PR - 1},y={AY + 8},z={PCZ - PR - 1},dx={2 * PR + 2},dy=30,dz={2 * PR + 2}] at @s run tp @s {PCX + 0.5} {AY + 1} {PCZ + 0.5}",
+        *[f"execute as @e[tag=pve.mob,x={PCX - PR - 1},y={AY + 8},z={z - PR - 1},dx={2 * PR + 2},dy=30,dz={2 * PR + 2}] at @s run tp @s {PCX + 0.5} {AY + 1} {z + 0.5}"
+          for (_, _, _, _, _, z, _) in OUTBREAK_MAPS],
+        "execute if score #dp pve matches 1.. run scoreboard players remove #dp pve 1",
+        "execute if score #dp pve matches 1 run tellraw @a[tag=pve.in] {\"text\":\"Double Points has worn off.\",\"color\":\"yellow\"}",
         "execute store result bossbar pvp:boss value run data get entity @n[tag=pve.boss] Health",
         "execute unless entity @e[tag=pve.boss] run bossbar set pvp:boss visible false",
     ])
@@ -581,6 +614,7 @@ def build_pve():
     # joining: pve.join = kit id (99 = leave the queue)
     fn("pve/join", [
         "scoreboard players operation #j pve = @s pve.join", "scoreboard players set @s pve.join 0",
+        f"execute if score #j pve matches 90..91 run return run function {P}/pick_map",
         "execute if score #j pve matches 99 run tag @s remove pve.q",
         f"execute if score #j pve matches 99 run return run {say('@s', 'You left the Outbreak queue.', 'yellow')}",
         f"execute if entity @s[tag=pve.in] run return run {say('@s', 'You are already in the Outbreak.', 'red')}",
@@ -590,24 +624,42 @@ def build_pve():
         f"execute if score #state pve matches 2..3 run return run {say('@s', 'Outbreak in progress: you will drop in at the next wave break.', 'green')}",
         say("@s", "Queued for the Outbreak. More players can join during the countdown.", "green"),
     ])
+    names = {m[0]: (m[2], m[3]) for m in OUTBREAK_MAPS}
+    fn("pve/pick_map", [   # as the clicking player; only before a run starts
+        f"execute if score #state pve matches 2..3 run return run {say('@s', 'An Outbreak is running: pick the map before the next one.', 'red')}",
+        "scoreboard players add #map pve 1",
+        f"execute if score #map pve matches {len(OUTBREAK_MAPS) + 1}.. run scoreboard players set #map pve 1",
+        f"execute if score #j pve matches 91 store result score #map pve run random value 1..{len(OUTBREAK_MAPS)}",
+        *[f"execute if score #map pve matches {i} run tellraw @a[{LOBBY_BOX}] [{{\"selector\":\"@s\",\"color\":\"white\"}},"
+          f"{{\"text\":\" set the next Outbreak map: \",\"color\":\"gray\"}},{{\"text\":\"{n}\",\"color\":\"{c}\",\"bold\":true}}]"
+          for i, (n, c) in names.items()],
+        "playsound minecraft:ui.button.click player @s ~ ~ ~ 1 1",
+    ])
     fn("pve/countdown_start", ["scoreboard players set #state pve 1", "scoreboard players set #timer pve 200",
                                "playsound minecraft:block.note_block.pling player @a[tag=pve.q] ~ ~ ~ 1 0.8"])
     fn("pve/countdown_tick", [
         "execute unless entity @a[tag=pve.q] run return run scoreboard players set #state pve 0",
         "scoreboard players remove #timer pve 1",
         "scoreboard players operation #s pve = #timer pve", "scoreboard players operation #s pve /= #20 pve",
-        "title @a[tag=pve.q] actionbar [{\"text\":\"☣ Outbreak starts in \",\"color\":\"green\"},{\"score\":{\"name\":\"#s\",\"objective\":\"pve\"},\"color\":\"white\"},{\"text\":\"s\",\"color\":\"green\"}]",
+        *[f"execute if score #map pve matches {i} run title @a[tag=pve.q] actionbar [{{\"text\":\"☣ {n}\",\"color\":\"{c}\",\"bold\":true}},"
+          "{\"text\":\" starts in \",\"color\":\"green\",\"bold\":false},{\"score\":{\"name\":\"#s\",\"objective\":\"pve\"},\"color\":\"white\"},{\"text\":\"s\",\"color\":\"green\"}]"
+          for i, (n, c) in names.items()],
         f"execute if score #timer pve matches ..0 run function {P}/start",
     ])
     fn("pve/start", [
-        "scoreboard players set #wave pve 0", "kill @e[tag=pve.mob]",
+        f"execute unless score #map pve matches 1..{len(OUTBREAK_MAPS)} run scoreboard players set #map pve 1",
+        *[f"execute if score #map pve matches {i} run data modify storage pvp:pve map set value {{bz:{z + 18.5}d}}"
+          for (i, _, _, _, _, z, _) in OUTBREAK_MAPS],
+        "scoreboard players set #wave pve 0", "kill @e[tag=pve.mob]", "kill @e[type=minecraft:item,tag=pve.pu]",
+        "scoreboard players set #dp pve 0", "scoreboard players set #insta pve 0",
         "scoreboard players set #state pve 3", "scoreboard players set #timer pve 100",
         f"execute as @a[tag=pve.q] run function {P}/enter",
         "tellraw @a[tag=pve.in] {\"text\":\"☣ The Outbreak has begun. Survive as long as you can.\",\"color\":\"green\"}",
     ])
     pts_spawn = ["execute store result score #r pve run random value 1..%d" % len(PVE_SPAWNS)]
-    for n, (dx, dz, yaw) in enumerate(PVE_SPAWNS, 1):
-        pts_spawn.append(f"execute if score #r pve matches {n} run tp @s {PCX + dx + 0.5} {AY + 1} {PCZ + dz + 0.5} {yaw} 0")
+    for (i, _, _, _, _, mz, _) in OUTBREAK_MAPS:
+        for n, (dx, dz, yaw) in enumerate(PVE_SPAWNS, 1):
+            pts_spawn.append(f"execute if score #map pve matches {i} if score #r pve matches {n} run tp @s {PCX + dx + 0.5} {AY + 1} {mz + dz + 0.5} {yaw} 0")
     fn("pve/tp_spawn", pts_spawn)
     fn("pve/enter", [   # as a queued player: into the run with their kit and 500 points
         "tag @s remove pve.q", "tag @s add pve.in", "team join pve @s",
@@ -622,7 +674,12 @@ def build_pve():
         "title @s title {\"text\":\"☣ OUTBREAK\",\"color\":\"dark_green\",\"bold\":true}",
         "playsound minecraft:entity.zombie_villager.converted player @s ~ ~ ~ 1 0.7",
     ])
-    fn("pve/break_tick", ["scoreboard players remove #timer pve 1", f"execute if score #timer pve matches ..0 run function {P}/next_wave"])
+    fn("pve/break_tick", [
+        "scoreboard players remove #timer pve 1",
+        "scoreboard players operation #s pve = #timer pve", "scoreboard players operation #s pve /= #20 pve",
+        "title @a[tag=pve.in] actionbar [{\"text\":\"Next wave in \",\"color\":\"gray\"},{\"score\":{\"name\":\"#s\",\"objective\":\"pve\"},\"color\":\"white\"},"
+        "{\"text\":\"s · re-buy at the Arsenal\",\"color\":\"gray\"}]",
+        f"execute if score #timer pve matches ..0 run function {P}/next_wave"])
     fn("pve/next_wave", [
         "scoreboard players add #wave pve 1",
         "execute store result score #np pve if entity @a[tag=pve.in]",
@@ -637,7 +694,6 @@ def build_pve():
         # health +15% and damage +8% per wave
         "execute store result storage pvp:pve s.hm double 0.15 run scoreboard players get #w1 pve",
         "execute store result storage pvp:pve s.dm double 0.08 run scoreboard players get #w1 pve",
-        f"execute as @a[tag=pve.down] run function {P}/revive",
         "scoreboard players set #state pve 2", "scoreboard players set #st pve 0", "scoreboard players set #wt pve 0",
         "title @a[tag=pve.in] title [{\"text\":\"Wave \",\"color\":\"red\"},{\"score\":{\"name\":\"#wave\",\"objective\":\"pve\"},\"color\":\"dark_red\",\"bold\":true}]",
         "execute as @a[tag=pve.in] at @s run playsound minecraft:event.raid.horn player @s ~ ~ ~ 0.6 1.2",
@@ -655,11 +711,12 @@ def build_pve():
         f"execute if score #tospawn pve matches 0 unless entity @e[tag=pve.mob] run function {P}/wave_end",
     ])
     fn("pve/wave_end", [
-        "scoreboard players set #state pve 3", "scoreboard players set #timer pve 200",
+        "scoreboard players set #state pve 3", f"scoreboard players set #timer pve {BREAK_TICKS}",
+        f"execute as @a[tag=pve.down] run function {P}/revive",   # back now, so they can re-buy during the break
         "scoreboard players operation #b pve = #wave pve", "scoreboard players operation #b pve *= #100 pve",
         "scoreboard players operation @a[tag=pve.in,tag=!pve.down] pve.pts += #b pve",
         "tellraw @a[tag=pve.in] [{\"text\":\"☣ Wave \",\"color\":\"green\"},{\"score\":{\"name\":\"#wave\",\"objective\":\"pve\"},\"color\":\"white\"},"
-        "{\"text\":\" cleared! +\",\"color\":\"green\"},{\"score\":{\"name\":\"#b\",\"objective\":\"pve\"},\"color\":\"gold\"},{\"text\":\" points. Next wave in 10 s.\",\"color\":\"green\"}]",
+        "{\"text\":\" cleared! +\",\"color\":\"green\"},{\"score\":{\"name\":\"#b\",\"objective\":\"pve\"},\"color\":\"gold\"},{\"text\":\" points. Next wave in " + str(BREAK_TICKS // 20) + " s.\",\"color\":\"green\"}]",
         "execute as @a[tag=pve.in] at @s run playsound minecraft:ui.toast.challenge_complete player @s ~ ~ ~ 0.6 1",
         f"give @a[tag=pve.in,tag=!pve.down] minecraft:cooked_beef {WAVE_FOOD}",
         f"execute as @a[tag=pve.q] run function {P}/enter",
@@ -675,13 +732,20 @@ def build_pve():
         (3, 60, "skeleton", ',equipment:{mainhand:{id:"minecraft:bow",count:1}},drop_chances:{mainhand:0.0f}'),
         (2, 75, "husk", ""),
     ]
+    for (i, _, _, _, _, _, extra_pool) in OUTBREAK_MAPS:   # this map's own mobs get the first roll
+        if extra_pool:
+            choose.append(f"execute if score #map pve matches {i} store result score #r2 pve run random value 1..100")
+        for (mw, roll, typ, extra) in extra_pool:
+            choose.append(f"execute if score #map pve matches {i} if score #p pve matches 0 if score #wave pve matches {mw}.. if score #r2 pve matches ..{roll} run "
+                          f"function {P}/type {{type:\"{typ}\",extra:'{extra}'}}")
     for (mw, roll, typ, extra) in pool:
         choose.append(f"execute if score #p pve matches 0 if score #wave pve matches {mw}.. if score #r pve matches ..{roll} run "
                       f"function {P}/type {{type:\"{typ}\",extra:'{extra}'}}")
     choose.append(f"execute if score #p pve matches 0 run function {P}/type {{type:\"zombie\",extra:''}}")
     choose.append("execute store result score #r pve run random value 1..%d" % len(MOB_POINTS))
-    for n, (dx, dz) in enumerate(MOB_POINTS, 1):
-        choose.append(f"execute if score #r pve matches {n} run data modify storage pvp:pve m merge value {{x:{PCX + dx + 0.5},y:{AY + 1},z:{PCZ + dz + 0.5}}}")
+    for (i, _, _, _, _, mz, _) in OUTBREAK_MAPS:
+        for n, (dx, dz) in enumerate(MOB_POINTS, 1):
+            choose.append(f"execute if score #map pve matches {i} if score #r pve matches {n} run data modify storage pvp:pve m merge value {{x:{PCX + dx + 0.5},y:{AY + 1},z:{mz + dz + 0.5}}}")
     choose += [f"function {P}/summon with storage pvp:pve m", "scoreboard players remove #tospawn pve 1"]
     fn("pve/spawn_mob", choose)
     fn("pve/type", ["scoreboard players set #p pve 1", "$data modify storage pvp:pve m merge value {type:\"$(type)\",extra:'$(extra)'}"])
@@ -698,23 +762,51 @@ def build_pve():
         "execute store result entity @s Health float 1 run attribute @s minecraft:max_health get",
     ])
     fn("pve/boss", [
-        f"summon minecraft:zombie {PCX + 0.5} {AY + 1} {PCZ + 18.5} {{Tags:[\"pve.mob\",\"pve.boss\",\"pve.new\"],PersistenceRequired:1b,CanPickUpLoot:0b,"
-        "DeathLootTable:\"minecraft:empty\",IsBaby:0b,CustomName:{\"text\":\"Abomination\",\"color\":\"dark_red\",\"bold\":true},CustomNameVisible:1b,"
-        "attributes:[{id:\"minecraft:follow_range\",base:64d},{id:\"minecraft:scale\",base:2.0d},{id:\"minecraft:max_health\",base:150d},"
-        "{id:\"minecraft:attack_damage\",base:9d},{id:\"minecraft:knockback_resistance\",base:0.8d},{id:\"minecraft:movement_speed\",base:0.26d}]}",
+        f"function {P}/boss_summon with storage pvp:pve map",
         f"execute as @e[tag=pve.new] run function {P}/scale with storage pvp:pve s",
         "execute store result bossbar pvp:boss max run data get entity @n[tag=pve.boss] Health",
         "bossbar set pvp:boss players @a[tag=pve.in]", "bossbar set pvp:boss visible true",
         "tellraw @a[tag=pve.in] {\"text\":\"☣ An Abomination has entered the arena!\",\"color\":\"dark_red\",\"bold\":true}",
         "execute as @a[tag=pve.in] at @s run playsound minecraft:entity.wither.spawn player @s ~ ~ ~ 0.5 0.8",
     ])
+    fn("pve/boss_summon", [
+        f"$summon minecraft:zombie {PCX + 0.5} {AY + 1} $(bz) {{Tags:[\"pve.mob\",\"pve.boss\",\"pve.new\"],PersistenceRequired:1b,CanPickUpLoot:0b,"
+        "DeathLootTable:\"minecraft:empty\",IsBaby:0b,CustomName:{\"text\":\"Abomination\",\"color\":\"dark_red\",\"bold\":true},CustomNameVisible:1b,"
+        "attributes:[{id:\"minecraft:follow_range\",base:64d},{id:\"minecraft:scale\",base:2.0d},{id:\"minecraft:max_health\",base:150d},"
+        "{id:\"minecraft:attack_damage\",base:9d},{id:\"minecraft:knockback_resistance\",base:0.8d},{id:\"minecraft:movement_speed\",base:0.26d}]}",
+    ])
     fn("pve/points", ["scoreboard players operation #k pve = @s pve.k", "scoreboard players operation #k pve *= #100 pve",
-                      "scoreboard players operation @s pve.pts += #k pve", "scoreboard players set @s pve.k 0"])
+                      "execute if score #dp pve matches 1.. run scoreboard players operation #k pve *= #2c pve",
+                      "scoreboard players operation @s pve.pts += #k pve", "scoreboard players set @s pve.k 0",
+                      "execute store result score #r pve run random value 1..100",
+                      f"execute if score #r pve matches ..{POWERUP_CHANCE} run function {P}/pu/drop"])
+    # power-ups: dropped a few blocks in front of the killer, glowing, gone after 30 s; picked up by any survivor
+    drop = ["execute store result score #r pve run random value 1..%d" % len(POWERUPS)]
+    for n, (k, it, name, col) in enumerate(POWERUPS, 1):
+        drop.append(f"execute if score #r pve matches {n} positioned ^ ^1 ^2 run summon minecraft:item ~ ~ ~ {{Tags:[\"pve.pu\"],Glowing:1b,Age:5400s,PickupDelay:10s,"
+                    f"CustomNameVisible:1b,CustomName:{tj({'text': name, 'color': col, 'bold': True})},Item:{{id:\"minecraft:{it}\",count:1,"
+                    f"components:{{\"minecraft:custom_data\":{{pvp_pu:\"{k}\"}},\"minecraft:custom_name\":{tj({'text': name, 'color': col, 'bold': True})}}}}}}}")
+    fn("pve/pu/drop", drop + ["playsound minecraft:block.amethyst_block.chime player @a[tag=pve.in] ~ ~ ~ 1 1.5"])
+    effects = {
+        "ammo": ["give @a[tag=pve.in,tag=!pve.down] minecraft:arrow 64"],
+        "insta": [f"effect give @a[tag=pve.in,tag=!pve.down] minecraft:strength {POWERUP_SECS} 19 true"],
+        "double": [f"scoreboard players set #dp pve {POWERUP_SECS + 1}"],
+        "nuke": ["kill @e[tag=pve.mob,tag=!pve.boss]", "scoreboard players add @a[tag=pve.in,tag=!pve.down] pve.pts 400",
+                 "execute as @a[tag=pve.in] at @s run playsound minecraft:entity.generic.explode player @s ~ ~ ~ 1 0.6",
+                 "execute as @a[tag=pve.in] at @s run particle minecraft:explosion_emitter ~ ~2 ~ 3 1 3 0 3"],
+    }
+    subs = {"ammo": "Arrows for everyone", "insta": f"{POWERUP_SECS} s of one-hit kills", "double": f"{POWERUP_SECS} s of double points",
+            "nuke": "Every mob wiped out · +400 points"}
+    for (k, it, name, col) in POWERUPS:
+        fn(f"pve/pu/{k}", [f"clear @s *[minecraft:custom_data~{{pvp_pu:\"{k}\"}}]", *effects[k],
+                           f"title @a[tag=pve.in] title {tj({'text': name, 'color': col, 'bold': True})}",
+                           f"title @a[tag=pve.in] subtitle {tj({'text': subs[k], 'color': 'gray'})}",
+                           "execute as @a[tag=pve.in] at @s run playsound minecraft:entity.player.levelup player @s ~ ~ ~ 1 0.7"])
 
     # going down / coming back
     fn("pve/downed", [
         "tag @s add pve.down", "gamemode spectator @s", *PERK_RESET,
-        f"tp @s {PCX + 0.5} {AY + 12} {PCZ + 0.5}",
+        *[f"execute if score #map pve matches {i} run tp @s {PCX + 0.5} {AY + 12} {z + 0.5}" for (i, _, _, _, _, z, _) in OUTBREAK_MAPS],
         "title @s title {\"text\":\"DOWN\",\"color\":\"dark_red\",\"bold\":true}",
         "title @s subtitle {\"text\":\"You're back at the start of the next wave\",\"color\":\"gray\"}",
         "tellraw @a[tag=pve.in] [{\"selector\":\"@s\",\"color\":\"red\"},{\"text\":\" went down!\",\"color\":\"gray\"}]",
@@ -724,7 +816,8 @@ def build_pve():
         f"function {NS}:kit/give_pve", f"function {P}/tp_spawn", say("@s", "You're back in the fight!", "green"),
     ])
     fn("pve/game_over", [
-        "scoreboard players set #state pve 0", "kill @e[tag=pve.mob]", "bossbar set pvp:boss visible false",
+        "scoreboard players set #state pve 0", "kill @e[tag=pve.mob]", "kill @e[type=minecraft:item,tag=pve.pu]", "scoreboard players set #dp pve 0",
+        "bossbar set pvp:boss visible false",
         "tellraw @a[tag=pve.in] [{\"text\":\"☣ Outbreak over. You reached wave \",\"color\":\"red\"},{\"score\":{\"name\":\"#wave\",\"objective\":\"pve\"},\"color\":\"white\",\"bold\":true},{\"text\":\".\",\"color\":\"red\"}]",
         "scoreboard players add @a[tag=pve.in] pve.best 0",   # unset scores never compare, so a first run would never count
         "execute as @a[tag=pve.in] if score #wave pve > @s pve.best run scoreboard players operation @s pve.best = #wave pve",
@@ -757,32 +850,68 @@ def build_pve():
         box.append(f"execute if score #r pve matches {n} run function {P}/box/{n}")
     fn("pve/box", box)
 
-    # build the Outbreak arena
-    rnd = random.Random(7)
-    x1, x2, z1, z2 = PCX - PR, PCX + PR, PCZ - PR, PCZ + PR
+    # build the Outbreak arenas: same footprint, themed per map
+    for m in OUTBREAK_MAPS:
+        fn(f"admin/build_pve_{m[1]}", build_pve_map(m))
+    fn("admin/build_pve", [f"function {NS}:admin/build_pve_{m[1]}" for m in OUTBREAK_MAPS])
+
+
+THEMES = {   # floor base, floor patches, floor lights, wall, wall stripe, cover blocks, cover top light
+    "ruins": ("deepslate_tiles", ["cracked_deepslate_tiles", "cobbled_deepslate", "mossy_cobblestone", "deepslate_tiles", "tuff_bricks", "coarse_dirt"],
+              ["ochre_froglight", "verdant_froglight"], "polished_blackstone_bricks", "cracked_polished_blackstone_bricks", None, "soul_lantern"),
+    "mine": ("tuff", ["cobbled_deepslate", "gravel", "tuff", "polished_tuff", "andesite", "coarse_dirt"],
+             ["shroomlight"], "deepslate_bricks", "stripped_dark_oak_wood", ["deepslate_iron_ore", "deepslate_gold_ore", "deepslate_redstone_ore", "deepslate_emerald_ore", "deepslate_diamond_ore", "cobbled_deepslate"], "lantern"),
+    "neon": ("black_concrete", ["black_concrete", "gray_concrete", "black_concrete", "polished_blackstone"],
+             ["sea_lantern", "pearlescent_froglight"], "black_concrete", "magenta_concrete", ["cyan_stained_glass", "magenta_stained_glass", "black_concrete", "light_blue_stained_glass", "gray_concrete", "purple_stained_glass"], "end_rod"),
+    "hellfort": ("nether_bricks", ["red_nether_bricks", "nether_bricks", "blackstone", "netherrack", "soul_soil", "cracked_nether_bricks"],
+                 ["magma_block", "shroomlight"], "nether_bricks", "red_nether_bricks", ["blackstone", "polished_blackstone_bricks", "nether_bricks", "gilded_blackstone", "basalt", "red_nether_bricks"], "soul_lantern"),
+}
+
+
+def build_pve_map(m):
+    i, key, name, color, _, cz, _ = m
+    base, patches, lights, wall, stripe, cover, toplight = THEMES[key]
+    rnd = random.Random(7 + i)
+    x1, x2, z1, z2 = PCX - PR, PCX + PR, cz - PR, cz + PR
     a = [f"fill {x1} {AY + 1 + k} {z1} {x2} {AY + 5 + k} {z2} minecraft:air" for k in range(0, 30, 5)]
-    a.append(f"fill {x1} {AY} {z1} {x2} {AY} {z2} minecraft:deepslate_tiles")
-    for cx in range(x1, x2 + 1, 5):
-        for cz in range(z1, z2 + 1, 5):
-            b = rnd.choice(["cracked_deepslate_tiles", "cobbled_deepslate", "mossy_cobblestone", "deepslate_tiles", "tuff_bricks", "coarse_dirt"])
-            a.append(f"fill {cx} {AY} {cz} {min(cx + 4, x2)} {AY} {min(cz + 4, z2)} minecraft:{b}")
-    for i in range(-PR + 2, PR - 1, 9):
-        for j in range(-PR + 2, PR - 1, 9):
-            a.append(f"setblock {PCX + i} {AY} {PCZ + j} minecraft:{rnd.choice(['ochre_froglight', 'verdant_froglight'])}")
-    a += walls(PCX, PCZ, PR, "polished_blackstone_bricks", "cracked_polished_blackstone_bricks")
+    a.append(f"fill {x1} {AY} {z1} {x2} {AY} {z2} minecraft:{base}")
+    for px in range(x1, x2 + 1, 5):
+        for pz in range(z1, z2 + 1, 5):
+            a.append(f"fill {px} {AY} {pz} {min(px + 4, x2)} {AY} {min(pz + 4, z2)} minecraft:{rnd.choice(patches)}")
+    for di in range(-PR + 2, PR - 1, 9):
+        for dj in range(-PR + 2, PR - 1, 9):
+            a.append(f"setblock {PCX + di} {AY} {cz + dj} minecraft:{rnd.choice(lights)}")
+    if key == "neon":   # glowing lane lines
+        a += [f"fill {x1} {AY} {cz} {x2} {AY} {cz} minecraft:cyan_concrete", f"fill {PCX} {AY} {z1} {PCX} {AY} {z2} minecraft:magenta_concrete"]
+    if key == "mine":   # rails across the floor
+        a += [f"fill {x1 + 1} {AY + 1} {cz + 6} {x2 - 1} {AY + 1} {cz + 6} minecraft:rail", f"fill {PCX - 6} {AY + 1} {z1 + 1} {PCX - 6} {AY + 1} {z2 - 1} minecraft:rail",
+              f"setblock {PCX - 6} {AY + 1} {cz + 6} minecraft:air"]
+    a += walls(PCX, cz, PR, wall, stripe)
     for (dx, dz) in MOB_POINTS:   # barred windows behind every mob spawn
-        wx, wz = PCX + dx, PCZ + dz
+        wx, wz = PCX + dx, cz + dz
         if abs(dx) == 20: wx = PCX + (PR + 1) * (1 if dx > 0 else -1); a.append(f"fill {wx} {AY + 1} {wz - 1} {wx} {AY + 3} {wz + 1} minecraft:iron_bars")
-        else: wz = PCZ + (PR + 1) * (1 if dz > 0 else -1); a.append(f"fill {wx - 1} {AY + 1} {wz} {wx + 1} {AY + 3} {wz} minecraft:iron_bars")
-    for (rx1, rz1, rx2, rz2, h, blk) in RUINS:
-        a.append(f"fill {PCX + rx1} {AY + 1} {PCZ + rz1} {PCX + rx2} {AY + h} {PCZ + rz2} minecraft:{blk}")
-        a.append(f"setblock {PCX + rx1} {AY + h + 1} {PCZ + rz1} minecraft:soul_lantern")
-        a.append(f"fill {PCX + rx2} {AY + h} {PCZ + rz2} {PCX + rx2} {AY + h} {PCZ + rz2} minecraft:air")   # broken corner
-    a += [f"fill {PCX - 1} {AY + 1} {PCZ - 1} {PCX + 1} {AY + 1} {PCZ + 1} minecraft:polished_andesite",   # Arsenal platform
-          f"setblock {PCX} {AY + 1} {PCZ} minecraft:lodestone"]
-    sx, sy, sz = SHOP_NPC
-    a += npc("pvp.shopnpc", (sx, sy, sz), "☣ Arsenal ☣", "green", "", "", 180, mannequin=True)
-    fn("admin/build_pve", a)
+        else: wz = cz + (PR + 1) * (1 if dz > 0 else -1); a.append(f"fill {wx - 1} {AY + 1} {wz} {wx + 1} {AY + 3} {wz} minecraft:iron_bars")
+    for (rx1, rz1, rx2, rz2, h, blk) in RUINS:   # same cover layout on every map, in the map's own blocks
+        b = blk if cover is None else rnd.choice(cover)
+        a.append(f"fill {PCX + rx1} {AY + 1} {cz + rz1} {PCX + rx2} {AY + h} {cz + rz2} minecraft:{b}")
+        a.append(f"setblock {PCX + rx1} {AY + h + 1} {cz + rz1} minecraft:{toplight}")
+        if key in ("ruins", "hellfort"):
+            a.append(f"setblock {PCX + rx2} {AY + h} {cz + rz2} minecraft:air")   # broken corner
+    if key == "mine":   # timber supports in the corners
+        for sx in (x1 + 3, x2 - 3):
+            for sz in (z1 + 3, z2 - 3):
+                a += [f"fill {sx} {AY + 1} {sz} {sx} {AY + 4} {sz} minecraft:stripped_spruce_log", f"setblock {sx} {AY + 5} {sz} minecraft:lantern"]
+    if key == "hellfort":   # fire pits in the corners
+        for sx in (x1 + 3, x2 - 3):
+            for sz in (z1 + 3, z2 - 3):
+                a += [f"setblock {sx} {AY} {sz} minecraft:netherrack", f"setblock {sx} {AY + 1} {sz} minecraft:fire"]
+    plat = {"ruins": "polished_andesite", "mine": "polished_deepslate", "neon": "light_blue_concrete", "hellfort": "polished_blackstone"}[key]
+    a += [f"fill {PCX - 1} {AY + 1} {cz - 1} {PCX + 1} {AY + 1} {cz + 1} minecraft:{plat}",   # Arsenal platform
+          f"setblock {PCX} {AY + 1} {cz} minecraft:lodestone"]
+    sx, sy, _ = SHOP_NPC
+    body = npc("pvp.shopnpc", (sx, sy, cz + 0.5), "☣ Arsenal ☣", "green", "", "", 180, mannequin=True)
+    a += [f"kill @e[tag=pvp.shopnpc,x={sx},y={sy},z={cz + 0.5},distance=..4]"] + body[1:]   # only this map's Arsenal
+    return a
 
 
 if __name__ == "__main__":

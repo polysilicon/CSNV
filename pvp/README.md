@@ -59,13 +59,29 @@ All kit gear is unbreakable, and every kit also gets 16 steak and 2 golden apple
   - **Veteran bonus**: you start each run with 500 points + 25 per wave of your best run (`pve.best`), capped at +1,000.
 - **Queue**: the first player to queue starts a 10 s countdown, and anyone who queues meanwhile joins the same run.
   If you queue during a run, you drop in at the next wave break.
-- **Arena**: ruins at 0, -60, 300, with 12 barred mob windows around the walls and the **Arsenal** shop in the middle.
+- **Maps**: four arenas, each the same size with 12 barred mob windows and the **Arsenal** shop in the middle.
+  **Change map** / **Random map** in the Outbreak menu (slots 45 / 53) pick the next map before a run starts.
+
+  | Map | Centre | Extra mobs |
+  |---|---|---|
+  | Ruins | 0, -60, 300 | none |
+  | Toxic Mine | 0, -60, 400 | cave spiders (wave 2+), silverfish (wave 4+) |
+  | Neon City | 0, -60, 500 | pillagers (wave 3+), vindicators (wave 5+) |
+  | Hellfort | 0, -60, 600 | wither skeletons (wave 3+), blazes (wave 4+) |
+
   Team members are on team `pve`, so there's no friendly fire, and they see their points on the team sidebar.
 - **Waves**: there are 6 + 4·(wave−1) mobs, plus 3 + 2·(wave−1) for each extra player, capped at 150. At most 30 are alive at once.
   - New types unlock as you go: husks at wave 2, skeletons at 3, spiders at 4, vindicators at 6, wither skeletons at 7, creepers at 8.
   - Mobs get +15% health and +8% damage per wave.
   - Every 5th wave adds an **Abomination** boss (a giant zombie, 150 base health, with a boss bar).
   - The last 4 mobs, and every mob in a wave that runs over 3 minutes, glow.
+- **Break**: 20 s between waves. Downed players come back at the start of the break, so they can re-buy at the Arsenal.
+- **Power-ups**: 4% of kills drop a glowing power-up in front of the killer. It lasts 30 s and any survivor can pick it up.
+  - **Max Ammo**: 64 arrows each.
+  - **Insta-Kill**: 30 s of Strength XX.
+  - **Double Points**: 30 s of double kill points.
+  - **Nuke**: kills every mob except the boss, +400 points each.
+- **Dropped items**: items players throw stay on the ground (normal 5-minute despawn); other loose items in the arenas are cleared.
 - **Points**:
   - start with 500;
   - 100 per kill;
@@ -74,7 +90,7 @@ All kit gear is unbreakable, and every kit also gets 16 steak and 2 golden apple
   Speed Cola 2,000, Mystery Box 950 (one of four wonder weapons), Ray Bow 5,000, Rations (16 steak) 100.
   Juggernog and Speed Cola are one per life, and you aren't charged if you already have one.
 - **Food**: Rations in the Arsenal, plus 4 steak for every survivor whenever a wave is cleared.
-- **Down**: if you die you spectate above the arena and come back with your kit at the next wave. The run ends when
+- **Down**: if you die you spectate above the arena and come back with your kit when the wave is cleared. The run ends when
   everyone is down. Your best wave is saved in `pve.best`, and a new server record (`#record pve`) is announced to everyone.
 
 Kits, shop, mob pool, spawns and arena layouts are tables at the top of `build.py`.
@@ -87,12 +103,12 @@ The dialog only loads on a server restart. To (re)build the lobby and arena:
 ```
 forceload add -16 -16 16 16
 forceload add -32 64 32 136
-forceload add -24 276 24 324
-function pvp:admin/build                  # build_lobby (+ place_npc), build_arena, build_pve
+forceload add -24 276 24 324              # and -24 376 24 424, -24 476 24 524, -24 576 24 624 for the other maps
+function pvp:admin/build                  # build_lobby (+ place_npc), build_arena, build_pve (all four maps)
 forceload remove -32 64 32 136
 forceload remove -24 276 24 324
 ```
-`pvp:admin/place_npc` re-places just the lobby NPCs and signs. The lobby chunks stay force-loaded.
+`pvp:admin/build_pve_<ruins|mine|neon|hellfort>` rebuilds one Outbreak map. `pvp:admin/place_npc` re-places just the lobby NPCs and signs. The lobby chunks stay force-loaded.
 
 ## Admin room
 A sealed room under the lobby (floor y 90) holds:
