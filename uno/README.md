@@ -42,6 +42,9 @@ To open it:
   | Wild | nether star | 1 |
   | Wild Draw Four | end crystal | 4 |
 
+- **Advancement** "Everyone has Uno...": awarded when your first game starts, with a toast and a chat announcement.
+  It comes from the lobby datapack `uno/datapack/crispy_uno` (copy it into `world/datapacks`). Players who had played
+  before it existed get it when they next join the lobby.
 - Wins are broadcast in the lobby. `/uno top` shows the most wins, saved in `plugins/UnoCraft/stats.yml`.
 - `/uno leave` leaves a table. Leaving the lobby (switching server or logging out) leaves too, and your cards go back
   into the deck.
@@ -49,7 +52,7 @@ To open it:
 ## Build and test
 ```
 CP=$(ls <paper-api and its libraries>/*.jar | tr '\n' ':')
-javac --release 21 -proc:none -cp "$CP" -d out $(find src -name '*.java') && cp res/* out/ && (cd out && jar cf ../UnoCraft-1.0.0.jar .)
+javac --release 21 -proc:none -cp "$CP" -d out $(find src -name '*.java') && cp res/* out/ && (cd out && jar cf ../UnoCraft-1.1.0.jar .)
 javac --release 21 -cp out -d tout test/crispy/uno/SimTest.java && java -cp tout:out crispy.uno.SimTest
 ```
 `Game.java` has no Minecraft code. `SimTest` covers:

@@ -1,0 +1,12 @@
+{
+ "display": {
+  "icon": {"id": "minecraft:red_concrete"},
+  "title": {"text": "Everyone has Uno...", "color": "red"},
+  "description": {"text": "Play your first game of UNO in the lobby (/uno)", "color": "gray"},
+  "frame": "task",
+  "background": "minecraft:block/red_concrete",
+  "show_toast": true,
+  "announce_to_chat": true
+ },
+ "criteria": {"played": {"trigger": "minecraft:impossible"}}
+}

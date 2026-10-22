@@ -18,7 +18,11 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.NamespacedKey;
+import org.bukkit.advancement.Advancement;
+import org.bukkit.advancement.AdvancementProgress;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemFlag;
@@ -154,7 +158,7 @@ public class UnoCraft extends JavaPlugin implements Listener {
         Collections.shuffle(t.g.seats);
         t.g.start();
         tell(t, "&aThe game starts! &7Seats: &f" + String.join("&7, &f", t.g.seats.stream().map(x -> x.name).toList()));
-        for (Seat s : t.g.seats) { Player o = player(s); if (o != null) { o.playSound(o.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1, 1.2f); game(o, t); } }
+        for (Seat s : t.g.seats) { Player o = player(s); if (o != null) { o.playSound(o.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1, 1.2f); award(o); game(o, t); } }
         flush(t);
     }
 
@@ -435,4 +439,17 @@ public class UnoCraft extends JavaPlugin implements Listener {
     }
 
     @EventHandler public void onQuit(PlayerQuitEvent e) { leave(e.getPlayer(), false); }
+
+    /** "Everyone has Uno..." (lobby datapack crispy_uno) for playing a first game. Players with games from before the
+     *  advancement existed get it when they join. */
+    static final NamespacedKey FIRST_GAME = new NamespacedKey("crispy_uno", "first_game");
+    void award(Player p) {
+        Advancement adv = Bukkit.getAdvancement(FIRST_GAME);
+        if (adv == null) { getLogger().warning("advancement " + FIRST_GAME + " missing: is the crispy_uno datapack installed?"); return; }
+        AdvancementProgress pr = p.getAdvancementProgress(adv);
+        if (!pr.isDone()) for (String c : pr.getRemainingCriteria()) pr.awardCriteria(c);
+    }
+    @EventHandler public void onJoin(PlayerJoinEvent e) {
+        if (stats.getInt("players." + e.getPlayer().getUniqueId() + ".played") > 0) award(e.getPlayer());
+    }
 }
