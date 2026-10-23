@@ -37,15 +37,20 @@ DASH = "execute rotated ~ 0 positioned ^ ^ ^-0.7 run summon minecraft:wind_charg
 
 
 def shoot(entity, speed, extra="", spread=(0,)):
-    """Projectiles from the caster's eyes along their look direction (yaw offsets in spread), owned by the caster."""
+    """Projectiles from the caster's eyes along their look direction (yaw offsets in spread), owned by the caster.
+    They have no acceleration, so air drag stops one that misses and it would hover forever: ability/tick removes
+    them (tag pvp.proj) after PROJ_LIFE ticks."""
     out = []
     for yaw in spread:
-        out += [f"execute anchored eyes positioned ^ ^ ^1 rotated ~{yaw} ~ run summon minecraft:{entity} ^ ^ ^0.2 {{Tags:[\"pvp.shot\"]{extra}}}",
+        out += [f"execute anchored eyes positioned ^ ^ ^1 rotated ~{yaw} ~ run summon minecraft:{entity} ^ ^ ^0.2 {{Tags:[\"pvp.shot\",\"pvp.proj\"]{extra}}}",
                 f"execute rotated ~{yaw} ~ positioned 0.0 0.0 0.0 run summon minecraft:marker ^ ^ ^{speed} {{Tags:[\"pvp.vec\"]}}",
                 "data modify entity @n[tag=pvp.shot] Motion set from entity @n[type=minecraft:marker,tag=pvp.vec] Pos",
                 "data modify entity @n[tag=pvp.shot] Owner set from entity @s UUID",
                 "kill @e[type=minecraft:marker,tag=pvp.vec]", "tag @e[tag=pvp.shot] remove pvp.shot"]
     return out
+
+
+PROJ_LIFE = 40
 
 
 def snd(s, vol=1, pitch=1): return f"playsound minecraft:{s} player @a[distance=..24] ~ ~ ~ {vol} {pitch}"
@@ -321,6 +326,9 @@ def build(fn, wj, lobby_box):
         f"execute as @a[scores={{pvp.rgt=1}}] run function {NS}:ability/regive",
         "scoreboard players remove @a[scores={pvp.rgt=2..}] pvp.rgt 1",
         f"execute as @e[type=minecraft:armor_stand,tag=pvp.nade] at @s run function {NS}:ability/nade_tick",
+        # ability fireballs that missed: gone after PROJ_LIFE ticks
+        "scoreboard players add @e[tag=pvp.proj] pvp.ft 1",
+        f"kill @e[tag=pvp.proj,scores={{pvp.ft={PROJ_LIFE}..}}]",
         # Doom Slayer: every kill heals (glory kill)
         f"execute as @a[scores={{pvp.gk=1..}}] {has('chainsaw')} at @s run function {NS}:ability/glory",
         "scoreboard players set @a[scores={pvp.gk=1..}] pvp.gk 0",
