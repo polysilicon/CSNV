@@ -16,16 +16,25 @@ instance was deleted after a backup to `/AMPStorage/backups/Bending01-20261019.t
 AMP rewrites `server.properties` on start, so change game settings through AMP, not the file.
 
 ## Arena
-The PvP arena is a Roman colosseum (`arena_map.py`, drawn with the Outbreak map engine and built by
-`admin/build_arena`):
-- a sand-swept floor with a red-sandstone mosaic and spokes in the middle;
-- the wall lined with pilasters, torches and red banners, and a barred gladiator gate in the middle of each side;
-- eight rows of stepped stands outside the wall (scenery behind the barrier) with a parapet, braziers and banners;
-- cover in the same places as before: a columned emperor's pavilion with a brazier in the centre, four gladiator
-  barracks (arched doors, barred windows, weathered tops, awnings, supplies), spina walls with lamp columns, fallen
-  columns and crates, plus obelisks, date palms and lamp posts.
+The PvP arena is a round Roman colosseum (`arena_map.py`, drawn with the Outbreak map engine and built by
+`admin/build_arena`; force-load about ±54 blocks around 0 100 first):
+- a round fighting floor 81 blocks across (radius 40): a red-sandstone mosaic in the middle, eight spoke paths and a ring
+  path, sand-swept stone, and a raked-sand track along the wall;
+- a round wall with pilasters, torches and red banners, a barred gladiator gate (with a tunnel) at each compass
+  point, invisible barrier above the wall and a barrier lid at 31 above the floor;
+- cover: a columned emperor's pavilion (9x9) with a brazier, four gladiator barracks (9x9: arched doors, barred
+  windows, weathered tops, awnings, supplies, practice targets), spina walls on the axes, fallen columns and crates,
+  eight obelisks, four date palms, lamp posts and four lion cages;
+- eight spawns at radius 32 (`arena_map.SPAWNS`);
+- **stands**: nine rows of stepped seating all the way round, aisles every 30 degrees, a parapet with braziers and
+  flag poles on the rim, and the emperor's box (dais, quartz columns, canopy, throne) above the north gate.
 
-`arena_map.check()` makes sure every spawn is clear and can walk to the centre.
+**Spectating**: the sandstone portal on the east side of the lobby (`admin/build_portal`) takes you to the stands
+(`function spectate`, tag `pvp.spec`) at one of three spots. Spectators can walk the stands but can't be hurt or hurt
+anyone (Resistance V + Weakness), and barrier keeps them out of the fight. `/spawn`, or leaving the stands, takes
+them back to the lobby.
+
+`arena_map.check()` makes sure every spawn is clear and can walk to the centre, and the spectator spots are on the stands.
 
 ## How it plays
 - Players spawn in a safe stone hub at 0 101 0, where they're immune to damage and can't deal any.

@@ -16,7 +16,7 @@ PACK_FORMAT = [107, 0], [107, 1]
 LOBBY_Y = 100                  # lobby floor; players stand at LOBBY_Y + 1, centred on 0,0
 LOBBY_R = 11                   # lobby platform half-size
 AY = -61                       # arena floors (superflat grass level); players stand at AY + 1
-ACX, ACZ, AR = 0, 100, 30      # PvP arena centre and half-size
+ACX, ACZ, AR = 0, 100, 40      # PvP arena centre and floor radius (a round colosseum: arena_map.py)
 PCX, PCZ, PR = 0, 300, 32      # Outbreak (PvE) arena centre and half-size (outer walls at ±33)
 KIT_NPC = (-3.5, LOBBY_Y + 1, -6.5)
 PVE_NPC = (4.5, LOBBY_Y + 1, -6.5)
@@ -32,6 +32,8 @@ IMPLANT_KEYS = ["kiroshi", "subdermal", "titanium", "lungs", "gorilla", "mantis"
 VELOCITY_MAX, VELOCITY_CAP = 5, 20   # Velocity enchant: +20% arrow speed per level; levels above the cap (via /fe) count as the cap
 LOBBY_BOX = box(0, 0, LOBBY_R, LOBBY_Y - 1, 20)
 ARENA_BOX = box(ACX, ACZ, AR, AY - 1, 35)
+STANDS_BOX = box(ACX, ACZ, arena_map.EXTENT - 1, AY - 1, 40)   # the colosseum stands, for spectators (tag pvp.spec)
+SPEC_PORTAL = (10, LOBBY_Y + 1, -1)   # lobby portal to the stands: east side, 3 wide (z -1..1), 3 high
 # Outbreak maps: same size and layout (spawns, mob windows, Arsenal in the middle), 100 blocks apart along z.
 # id, key, name, colour, menu icon, centre z, extra mobs (min wave, roll <=, type, extra NBT) tried before the normal pool
 OUTBREAK_MAPS = [
@@ -61,7 +63,7 @@ POWERUPS = [  # key, item, name, colour
     ("double", "experience_bottle", "DOUBLE POINTS", "yellow"), ("nuke", "tnt", "NUKE", "gold")]
 
 # PvP spawn points: offset from the centre, yaw facing the centre
-SPAWNS = [(24, 0, 90), (-24, 0, -90), (0, -24, 0), (0, 24, 180), (20, -20, 45), (-20, -20, -45), (20, 20, 135), (-20, 20, -135)]
+SPAWNS = arena_map.SPAWNS   # radius 32, facing the centre
 # PvP cover: (x1, z1, x2, z2, height, stripe colour, hollow-with-doors) offsets from the arena centre
 BUILDINGS = [
     (-3, -3, 3, 3, 10, "cyan", True),
@@ -516,6 +518,7 @@ def build():
         f"execute as @a[scores={{pvp.kn=1..}}] at @s run function {NS}:killed",
         f"execute as @a[scores={{pvp.kit=1..}}] at @s run function {NS}:kit/pick",
         f"execute as @a[scores={{pvp.spawn=1..}}] run function {NS}:trigger_lobby",
+        f"execute as @a[x={SPEC_PORTAL[0]},y={SPEC_PORTAL[1]},z={SPEC_PORTAL[2]},dx=0,dy=2,dz=2,tag=!pvp.spec] run function {NS}:spectate",
         "scoreboard players set @a[scores={pvp.hurt=1..}] pvp.ct 200", "scoreboard players set @a[scores={pvp.hurt=1..}] pvp.hurt 0",
         "scoreboard players remove @a[scores={pvp.ct=1..}] pvp.ct 1",
         f"function {NS}:pve/tick",
@@ -526,10 +529,15 @@ def build():
         f"effect give @a[{LOBBY_BOX}] minecraft:resistance 3 4 true",
         f"effect give @a[{LOBBY_BOX}] minecraft:weakness 3 255 true",
         f"effect give @a[{LOBBY_BOX}] minecraft:saturation 3 0 true",
+        # spectators in the colosseum stands can't be hurt and can't hurt anyone
+        "effect give @a[tag=pvp.spec] minecraft:resistance 3 4 true", "effect give @a[tag=pvp.spec] minecraft:weakness 3 255 true",
+        "effect give @a[tag=pvp.spec] minecraft:saturation 3 0 true",
+        f"execute as @a[tag=pvp.spec] unless entity @s[{STANDS_BOX}] run function {NS}:to_lobby",
         # anyone (in adventure) outside the lobby and both arenas goes back to the lobby
-        f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[{ARENA_BOX}] {" ".join(f"unless entity @s[{b}]" for b in PVE_BOXES.values())} unless entity @s[tag=pvp.admin,{ROOM_BOX}] run function {NS}:to_lobby",
+        f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[{ARENA_BOX}] {" ".join(f"unless entity @s[{b}]" for b in PVE_BOXES.values())} unless entity @s[tag=pvp.admin,{ROOM_BOX}] unless entity @s[tag=pvp.spec,{STANDS_BOX}] run function {NS}:to_lobby",
         f"function {NS}:pve/second",
         f"function {NS}:ability/second",
+        f"particle minecraft:reverse_portal {SPEC_PORTAL[0] + 0.5} {SPEC_PORTAL[1] + 1.5} 0.5 0.1 0.9 0.9 0.05 40",
         # NPC clicks are advancements; clear any left granted so an NPC can never get stuck for a player
         "advancement revoke @a only pvp:npc", "advancement revoke @a only pvp:pvenpc", "advancement revoke @a only pvp:shopnpc",
     ])
@@ -538,7 +546,7 @@ def build():
         "execute if entity @s[tag=pve.in] if score #state pve matches 2..3 if score #wave pve > @s pve.best run scoreboard players operation @s pve.best = #wave pve",
         "clear @s", "effect clear @s", "function cyber:admin/reset", "gamemode adventure @s",
         *PERK_RESET,
-        "tag @s remove pve.in", "tag @s remove pve.down", "tag @s remove pve.q", "team leave @s",
+        "tag @s remove pve.in", "tag @s remove pve.down", "tag @s remove pve.q", "team leave @s", "tag @s remove pvp.spec",
         f"tp @s 0.5 {LOBBY_Y + 1} 0.5 180 0",
         "scoreboard players set @s pvp.left 0", "scoreboard players set @s pvp.ct 0",
         "scoreboard players add @s pvp.streak 0", "scoreboard players add @s pvp.kills 0",
@@ -655,13 +663,35 @@ def build():
     B = L + 1   # invisible walls so nobody falls off
     lobby += [f"fill {-B} {Y + 1} {-B} {B} {Y + 15} {-B} minecraft:barrier", f"fill {-B} {Y + 1} {B} {B} {Y + 15} {B} minecraft:barrier",
               f"fill {-B} {Y + 1} {-B} {-B} {Y + 15} {B} minecraft:barrier", f"fill {B} {Y + 1} {-B} {B} {Y + 15} {B} minecraft:barrier"]
-    fn("admin/build_lobby", lobby + [f"function {NS}:admin/place_npc"])
+    fn("admin/build_lobby", lobby + [f"function {NS}:admin/build_portal", f"function {NS}:admin/place_npc"])
+    # the spectator portal on the east side of the lobby: a sandstone gate with portal particles; walking through it
+    # (tick: function spectate) takes you to the colosseum stands
+    X, PY = SPEC_PORTAL[0], SPEC_PORTAL[1]
+    fn("admin/build_portal", [
+        f"fill {X} {PY} -2 {X} {PY + 3} 2 minecraft:chiseled_sandstone", f"fill {X} {PY} -1 {X} {PY + 2} 1 minecraft:air",
+        f"fill {X + 1} {PY - 1} -2 {X + 1} {PY + 3} 2 minecraft:smooth_sandstone",
+        f"fill {X} {PY + 4} -2 {X} {PY + 4} 2 minecraft:sandstone_slab[type=bottom]", f"setblock {X} {PY + 4} 0 minecraft:gold_block",
+        f"fill {X - 1} {PY - 1} -1 {X} {PY - 1} 1 minecraft:crying_obsidian",
+        f"setblock {X - 1} {PY + 3} -2 minecraft:wall_torch[facing=west]", f"setblock {X - 1} {PY + 3} 2 minecraft:wall_torch[facing=west]",
+        "kill @e[tag=pvp.specholo]",
+        f"summon minecraft:text_display {X - 0.5} {PY + 4.6} 0.5 {{Tags:[\"pvp.specholo\"],billboard:\"center\",background:0,"
+        "text:[{\"text\":\"👁 Spectate the Arena\",\"color\":\"gold\",\"bold\":true},{\"text\":\"\\nWalk through to watch from the stands\",\"color\":\"gray\"}]}"])
+    spots = arena_map.SPECTATE
+    sp = ["execute store result score #r pvp run random value 1..%d" % len(spots)]
+    for n, (dx, dz, yaw) in enumerate(spots, 1):
+        h = arena_map.WALL_H + (arena_map.row(dx, dz) - 1) + 1
+        sp.append(f"execute if score #r pvp matches {n} run tp @s {ACX + dx + 0.5} {AY + h} {ACZ + dz + 0.5} {yaw} 10")
+    fn("spectate", [
+        "clear @s", "effect clear @s", "gamemode adventure @s", "tag @s add pvp.spec", *sp,
+        "effect give @s minecraft:resistance 3 4 true", "effect give @s minecraft:weakness 3 255 true",
+        "playsound minecraft:block.portal.travel player @s ~ ~ ~ 0.4 1.4",
+        "tellraw @s [{\"text\":\"👁 You're in the stands. \",\"color\":\"gold\"},{\"text\":\"Watch the fights, walk the rim, and type \",\"color\":\"gray\"},"
+        "{\"text\":\"/spawn\",\"color\":\"yellow\"},{\"text\":\" to go back.\",\"color\":\"gray\"}]"])
 
-    # the colosseum (arena_map.py): clear the floor and the stands around it, put up the walls, then draw it
-    S = AR + 1 + arena_map.STANDS + 1
-    ar = [f"fill {ACX - S} {AY + 1 + k} {ACZ - S} {ACX + S} {AY + 4 + k} {ACZ + S} minecraft:air" for k in range(0, 32, 4)]
+    # the colosseum (arena_map.py): clear it and its stands, lay the floor, then draw it (wall, barrier and lid included)
+    S = arena_map.EXTENT
+    ar = [f"fill {ACX - S} {AY + 1 + k} {ACZ - S} {ACX + S} {AY + 2 + k} {ACZ + S} minecraft:air" for k in range(0, 32, 2)]
     ar.append(f"fill {ACX - AR} {AY} {ACZ - AR} {ACX + AR} {AY} {ACZ + AR} minecraft:smooth_sandstone")
-    ar += walls(ACX, ACZ, AR, "sandstone", "chiseled_sandstone")
     g = arena_map.colosseum(SPAWNS)
     arena_map.check(g, SPAWNS)
     ar += outbreak_maps.commands(g, ACX, AY, ACZ)
