@@ -361,6 +361,8 @@ ABILITIES = {
     "guts": shotgun("Guts", "light_purple", "golden_hoe", 1.0, 9, 3, "Rebecca's oversized shotgun.", "entity.generic.explode", 1.8),
     "pistol": gun("Pistol", "aqua", "stone_hoe", 0.35, 3, 28, "Quick sidearm.", "entity.firework_rocket.blast", 1.9),
     "m60": gun("Trunk M60", "dark_gray", "netherite_shovel", 0.25, 3, 32, "The machine gun from the trunk.", "entity.firework_rocket.blast", 1.8),
+    "power_beam": gun("Arm Cannon", "gold", "orange_dye", 0.5, 5, 36, "Samus's Power Beam.", "block.beacon.deactivate", 2.0,
+                      [("", "particle minecraft:electric_spark ~ ~1 ~ 0.2 0.4 0.2 0.3 12")]),
     "amban": gun("Amban Rifle", "gray", "iron_shovel", 2.5, 12, 60, "Disintegration sniper rifle.", "block.beacon.deactivate", 1.8,
                  [("glowing 3 s", "effect give @s minecraft:glowing 3 0"), ("", "particle minecraft:electric_spark ~ ~1 ~ 0.3 0.5 0.3 0.3 20")]),
     # ---------------------------------------------------------------- King of the Hill / Futurama / Mr. Robot

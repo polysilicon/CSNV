@@ -184,9 +184,8 @@ FRANCHISE_KITS = [
      [f"give @s {item('diamond_sword', 'Star Rod', 'light_purple', {'sharpness': 4, CE + 'devour': 3})}", AB("inhale"), AB("stone")]
      + suit("leather", 4, dye=15961002, extra={"feet": {CE + "antigravity": 2}}) + head("kirby", "Kirby", "light_purple")
      + passive("jump_boost", 1) + passive("resistance") + size(0.6), []),
-    (20, "samus", "Samus", "gold", "golden_helmet", ["Arm Cannon (Explosive II, Eagle Eye III) · Varia Suit (Reinforced III)", ab_line("charge_shot", "screw_attack")],
-     [f"give @s {item('bow', 'Arm Cannon', 'gold', {'power': 4, 'infinity': 1, CE + 'explosive': 2, CE + 'eagleeye': 3})}", AB("charge_shot"), AB("screw_attack"),
-      f"give @s {item('iron_sword', enchants={'sharpness': 2})}", "give @s minecraft:arrow 1"]
+    (20, "samus", "Samus", "gold", "golden_helmet", ["Arm Cannon (Power Beam) · Varia Suit (Reinforced III)", ab_line("power_beam", "charge_shot", "screw_attack")],
+     [AB("power_beam"), AB("charge_shot"), AB("screw_attack"), f"give @s {item('iron_sword', enchants={'sharpness': 2})}"]
      + suit("golden", 4, extra={"chest": {CE + "reinforced": 3}}) + head("samus", "Samus Aran", "gold") + size(1.08), []),
     (21, "randy", "Randy Marsh", "white", "fern", ["No weapon: fists hit for +7 (sword speed) · Sandevistan cyberware", ab_line("tegridy", "wassup_bruh") + " · Sandevistan (double-tap sneak)"],
      [AB("tegridy"), AB("wassup_bruh"), "attribute @s minecraft:attack_damage modifier add pvp:fists 7 add_value",

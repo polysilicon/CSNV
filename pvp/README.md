@@ -52,7 +52,7 @@ classic kits with no character (Juggernaut, Berserker, Medic, Pyro, Ranger, Shin
 | Mario | Hammer (mace), overalls, Resistance I | **Fireball** (3 s), **Super Jump Punch** (leap + 6 dmg uppercut, 8 s) |
 | Pikachu | Iron Tail sword, Speed I, Resistance I | **Thunder Jolt** (zap 6 dmg, 4 s), **Quick Attack** (dash, 6 s) |
 | Kirby | Star sword, Jump Boost II, Resistance I | **Inhale** (suck in + 5 dmg + 2 hearts, 10 s), **Stone** (immune 3 s + slam, 12 s) |
-| Samus | Arm Cannon (bow), Varia Suit (gold) | **Charge Shot** (explosive, 6 s), **Screw Attack** (spin up + 6 dmg, 8 s) |
+| Samus | Arm Cannon (gun ability: Power Beam), Varia Suit (gold) | **Charge Shot** (explosive, 6 s), **Screw Attack** (spin up + 6 dmg, 8 s) |
 
 **Guns** are abilities, not bows or crossbows: right-click fires a hitscan shot (with a tracer) at the first enemy
 along your aim, so there are no arrows to carry. Shotguns hit everything in a short cone in front of you instead.
@@ -66,9 +66,10 @@ along your aim, so there are no arrows to carry. Shotguns hit everything in a sh
 | Guts | Rebecca | 6 (cone) | 9 | 1 s | knockback |
 | Pistol | Rebecca | 28 | 3 | 0.35 s | |
 | Trunk M60 | Walter White | 32 | 3 | 0.25 s | |
+| Arm Cannon (Power Beam) | Samus | 36 | 5 | 0.5 s | |
 | Amban Rifle | Mandalorian | 60 | 12 | 2.5 s | glowing 3 s |
 
-Bows stay bows: Link's Hero Bow, Red's Slingshot, Samus's Arm Cannon and the Sniper's Sniper Rifle.
+Bows stay bows: Link's Hero Bow, Red's Slingshot and the Sniper's Sniper Rifle.
 
 **Character heads, enchants and sizes**:
 - Each character kit wears its character's head as the helmet. The head has diamond-helmet armor and Protection IV,
