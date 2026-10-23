@@ -81,7 +81,7 @@ The menu shows all 20 kits mixed together in three rows; custom kits go on the r
 
 | Kit | Gear | Abilities |
 |---|---|---|
-| Randy Marsh (South Park) | No weapon: fists +7 damage at sword attack speed; leather outfit; **Sandevistan** cyberware (double-tap sneak) | **Tegridy** (Regeneration II + Speed I 6 s, 20 s) |
+| Randy Marsh (South Park) | No weapon: fists +7 damage at sword attack speed; light blue shirt, jeans and brown shoes (leather); **Sandevistan** cyberware (double-tap sneak) | **Tegridy** (Regeneration II + Speed I 6 s, 20 s) |
 | Courier Six (Fallout: New Vegas) | Lucky (revolver crossbow, Eagle Eye III), Machete (Bleed II), Ranger armor + Desert Ranger head | **V.A.T.S.** (enemies within 12 blocks: Slowness III + glowing 5 s; you: Strength I, 18 s), **Stimpak** (Instant Health II + Regeneration II, 15 s) |
 
 Randy's head came from a skin uploaded to MineSkin (no Randy in the head database). The same works for any character:

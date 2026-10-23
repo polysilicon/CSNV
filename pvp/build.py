@@ -174,7 +174,7 @@ FRANCHISE_KITS = [
     (21, "randy", "Randy Marsh", "white", "fern", ["No weapon: fists hit for +7 (sword speed) · Sandevistan cyberware", "Tegridy · Sandevistan (double-tap sneak)"],
      [AB("tegridy"), "attribute @s minecraft:attack_damage modifier add pvp:fists 7 add_value",
       "attribute @s minecraft:attack_speed modifier add pvp:fists -2.4 add_value"]
-     + suit("leather", 3, dye={"head": 4007438, "chest": 15790320, "legs": 3949738, "feet": 6045219}) + head("randy", "Randy Marsh", "white"), ["sandy"]),
+     + suit("leather", 3, dye={"head": 4007438, "chest": 9226476, "legs": 3949738, "feet": 6045219}) + head("randy", "Randy Marsh", "white"), ["sandy"]),
     (22, "courier", "Courier Six", "gold", "spyglass", ["Lucky (revolver: Eagle Eye III) + machete (Bleed II) · Ranger armor", ab_line("vats", "stimpak")],
      [f"give @s {item('crossbow', 'Lucky', 'gold', {'quick_charge': 3, 'piercing': 2, CE + 'eagleeye': 3})}", AB("vats"), AB("stimpak"),
       f"give @s {item('iron_sword', 'Machete', 'gray', {'sharpness': 4, CE + 'bleed': 2})}", "give @s minecraft:arrow 64"]
