@@ -587,12 +587,15 @@ def build():
         f"function {NS}:admin/place_leaderboard",
         *npc("pvp.npc", KIT_NPC, "⚔ Kit Dealer ⚔", "aqua", "weaponsmith", "snow"),
         *npc("pvp.pvenpc", PVE_NPC, "☣ Outbreak ☣", "green", "cleric", "swamp"),
+        f"function {NS}:admin/place_holo",
+    ])
+    fn("admin/place_holo", [   # the lobby board (on its own, so it can be redone without touching the NPCs)
         "kill @e[tag=pvp.holo]",
         holo(LOBBY_Y + 6, -LOBBY_R + 1.5, {"text": "CRISPY PVP", "color": "gold", "bold": True}, 3),
         holo(LOBBY_Y + 4.6, -LOBBY_R + 1.5, [{"text": "Kit Dealer: ", "color": "aqua"}, {"text": "PvP arena", "color": "gray"},
                                               {"text": "   Outbreak: ", "color": "green"}, {"text": "waves of mobs, solo or team", "color": "gray"},
-                                              {"text": "\nStar Wars · Zelda · Halo · Doom · Witcher · Smash Bros · Cyberpunk", "color": "yellow"},
-                                              {"text": "\nCustom enchants in every kit · /spawn to return", "color": "dark_gray"}]),
+                                              {"text": f"\nPlay as {len(KITS)} heroes, villains and legends from games, movies, TV and memes", "color": "yellow"},
+                                              {"text": "\nEvery character has their own abilities · /spawn to return", "color": "dark_gray"}]),
     ])
     L, Y = LOBBY_R, LOBBY_Y
     lobby = [f"fill {-L} {Y} {-L} {L} {Y} {L} minecraft:polished_andesite",
