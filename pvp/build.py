@@ -46,6 +46,8 @@ OUTBREAK_MAPS = [
     (4, "hellfort", "Hellfort", "red", "nether_bricks", 600,
      [(3, 12, "wither_skeleton", ',equipment:{mainhand:{id:"minecraft:stone_sword",count:1}},drop_chances:{mainhand:0.0f}'),
       (4, 20, "blaze", "")]),
+    (5, "orbital", "Orbital Station", "aqua", "end_rod", 700,
+     [(2, 12, "endermite", ""), (4, 20, "stray", ',equipment:{mainhand:{id:"minecraft:bow",count:1}},drop_chances:{mainhand:0.0f}')]),
 ]
 PVE_BOXES = {m[0]: box(PCX, m[5], PR, AY - 1, 35) for m in OUTBREAK_MAPS}
 PVE_BOX = PVE_BOXES[1]
@@ -55,6 +57,7 @@ MAP_LORE = {
     "mine": ["Abandoned toxic mine", "Rock outcrops, mine-cart loop", "Sludge puddles slow you down", "Extra: cave spiders, silverfish"],
     "neon": ["Night-time crossroads", "Tower, noodle bar, car park, arcade", "Extra: pillagers, vindicators"],
     "hellfort": ["Nether keep with four gates", "Lava pools, basalt, a giant ribcage", "Extra: wither skeletons, blazes"],
+    "orbital": ["Space station decks and glass labs", "Reactor ring, cargo crates, copper pipes", "Extra: endermites, strays"],
 }
 POWERUP_CHANCE = 4       # % of kills that drop a power-up
 POWERUP_SECS = 30        # Insta-Kill / Double Points length
@@ -341,12 +344,19 @@ UP_BOOST = {   # per tier, added to the existing enchants; kind -> (item tag/id,
     "trident": ("minecraft:trident", {"impaling": 2}, {"channeling": 1}),
     "mace": ("minecraft:mace", {"density": 1, "breach": 1}, {"wind_burst": 1}),
 }
-VETERAN_PER_WAVE, VETERAN_MAX = 25, 1000   # extra starting points per best wave reached
-PERK_RESET = ["attribute @s minecraft:scale modifier remove pvp:size", "attribute @s minecraft:attack_damage modifier remove pvp:size_dmg",
+VETERAN_PER_WAVE, VETERAN_MAX = 25, 1000
+# Kit mastery: XP per character (score pvp.mx<kit id>), +10 per PvP kill and +1 per Outbreak kill with that kit.
+MASTERY = [50, 150, 400, 800, 1500]      # XP for levels I..V (V = Master)
+MASTERY_PVP, MASTERY_PVE = 10, 1   # extra starting points per best wave reached
+PERK_RESET = ["tag @s remove pvp.master", "attribute @s minecraft:scale modifier remove pvp:size", "attribute @s minecraft:attack_damage modifier remove pvp:size_dmg",
               "attribute @s minecraft:max_health modifier remove pvp:size_hp", "attribute @s minecraft:knockback_resistance modifier remove pvp:size_kb",
               "attribute @s minecraft:movement_speed modifier remove pvp:size_spd", "attribute @s minecraft:attack_damage modifier remove pvp:fists",
               "attribute @s minecraft:attack_speed modifier remove pvp:fists", "attribute @s minecraft:max_health modifier remove pvp:jug", "attribute @s minecraft:max_health modifier remove pvp:arm",
               "tag @s remove pve.jug", "tag @s remove pve.cola", "tag @s remove pve.dt", "tag @s remove pve.phd", "scoreboard players set @s pve.arm 0", "scoreboard players set @s pve.gun 0"]
+CELLS_NEEDED = 3   # Power Cells (from boss waves) to assemble the Annihilator
+CELL = ('minecraft:heart_of_the_sea[minecraft:custom_data={pvp_cell:1b},minecraft:custom_name={"text":"Power Cell","color":"light_purple","italic":false},'
+        'minecraft:lore=[{"text":"Bring 3 to the Arsenal to assemble the Annihilator","color":"gray","italic":false}],minecraft:enchantment_glint_override=true]')
+REVIVE_TICKS = 60  # crouching next to a downed teammate this long revives them   # steak for every survivor when a wave is cleared
 # Outbreak shop: id, name, colour, icon, cost, lore, commands (run as the buyer), one-per-life tag (checked before paying)
 SHOP = [
     (1, "Golden Apple", "gold", "golden_apple", 500, "One golden apple", ["give @s minecraft:golden_apple 1"], None),
@@ -370,9 +380,11 @@ SHOP = [
      ["effect give @s minecraft:strength infinite 0 true"], "pve.dt"),
     (13, "PhD Flopper", "light_purple", "magma_cream", 1500, "Fire immunity + Jump Boost until you go down",
      ["effect give @s minecraft:fire_resistance infinite 0 true", "effect give @s minecraft:jump_boost infinite 0 true"], "pve.phd"),
+    (14, "Assemble: Annihilator", "light_purple", "end_crystal", None, f"Needs {CELLS_NEEDED} Power Cells (one per survivor for each boss wave cleared)",
+     ["function pvp:pve/assemble"], None),
 ]
-SHOP_SLOTS = [10, 11, 12, 13, 14, 15, 16, 21, 23, 19, 20, 24, 25]
-WAVE_FOOD = 4   # steak for every survivor when a wave is cleared
+SHOP_SLOTS = [10, 11, 12, 13, 14, 15, 16, 21, 23, 19, 20, 24, 25, 22]
+WAVE_FOOD = 4
 # Mystery Box rolls (equal odds): name, colour, commands. Wonder weapons, gear and abilities from the character
 # kits, and the Teddy Bear (nothing, half the points back).
 BOX = [
@@ -472,7 +484,7 @@ def build():
                        "Spend points at the Arsenal in the arena", "Pack-a-Punch weapons, upgrade armor, buy perks", "Your best wave adds starting points", "Go down and you're back next wave", "Game over when the whole team is down"]), "cmd": ""}]},
         "pve_maps": {"title": {"text": "☣ Outbreak: pick a map", "color": "dark_green"}, "rows": 3, "fill": PANE, "items":
                      [{"slot": s, "item": icon(m[4], m[2], m[3], MAP_LORE[m[1]] + ["", "Click to pick your kit"]), "cmd": f"trigger pve.join set {80 + m[0]}"}
-                      for s, m in zip((10, 12, 14, 16), OUTBREAK_MAPS)]
+                      for s, m in zip((11, 12, 13, 14, 15), OUTBREAK_MAPS)]
                      + [{"slot": 4, "item": icon("zombie_head", "Outbreak (PvE)", "green", [
                          "Fight endless waves of mobs, solo or as a team", "1. Pick a map  2. Pick your kit",
                          "If a run is already starting, you join that map"]), "cmd": ""},
@@ -493,7 +505,8 @@ def build():
             "pvp dummy", "pvp.kit trigger", "pvp.spawn trigger", "pvp.kn playerKillCount", "pvp.dead deathCount",
             "pvp.left minecraft.custom:minecraft.leave_game", "pvp.streak dummy", "pvp.best dummy",
             "pvp.hurt minecraft.custom:minecraft.damage_taken", "pvp.ct dummy",
-            "pve dummy", "pve.join trigger", "pve.buy trigger", "pve.k totalKillCount", "pve.kit dummy", "pve.best dummy", "pve.arm dummy", "pve.gun dummy", "pve.map dummy"]],
+            "pvp.cur dummy", "pvp.mastery trigger", "pvp.mastered dummy", *[f"pvp.mx{k[0]} dummy" for k in KITS],
+            "pve dummy", "pve.join trigger", "pve.buy trigger", "pve.k totalKillCount", "pve.kit dummy", "pve.best dummy", "pve.arm dummy", "pve.gun dummy", "pve.map dummy", "pve.rv dummy"]],
         'scoreboard objectives add pvp.kills playerKillCount {"text":"⚔ Kills","color":"aqua","bold":true}',
         'scoreboard objectives add pve.pts dummy {"text":"☣ Points","color":"green","bold":true}',
         "scoreboard objectives setdisplay sidebar pvp.kills",
@@ -518,6 +531,7 @@ def build():
         f"execute as @a[scores={{pvp.kn=1..}}] at @s run function {NS}:killed",
         f"execute as @a[scores={{pvp.kit=1..}}] at @s run function {NS}:kit/pick",
         f"execute as @a[scores={{pvp.spawn=1..}}] run function {NS}:trigger_lobby",
+        "scoreboard players enable @a pvp.mastery", f"execute as @a[scores={{pvp.mastery=1..}}] run function {NS}:mastery/list",
         f"execute as @a[x={SPEC_PORTAL[0]},y={SPEC_PORTAL[1]},z={SPEC_PORTAL[2]},dx=0,dy=2,dz=2,tag=!pvp.spec] run function {NS}:spectate",
         "scoreboard players set @a[scores={pvp.hurt=1..}] pvp.ct 200", "scoreboard players set @a[scores={pvp.hurt=1..}] pvp.hurt 0",
         "scoreboard players remove @a[scores={pvp.ct=1..}] pvp.ct 1",
@@ -537,6 +551,7 @@ def build():
         f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[{ARENA_BOX}] {" ".join(f"unless entity @s[{b}]" for b in PVE_BOXES.values())} unless entity @s[tag=pvp.admin,{ROOM_BOX}] unless entity @s[tag=pvp.spec,{STANDS_BOX}] run function {NS}:to_lobby",
         f"function {NS}:pve/second",
         f"function {NS}:ability/second",
+        f"execute as @a[tag=pvp.master] at @s unless entity @s[{LOBBY_BOX}] run particle minecraft:wax_on ~ ~1 ~ 0.35 0.6 0.35 0 5",
         f"particle minecraft:reverse_portal {SPEC_PORTAL[0] + 0.5} {SPEC_PORTAL[1] + 1.5} 0.5 0.1 0.9 0.9 0.05 40",
         # NPC clicks are advancements; clear any left granted so an NPC can never get stuck for a player
         "advancement revoke @a only pvp:npc", "advancement revoke @a only pvp:pvenpc", "advancement revoke @a only pvp:shopnpc",
@@ -567,13 +582,16 @@ def build():
         f"function {NS}:to_lobby",
     ])
     fn("killed", [
+        f"scoreboard players set #g pvp {MASTERY_PVP}", f"function {NS}:mastery/gain",
         "scoreboard players add @s pvp.streak 1", "scoreboard players set @s pvp.kn 0", "scoreboard players add @s pvp.best 0",
         "execute if score @s pvp.streak > @s pvp.best run scoreboard players operation @s pvp.best = @s pvp.streak",
         "effect give @s minecraft:instant_health 1 0", "effect give @s minecraft:absorption 10 0",
         "give @s minecraft:golden_apple 1",
         "playsound minecraft:entity.experience_orb.pickup player @s ~ ~ ~ 1 1.2",
         "scoreboard players operation #m pvp = @s pvp.streak", "scoreboard players set #5 pvp 5", "scoreboard players operation #m pvp %= #5 pvp",
-        "execute if score @s pvp.streak matches 3 run tellraw @a [{\"selector\":\"@s\",\"color\":\"yellow\"},{\"text\":\" is on a 3 kill streak!\",\"color\":\"gold\"}]",
+        "execute if score @s pvp.streak matches 3 unless entity @s[tag=pvp.master] run tellraw @a [{\"selector\":\"@s\",\"color\":\"yellow\"},{\"text\":\" is on a 3 kill streak!\",\"color\":\"gold\"}]",
+        "execute if score @s pvp.streak matches 3 if entity @s[tag=pvp.master] run tellraw @a [{\"text\":\"★ \",\"color\":\"gold\"},{\"selector\":\"@s\",\"color\":\"yellow\"},{\"text\":\" is on a 3 kill streak!\",\"color\":\"gold\"}]",
+        "execute if score @s pvp.streak matches 5.. if score #m pvp matches 0 if entity @s[tag=pvp.master] run tellraw @a {\"text\":\"★ Master\",\"color\":\"gold\",\"bold\":true}",
         "execute if score @s pvp.streak matches 5.. if score #m pvp matches 0 run tellraw @a [{\"selector\":\"@s\",\"color\":\"yellow\"},{\"text\":\" is on a \",\"color\":\"gold\"},"
         "{\"score\":{\"name\":\"@s\",\"objective\":\"pvp.streak\"},\"color\":\"red\",\"bold\":true},{\"text\":\" kill streak!\",\"color\":\"gold\"}]",
     ])
@@ -591,12 +609,14 @@ def build():
             + ("{\"text\":\" (cyberware installed)\",\"color\":\"gray\"}]" if implants else
              "{\"text\":\" · right-click your ability items\",\"color\":\"gray\"}]" if any("loot pvp:ability/" in l for l in items) else "{\"text\":\"\"}]"),
             *(["tellraw @s {\"text\":\"Double-tap sneak to activate your Operating System implant.\",\"color\":\"dark_gray\"}"]
-              if any(i in ("sandy", "berserk") for i in implants) else [])])
+              if any(i in ("sandy", "berserk") for i in implants) else []),
+            f"scoreboard players set @s pvp.cur {kid}", f"function {NS}:mastery/show/{key}"])
     pick += [*[f"execute if score #k pvp matches {k[0]} run scoreboard players set #ok pvp 1" for k in KITS],
              f"execute if score #k pvp matches 101.. run function {NS}:kit/custom",
              f"execute if score #ok pvp matches 1 run function {NS}:arena/enter",
              f"execute unless score #ok pvp matches 1 run {say('@s', 'That kit no longer exists.', 'red')}"]
     fn("kit/pick", pick)
+    build_mastery()
     fn("kit/valid_pve", [f"execute if score #j pve matches {k[0]} run return 1" for k in KITS] + ["return 0"])   # #j pve is a real kit id
     # admin-made kits are given by the mod ("pvpkit give <id>", ids 101+)
     fn("kit/custom", ["execute store result storage pvp:tmp k int 1 run scoreboard players get #k pvp", f"function {NS}:kit/custom_give with storage pvp:tmp"])
@@ -785,6 +805,57 @@ def afford(name, cost):
             "{\"score\":{\"name\":\"@s\",\"objective\":\"pve.pts\"},\"color\":\"white\"},{\"text\":\").\",\"color\":\"red\"}]")
 
 
+def build_mastery():
+    """Kit mastery: gain (#g pvp XP for the kit in pvp.cur), level-ups, the line shown on kit pick, and /trigger pvp.mastery."""
+    roman = ["I", "II", "III", "IV", "V"]
+    stars = lambda n: [{"text": "★" * n, "color": "gold"}, {"text": "☆" * (5 - n), "color": "dark_gray"}]
+    fn("mastery/gain", ["execute unless score #g pvp matches 1.. run return 0"]
+       + [f"execute if score @s pvp.cur matches {k[0]} run return run function {NS}:mastery/gain/{k[1]}" for k in KITS])
+    shows, rows = [], []
+    for (kid, key, name, color, *_rest) in KITS:
+        o = f"pvp.mx{kid}"
+        g = [f"scoreboard players add @s {o} 0", f"scoreboard players operation #x pvp = @s {o}",
+             f"scoreboard players operation @s {o} += #g pvp", f"scoreboard players operation #y pvp = @s {o}"]
+        for n, T in enumerate(MASTERY, 1):
+            msg = [{"text": "MASTERY " + roman[n - 1], "color": "gold", "bold": True}]
+            g += [f"execute if score #x pvp matches ..{T - 1} if score #y pvp matches {T}.. run title @s actionbar {tj(msg + [{'text': ' · ' + name, 'color': color}])}",
+                  f"execute if score #x pvp matches ..{T - 1} if score #y pvp matches {T}.. run playsound minecraft:ui.toast.challenge_complete player @s ~ ~ ~ 0.8 1.2",
+                  f"execute if score #x pvp matches ..{T - 1} if score #y pvp matches {T}.. run tellraw @s "
+                  + tj([{"text": "Mastery up! ", "color": "gold"}, {"text": name, "color": color, "bold": True}, {"text": " is now ", "color": "gray"}]
+                       + stars(n) + [{"text": f" {roman[n - 1]}" + (" (Master)" if n == 5 else ""), "color": "gold"}])]
+        T = MASTERY[-1]
+        g += [f"execute if score #x pvp matches ..{T - 1} if score #y pvp matches {T}.. run tag @s add pvp.master",
+              f"execute if score #x pvp matches ..{T - 1} if score #y pvp matches {T}.. run scoreboard players add @s pvp.mastered 1",
+              f"execute if score #x pvp matches ..{T - 1} if score #y pvp matches {T}.. run tellraw @a "
+              + tj([{"text": "★ ", "color": "gold"}, {"selector": "@s", "color": "yellow"}, {"text": " has mastered ", "color": "gold"},
+                    {"text": name, "color": color, "bold": True}, {"text": "!", "color": "gold"}])]
+        fn(f"mastery/gain/{key}", g)
+        # shown when the kit is given: level, stars and progress; masters get the aura tag
+        sh = [f"scoreboard players add @s {o} 0", "tag @s remove pvp.master"]
+        bounds = [0] + MASTERY
+        for n in range(6):
+            lo, hi = bounds[n], (MASTERY[n] - 1 if n < 5 else None)
+            rng = f"{lo}..{hi}" if hi is not None else f"{lo}.."
+            prog = ([{"score": {"name": "@s", "objective": o}, "color": "white"}, {"text": f"/{MASTERY[n]} XP", "color": "gray"}] if n < 5
+                    else [{"text": "Master", "color": "gold", "bold": True}])
+            sh.append(f"execute if score @s {o} matches {rng} run tellraw @s "
+                      + tj([{"text": "Mastery: ", "color": "gray"}] + stars(n) + [{"text": f" {roman[n - 1] if n else '-'} · ", "color": "gray"}] + prog
+                           + [{"text": "  [all]", "color": "aqua", "click_event": {"action": "run_command", "command": "/trigger pvp.mastery"},
+                               "hover_event": {"action": "show_text", "value": "See your mastery for every character"}}]))
+        sh.append(f"execute if score @s {o} matches {MASTERY[-1]}.. run tag @s add pvp.master")
+        fn(f"mastery/show/{key}", sh)
+        for n in range(6):
+            lo, hi = bounds[n], (MASTERY[n] - 1 if n < 5 else None)
+            rng = f"{max(lo, 1)}..{hi}" if hi is not None else f"{lo}.."
+            rows.append(f"execute if score @s {o} matches {rng} run tellraw @s "
+                        + tj([{"text": " " + name + " ", "color": color}] + stars(n)
+                             + [{"text": " ", "color": "gray"}, {"score": {"name": "@s", "objective": o}, "color": "white"}, {"text": " XP", "color": "gray"}]))
+    fn("mastery/list", ["scoreboard players set @s pvp.mastery 0",
+                        f"tellraw @s {tj([{'text': '★ Kit mastery', 'color': 'gold', 'bold': True}, {'text': f' (+{MASTERY_PVP} XP per PvP kill, +{MASTERY_PVE} per Outbreak kill; Master at {MASTERY[-1]:,})', 'color': 'gray'}])}",
+                        *rows,
+                        f"execute unless score @s pvp.cur matches 1.. run tellraw @s {tj({'text': ' Play a character to start earning mastery.', 'color': 'gray'})}"])
+
+
 def build_upgrades():
     """Pack-a-Punch (held weapon, tier on the item's custom_data) and Armor Upgrade (per player, pve.arm)."""
     P = f"{NS}:pve/up"
@@ -882,10 +953,14 @@ def build_pve():
         f"execute if score #state pve matches 0 if entity @a[tag=pve.q] run function {P}/countdown_start",
         f"execute if score #state pve matches 1 run function {P}/countdown_tick",
         f"execute if score #state pve matches 2 run function {P}/wave_tick",
+        f"execute as @e[type=minecraft:armor_stand,tag=pve.body] at @s run function {P}/revive_tick",
         f"execute if score #state pve matches 3 run function {P}/break_tick",
     ])
     fn("pve/second", [
         "scoreboard players set @a[tag=!pve.in] pve.k 0",
+        # downed markers whose player is gone (left, or already back) are removed
+        "tag @e[type=minecraft:armor_stand,tag=pve.body] add pve.orphan", f"execute as @a[tag=pve.down] run function {P}/body_keep",
+        "kill @e[type=minecraft:armor_stand,tag=pve.orphan]",
         f"execute if score #state pve matches 2..3 unless entity @a[tag=pve.in,tag=!pve.down] run function {P}/game_over",
         # downed spectators stay above the arena
         *[f"execute if score #map pve matches {i} as @a[tag=pve.down] unless entity @s[{b}] run tp @s {PCX + 0.5} {AY + 12} {z + 0.5}"
@@ -1021,6 +1096,11 @@ def build_pve():
     fn("pve/wave_end", [
         "scoreboard players set #state pve 3", f"scoreboard players set #timer pve {BREAK_TICKS}",
         f"execute as @a[tag=pve.down] run function {P}/revive",   # back now, so they can re-buy during the break
+        "kill @e[type=minecraft:armor_stand,tag=pve.body]",
+        "scoreboard players operation #m pve = #wave pve", "scoreboard players operation #m pve %= #5 pve",
+        f"execute if score #m pve matches 0 run give @a[tag=pve.in,tag=!pve.down] {CELL}",
+        "execute if score #m pve matches 0 run tellraw @a[tag=pve.in] [{\"text\":\"☣ Boss down! Everyone standing gets a \",\"color\":\"light_purple\"},"
+        f"{{\"text\":\"Power Cell\",\"color\":\"light_purple\",\"bold\":true}},{{\"text\":\" ({CELLS_NEEDED} assemble the Annihilator at the Arsenal).\",\"color\":\"gray\"}}]",
         "scoreboard players operation #b pve = #wave pve", "scoreboard players operation #b pve *= #100 pve",
         "scoreboard players operation @a[tag=pve.in,tag=!pve.down] pve.pts += #b pve",
         "tellraw @a[tag=pve.in] [{\"text\":\"☣ Wave \",\"color\":\"green\"},{\"score\":{\"name\":\"#wave\",\"objective\":\"pve\"},\"color\":\"white\"},"
@@ -1083,7 +1163,9 @@ def build_pve():
         "attributes:[{id:\"minecraft:follow_range\",base:64d},{id:\"minecraft:scale\",base:2.0d},{id:\"minecraft:max_health\",base:150d},"
         "{id:\"minecraft:attack_damage\",base:9d},{id:\"minecraft:knockback_resistance\",base:0.8d},{id:\"minecraft:movement_speed\",base:0.26d}]}",
     ])
-    fn("pve/points", ["scoreboard players operation #k pve = @s pve.k", "scoreboard players operation #k pve *= #100 pve",
+    fn("pve/points", ["scoreboard players operation #g pvp = @s pve.k", f"scoreboard players operation #g pvp *= #{MASTERY_PVE} pvp" if MASTERY_PVE != 1 else None,
+                      f"function {NS}:mastery/gain",
+                      "scoreboard players operation #k pve = @s pve.k", "scoreboard players operation #k pve *= #100 pve",
                       "execute if score #dp pve matches 1.. run scoreboard players operation #k pve *= #2c pve",
                       "scoreboard players operation @s pve.pts += #k pve", "scoreboard players set @s pve.k 0",
                       "execute store result score #r pve run random value 1..100",
@@ -1113,18 +1195,62 @@ def build_pve():
 
     # going down / coming back
     fn("pve/downed", [
-        "tag @s add pve.down", "gamemode spectator @s", *PERK_RESET,
+        "tag @s add pve.down", f"function {P}/body", "gamemode spectator @s", *PERK_RESET,
         *[f"execute if score #map pve matches {i} run tp @s {PCX + 0.5} {AY + 12} {z + 0.5}" for (i, _, _, _, _, z, _) in OUTBREAK_MAPS],
         "title @s title {\"text\":\"DOWN\",\"color\":\"dark_red\",\"bold\":true}",
-        "title @s subtitle {\"text\":\"You're back at the start of the next wave\",\"color\":\"gray\"}",
+        "title @s subtitle {\"text\":\"A teammate can revive you, or you're back next wave\",\"color\":\"gray\"}",
         "tellraw @a[tag=pve.in] [{\"selector\":\"@s\",\"color\":\"red\"},{\"text\":\" went down!\",\"color\":\"gray\"}]",
     ])
     fn("pve/revive", [
         "tag @s remove pve.down", "gamemode adventure @s", "clear @s", "effect clear @s", "function cyber:admin/reset",
         f"function {NS}:kit/give_pve", f"function {P}/tp_spawn", say("@s", "You're back in the fight!", "green"),
     ])
+    # co-op revive: a glowing marker where you went down; a teammate crouching next to it for 3 s brings you back there
+    wj(f"data/{NS}/predicate/sneaking.json", {"condition": "minecraft:entity_properties", "entity": "this",
+                                             "predicate": {"flags": {"is_sneaking": True}}})
+    fn("pve/body", [
+        "execute unless score @s pvp.id matches 1.. store result score @s pvp.id run scoreboard players add #nextid pvp 1",
+        "data modify storage pvp:pve body set value {x:0,y:0,z:0}",
+        "execute store result storage pvp:pve body.x int 1 run data get entity @s LastDeathLocation.pos[0]",
+        "execute store result storage pvp:pve body.y int 1 run data get entity @s LastDeathLocation.pos[1]",
+        "execute store result storage pvp:pve body.z int 1 run data get entity @s LastDeathLocation.pos[2]",
+        f"function {P}/body_summon with storage pvp:pve body",
+        "scoreboard players operation @n[type=minecraft:armor_stand,tag=pve.bnew] pvp.id = @s pvp.id",
+        "scoreboard players set @n[type=minecraft:armor_stand,tag=pve.bnew] pve.rv 0",
+        "tag @e[type=minecraft:armor_stand,tag=pve.bnew] remove pve.bnew"])
+    fn("pve/body_summon", ["$summon minecraft:armor_stand $(x) $(y) $(z) {Tags:[\"pve.body\",\"pve.bnew\"],Invisible:1b,Invulnerable:1b,NoGravity:1b,"
+                           "Marker:1b,Glowing:1b,CustomNameVisible:1b,CustomName:{\"text\":\"☠ Downed teammate · crouch here to revive\",\"color\":\"red\"}}"])
+    fn("pve/revive_tick", [   # as a body, at it
+        f"execute if entity @a[tag=pve.in,tag=!pve.down,distance=..2,predicate={NS}:sneaking] run scoreboard players add @s pve.rv 1",
+        f"execute unless entity @a[tag=pve.in,tag=!pve.down,distance=..2,predicate={NS}:sneaking] run scoreboard players set @s pve.rv 0",
+        "particle minecraft:dust{color:[1.0,0.1,0.1],scale:1.0} ~ ~0.3 ~ 0.3 0.1 0.3 0 2",
+        f"execute if score @s pve.rv matches 1.. as @a[tag=pve.in,tag=!pve.down,distance=..2,predicate={NS}:sneaking] run title @s actionbar "
+        "[{\"text\":\"Reviving... \",\"color\":\"green\"},{\"score\":{\"name\":\"@n[tag=pve.body]\",\"objective\":\"pve.rv\"},\"color\":\"white\"},"
+        f"{{\"text\":\"/{REVIVE_TICKS}\",\"color\":\"gray\"}}]",
+        f"execute if score @s pve.rv matches {REVIVE_TICKS}.. run function {P}/revive_done"])
+    fn("pve/revive_done", [   # as the body
+        "scoreboard players operation #id pvp = @s pvp.id",
+        "execute as @a[tag=pve.in,tag=!pve.down,distance=..2,predicate=pvp:sneaking,limit=1] run tag @s add pve.saver",
+        f"execute as @a[tag=pve.down] if score @s pvp.id = #id pvp run function {P}/revive",
+        "execute as @a[tag=pve.in] if score @s pvp.id = #id pvp run tp @s @n[type=minecraft:armor_stand,tag=pve.body]",
+        "execute as @a[tag=pve.in] if score @s pvp.id = #id pvp run tellraw @a[tag=pve.in] [{\"selector\":\"@a[tag=pve.saver]\",\"color\":\"green\"},"
+        "{\"text\":\" revived \",\"color\":\"gray\"},{\"selector\":\"@s\",\"color\":\"green\"},{\"text\":\"! (+250 points)\",\"color\":\"gray\"}]",
+        "scoreboard players add @a[tag=pve.saver] pve.pts 250", "tag @a remove pve.saver",
+        "playsound minecraft:item.totem.use player @a[distance=..16] ~ ~ ~ 0.6 1.4", "particle minecraft:totem_of_undying ~ ~1 ~ 0.4 0.8 0.4 0.3 30",
+        "kill @s"])
+    fn("pve/body_keep", ["scoreboard players operation #id pvp = @s pvp.id",
+                         "execute as @e[type=minecraft:armor_stand,tag=pve.body] if score @s pvp.id = #id pvp run tag @s remove pve.orphan"])
+    # the quest: Power Cells from boss waves -> the Annihilator
+    fn("pve/assemble", [
+        "execute store result score #c pve run clear @s *[minecraft:custom_data~{pvp_cell:1b}] 0",
+        f"execute if score #c pve matches ..{CELLS_NEEDED - 1} run return run tellraw @s [{{\"text\":\"You need {CELLS_NEEDED} Power Cells (you have \",\"color\":\"red\"}},"
+        "{\"score\":{\"name\":\"#c\",\"objective\":\"pve\"},\"color\":\"white\"},{\"text\":\"). Every boss wave you clear gives one.\",\"color\":\"red\"}]",
+        f"clear @s *[minecraft:custom_data~{{pvp_cell:1b}}] {CELLS_NEEDED}", abilities.give("annihilator"),
+        "playsound minecraft:block.end_portal.spawn player @a[tag=pve.in] ~ ~ ~ 0.6 1.4", "particle minecraft:end_rod ~ ~1 ~ 0.5 1 0.5 0.1 60",
+        "tellraw @a[tag=pve.in] [{\"text\":\"☣ \",\"color\":\"light_purple\"},{\"selector\":\"@s\",\"color\":\"white\"},"
+        "{\"text\":\" assembled the \",\"color\":\"light_purple\"},{\"text\":\"ANNIHILATOR\",\"color\":\"light_purple\",\"bold\":true},{\"text\":\"!\",\"color\":\"light_purple\"}]"])
     fn("pve/game_over", [
-        "scoreboard players set #state pve 0", "kill @e[tag=pve.mob]", "kill @e[type=minecraft:item,tag=pve.pu]", "scoreboard players set #dp pve 0",
+        "scoreboard players set #state pve 0", "kill @e[type=minecraft:armor_stand,tag=pve.body]", "kill @e[tag=pve.mob]", "kill @e[type=minecraft:item,tag=pve.pu]", "scoreboard players set #dp pve 0",
         *[f"forceload remove {PCX - PR - 1} {z - PR - 1} {PCX + PR + 1} {z + PR + 1}" for (_, _, _, _, _, z, _) in OUTBREAK_MAPS],
         "bossbar set pvp:boss visible false",
         "tellraw @a[tag=pve.in] [{\"text\":\"☣ Outbreak over. You reached wave \",\"color\":\"red\"},{\"score\":{\"name\":\"#wave\",\"objective\":\"pve\"},\"color\":\"white\",\"bold\":true},{\"text\":\".\",\"color\":\"red\"}]",
@@ -1168,7 +1294,8 @@ def build_pve():
 
 
 PVE_THEMES = {"ruins": ("stone_bricks", "polished_andesite"), "mine": ("stone", "polished_tuff"),   # outer wall, Arsenal platform
-              "neon": ("black_concrete", "light_blue_concrete"), "hellfort": ("nether_bricks", "polished_blackstone")}
+              "neon": ("black_concrete", "light_blue_concrete"), "hellfort": ("nether_bricks", "polished_blackstone"),
+              "orbital": ("light_gray_concrete", "cyan_concrete")}
 
 
 def build_pve_map(m):

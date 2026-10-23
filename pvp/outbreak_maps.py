@@ -573,7 +573,71 @@ def hellfort(mob_points, spawns):
     return g
 
 
-MAPS = {"ruins": ruins, "mine": mine, "neon": neon, "hellfort": hellfort}
+# ---------------------------------------------------------------------------------------------- Orbital Station
+def orbital(mob_points, spawns):
+    """A space station: white panel decks with lit seams and copper grates, a reactor ring around the Arsenal, four
+    glass-walled labs, cargo crates, copper pipes and bulbs along the hull, and dark viewports in the outer wall."""
+    rnd = random.Random(15)
+    def wallfn(x, y, z, t):
+        if y == 5 and t % 8 == 0: return "sea_lantern"
+        if y in (2, 3) and t % 8 in (3, 4, 5): return "black_stained_glass"   # viewports
+        if y == 4: return "cyan_concrete"
+        return "white_concrete" if y <= 1 else "light_gray_concrete"
+    g = base(mob_points, spawns, wallfn)
+    grate = Noise(16, 5)
+    for (x, z) in g.floor():
+        if x % 8 == 0 and z % 8 == 0: b = "sea_lantern"
+        elif x % 8 == 0 or z % 8 == 0: b = "light_blue_concrete"   # lit seams between the deck panels
+        elif grate(x, z) > 0.72 and not g.protected(x, z):
+            b = "waxed_oxidized_copper_grate"
+            g.put(x, -1, z, "verdant_froglight")   # glow under the grates
+        else: b = "white_concrete" if ((x // 8) + (z // 8)) % 2 == 0 else "smooth_quartz"
+        g.put(x, 0, z, b)
+    # reactor ring around the Arsenal: four columns with lights and a low rail between them
+    for (x, z) in ((7, 0), (-7, 0), (0, 7), (0, -7)):
+        for y in range(1, 4): g.put(x, y, z, "iron_block")
+        g.put(x, 4, z, "sea_lantern"); g.put(x, 5, z, "end_rod[facing=up]")
+    for k in range(32):
+        a = math.radians(k * 11.25)
+        x, z = round(7 * math.cos(a)), round(7 * math.sin(a))
+        if (x, z) in ((7, 0), (-7, 0), (0, 7), (0, -7)) or k % 4 in (1, 2): continue
+        g.put(x, 1, z, "iron_bars")
+    # four labs on the diagonals: glass-walled rooms with consoles
+    for (sx, sz) in ((1, 1), (-1, 1), (1, -1), (-1, -1)):
+        xs, zs = sorted((sx * 10, sx * 17)), sorted((sz * 10, sz * 17))
+        for x in range(xs[0], xs[1] + 1):
+            for z in range(zs[0], zs[1] + 1):
+                edge = x in xs or z in zs
+                corner = x in xs and z in zs
+                if edge:
+                    door = (x == sx * 10 and abs(z - sz * 13) <= 1) or (z == sz * 10 and abs(x - sx * 13) <= 1)
+                    for y in range(1, 5):
+                        if door and y <= 2: continue
+                        g.put(x, y, z, "iron_block" if corner else "light_blue_stained_glass_pane" if y in (2, 3) and not door else "white_concrete")
+                g.put(x, 5, z, "smooth_quartz_slab[type=bottom]" if not edge else "light_gray_concrete")
+        cx, cz = sx * 15, sz * 15
+        g.put(cx, 1, cz, "observer[facing=up]"); g.put(cx, 2, cz, "daylight_detector")
+        g.put(cx - sx, 1, cz, "crafter"); g.put(cx, 1, cz - sz, "cauldron")
+        g.put(cx - sx * 2, 1, cz - sz * 2, "verdant_froglight")
+        g.put(sx * 13, 4, sz * 13, "end_rod[facing=down]")
+    # cargo crates in the outer ring
+    for _ in range(18):
+        x, z = rnd.randint(-28, 28), rnd.randint(-28, 28)
+        if max(abs(x), abs(z)) < 19: continue
+        for (ox, oz) in [(0, 0)] + rnd.sample([(1, 0), (0, 1), (-1, 0), (0, -1)], rnd.randint(1, 2)):
+            X, Z = x + ox, z + oz
+            if g.protected(X, Z) or not g.empty(X, 1, Z): continue
+            col = rnd.choice(["white", "light_gray", "orange", "cyan"])
+            g.put(X, 1, Z, f"{col}_shulker_box")
+            if (ox, oz) == (0, 0) and rnd.random() < 0.5: g.put(X, 2, Z, f"{rnd.choice(['white', 'orange'])}_shulker_box")
+    # copper pipes with bulbs along the hull, away from the windows
+    for (x, z), d, t in wall_sides():
+        if near_window(t, 3): continue
+        if t % 2 == 0: g.put(x, 4, z, "waxed_cut_copper" if t % 12 else "waxed_copper_bulb[lit=true]")
+    return g
+
+
+MAPS = {"ruins": ruins, "mine": mine, "neon": neon, "hellfort": hellfort, "orbital": orbital}
 
 
 # ---------------------------------------------------------------------------------------------- output

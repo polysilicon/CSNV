@@ -385,6 +385,10 @@ ABILITIES = {
     "power_beam": gun("Arm Cannon", "gold", "orange_dye", 0.5, 5, 36, "Samus's Power Beam.", "block.beacon.deactivate", 2.0,
                       [("", "particle minecraft:electric_spark ~ ~1 ~ 0.2 0.4 0.2 0.3 12")]),
     "militech_handgun": gun("Militech Handgun", "yellow", "wooden_hoe", 0.6, 6, 30, "David's sidearm.", "entity.firework_rocket.blast", 1.3),
+    # the Outbreak quest reward (3 Power Cells at the Arsenal); not in any kit
+    "annihilator": gun("Annihilator", "light_purple", "end_crystal", 0.8, 24, 50, "The Outbreak's ultimate wonder weapon.", "entity.wither.shoot", 1.4,
+                       [("8 damage to everything within 3 blocks of the hit", around(3, damage(8, "magic"))),
+                        ("", "particle minecraft:explosion ~ ~1 ~ 0 0 0 0 1"), ("", "particle minecraft:end_rod ~ ~1 ~ 0.6 0.6 0.6 0.1 25")]),
     "amban": gun("Amban Rifle", "gray", "iron_shovel", 2.5, 12, 60, "Disintegration sniper rifle.", "block.beacon.deactivate", 1.8,
                  [("glowing 3 s", "effect give @s minecraft:glowing 3 0"), ("", "particle minecraft:electric_spark ~ ~1 ~ 0.3 0.5 0.3 0.3 20")]),
     # ---------------------------------------------------------------- King of the Hill / Futurama / Mr. Robot
