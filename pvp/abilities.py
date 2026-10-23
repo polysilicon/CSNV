@@ -359,6 +359,11 @@ ABILITIES = {
         "effect give @s minecraft:nausea 2 0 true",
         "particle minecraft:dust{color:[0.2,1.0,0.9],scale:1.2} ~ ~1 ~ 0.4 0.8 0.4 0 40", "particle minecraft:electric_spark ~ ~1 ~ 0.4 0.8 0.4 0.3 25",
         snd("block.beacon.power_select", 1, 1.6), snd("entity.warden.heartbeat", 1, 1.4), bar("OVERCLOCK", "aqua")]),
+    "borg_slam": ("Borg Slam", "dark_red", "heavy_core", 14, ["Leaps high, then crashes down.", "Landing: 10 damage within 5 blocks · knockback · Slowness II 2 s"], [
+        "tag @s add pvp.slam", "scoreboard players set @s pvp.ft 0", LAUNCH, "effect give @s minecraft:levitation 1 3 true",
+        "effect give @s minecraft:resistance 4 2 true",   # no fall damage from his own slam
+        "particle minecraft:large_smoke ~ ~0.3 ~ 0.4 0.1 0.4 0.05 20",
+        snd("entity.iron_golem.attack", 1, 0.5), snd("entity.wind_charge.wind_burst", 1, 0.6), bar("BORG SLAM", "dark_red")]),
     # ---------------------------------------------------------------- Team Fortress 2
     "jarate": ("Jarate", "yellow", "honey_bottle", 16, ["Throws a jar of... something.", "Splash: Weakness II + glowing 8 s, Slowness I 3 s"], [
         *shoot("splash_potion", 0.9, ',Item:{id:"minecraft:splash_potion",count:1,components:{"minecraft:potion_contents":{custom_color:15128576,'
@@ -551,6 +556,8 @@ def build(fn, wj, lobby_box):
         f"execute as @a[scores={{pvp.rgt=1}}] run function {NS}:ability/regive",
         "scoreboard players remove @a[scores={pvp.rgt=2..}] pvp.rgt 1",
         f"execute as @e[type=minecraft:armor_stand,tag=pvp.nade] at @s run function {NS}:ability/nade_tick",
+        # Borg Slam: hits everything around when Adam Smasher lands
+        f"execute as @a[tag=pvp.slam] at @s run function {NS}:ability/slam_tick",
         # Fling: the bird hits whatever it crashes into (or the ground)
         f"execute as @a[tag=pvp.sling] at @s run function {NS}:ability/sling_tick",
         # ability fireballs that missed: gone after PROJ_LIFE ticks
@@ -560,6 +567,15 @@ def build(fn, wj, lobby_box):
         f"execute as @a[scores={{pvp.gk=1..}}] {has('chainsaw')} at @s run function {NS}:ability/glory",
         "scoreboard players set @a[scores={pvp.gk=1..}] pvp.gk 0",
     ])
+    fn("ability/slam_tick", [
+        "scoreboard players add @s pvp.ft 1",
+        f"execute if score @s pvp.ft matches 10.. if entity @s[nbt={{OnGround:1b}}] run return run function {NS}:ability/slam_hit",
+        f"execute if score @s pvp.ft matches 80.. run function {NS}:ability/slam_end"])
+    fn("ability/slam_hit", ["tag @s add pvp.caster", around(5, damage(10)), around(5, PUSH), around(5, "effect give @s minecraft:slowness 2 1"),
+                            "particle minecraft:explosion_emitter ~ ~0.5 ~ 0 0 0 0 1", "particle minecraft:block{block_state:\"minecraft:stone\"} ~ ~0.2 ~ 2 0.2 2 0.3 80",
+                            snd("entity.generic.explode", 1, 0.6), snd("entity.iron_golem.damage", 1, 0.5),
+                            "tag @s remove pvp.caster", f"function {NS}:ability/slam_end"])
+    fn("ability/slam_end", ["tag @s remove pvp.slam", "effect clear @s minecraft:levitation", "scoreboard players set @s pvp.ft 0"])
     fn("ability/sling_tick", [
         "tag @s add pvp.caster", "scoreboard players add @s pvp.ft 1",
         f"execute if score @s pvp.ft matches 3.. if entity @e[distance=..2,{TGT}] run return run function {NS}:ability/sling_hit",

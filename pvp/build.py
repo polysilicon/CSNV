@@ -295,9 +295,9 @@ KITS = [
      [f"give @s {item('diamond_sword', 'Monowire', 'light_purple', {'sharpness': 4, CE + 'assassin': 3, CE + 'poison': 2})}", AB("short_circuit"), AB("optical_camo")]
      + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "diamond"}, 3, dye=15790320, extra={"chest": {CE + "dodge": 2}})
      + head("lucy", "Lucy", "light_purple"), ["lynx", "reflex", "kiroshi"]),
-    (23, "smasher", "Adam Smasher", "dark_red", "netherite_chestplate", ["Militech Heavy Cannon + Arasaka axe (Cleave III) · full-borg frame (Armored III) · huge",
+    (23, "smasher", "Adam Smasher", "dark_red", "netherite_chestplate", ["Militech Heavy Cannon + Borg Slam + Arasaka axe (Cleave III) · full-borg frame (Armored III) · huge",
      "Cyberware: Projectile Launcher, Sandevistan, Subdermal Armor, Titanium Bones"],
-     [AB("heavy_cannon"), f"give @s {item('netherite_axe', 'Arasaka Breaker', 'red', {'sharpness': 4, CE + 'cleave': 3})}"]
+     [AB("heavy_cannon"), AB("borg_slam"), f"give @s {item('netherite_axe', 'Arasaka Breaker', 'red', {'sharpness': 4, CE + 'cleave': 3})}"]
      + suit("netherite", 3, trim=("redstone", "rib"), extra={"chest": {CE + "armored": 3, CE + "explosiveimmunity": 3}})
      + head("smasher", "Adam Smasher", "dark_red") + size(1.3), ["launcher", "sandy", "subdermal", "titanium"]),
     (27, "rebecca", "Rebecca", "light_purple", "crossbow", ["Guts (shotgun) + Pistol · Dodge II · tiny",
