@@ -75,7 +75,7 @@ The menu shows all 20 kits mixed together in three rows; custom kits go on the r
   | Samus | Explosive II, Eagle Eye III, Reinforced III |
 
 - Sizes (`scale` modifier `pvp:size`, removed on `to_lobby`, going down and Outbreak entry): Pikachu and Kirby 0.6×,
-  Mario 0.85×, Spartan 1.1×, Samus 1.08×, Adam Smasher 1.3×.
+  Mario 0.85×, Spartan 1.1×, Samus 1.08×, Adam Smasher 1.3×, Sonic 0.8×, Rebecca 0.75×, Donkey Kong 1.25×.
 
 **Other kits**:
 
@@ -83,17 +83,23 @@ The menu shows all 20 kits mixed together in three rows; custom kits go on the r
 |---|---|---|
 | Randy Marsh (South Park) | No weapon: fists +7 damage at sword attack speed; light blue shirt, jeans and brown shoes (leather); **Sandevistan** cyberware (double-tap sneak) | **Tegridy** (Regeneration II + Speed I 6 s, 20 s) |
 | Courier Six (Fallout: New Vegas) | Lucky (revolver crossbow, Eagle Eye III), Machete (Bleed II), Ranger armor + Desert Ranger head | **V.A.T.S.** (enemies within 12 blocks: Slowness III + glowing 5 s; you: Strength I, 18 s), **Stimpak** (Instant Health II + Regeneration II, 15 s) |
+| Sonic | Chaos Emerald (iron sword, Sharpness IV), blue leather with red shoes (Springs II, Gears II), Speed II, 0.8× | **Spin Dash** (dash + Speed III 2 s, 5 dmg up close, 6 s), **Homing Attack** (12 blocks: zip to the target, 7 dmg, bounce off, 8 s) |
+| Walter White (Breaking Bad) | Trunk M60 (crossbow: Multishot, Quick Charge III), 3 splash Poison II, yellow hazmat suit (Explosive Immunity III), Heisenberg head | **Say My Name** (10 blocks: Weakness II + Slowness I + glowing 6 s; you: Resistance I, 22 s), **Fulminated Mercury** (explosive throw, 10 s) |
+| Herobrine (Minecraft) | Diamond sword (Sharpness V, Fire Aspect), Steve-coloured leather, Night Vision | **Smite** (24 blocks: 7 lightning dmg + Blindness 2 s, 10 s), **Haunt** (teleport behind the nearest enemy within 16 blocks, blinds them, you go invisible 2 s, 12 s) |
+| Donkey Kong | No weapon: fists +8 damage at axe speed; brown leather with a red tie, Tank II, 1.25× | **Giant Punch** (4 blocks: 12 dmg, launches, 9 s), **Ground Pound** (5 blocks: 6 dmg, Slowness III 2 s, pops them up, 10 s) |
+| Mandalorian | Amban Rifle (crossbow: Piercing III, Eagle Eye III), Darksaber (Sharpness V), Beskar (iron Prot IV, quartz trim, Armored III), Din Djarin head | **Jetpack** (launch + Slow Falling 6 s, 9 s), **Flamethrower** (4 blocks: 5 fire dmg + 3 fireballs, 9 s) |
 
 Randy's head came from a skin uploaded to MineSkin (no Randy in the head database). The same works for any character:
 upload the skin at mineskin.org and put its texture value in `heads.json`.
 
-**Cyberpunk kits** (Edgerunner, Netrunner, Adam Smasher) keep their cyberware:
+**Cyberpunk kits** (Edgerunner, Netrunner, Adam Smasher, Rebecca) keep their cyberware:
 
 | Kit | Gear | Cyberware |
 |---|---|---|
 | Edgerunner | Katana: Sharpness V, Lifesteal III, Double Strike II | Sandevistan, Mantis Blades, Reflex Tuner, Kiroshi |
 | Netrunner | Sword: Sharpness IV, Assassin III, Poison II, plus Invisibility | Sandevistan, Lynx Paws, Reflex Tuner, Kiroshi |
 | Adam Smasher | Militech Heavy Cannon (crossbow: Quick Charge III, Multishot, Piercing II), Arasaka Breaker (axe: Sharpness IV, Cleave III), netherite Prot III with a redstone rib trim (chest: Armored III, Explosive Immunity III), Adam Smasher head (MineSkin upload), 1.3× size | Projectile Launch System (sneak + jump), Sandevistan (double-tap sneak), Subdermal Armor, Titanium Bones |
+| Rebecca | Guts (crossbow: Multishot, Quick Charge III, Piercing I), Pistol (crossbow, Eagle Eye II), black leather with pink boots (Dodge II), 0.75× | Gorilla Arms, Reinforced Tendons, Reflex Tuner, Kiroshi |
 
 **Classic kits** have no cyberware, just custom enchants and one passive effect:
 
@@ -277,8 +283,7 @@ from `/function cyber:admin/give`. Then run:
 /pvpkit list              ids, authors, item and implant counts
 /pvpkit delete <id>
 ```
-- Up to 9 custom kits show (bottom row of the kit menus).
-- They show up in the bottom two rows of both the Kit Dealer and the Outbreak menus.
+- Up to 9 custom kits show, in the top row of both the Kit Dealer and the Outbreak kit menus.
 - They're given exactly as saved, with gear in the same slots and implants installed.
 - Ids start at 101.
 - They're stored in the world (`pvp:customkits`), so `/reload` and datapack updates keep them.

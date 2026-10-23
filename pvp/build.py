@@ -179,6 +179,29 @@ FRANCHISE_KITS = [
      [f"give @s {item('crossbow', 'Lucky', 'gold', {'quick_charge': 3, 'piercing': 2, CE + 'eagleeye': 3})}", AB("vats"), AB("stimpak"),
       f"give @s {item('iron_sword', 'Machete', 'gray', {'sharpness': 4, CE + 'bleed': 2})}", "give @s minecraft:arrow 64"]
      + suit({"head": "iron", "chest": "leather", "legs": "iron", "feet": "iron"}, 4, dye=6045219) + head("courier", "Courier Six", "gold"), []),
+    (24, "sonic", "Sonic", "blue", "lapis_lazuli", ["Chaos Emerald blade · Springs II + Gears II shoes · Speed II · small", ab_line("spin_dash", "homing_attack")],
+     [f"give @s {item('iron_sword', 'Chaos Emerald', 'green', {'sharpness': 4}, model('emerald'))}", AB("spin_dash"), AB("homing_attack")]
+     + suit("leather", 4, dye={"head": 2068440, "chest": 2068440, "legs": 2068440, "feet": 13184550},
+            extra={"chest": {CE + "dodge": 2}, "feet": {CE + "springs": 2, CE + "gears": 2}})
+     + head("sonic", "Sonic", "blue") + passive("speed", 1) + size(0.8), []),
+    (25, "walter", "Walter White", "dark_gray", "quartz", ["Trunk M60 (Multishot) · 3 splash Poison II · hazmat suit (Explosive Immunity III)", ab_line("say_my_name", "fulminate")],
+     [f"give @s {item('crossbow', 'Trunk M60', 'dark_gray', {'quick_charge': 3, 'multishot': 1})}", AB("say_my_name"), AB("fulminate"),
+      potion("splash_potion", "strong_poison", 3), "give @s minecraft:arrow 64"]
+     + suit("leather", 4, dye=15057152, extra={"chest": {CE + "explosiveimmunity": 3}}) + head("walter", "Heisenberg", "dark_gray"), []),
+    (26, "herobrine", "Herobrine", "white", "end_rod", ["Diamond sword (Sharpness V, Fire Aspect) · Night Vision", ab_line("smite", "haunt")],
+     [f"give @s {item('diamond_sword', 'Herobrine', 'white', {'sharpness': 5, 'fire_aspect': 1})}", AB("smite"), AB("haunt")]
+     + suit("leather", 4, dye={"head": 43690, "chest": 43690, "legs": 3355562, "feet": 5592405}) + head("herobrine", "Herobrine", "white")
+     + passive("night_vision"), []),
+    (28, "dk", "Donkey Kong", "gold", "cocoa_beans", ["No weapon: fists hit for +8 (axe speed) · Tank II · big", ab_line("giant_punch", "ground_pound")],
+     [AB("giant_punch"), AB("ground_pound"), "attribute @s minecraft:attack_damage modifier add pvp:fists 8 add_value",
+      "attribute @s minecraft:attack_speed modifier add pvp:fists -2.8 add_value"]
+     + suit("leather", 3, dye={"head": 6045219, "chest": 13184550, "legs": 6045219, "feet": 6045219}, extra={"legs": {CE + "tank": 2}})
+     + head("dk", "Donkey Kong", "gold") + size(1.25), []),
+    (29, "mando", "Mandalorian", "gray", "firework_rocket", ["Amban rifle (Eagle Eye III) + Darksaber · Beskar armor (Armored III)", ab_line("jetpack", "flamethrower")],
+     [f"give @s {item('crossbow', 'Amban Rifle', 'gray', {'quick_charge': 2, 'piercing': 3, CE + 'eagleeye': 3})}", AB("jetpack"), AB("flamethrower"),
+      f"give @s {item('netherite_sword', 'Darksaber', 'dark_gray', {'sharpness': 5})}", "give @s minecraft:arrow 64"]
+     + suit("iron", 4, trim=("quartz", "sentry"), extra={"chest": {CE + "armored": 3}, "feet": {"feather_falling": 4}})
+     + head("mando", "Din Djarin", "gray"), []),
 ]
 FOOD = ["give @s minecraft:cooked_beef 16", "give @s minecraft:golden_apple 2"]
 # id, key, name, colour, menu icon, blurb lines, item commands, implants (one per body slot)
@@ -225,6 +248,12 @@ KITS = [
       f"give @s {item('netherite_axe', 'Arasaka Breaker', 'red', {'sharpness': 4, CE + 'cleave': 3})}", "give @s minecraft:arrow 64"]
      + suit("netherite", 3, trim=("redstone", "rib"), extra={"chest": {CE + "armored": 3, CE + "explosiveimmunity": 3}})
      + head("smasher", "Adam Smasher", "dark_red") + size(1.3), ["launcher", "sandy", "subdermal", "titanium"]),
+    (27, "rebecca", "Rebecca", "light_purple", "crossbow", ["Guts (shotgun: Multishot, Quick Charge III) + pistol · Dodge II · tiny",
+     "Cyberware: Gorilla Arms, Reinforced Tendons, Reflex Tuner, Kiroshi"],
+     [f"give @s {item('crossbow', 'Guts', 'light_purple', {'quick_charge': 3, 'multishot': 1, 'piercing': 1})}",
+      f"give @s {item('crossbow', 'Pistol', 'aqua', {'quick_charge': 3, CE + 'eagleeye': 2})}", "give @s minecraft:arrow 64"]
+     + suit("leather", 4, dye={"head": 1908001, "chest": 1908001, "legs": 1908001, "feet": 15961002}, extra={"chest": {CE + "dodge": 2}})
+     + head("rebecca", "Rebecca", "light_purple") + size(0.75), ["gorilla", "tendons", "reflex", "kiroshi"]),
 ] + FRANCHISE_KITS
 # Admin-only test kits: never in a menu. /function pvp:admin/test_david queues you for Outbreak with it.
 TEST_KIT_ID = 60
@@ -242,12 +271,14 @@ TEST_KIT = [
     "tellraw @s [{\"text\":\"Kit: \",\"color\":\"gray\"},{\"text\":\"David (test)\",\"color\":\"dark_red\",\"bold\":true},"
     "{\"text\":\" · Cyberskeleton, Sandevistan, Kiroshi, Reflex Tuner. Swap the crossbows into both hands to dual-fire.\",\"color\":\"gray\"}]",
 ]
-# kit menu order: franchises and classics mixed, rows of 7 / 9 / 7
+# kit menu order: franchises and classics mixed, rows of 7 / 9 / 7 / 6
 KIT_ORDER = [11, 1, 17, 2, 13, 18, 3,          # Jedi, Edgerunner, Mario, Juggernaut, Link, Pikachu, Sniper
              12, 21, 4, 14, 23, 19, 6, 22, 5,  # Sith, Randy Marsh, Berserker, Spartan, Adam Smasher, Kirby, Medic, Courier Six, Netrunner
-             15, 7, 20, 8, 16, 9, 10]          # Doom Slayer, Pyro, Samus, Ranger, Witcher, Shinobi, Skyhammer
-KIT_SLOT = dict(zip(KIT_ORDER, [10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34]))
-CUSTOM_SLOTS = [36, 37, 38, 39, 40, 41, 42, 43, 44]   # admin-made kits (/pvpkit create), ids 101+
+             15, 7, 20, 8, 16, 9, 10,          # Doom Slayer, Pyro, Samus, Ranger, Witcher, Shinobi, Skyhammer
+             24, 25, 27, 26, 28, 29]           # Sonic, Walter White, Rebecca | Herobrine, Donkey Kong, Mandalorian
+KIT_SLOT = dict(zip(KIT_ORDER, [10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34,
+                                37, 38, 39, 41, 42, 43]))
+CUSTOM_SLOTS = [0, 1, 2, 3, 4, 5, 6, 7, 8]   # admin-made kits (/pvpkit create), ids 101+: the top row
 
 # Upgrades (points per tier I / II / III). Pack-a-Punch works on the held weapon (the tier is stored on the item);
 # armor upgrades are per player (pve.arm). Both are lost when you go down, since your kit is handed out again.

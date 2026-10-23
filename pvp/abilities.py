@@ -163,6 +163,56 @@ ABILITIES = {
         "effect give @s minecraft:instant_health 1 1", "effect give @s minecraft:regeneration 4 1",
         "particle minecraft:heart ~ ~1.5 ~ 0.4 0.3 0.4 0 6",
         snd("entity.bee.sting", 1, 1.4), bar("STIMPAK", "red")]),
+    # ---------------------------------------------------------------- Sonic / Breaking Bad / Minecraft / DK / Mandalorian
+    "spin_dash": ("Spin Dash", "blue", "lapis_lazuli", 6, ["Revs up and rockets forward.", "Speed III 2 s · 5 damage + knockback up close"], [
+        DASH, "effect give @s minecraft:speed 2 2", cone(2.5, damage(5)), cone(2.5, PUSH),
+        "particle minecraft:dust{color:[0.1,0.3,1.0],scale:1.5} ~ ~0.5 ~ 0.4 0.3 0.4 0 30",
+        snd("entity.breeze.charge", 1, 1.8), snd("entity.breeze.jump", 1, 1.4), bar("SPIN DASH", "blue")]),
+    "homing_attack": ("Homing Attack", "gold", "gold_ingot", 8, ["Homes in on the enemy you aim at.", "12 blocks · 7 damage · you bounce off them"], [
+        *ray(24),
+        "execute at @e[tag=pvp.hit,limit=1] run tp @s ~ ~1.2 ~",
+        hit(damage(7)), hit("particle minecraft:crit ~ ~1 ~ 0.3 0.5 0.3 0.3 25"),
+        "execute if entity @e[tag=pvp.hit] at @s run " + LAUNCH,
+        "execute unless entity @e[tag=pvp.hit] run " + snd("entity.item.pickup", 0.6, 0.6),
+        snd("entity.experience_orb.pickup", 1, 1.4), bar("HOMING ATTACK", "gold")]),
+    "say_my_name": ("Say My Name", "dark_gray", "name_tag", 22, ["Everyone near you knows who you are.", "10 blocks · Weakness II + Slowness I 6 s · you: Resistance I"], [
+        around(10, "effect give @s minecraft:weakness 6 1"), around(10, "effect give @s minecraft:slowness 6 0"),
+        around(10, "effect give @s minecraft:glowing 6 0"), "effect give @s minecraft:resistance 6 0",
+        "particle minecraft:smoke ~ ~1 ~ 3 0.5 3 0.02 60",
+        snd("entity.warden.heartbeat", 1, 0.6), snd("block.bell.resonate", 0.6, 0.5), bar("SAY MY NAME.", "dark_gray")]),
+    "fulminate": ("Fulminated Mercury", "white", "quartz", 10, ["Throws a 'crystal' that blows up.", "Explodes where it hits"], [
+        *shoot("fireball", 1.2, ",ExplosionPower:1b,acceleration_power:0.0d"),
+        snd("entity.snowball.throw", 1, 0.5), snd("block.glass.break", 0.6, 1.6), bar("THIS IS NOT METH", "white")]),
+    "smite": ("Smite", "white", "end_rod", 10, ["Strikes the enemy you aim at from the sky.", "24 blocks · 7 damage · Blindness 2 s"], [
+        *ray(48),
+        hit(damage(7, "lightning_bolt")), hit("effect give @s minecraft:blindness 2 0"),
+        hit("particle minecraft:end_rod ~ ~4 ~ 0.05 3 0.05 0 60"), hit("particle minecraft:electric_spark ~ ~1 ~ 0.4 0.6 0.4 0.4 40"),
+        hit(snd("entity.lightning_bolt.thunder", 0.5, 1.4)),
+        "execute unless entity @e[tag=pvp.hit] run " + snd("block.fire.extinguish", 0.5, 1.5), bar("YOU WERE NEVER ALONE", "white")]),
+    "haunt": ("Haunt", "dark_gray", "ender_pearl", 12, ["Vanishes and appears behind the nearest enemy.", "16 blocks · they're blinded 2 s · you: Invisibility 2 s"], [
+        f"execute as @e[distance=..16,{TGT},sort=nearest,limit=1] run effect give @s minecraft:blindness 2 0",
+        "particle minecraft:large_smoke ~ ~1 ~ 0.3 0.6 0.3 0.02 20",
+        f"execute as @e[distance=..16,{TGT},sort=nearest,limit=1] at @s rotated ~ 0 positioned ^ ^ ^-1.5 run tp @p[tag=pvp.caster] ~ ~ ~ facing entity @s eyes",
+        "effect give @s minecraft:invisibility 2 0 true",
+        snd("entity.enderman.teleport", 1, 0.5), snd("ambient.cave", 0.8, 1), bar("HAUNT", "dark_gray")]),
+    "giant_punch": ("Giant Punch", "gold", "cocoa_beans", 9, ["A huge wind-up punch.", "4 blocks · 12 damage · sends them flying"], [
+        *ray(8),
+        hit(damage(12)), hit(PUSH), hit("effect give @s minecraft:levitation 1 1"),
+        hit("particle minecraft:explosion ~ ~1 ~ 0 0 0 0 1"),
+        snd("entity.player.attack.knockback", 1, 0.5), snd("entity.iron_golem.attack", 1, 0.6), bar("GIANT PUNCH", "gold")]),
+    "ground_pound": ("Ground Pound", "dark_red", "anvil", 10, ["Pounds the ground around you.", "5 blocks · 6 damage · Slowness III 2 s · pops them up"], [
+        around(5, damage(6)), around(5, "effect give @s minecraft:slowness 2 2"), around(5, "effect give @s minecraft:levitation 1 0"),
+        "particle minecraft:block{block_state:\"minecraft:dirt\"} ~ ~0.2 ~ 2 0.2 2 0.2 80",
+        snd("entity.warden.attack_impact", 1, 0.6), snd("block.anvil.land", 0.6, 0.6), bar("GROUND POUND", "dark_red")]),
+    "jetpack": ("Jetpack", "gray", "firework_rocket", 9, ["Blasts you into the air.", "Then Slow Falling for 6 s"], [
+        LAUNCH, "effect give @s minecraft:levitation 1 2 true", "effect give @s minecraft:slow_falling 6 0 true",
+        "particle minecraft:flame ~ ~0.2 ~ 0.2 0.1 0.2 0.05 30", "particle minecraft:campfire_cosy_smoke ~ ~0.2 ~ 0.3 0.1 0.3 0.02 8",
+        snd("entity.firework_rocket.launch", 1, 0.6), snd("block.fire.ambient", 1, 0.5), bar("JETPACK", "gray")]),
+    "flamethrower": ("Flamethrower", "gold", "flint_and_steel", 9, ["Sprays fire in front of you.", "4 blocks · 5 damage · sets them on fire"], [
+        cone(4, damage(5, "in_fire")),
+        *shoot("small_fireball", 1.0, ",acceleration_power:0.0d", (-8, 0, 8)),
+        "execute anchored eyes run particle minecraft:flame ^ ^ ^2 0.6 0.4 0.6 0.05 60",
+        snd("item.firecharge.use", 1, 0.6), snd("entity.blaze.burn", 1, 0.8), bar("THIS IS THE WAY", "gold")]),
 }
 
 
