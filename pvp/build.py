@@ -84,8 +84,9 @@ RUINS = [(-12, -12, -8, -11, 3, "mossy_stone_bricks"), (8, -14, 9, -8, 2, "cobbl
 
 
 def ench(d): return "{" + ",".join(f'"{k if ":" in k else "minecraft:" + k}":{v}' for k, v in d.items()) + "}"
-def item(id_, name=None, color="white", enchants=None, extra=""):
-    comps = ["minecraft:unbreakable={}"]
+def item(id_, name=None, color="white", enchants=None, extra="", durability=None):
+    """Unbreakable unless durability is given (then it wears out and breaks after that many uses)."""
+    comps = [f"minecraft:max_damage={durability}", "minecraft:damage=0"] if durability else ["minecraft:unbreakable={}"]
     if enchants: comps.append(f"minecraft:enchantments={ench(enchants)}")
     if name: comps.append(f'minecraft:custom_name={{"text":"{name}","color":"{color}","italic":false}}')
     if extra: comps.append(extra)
@@ -357,10 +358,11 @@ WAVE_FOOD = 4   # steak for every survivor when a wave is cleared
 # Mystery Box rolls (equal odds): name, colour, commands. Wonder weapons, gear and abilities from the character
 # kits, and the Teddy Bear (nothing, half the points back).
 BOX = [
-    ("Excalibur", "gold", [f"give @s {item('netherite_sword', 'Excalibur', 'gold', {'sharpness': 7, 'sweeping_edge': 3})}"]),
-    ("Thunderfang", "aqua", [f"give @s {item('trident', 'Thunderfang', 'aqua', {'impaling': 5, 'loyalty': 3})}"]),
-    ("Wunderwaffe", "yellow", [f"give @s {item('crossbow', 'Wunderwaffe', 'yellow', {'quick_charge': 3, 'multishot': 1, 'piercing': 4})}", "give @s minecraft:arrow 64"]),
-    ("Thundergun", "blue", [f"give @s {item('mace', 'Thundergun', 'blue', {'density': 5, 'wind_burst': 3})}", "give @s minecraft:wind_charge 16"]),
+    # wonder weapons: far stronger than kit gear, but they wear out (durability = uses before they break)
+    ("Excalibur", "gold", [f"give @s {item('netherite_sword', 'Excalibur', 'gold', {'sharpness': 10, 'sweeping_edge': 3, 'fire_aspect': 2, CE + 'lifesteal': 3}, durability=300)}"]),
+    ("Thunderfang", "aqua", [f"give @s {item('trident', 'Thunderfang', 'aqua', {'sharpness': 8, 'impaling': 5, 'loyalty': 3, 'channeling': 1, CE + 'paralyze': 2}, durability=200)}"]),
+    ("Wunderwaffe", "yellow", [f"give @s {item('crossbow', 'Wunderwaffe', 'yellow', {'quick_charge': 3, 'multishot': 1, 'piercing': 5, 'power': 6, 'flame': 1, CE + 'explosive': 2}, durability=250)}", "give @s minecraft:arrow 64"]),
+    ("Thundergun", "blue", [f"give @s {item('mace', 'Thundergun', 'blue', {'density': 8, 'breach': 4, 'wind_burst': 3}, durability=150)}", "give @s minecraft:wind_charge 16"]),
     ("Lightsaber", "aqua", [f"give @s {item('netherite_sword', 'Lightsaber', 'aqua', {'sharpness': 6, CE + 'doublestrike': 2}, model('breeze_rod'))}"]),
     ("Darksaber", "dark_gray", [f"give @s {item('netherite_sword', 'Darksaber', 'dark_gray', {'sharpness': 7, 'fire_aspect': 1})}"]),
     ("Arasaka Breaker", "red", [f"give @s {item('netherite_axe', 'Arasaka Breaker', 'red', {'sharpness': 6, CE + 'cleave': 3})}"]),

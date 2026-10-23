@@ -175,8 +175,12 @@ All kit gear is unbreakable, and every kit also gets 16 steak and 2 golden apple
   Speed Cola 2,000, Mystery Box 950 (see below), Ray Bow 5,000, Rations (16 steak) 100.
   Juggernog and Speed Cola are one per life, and you aren't charged if you already have one.
 - **Mystery Box** (950): 14 rolls with equal odds, announced to the whole run.
-  - Wonder weapons: Excalibur (Sharpness VII sword), Thunderfang (Impaling V trident), Wunderwaffe (Piercing IV
-    multishot crossbow + 64 arrows), Thundergun (Density V mace + 16 wind charges).
+  - Wonder weapons: much stronger than kit gear, but not unbreakable: they wear out and break.
+    - Excalibur: netherite sword, Sharpness X, Sweeping Edge III, Fire Aspect II, Lifesteal III; 300 uses.
+    - Thunderfang: trident, Sharpness VIII, Impaling V, Loyalty III, Channeling, Paralyze II; 200 uses.
+    - Wunderwaffe: crossbow, Quick Charge III, Multishot, Piercing V, Power VI, Flame, Explosive II, + 64 arrows;
+      250 uses (a multishot volley uses 3).
+    - Thundergun: mace, Density VIII, Breach IV, Wind Burst III, + 16 wind charges; 150 uses.
   - Character gear: Lightsaber (Sharpness VI, Double Strike II), Darksaber (Sharpness VII, Fire Aspect), Arasaka
     Breaker (Sharpness VI axe, Cleave III).
   - Character abilities: Propane Tank, Jarate, Laser Pistol, Fingertip Lightning, Charge Shot, Krabby Patty. They
