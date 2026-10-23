@@ -46,13 +46,30 @@ classic kits with no character (Juggernaut, Berserker, Medic, Pyro, Ranger, Shin
 | Jedi Knight | Lightsaber (Sharpness V), robes, Jump Boost II | **Force Push** (cone knockback, 7 s), **Mind Trick** (blind + slow, 15 s) |
 | Sith Lord | Red lightsaber (Sharpness V, Fire Aspect) | **Force Lightning** (cone, 6 dmg + slow, 9 s), **Force Choke** (lift + Wither, 14 s) |
 | Hero of Hyrule | Master Sword, Hylian Shield, bow | **Spin Attack** (7 dmg around you, 6 s), **Hookshot** (reel a target in, 8 s) |
-| Spartan | Assault rifle (crossbow), energy sword, trimmed netherite | **Frag Grenade** (10 dmg where it lands, 10 s); passive **energy shield**: 4 absorption hearts that come back after 4 s without damage |
-| Doom Slayer | Super Shotgun (multishot), Crucible | **Chainsaw** (14 dmg up close, 12 s), **Berserk Rune** (Strength II/Speed II/Resistance, 25 s); passive **glory kills** (every kill heals) |
+| Spartan | MA5 Assault Rifle (gun ability), energy sword, trimmed netherite | **Frag Grenade** (10 dmg where it lands, 10 s); passive **energy shield**: 4 absorption hearts that come back after 4 s without damage |
+| Doom Slayer | Super Shotgun (gun ability), Crucible | **Chainsaw** (14 dmg up close, 12 s), **Berserk Rune** (Strength II/Speed II/Resistance, 25 s); passive **glory kills** (every kill heals) |
 | Witcher | Steel sword, silver sword (Smite V), 2 Swallow potions | **Igni** (3 fireballs, 8 s), **Quen** (shield, 16 s) |
 | Mario | Hammer (mace), overalls, Resistance I | **Fireball** (3 s), **Super Jump Punch** (leap + 6 dmg uppercut, 8 s) |
 | Pikachu | Iron Tail sword, Speed I, Resistance I | **Thunder Jolt** (zap 6 dmg, 4 s), **Quick Attack** (dash, 6 s) |
 | Kirby | Star sword, Jump Boost II, Resistance I | **Inhale** (suck in + 5 dmg + 2 hearts, 10 s), **Stone** (immune 3 s + slam, 12 s) |
 | Samus | Arm Cannon (bow), Varia Suit (gold) | **Charge Shot** (explosive, 6 s), **Screw Attack** (spin up + 6 dmg, 8 s) |
+
+**Guns** are abilities, not bows or crossbows: right-click fires a hitscan shot (with a tracer) at the first enemy
+along your aim, so there are no arrows to carry. Shotguns hit everything in a short cone in front of you instead.
+
+| Gun | Kit | Range | Damage | Cooldown | Extra |
+|---|---|---|---|---|---|
+| MA5 Assault Rifle | Spartan | 32 | 4 | 0.4 s | |
+| Super Shotgun | Doom Slayer | 7 (cone) | 10 | 1.2 s | knockback |
+| Lucky | Courier Six | 40 | 8 | 1 s | |
+| Militech Heavy Cannon | Adam Smasher | 32 | 8 | 1 s | Slowness I 1 s |
+| Guts | Rebecca | 6 (cone) | 9 | 1 s | knockback |
+| Pistol | Rebecca | 28 | 3 | 0.35 s | |
+| Trunk M60 | Walter White | 32 | 3 | 0.25 s | |
+| Amban Rifle | Mandalorian | 60 | 12 | 2.5 s | glowing 3 s |
+| Sniper Rifle | Sniper | 80 | 14 | 3 s | |
+
+Bows that aren't guns stay bows: Link's Hero Bow, Red's Slingshot and Samus's Arm Cannon.
 
 **Character heads, enchants and sizes**:
 - Each character kit wears its character's head as the helmet. The head has diamond-helmet armor and Protection IV,
@@ -97,12 +114,12 @@ classic kits with no character (Juggernaut, Berserker, Medic, Pyro, Ranger, Shin
 | Kit | Gear | Abilities |
 |---|---|---|
 | Randy Marsh (South Park) | No weapon: fists +7 damage at sword attack speed; light blue shirt, jeans and brown shoes (leather); **Sandevistan** cyberware (double-tap sneak) | **Tegridy** (Regeneration II + Speed I 6 s, 20 s) |
-| Courier Six (Fallout: New Vegas) | Lucky (revolver crossbow, Eagle Eye III), Machete (Bleed II), Ranger armor + Desert Ranger head | **V.A.T.S.** (enemies within 12 blocks: Slowness III + glowing 5 s; you: Strength I, 18 s), **Stimpak** (Instant Health II + Regeneration II, 15 s) |
+| Courier Six (Fallout: New Vegas) | Lucky (revolver, gun ability), Machete (Bleed II), Ranger armor + Desert Ranger head | **V.A.T.S.** (enemies within 12 blocks: Slowness III + glowing 5 s; you: Strength I, 18 s), **Stimpak** (Instant Health II + Regeneration II, 15 s) |
 | Sonic | Chaos Emerald (iron sword, Sharpness IV), blue leather with red shoes (Springs II, Gears II), Speed II, 0.8× | **Spin Dash** (dash + Speed III 2 s, 5 dmg up close, 6 s), **Homing Attack** (12 blocks: zip to the target, 7 dmg, bounce off, 8 s) |
-| Walter White (Breaking Bad) | Trunk M60 (crossbow: Multishot, Quick Charge III), 3 splash Poison II, yellow hazmat suit (Explosive Immunity III), Heisenberg head | **Say My Name** (10 blocks: Weakness II + Slowness I + glowing 6 s; you: Resistance I, 22 s), **Fulminated Mercury** (explosive throw, 10 s) |
+| Walter White (Breaking Bad) | Trunk M60 (machine gun ability), 3 splash Poison II, yellow hazmat suit (Explosive Immunity III), Heisenberg head | **Say My Name** (10 blocks: Weakness II + Slowness I + glowing 6 s; you: Resistance I, 22 s), **Fulminated Mercury** (explosive throw, 10 s) |
 | Herobrine (Minecraft) | Diamond sword (Sharpness V, Fire Aspect), Steve-coloured leather, Night Vision | **Smite** (24 blocks: 7 lightning dmg + Blindness 2 s, 10 s), **Haunt** (teleport behind the nearest enemy within 16 blocks, blinds them, you go invisible 2 s, 12 s) |
 | Donkey Kong | No weapon: fists +8 damage at axe speed; brown leather with a red tie, Tank II, 1.25× | **Giant Punch** (4 blocks: 12 dmg, launches, 9 s), **Ground Pound** (5 blocks: 6 dmg, Slowness III 2 s, pops them up, 10 s) |
-| Mandalorian | Amban Rifle (crossbow: Piercing III, Eagle Eye III), Darksaber (Sharpness V), Beskar (iron Prot IV, quartz trim, Armored III), Din Djarin head | **Jetpack** (launch + Slow Falling 6 s, 9 s), **Flamethrower** (4 blocks: 5 fire dmg + 3 fireballs, 9 s) |
+| Mandalorian | Amban Rifle (gun ability), Darksaber (Sharpness V), Beskar (iron Prot IV, quartz trim, Armored III), Din Djarin head | **Jetpack** (launch + Slow Falling 6 s, 9 s), **Flamethrower** (4 blocks: 5 fire dmg + 3 fireballs, 9 s) |
 | Red (Angry Birds) | Slingshot (bow: Power IV, Punch II, Infinity), beak: fists +5 at sword speed, red leather with a cream belly, Jump Boost I, 0.7× | **Fling** (slingshots you forward; crashing into an enemy or landing deals 7 dmg + knockback within 3 blocks, 8 s), **Battle Cry** (6 blocks: 4 dmg + knockback + Slowness I; you: Strength I + Speed I 6 s, 18 s) |
 | Spider-Man | No weapon: fists +6 at sword speed; red and blue suit (Dodge III, Springs II), Jump Boost II | **Web Shot** (20 blocks: 3 dmg, stuck in place 2 s, 9 s), **Web Swing** (swing forward + Slow Falling 3 s + Speed II, 7 s) |
 | Shrek | No weapon: fists +8 at axe speed; vest (Tank II), Health Boost I, 1.3× | **Swamp Roar** (6 blocks: 4 dmg, knockback, Nausea 4 s, Slowness I 3 s, 14 s), **Onion Layers** (8 absorption hearts 12 s + Resistance I 6 s, 20 s) |
@@ -111,7 +128,7 @@ classic kits with no character (Juggernaut, Berserker, Medic, Pyro, Ranger, Shin
 | Darth Maul (Star Wars) | Double-Bladed Lightsaber (netherite: Sharpness V, Sweeping Edge III, Double Strike III), black robes (Dodge II, Springs I), Speed I | **Saber Throw** (16 blocks: 8 dmg + Slowness I 2 s, 9 s), **Saber Spin** (3.5 blocks: 7 dmg + knockback, 7 s) |
 | Mr. Krabs (SpongeBob) | No weapon: claws +6 at sword speed; red shell, blue shirt (Armored II), 0.9× | **Claw Pinch** (4 blocks: 8 dmg + Slowness II 2 s, 7 s), **Money Grab** (6 blocks: pulls enemies 2 blocks in, Weakness I 4 s; you: Strength I 5 s, 14 s) |
 | Saul Goodman (Better Call Saul) | Gavel (mace: Density II, Breach I), loud yellow suit (Dodge II), Speed I | **Better Call Saul** (2 tamed wolf "clients" fight for you for 20 s, 30 s), **Loophole** (untouchable 1.5 s, clears Slowness/Weakness/Poison/Wither/Blindness/Nausea, Speed II 3 s, 20 s), **Fingertip Lightning** ("lightning bolts shoot from my fingertips": 16 blocks, 6 lightning dmg, arcs for 3 dmg to enemies within 3 blocks of the target, 10 s) |
-| Sniper (Team Fortress 2, was the classic Sniper) | Sniper Rifle (bow: Power V, Infinity, Lethal Sniper III, Lightning Arrows II), Kukri (Sharpness III, Bleed I), red shirt and brown vest, RED Sniper head, Night Vision | **Jarate** (thrown splash: Weakness II + glowing 8 s, Slowness I 3 s, 16 s), **Focus** (every enemy within 40 blocks glows 6 s, 20 s) |
+| Sniper (Team Fortress 2, was the classic Sniper) | Sniper Rifle (gun ability), Kukri (Sharpness III, Bleed I), red shirt and brown vest, RED Sniper head, Night Vision | **Jarate** (thrown splash: Weakness II + glowing 8 s, Slowness I 3 s, 16 s), **Focus** (every enemy within 40 blocks glows 6 s, 20 s) |
 | Hank Hill (King of the Hill) | Grill Spatula (iron shovel: Sharpness IV, Fire Aspect), white tee and jeans (Explosive Immunity III), Fire Resistance | **Propane Tank** (explosive throw, 10 s), **I'm Gonna Kick Your Ass** (Strength II + Speed I 6 s, knocks back enemies within 3 blocks, 22 s) |
 | Leela (Futurama) | No weapon: martial arts, fists +6 at sword speed; white top, black pants (Dodge II, Springs I), Speed I | **Martial Arts Kick** (dash, 7 dmg + knockback up close, 7 s), **Laser Pistol** (20 blocks: 5 dmg + glowing 2 s, 5 s) |
 | Elliot (Mr. Robot) | Pocketknife (Sharpness IV, Poison I), black hoodie (Dodge II), Night Vision; Elliot head (MineSkin upload) | **Blackout** (12 blocks: Darkness 6 s, Blindness 2 s, Slowness I 3 s, 22 s), **Mr. Robot** (Strength II + Resistance I + Speed I 6 s, 25 s) |
@@ -128,8 +145,8 @@ upload the skin at mineskin.org and put its texture value in `heads.json`.
 |---|---|---|
 | Edgerunner | Katana: Sharpness V, Lifesteal III, Double Strike II | Sandevistan, Mantis Blades, Reflex Tuner, Kiroshi |
 | Lucy (was Netrunner) | Monowire (diamond sword: Sharpness IV, Assassin III, Poison II), white bodysuit (Dodge II), Lucyna head; abilities **Short Circuit** (quickhack: 20 blocks, 5 dmg, Slowness II 2 s, glowing 3 s, 8 s) and **Optical Camo** (Invisibility + Speed I 6 s, 25 s) | Lynx Paws, Reflex Tuner, Kiroshi |
-| Adam Smasher | Militech Heavy Cannon (crossbow: Quick Charge III, Multishot, Piercing II), Arasaka Breaker (axe: Sharpness IV, Cleave III), netherite Prot III with a redstone rib trim (chest: Armored III, Explosive Immunity III), Adam Smasher head (MineSkin upload), 1.3× size | Projectile Launch System (sneak + jump), Sandevistan (double-tap sneak), Subdermal Armor, Titanium Bones |
-| Rebecca | Guts (crossbow: Multishot, Quick Charge III, Piercing I), Pistol (crossbow, Eagle Eye II), black leather with pink boots (Dodge II), 0.75× | Gorilla Arms, Reinforced Tendons, Reflex Tuner, Kiroshi |
+| Adam Smasher | Militech Heavy Cannon (gun ability), Arasaka Breaker (axe: Sharpness IV, Cleave III), netherite Prot III with a redstone rib trim (chest: Armored III, Explosive Immunity III), Adam Smasher head (MineSkin upload), 1.3× size | Projectile Launch System (sneak + jump), Sandevistan (double-tap sneak), Subdermal Armor, Titanium Bones |
+| Rebecca | Guts (shotgun ability) and Pistol (gun ability), black leather with pink boots (Dodge II), 0.75× | Gorilla Arms, Reinforced Tendons, Reflex Tuner, Kiroshi |
 
 All kit gear is unbreakable, and every kit also gets 16 steak and 2 golden apples.
 

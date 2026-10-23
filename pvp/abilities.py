@@ -53,6 +53,26 @@ def shoot(entity, speed, extra="", spread=(0,)):
 PROJ_LIFE = 40
 
 
+def gun(name, color, model, cd, dmg, rng, what, sound, pitch=1.0, on_hit=()):
+    """A hitscan gun: right-click fires a bullet (with a tracer) at the first enemy along your aim, up to rng blocks."""
+    extra = [h[0] for h in on_hit if h[0]]
+    return (name, color, model, cd, [what, f"{rng} blocks · {dmg} damage" + (f" · {', '.join(extra)}" if extra else "")], [
+        "scoreboard players set #tr pvp 1", *ray(rng * 2), "scoreboard players set #tr pvp 0",
+        hit(damage(dmg, "arrow")), *[hit(h[1]) for h in on_hit],
+        hit("particle minecraft:damage_indicator ~ ~1 ~ 0.2 0.3 0.2 0.1 3"),
+        "execute anchored eyes run particle minecraft:smoke ^ ^-0.1 ^0.9 0.03 0.03 0.03 0.01 4",
+        f"playsound minecraft:{sound} player @a[distance=..48] ~ ~ ~ 1 {pitch}"])
+
+
+def shotgun(name, color, model, cd, dmg, rng, what, sound, pitch=1.0):
+    """A shotgun: a blast hitting every enemy in a cone in front of you, with knockback."""
+    return (name, color, model, cd, [what, f"{round(rng * 2)} blocks · {dmg} damage to everything in front · knockback"], [
+        cone(rng, damage(dmg, "arrow")), cone(rng, PUSH),
+        f"execute anchored eyes run particle minecraft:crit ^ ^ ^{rng} 0.8 0.5 0.8 0.3 40",
+        "execute anchored eyes run particle minecraft:large_smoke ^ ^-0.1 ^1 0.1 0.1 0.1 0.02 6",
+        f"playsound minecraft:{sound} player @a[distance=..48] ~ ~ ~ 1 {pitch}"])
+
+
 def snd(s, vol=1, pitch=1): return f"playsound minecraft:{s} player @a[distance=..24] ~ ~ ~ {vol} {pitch}"
 def bar(text, color): return f'title @s actionbar {{"text":"◆ {text}","color":"{color}","bold":true}}'
 
@@ -328,6 +348,18 @@ ABILITIES = {
         around(40, "effect give @s minecraft:glowing 6 0"),
         "particle minecraft:end_rod ~ ~1.6 ~ 0.3 0.3 0.3 0.02 10",
         snd("block.note_block.hat", 1, 0.6), snd("item.spyglass.use", 1, 0.8), bar("PROFESSIONALS HAVE STANDARDS", "dark_green")]),
+    # ---------------------------------------------------------------- guns (hitscan; no arrows)
+    "ma5": gun("MA5 Assault Rifle", "dark_green", "netherite_hoe", 0.4, 4, 32, "UNSC standard issue.", "entity.firework_rocket.blast", 1.6),
+    "super_shotgun": shotgun("Super Shotgun", "red", "crossbow", 1.2, 10, 3.5, "Both barrels.", "entity.generic.explode", 1.6),
+    "lucky": gun("Lucky", "gold", "iron_hoe", 1.0, 8, 40, "A .357 revolver. Lucky.", "entity.firework_rocket.blast", 0.8),
+    "heavy_cannon": gun("Militech Heavy Cannon", "dark_red", "diamond_hoe", 1.0, 8, 32, "Arm-mounted heavy cannon.", "entity.generic.explode", 1.2,
+                        [("Slowness I 1 s", "effect give @s minecraft:slowness 1 0"), ("", "particle minecraft:explosion ~ ~1 ~ 0 0 0 0 1")]),
+    "guts": shotgun("Guts", "light_purple", "golden_hoe", 1.0, 9, 3, "Rebecca's oversized shotgun.", "entity.generic.explode", 1.8),
+    "pistol": gun("Pistol", "aqua", "stone_hoe", 0.35, 3, 28, "Quick sidearm.", "entity.firework_rocket.blast", 1.9),
+    "m60": gun("Trunk M60", "dark_gray", "netherite_shovel", 0.25, 3, 32, "The machine gun from the trunk.", "entity.firework_rocket.blast", 1.8),
+    "amban": gun("Amban Rifle", "gray", "iron_shovel", 2.5, 12, 60, "Disintegration sniper rifle.", "block.beacon.deactivate", 1.8,
+                 [("glowing 3 s", "effect give @s minecraft:glowing 3 0"), ("", "particle minecraft:electric_spark ~ ~1 ~ 0.3 0.5 0.3 0.3 20")]),
+    "sniper_rifle": gun("Sniper Rifle", "dark_red", "diamond_shovel", 3.0, 14, 80, "Professionals have standards.", "entity.generic.explode", 2.0),
     # ---------------------------------------------------------------- King of the Hill / Futurama / Mr. Robot
     "propane": ("Propane Tank", "aqua", "lantern", 10, ["Lobs a propane tank that blows up.", "Explodes where it hits"], [
         *shoot("fireball", 1.0, ",ExplosionPower:1b,acceleration_power:0.0d"),
@@ -462,6 +494,7 @@ def build(fn, wj, lobby_box):
     # raycast: half-block steps from the eyes, stops at the first target or a solid block
     fn("ability/ray_start", [f"execute anchored eyes positioned ^ ^ ^0.5 run function {NS}:ability/ray"])
     fn("ability/ray", [
+        "execute if score #tr pvp matches 1 run particle minecraft:crit ~ ~ ~ 0 0 0 0 1",   # gun tracer
         f"execute positioned ~-0.5 ~-0.5 ~-0.5 as @e[dx=0,dy=0,dz=0,{TGT},limit=1,sort=nearest] run return run tag @s add pvp.hit",
         "scoreboard players remove #ray pvp 1",
         f"execute if score #ray pvp matches 1.. if block ~ ~ ~ #minecraft:replaceable positioned ^ ^ ^0.5 run function {NS}:ability/ray",

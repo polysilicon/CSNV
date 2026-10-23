@@ -162,13 +162,12 @@ FRANCHISE_KITS = [
       f"item replace entity @s weapon.offhand with {item('shield', 'Hylian Shield', 'blue')}"]
      + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "iron"}, 4, dye=4237864, extra={"feet": {CE + "springs": 2}})
      + head("link", "Hero of Hyrule", "green"), []),
-    (14, "spartan", "Spartan", "dark_green", "turtle_helmet", ["Assault rifle (Eagle Eye III), energy sword · MJOLNIR armor (Armored III) · tall", "Frag Grenade · energy shield recharges"],
-     [f"give @s {item('crossbow', 'MA5 Assault Rifle', 'dark_green', {'quick_charge': 3, 'piercing': 1, CE + 'eagleeye': 3})}", AB("frag_grenade"),
-      f"give @s {item('diamond_sword', 'Energy Sword', 'aqua', {'sharpness': 3})}", "give @s minecraft:arrow 64"]
+    (14, "spartan", "Spartan", "dark_green", "turtle_helmet", ["MA5 Assault Rifle + energy sword · MJOLNIR armor (Armored III) · tall", ab_line("ma5", "frag_grenade") + " · energy shield recharges"],
+     [AB("ma5"), AB("frag_grenade"), f"give @s {item('diamond_sword', 'Energy Sword', 'aqua', {'sharpness': 3})}"]
      + suit("netherite", 2, trim=("emerald", "sentry"), extra={"chest": {CE + "armored": 3}}) + head("spartan", "Master Chief", "dark_green") + size(1.1), []),
-    (15, "doom", "Doom Slayer", "red", "netherite_axe", ["Super Shotgun, Crucible (Bleed IV, Rage III) · Praetor Suit (Tank II)", ab_line("chainsaw", "rip_tear") + " · kills heal"],
-     [f"give @s {item('crossbow', 'Super Shotgun', 'red', {'multishot': 1, 'quick_charge': 2})}", AB("chainsaw"), AB("rip_tear"),
-      f"give @s {item('netherite_sword', 'Crucible', 'dark_red', {'sharpness': 4, 'fire_aspect': 1, CE + 'bleed': 4, CE + 'rage': 3})}", "give @s minecraft:arrow 64"]
+    (15, "doom", "Doom Slayer", "red", "netherite_axe", ["Super Shotgun + Crucible (Bleed IV, Rage III) · Praetor Suit (Tank II)", ab_line("super_shotgun", "chainsaw", "rip_tear") + " · kills heal"],
+     [AB("super_shotgun"), AB("chainsaw"), AB("rip_tear"),
+      f"give @s {item('netherite_sword', 'Crucible', 'dark_red', {'sharpness': 4, 'fire_aspect': 1, CE + 'bleed': 4, CE + 'rage': 3})}"]
      + suit("netherite", 3, trim=("emerald", "ward"), extra={"legs": {CE + "tank": 2}}) + head("doom", "Doom Slayer", "red"), []),
     (16, "witcher", "Witcher", "gray", "iron_sword", ["Steel sword (Cleave III, Bleed III) + silver sword (Smite V), 2 Swallow potions", ab_line("igni", "quen")],
      [f"give @s {item('diamond_sword', 'Steel Sword', 'gray', {'sharpness': 5, CE + 'cleave': 3, CE + 'bleed': 3})}", AB("igni"), AB("quen"),
@@ -193,18 +192,16 @@ FRANCHISE_KITS = [
      [AB("tegridy"), "attribute @s minecraft:attack_damage modifier add pvp:fists 7 add_value",
       "attribute @s minecraft:attack_speed modifier add pvp:fists -2.4 add_value"]
      + suit("leather", 3, dye={"head": 4007438, "chest": 9226476, "legs": 3949738, "feet": 6045219}) + head("randy", "Randy Marsh", "white"), ["sandy"]),
-    (22, "courier", "Courier Six", "gold", "spyglass", ["Lucky (revolver: Eagle Eye III) + machete (Bleed II) · Ranger armor", ab_line("vats", "stimpak")],
-     [f"give @s {item('crossbow', 'Lucky', 'gold', {'quick_charge': 3, 'piercing': 2, CE + 'eagleeye': 3})}", AB("vats"), AB("stimpak"),
-      f"give @s {item('iron_sword', 'Machete', 'gray', {'sharpness': 4, CE + 'bleed': 2})}", "give @s minecraft:arrow 64"]
+    (22, "courier", "Courier Six", "gold", "spyglass", ["Lucky (revolver) + machete (Bleed II) · Ranger armor", ab_line("lucky", "vats", "stimpak")],
+     [AB("lucky"), AB("vats"), AB("stimpak"), f"give @s {item('iron_sword', 'Machete', 'gray', {'sharpness': 4, CE + 'bleed': 2})}"]
      + suit({"head": "iron", "chest": "leather", "legs": "iron", "feet": "iron"}, 4, dye=6045219) + head("courier", "Courier Six", "gold"), []),
     (24, "sonic", "Sonic", "blue", "lapis_lazuli", ["Chaos Emerald blade · Springs II + Gears II shoes · Speed II · small", ab_line("spin_dash", "homing_attack")],
      [f"give @s {item('iron_sword', 'Chaos Emerald', 'green', {'sharpness': 4}, model('emerald'))}", AB("spin_dash"), AB("homing_attack")]
      + suit("leather", 4, dye={"head": 2068440, "chest": 2068440, "legs": 2068440, "feet": 13184550},
             extra={"chest": {CE + "dodge": 2}, "feet": {CE + "springs": 2, CE + "gears": 2}})
      + head("sonic", "Sonic", "blue") + passive("speed", 1) + size(0.8), []),
-    (25, "walter", "Walter White", "dark_gray", "quartz", ["Trunk M60 (Multishot) · 3 splash Poison II · hazmat suit (Explosive Immunity III)", ab_line("say_my_name", "fulminate")],
-     [f"give @s {item('crossbow', 'Trunk M60', 'dark_gray', {'quick_charge': 3, 'multishot': 1})}", AB("say_my_name"), AB("fulminate"),
-      potion("splash_potion", "strong_poison", 3), "give @s minecraft:arrow 64"]
+    (25, "walter", "Walter White", "dark_gray", "quartz", ["Trunk M60 (machine gun) · 3 splash Poison II · hazmat suit (Explosive Immunity III)", ab_line("m60", "say_my_name", "fulminate")],
+     [AB("m60"), AB("say_my_name"), AB("fulminate"), potion("splash_potion", "strong_poison", 3)]
      + suit("leather", 4, dye=15057152, extra={"chest": {CE + "explosiveimmunity": 3}}) + head("walter", "Heisenberg", "dark_gray"), []),
     (26, "herobrine", "Herobrine", "white", "end_rod", ["Diamond sword (Sharpness V, Fire Aspect) · Night Vision", ab_line("smite", "haunt")],
      [f"give @s {item('diamond_sword', 'Herobrine', 'white', {'sharpness': 5, 'fire_aspect': 1})}", AB("smite"), AB("haunt")]
@@ -215,9 +212,8 @@ FRANCHISE_KITS = [
       "attribute @s minecraft:attack_speed modifier add pvp:fists -2.8 add_value"]
      + suit("leather", 3, dye={"head": 6045219, "chest": 13184550, "legs": 6045219, "feet": 6045219}, extra={"legs": {CE + "tank": 2}})
      + head("dk", "Donkey Kong", "gold") + size(1.25), []),
-    (29, "mando", "Mandalorian", "gray", "firework_rocket", ["Amban rifle (Eagle Eye III) + Darksaber · Beskar armor (Armored III)", ab_line("jetpack", "flamethrower")],
-     [f"give @s {item('crossbow', 'Amban Rifle', 'gray', {'quick_charge': 2, 'piercing': 3, CE + 'eagleeye': 3})}", AB("jetpack"), AB("flamethrower"),
-      f"give @s {item('netherite_sword', 'Darksaber', 'dark_gray', {'sharpness': 5})}", "give @s minecraft:arrow 64"]
+    (29, "mando", "Mandalorian", "gray", "firework_rocket", ["Amban Rifle + Darksaber · Beskar armor (Armored III)", ab_line("amban", "jetpack", "flamethrower")],
+     [AB("amban"), AB("jetpack"), AB("flamethrower"), f"give @s {item('netherite_sword', 'Darksaber', 'dark_gray', {'sharpness': 5})}"]
      + suit("iron", 4, trim=("quartz", "sentry"), extra={"chest": {CE + "armored": 3}, "feet": {"feather_falling": 4}})
      + head("mando", "Din Djarin", "gray"), []),
     (30, "red", "Red", "red", "red_dye", ["Slingshot bow (Punch II) · beak: fists +5 (sword speed) · Jump Boost I · small", ab_line("fling", "battle_cry")],
@@ -287,25 +283,22 @@ KITS = [
     (1, "samurai", "Edgerunner", "aqua", "netherite_sword", ["Katana: Sharpness V, Lifesteal III, Double Strike II", "Cyberware: Sandevistan, Mantis Blades, Reflex Tuner, Kiroshi"],
      [f"give @s {item('netherite_sword', 'Edgerunner Katana', 'aqua', {'sharpness': 5, CE + 'lifesteal': 3, CE + 'doublestrike': 2})}"]
      + armor("diamond", 3) + head("edgerunner", "David Martinez", "aqua"), ["sandy", "mantis", "reflex", "kiroshi"]),
-    (3, "sniper", "Sniper", "dark_red", "bow", ["Sniper Rifle (bow: Power V, Lethal Sniper III, Lightning Arrows II) + Kukri · Night Vision", ab_line("jarate", "focus")],
-     [f"give @s {item('bow', 'Sniper Rifle', 'dark_red', {'power': 5, 'infinity': 1, CE + 'lethalsniper': 3, CE + 'lightningarrows': 2})}",
-      AB("jarate"), AB("focus"), f"give @s {item('iron_sword', 'Kukri', 'gray', {'sharpness': 3, CE + 'bleed': 1})}", "give @s minecraft:arrow 1"]
+    (3, "sniper", "Sniper", "dark_red", "bow", ["Sniper Rifle + Kukri (Bleed I) · Night Vision", ab_line("sniper_rifle", "jarate", "focus")],
+     [AB("sniper_rifle"), AB("jarate"), AB("focus"), f"give @s {item('iron_sword', 'Kukri', 'gray', {'sharpness': 3, CE + 'bleed': 1})}"]
      + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "diamond"}, 3, dye={"head": 6045219, "chest": 11141120, "legs": 6045219})
      + head("sniper", "Sniper", "dark_red") + passive("night_vision"), []),
     (5, "assassin", "Lucy", "light_purple", "diamond_sword", ["Monowire: Sharpness IV, Assassin III, Poison II · Dodge II", "Cyberware: Lynx Paws, Reflex Tuner, Kiroshi · " + ab_line("short_circuit", "optical_camo")],
      [f"give @s {item('diamond_sword', 'Monowire', 'light_purple', {'sharpness': 4, CE + 'assassin': 3, CE + 'poison': 2})}", AB("short_circuit"), AB("optical_camo")]
      + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "diamond"}, 3, dye=15790320, extra={"chest": {CE + "dodge": 2}})
      + head("lucy", "Lucy", "light_purple"), ["lynx", "reflex", "kiroshi"]),
-    (23, "smasher", "Adam Smasher", "dark_red", "netherite_chestplate", ["Heavy cannon (Multishot) + Arasaka axe (Cleave III) · full-borg frame (Armored III) · huge",
+    (23, "smasher", "Adam Smasher", "dark_red", "netherite_chestplate", ["Militech Heavy Cannon + Arasaka axe (Cleave III) · full-borg frame (Armored III) · huge",
      "Cyberware: Projectile Launcher, Sandevistan, Subdermal Armor, Titanium Bones"],
-     [f"give @s {item('crossbow', 'Militech Heavy Cannon', 'dark_red', {'quick_charge': 3, 'multishot': 1, 'piercing': 2})}",
-      f"give @s {item('netherite_axe', 'Arasaka Breaker', 'red', {'sharpness': 4, CE + 'cleave': 3})}", "give @s minecraft:arrow 64"]
+     [AB("heavy_cannon"), f"give @s {item('netherite_axe', 'Arasaka Breaker', 'red', {'sharpness': 4, CE + 'cleave': 3})}"]
      + suit("netherite", 3, trim=("redstone", "rib"), extra={"chest": {CE + "armored": 3, CE + "explosiveimmunity": 3}})
      + head("smasher", "Adam Smasher", "dark_red") + size(1.3), ["launcher", "sandy", "subdermal", "titanium"]),
-    (27, "rebecca", "Rebecca", "light_purple", "crossbow", ["Guts (shotgun: Multishot, Quick Charge III) + pistol · Dodge II · tiny",
+    (27, "rebecca", "Rebecca", "light_purple", "crossbow", ["Guts (shotgun) + Pistol · Dodge II · tiny",
      "Cyberware: Gorilla Arms, Reinforced Tendons, Reflex Tuner, Kiroshi"],
-     [f"give @s {item('crossbow', 'Guts', 'light_purple', {'quick_charge': 3, 'multishot': 1, 'piercing': 1})}",
-      f"give @s {item('crossbow', 'Pistol', 'aqua', {'quick_charge': 3, CE + 'eagleeye': 2})}", "give @s minecraft:arrow 64"]
+     [AB("guts"), AB("pistol")]
      + suit("leather", 4, dye={"head": 1908001, "chest": 1908001, "legs": 1908001, "feet": 15961002}, extra={"chest": {CE + "dodge": 2}})
      + head("rebecca", "Rebecca", "light_purple") + size(0.75), ["gorilla", "tendons", "reflex", "kiroshi"]),
 ] + FRANCHISE_KITS
