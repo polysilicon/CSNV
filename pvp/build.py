@@ -384,6 +384,11 @@ BOX = [
     ("Fingertip Lightning", "aqua", [abilities.give("fingertips")]),
     ("Charge Shot", "gold", [abilities.give("charge_shot")]),
     ("Krabby Patty", "yellow", [abilities.give("krabby_patty")]),
+    ("MA5 Assault Rifle", "dark_green", [abilities.give("ma5")]),
+    ("Super Shotgun", "red", [abilities.give("super_shotgun")]),
+    ("Lucky", "gold", [abilities.give("lucky")]),
+    ("Trunk M60", "dark_gray", [abilities.give("m60")]),
+    ("Amban Rifle", "gray", [abilities.give("amban")]),
     ("Teddy Bear", "gold", ["scoreboard players add @s pve.pts 475", "playsound minecraft:entity.panda.ambient player @s ~ ~ ~ 1 0.7",
                              "tellraw @s {\"text\":\"Bye bye! The box gave you a teddy bear (475 points back).\",\"color\":\"gray\",\"italic\":true}"]),
 ]

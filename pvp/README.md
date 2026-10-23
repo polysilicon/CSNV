@@ -205,7 +205,7 @@ All kit gear is unbreakable, and every kit also gets 16 steak and 2 golden apple
 - **Arsenal**: Golden Apple 500, Med Kit 750, Ammo 250, Strength 1,000, Juggernog (+3 hearts) 2,500,
   Speed Cola 2,000, Mystery Box 950 (see below), Ray Bow 5,000, Rations (16 steak) 100.
   Juggernog and Speed Cola are one per life, and you aren't charged if you already have one.
-- **Mystery Box** (950): 14 rolls with equal odds, announced to the whole run.
+- **Mystery Box** (950): 19 rolls with equal odds (about 5.3 % each), announced to the whole run.
   - Wonder weapons: much stronger than kit gear, but not unbreakable: they wear out and break.
     - Excalibur: netherite sword, Sharpness X, Sweeping Edge III, Fire Aspect II, Lifesteal III; 300 uses.
     - Thunderfang: trident, Sharpness VIII, Impaling V, Loyalty III, Channeling, Paralyze II; 200 uses.
@@ -216,6 +216,7 @@ All kit gear is unbreakable, and every kit also gets 16 steak and 2 golden apple
     Breaker (Sharpness VI axe, Cleave III).
   - Character abilities: Propane Tank, Jarate, Laser Pistol, Fingertip Lightning, Charge Shot, Krabby Patty. They
     work like the kits' ability items, and like all gear they're lost when you go down.
+  - Guns (the kits' gun abilities, see Guns above): MA5 Assault Rifle, Super Shotgun, Lucky, Trunk M60, Amban Rifle.
   - Teddy Bear: nothing, and half the points (475) back.
 - **Food**: Rations in the Arsenal, plus 4 steak for every survivor whenever a wave is cleared.
 - **Cleanup**: the map is force-loaded for the length of a run, so when the last player leaves or goes down every mob is
