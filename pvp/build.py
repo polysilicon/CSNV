@@ -8,6 +8,7 @@ Kit/arena PvP plus "Outbreak", a CoD-zombies style wave mode, both using Anarchy
 Menus are chest screens opened with /pvpmenu (crispy-pvp-spawn mod) from storage pvp:menus.
 """
 import json
+import math
 import abilities, arena_map, outbreak_maps, os, random, shutil, sys
 
 NS = "pvp"
@@ -57,7 +58,7 @@ MAP_LORE = {
     "mine": ["Abandoned toxic mine", "Rock outcrops, mine-cart loop", "Sludge puddles slow you down", "Extra: cave spiders, silverfish"],
     "neon": ["Night-time crossroads", "Tower, noodle bar, car park, arcade", "Extra: pillagers, vindicators"],
     "hellfort": ["Nether keep with four gates", "Lava pools, basalt, a giant ribcage", "Extra: wither skeletons, blazes"],
-    "orbital": ["Space station decks and glass labs", "Reactor ring, cargo crates, copper pipes", "Extra: endermites, strays"],
+    "orbital": ["A wheel-shaped space station: no square here", "Round hub, four spokes, an outer ring", "Mobs come in from the ring", "Extra: endermites, strays"],
 }
 POWERUP_CHANCE = 4       # % of kills that drop a power-up
 POWERUP_SECS = 30        # Insta-Kill / Double Points length
@@ -82,6 +83,9 @@ ARENA_TRIM = {"cyan": "chiseled_sandstone", "magenta": "cut_red_sandstone", "yel
 # Outbreak: player spawns around the Arsenal, mob windows just inside the walls, ruins for cover
 PVE_SPAWNS = [(4, 4, -45), (-4, 4, 45), (4, -4, -135), (-4, -4, 135)]
 MOB_POINTS = [(30, 0), (-30, 0), (0, 30), (0, -30), (30, 16), (30, -16), (-30, 16), (-30, -16), (16, 30), (-16, 30), (16, -30), (-16, -30)]
+# a map that isn't a square courtyard has its own mob points (the same number): the Orbital Station's are on its ring
+MAP_POINTS = {"orbital": outbreak_maps.ORBITAL_POINTS}
+def map_points(key): return MAP_POINTS.get(key, MOB_POINTS)
 RUINS = [(-12, -12, -8, -11, 3, "mossy_stone_bricks"), (8, -14, 9, -8, 2, "cobblestone"), (-14, 6, -13, 12, 3, "stone_bricks"),
          (10, 10, 14, 11, 2, "mossy_cobblestone"), (-4, 14, 4, 15, 2, "cracked_stone_bricks"), (-4, -16, 4, -15, 2, "cracked_stone_bricks"),
          (15, -3, 16, 3, 3, "mossy_stone_bricks"), (-17, -3, -16, 3, 2, "cobblestone"), (5, 4, 6, 8, 2, "mossy_cobblestone"),
@@ -1079,8 +1083,13 @@ def build_upgrades():
 def smoke_puffs():
     """Smoke drifting across the outside of every window of the current map, while a run is on."""
     out = []
-    for (i, _, _, _, _, cz, _) in OUTBREAK_MAPS:
-        for (dx, dz) in MOB_POINTS:
+    for (i, key, _, _, _, cz, _) in OUTBREAK_MAPS:
+        for (dx, dz) in map_points(key):
+            if key in MAP_POINTS:
+                a = math.atan2(dz, dx)
+                out.append(f"execute if score #state pve matches 2..3 if score #map pve matches {i} run particle minecraft:large_smoke "
+                           f"{PCX + 32.4 * math.cos(a) + 0.5:.1f} {AY + 2.5} {cz + 32.4 * math.sin(a) + 0.5:.1f} 0.4 0.6 0.4 0.01 12")
+                continue
             if abs(dx) > abs(dz): x, z, d = PCX + (PR + 1) * (1 if dx > 0 else -1) + 0.5 + (0.8 if dx > 0 else -0.8), cz + dz + 0.5, "0.1 0.6 0.7"
             else: x, z, d = PCX + dx + 0.5, cz + (PR + 1) * (1 if dz > 0 else -1) + 0.5 + (0.8 if dz > 0 else -0.8), "0.7 0.6 0.1"
             out.append(f"execute if score #state pve matches 2..3 if score #map pve matches {i} run particle minecraft:large_smoke {x} {AY + 2.5} {z} {d} 0.01 12")
@@ -1279,8 +1288,9 @@ def build_pve():
                       f"function {P}/type {{type:\"{typ}\",extra:'{extra}'}}")
     choose.append(f"execute if score #p pve matches 0 run function {P}/type {{type:\"zombie\",extra:''}}")
     choose.append("execute store result score #r pve run random value 1..%d" % len(MOB_POINTS))
-    for (i, _, _, _, _, mz, _) in OUTBREAK_MAPS:
-        for n, (dx, dz) in enumerate(MOB_POINTS, 1):
+    for (i, key, _, _, _, mz, _) in OUTBREAK_MAPS:
+        assert len(map_points(key)) == len(MOB_POINTS)
+        for n, (dx, dz) in enumerate(map_points(key), 1):
             choose.append(f"execute if score #map pve matches {i} if score #r pve matches {n} run data modify storage pvp:pve m merge value {{x:{PCX + dx + 0.5},y:{AY + 1},z:{mz + dz + 0.5}}}")
     choose += [f"function {P}/summon with storage pvp:pve m", "scoreboard players remove #tospawn pve 1"]
     fn("pve/spawn_mob", choose)
@@ -1443,14 +1453,14 @@ def build_pve():
 
 PVE_THEMES = {"ruins": ("stone_bricks", "polished_andesite"), "mine": ("stone", "polished_tuff"),   # outer wall, Arsenal platform
               "neon": ("black_concrete", "light_blue_concrete"), "hellfort": ("nether_bricks", "polished_blackstone"),
-              "orbital": ("light_gray_concrete", "cyan_concrete")}
+              "orbital": ("black_concrete", "cyan_concrete")}   # the station sits in black "space"
 
 
 def build_pve_map(m):
     """Clear the map, put up the outer wall (with barrier above) and draw the layout from outbreak_maps.py."""
     i, key, name, color, _, cz, _ = m
     wall, plat = PVE_THEMES[key]
-    g = outbreak_maps.MAPS[key](MOB_POINTS, PVE_SPAWNS)
+    g = outbreak_maps.MAPS[key](map_points(key), PVE_SPAWNS)
     outbreak_maps.check(g, name)
     x1, x2, z1, z2 = PCX - PR, PCX + PR, cz - PR, cz + PR
     a = [f"fill {x1} {AY + 1 + k} {z1} {x2} {AY + 5 + k} {z2} minecraft:air" for k in range(0, 30, 5)]

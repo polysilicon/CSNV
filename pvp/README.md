@@ -214,8 +214,8 @@ Every character has its own mastery XP (`pvp.mx<kit id>`): +10 per PvP kill and 
   - **Veteran bonus**: you start each run with 500 points + 25 per wave of your best run (`pve.best`), capped at +1,000.
 - **Queue**: the first player to queue starts a 10 s countdown, and anyone who queues meanwhile joins the same run.
   If you queue during a run, you drop in at the next wave break.
-- **Maps**: five arenas of the same size (65 × 65 inside, walls at ±33 from the centre), each with 12 barred mob
-  windows on the outer walls, the player spawns and the **Arsenal** in the middle, but with their own layout. They were
+- **Maps**: five arenas in the same 65 × 65 footprint (walls at ±33 from the centre), each with 12 barred mob
+  windows in its outer wall, the player spawns and the **Arsenal** in the middle, but with their own layout. They were
   45 × 45 until the character kits' jumps and dashes needed more room: each map's original design fills the middle
   and an outer ring of themed cover (ruined pillars, rock outcrops, kiosks and parked cars, lava pools and basalt)
   surrounds it. Each player's pick is kept in `pve.map`.
@@ -229,7 +229,7 @@ Every character has its own mastery XP (`pvp.mx<kit id>`): +10 per PvP kill and 
   | Toxic Mine | 0, -60, 400 | cave: rock outcrops, stalagmites, an overhang with stalactites, a mine-cart loop under timber frames, toxic barrels, slime sludge puddles (they slow you) | cave spiders (wave 2+), silverfish (wave 4+) |
   | Neon City | 0, -60, 500 | crossroads with crosswalks, kerbs and street lamps; a tower with a glowing sign, a noodle bar, a car park, an arcade with a rooftop billboard | pillagers (wave 3+), vindicators (wave 5+) |
   | Hellfort | 0, -60, 600 | you start inside a walled keep with four arched gates and corner towers; outside are fenced lava pools, basalt columns, a giant ribcage and a ruined portal | wither skeletons (wave 3+), blazes (wave 4+) |
-  | Orbital Station | 0, -60, 700 | space station: white panel decks with lit seams and glowing copper grates, a reactor ring of iron columns around the Arsenal, four glass-walled labs with consoles, cargo crates, copper pipes and bulbs, dark viewports | endermites (wave 2+), strays with bows (wave 4+) |
+  | Orbital Station | 0, -60, 700 | **not a square**: a wheel-shaped space station. A round hub (Arsenal, spawns, a reactor of four columns and consoles), four 7-wide spoke corridors with viewports, and an outer ring corridor with four glass lab pods, cargo crates and copper bulbs; between them is a black starfield you can see but not reach (barrier above the hull). Its 12 mob windows are in the outer hull (`outbreak_maps.ORBITAL_POINTS`, via `build.MAP_POINTS`) | endermites (wave 2+), strays with bows (wave 4+) |
 
   Behind each window is a smoke vent: a campfire (soul campfire in Hellfort) outside the bars, with solid wall behind it,
   so you can't see out to the other maps. During a run, smoke puffs also drift across the bars.

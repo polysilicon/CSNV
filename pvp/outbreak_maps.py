@@ -574,66 +574,101 @@ def hellfort(mob_points, spawns):
 
 
 # ---------------------------------------------------------------------------------------------- Orbital Station
+# Not a square courtyard: a wheel-shaped station. A round hub (the Arsenal and the spawns), four spoke corridors, and
+# an outer ring corridor; everything else is space (a starfield you can see over the hull but never reach). Its mob
+# windows sit in the outer hull, so it has its own mob points (ORBITAL_POINTS, on the ring).
+HUB_R, RING_IN, RING_OUT, SPOKE_W = 11.5, 19.5, 30.5, 3   # walkable: d <= HUB_R, RING_IN <= d <= RING_OUT, |minor| <= SPOKE_W
+ORBITAL_POINTS = [(round(28 * math.cos(math.radians(15 + 30 * k))), round(28 * math.sin(math.radians(15 + 30 * k)))) for k in range(12)]
+
+
+def orbital_walk(x, z):
+    d = math.hypot(x, z)
+    if d <= HUB_R or RING_IN <= d <= RING_OUT: return True
+    return d < RING_IN and min(abs(x), abs(z)) <= SPOKE_W
+
+
+def orbital_hull(x, z):
+    """A hull cell: not walkable, but next to a walkable one (8 neighbours)."""
+    if orbital_walk(x, z): return False
+    return any(orbital_walk(x + ox, z + oz) for ox in (-1, 0, 1) for oz in (-1, 0, 1))
+
+
 def orbital(mob_points, spawns):
-    """A space station: white panel decks with lit seams and copper grates, a reactor ring around the Arsenal, four
-    glass-walled labs, cargo crates, copper pipes and bulbs along the hull, and dark viewports in the outer wall."""
     rnd = random.Random(15)
-    def wallfn(x, y, z, t):
-        if y == 5 and t % 8 == 0: return "sea_lantern"
-        if y in (2, 3) and t % 8 in (3, 4, 5): return "black_stained_glass"   # viewports
-        if y == 4: return "cyan_concrete"
-        return "white_concrete" if y <= 1 else "light_gray_concrete"
-    g = base(mob_points, spawns, wallfn)
-    grate = Noise(16, 5)
-    for (x, z) in g.floor():
-        if x % 8 == 0 and z % 8 == 0: b = "sea_lantern"
-        elif x % 8 == 0 or z % 8 == 0: b = "light_blue_concrete"   # lit seams between the deck panels
-        elif grate(x, z) > 0.72 and not g.protected(x, z):
-            b = "waxed_oxidized_copper_grate"
-            g.put(x, -1, z, "verdant_froglight")   # glow under the grates
-        else: b = "white_concrete" if ((x // 8) + (z // 8)) % 2 == 0 else "smooth_quartz"
-        g.put(x, 0, z, b)
-    # reactor ring around the Arsenal: four columns with lights and a low rail between them
-    for (x, z) in ((7, 0), (-7, 0), (0, 7), (0, -7)):
+    g = Grid(mob_points, spawns)
+    stars = Noise(17, 2)
+    E = R + 1
+    hull = set()
+    for x in range(-E, E + 1):
+        for z in range(-E, E + 1):
+            d = math.hypot(x, z)
+            if orbital_walk(x, z):   # decks
+                if d <= HUB_R:
+                    b = "cyan_concrete" if int(d) in (3, 7, 11) else "smooth_quartz" if int(d) % 2 else "white_concrete"
+                elif d >= RING_IN:
+                    a = (math.degrees(math.atan2(z, x)) + 360) % 360
+                    if abs(d - 25) < 0.5: b = "sea_lantern" if int(a) % 15 == 0 else "light_blue_concrete"   # a lit seam round the ring
+                    else: b = "white_concrete" if int(a / 6) % 2 else "smooth_quartz"
+                else:   # spokes: a lit strip down the middle
+                    b = "sea_lantern" if min(abs(x), abs(z)) == 0 and int(d) % 4 == 0 else "light_blue_concrete" if min(abs(x), abs(z)) == 0 else "white_concrete"
+                g.put(x, 0, z, b)
+            elif orbital_hull(x, z):
+                hull.add((x, z))
+            else:   # space: black, with stars
+                g.put(x, 0, z, "sea_lantern" if stars(x * 3, z * 3) > 0.93 else "black_concrete")
+    # the hull: 6 high, viewports in the spoke walls and around the hub, barrier above so nobody jumps into space
+    for (x, z) in hull:
+        d = math.hypot(x, z)
+        for y in range(1, 7):
+            b = "white_concrete" if y <= 1 else "cyan_concrete" if y == 4 else "light_gray_concrete"
+            if y in (2, 3) and RING_IN - 1 > d > HUB_R + 1 and (x + z) % 4 == 0: b = "light_blue_stained_glass"   # spoke viewports
+            if y == 6 and (x * 7 + z * 3) % 9 == 0: b = "sea_lantern"
+            g.b[(x, y, z)] = b
+        for y in range(7, 31): g.b[(x, y, z)] = "barrier"
+    # mob windows in the outer hull: bars where each mob point meets the hull, smoke behind them
+    for (mx, mz) in mob_points:
+        a = math.atan2(mz, mx)
+        for k in (-1, 0, 1):
+            tx, tz = -math.sin(a) * k, math.cos(a) * k
+            wx, wz = round(31.3 * math.cos(a) + tx), round(31.3 * math.sin(a) + tz)
+            if (wx, wz) not in hull: continue
+            g.windows.append((wx, wz))
+            for y in (1, 2, 3): g.b[(wx, y, wz)] = "iron_bars"
+            bx, bz = round(32.4 * math.cos(a) + tx), round(32.4 * math.sin(a) + tz)
+            if (bx, bz) not in hull and abs(bx) <= R + 1 and abs(bz) <= R + 1: g.b[(bx, 1, bz)] = "campfire[lit=true]"
+    # the hub: a reactor (four columns on the diagonals) and consoles
+    for (x, z) in ((6, 6), (-6, -6), (6, -6), (-6, 6)):
         for y in range(1, 4): g.put(x, y, z, "iron_block")
         g.put(x, 4, z, "sea_lantern"); g.put(x, 5, z, "end_rod[facing=up]")
-    for k in range(32):
-        a = math.radians(k * 11.25)
-        x, z = round(7 * math.cos(a)), round(7 * math.sin(a))
-        if (x, z) in ((7, 0), (-7, 0), (0, 7), (0, -7)) or k % 4 in (1, 2): continue
-        g.put(x, 1, z, "iron_bars")
-    # four labs on the diagonals: glass-walled rooms with consoles
-    for (sx, sz) in ((1, 1), (-1, 1), (1, -1), (-1, -1)):
-        xs, zs = sorted((sx * 10, sx * 17)), sorted((sz * 10, sz * 17))
-        for x in range(xs[0], xs[1] + 1):
-            for z in range(zs[0], zs[1] + 1):
-                edge = x in xs or z in zs
-                corner = x in xs and z in zs
+    for (x, z, b) in ((8, 3, "observer[facing=up]"), (-8, -3, "crafter"), (3, -8, "observer[facing=up]"), (-3, 8, "crafter")):
+        g.put(x, 1, z, b)
+    # the ring: four glass lab pods on the diagonals, cargo crates, copper bulbs along the outer hull
+    for k in range(4):
+        a = math.radians(45 + 90 * k)
+        cx, cz = round(25 * math.cos(a)), round(25 * math.sin(a))
+        for x in range(cx - 2, cx + 3):
+            for z in range(cz - 2, cz + 3):
+                if not orbital_walk(x, z): continue
+                edge = max(abs(x - cx), abs(z - cz)) == 2
                 if edge:
-                    door = (x == sx * 10 and abs(z - sz * 13) <= 1) or (z == sz * 10 and abs(x - sx * 13) <= 1)
-                    for y in range(1, 5):
+                    door = abs(x - cx) <= 0 or abs(z - cz) <= 0
+                    for y in range(1, 4):
                         if door and y <= 2: continue
-                        g.put(x, y, z, "iron_block" if corner else "light_blue_stained_glass_pane" if y in (2, 3) and not door else "white_concrete")
-                g.put(x, 5, z, "smooth_quartz_slab[type=bottom]" if not edge else "light_gray_concrete")
-        cx, cz = sx * 15, sz * 15
-        g.put(cx, 1, cz, "observer[facing=up]"); g.put(cx, 2, cz, "daylight_detector")
-        g.put(cx - sx, 1, cz, "crafter"); g.put(cx, 1, cz - sz, "cauldron")
-        g.put(cx - sx * 2, 1, cz - sz * 2, "verdant_froglight")
-        g.put(sx * 13, 4, sz * 13, "end_rod[facing=down]")
-    # cargo crates in the outer ring
-    for _ in range(18):
-        x, z = rnd.randint(-28, 28), rnd.randint(-28, 28)
-        if max(abs(x), abs(z)) < 19: continue
-        for (ox, oz) in [(0, 0)] + rnd.sample([(1, 0), (0, 1), (-1, 0), (0, -1)], rnd.randint(1, 2)):
-            X, Z = x + ox, z + oz
-            if g.protected(X, Z) or not g.empty(X, 1, Z): continue
-            col = rnd.choice(["white", "light_gray", "orange", "cyan"])
-            g.put(X, 1, Z, f"{col}_shulker_box")
-            if (ox, oz) == (0, 0) and rnd.random() < 0.5: g.put(X, 2, Z, f"{rnd.choice(['white', 'orange'])}_shulker_box")
-    # copper pipes with bulbs along the hull, away from the windows
-    for (x, z), d, t in wall_sides():
-        if near_window(t, 3): continue
-        if t % 2 == 0: g.put(x, 4, z, "waxed_cut_copper" if t % 12 else "waxed_copper_bulb[lit=true]")
+                        g.put(x, y, z, "iron_block" if abs(x - cx) == 2 and abs(z - cz) == 2 else "light_blue_stained_glass_pane" if y in (2, 3) else "white_concrete")
+                g.put(x, 4, z, "smooth_quartz_slab[type=bottom]")
+        g.put(cx, 1, cz, "verdant_froglight"); g.put(cx + 1, 1, cz, "cauldron")
+    for _ in range(26):
+        a = rnd.uniform(0, 2 * math.pi); d = rnd.uniform(RING_IN + 1, RING_OUT - 1)
+        x, z = round(d * math.cos(a)), round(d * math.sin(a))
+        if not orbital_walk(x, z) or g.protected(x, z) or not g.empty(x, 1, z): continue
+        if min(abs(x), abs(z)) <= 3: continue   # keep the spoke mouths open
+        g.put(x, 1, z, f"{rnd.choice(['white', 'light_gray', 'orange', 'cyan'])}_shulker_box")
+        if rnd.random() < 0.4: g.put(x, 2, z, f"{rnd.choice(['white', 'orange'])}_shulker_box")
+    for (x, z) in hull:
+        d = math.hypot(x, z)
+        if d > RING_OUT and (x * 5 + z * 11) % 13 == 0:
+            ix, iz = round(x * (d - 1) / d), round(z * (d - 1) / d)   # the deck cell just inside
+            if orbital_walk(ix, iz) and not g.protected(ix, iz) and g.empty(ix, 4, iz): g.put(ix, 4, iz, "waxed_copper_bulb[lit=true]")
     return g
 
 
