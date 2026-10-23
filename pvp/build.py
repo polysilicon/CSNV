@@ -671,7 +671,7 @@ def build():
                                         f"text:{tj(text)}}}")
     # leaderboards on the south side of the lobby; the mod (Leaderboards.java) fills in the text every 5 s
     lb = ["kill @e[tag=pvp.lb]"]
-    for x, tag in ((-5.5, "pvp.lb.kills"), (0.5, "pvp.lb.streak"), (6.5, "pvp.lb.wave")):
+    for x, tag in ((-7.5, "pvp.lb.kills"), (-2.5, "pvp.lb.streak"), (2.5, "pvp.lb.wave"), (7.5, "pvp.lb.duel")):
         lb.append(f"summon minecraft:text_display {x} {LOBBY_Y + 2.2} {LOBBY_R - 2.5} {{Tags:[\"pvp.lb\",\"{tag}\"],billboard:\"center\","
                   "background:1073741824,line_width:160,transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],"
                   "translation:[0f,0f,0f],scale:[1.4f,1.4f,1.4f]},text:{\"text\":\"Loading leaderboard...\",\"color\":\"gray\"}}")

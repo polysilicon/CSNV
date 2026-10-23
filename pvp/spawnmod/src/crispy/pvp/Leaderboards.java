@@ -20,6 +20,7 @@ public final class Leaderboards {
             {"pvp.kills", "pvp.lb.kills", "⚔ Top Kills", "aqua"},
             {"pvp.best", "pvp.lb.streak", "🔥 Best Kill Streak", "gold"},
             {"pve.best", "pvp.lb.wave", "☣ Best Outbreak Wave", "green"},
+            {"pvp.elo", "pvp.lb.duel", "⚔ Duel Rating", "red"},
     };
     private static final int TOP = 5, EVERY_TICKS = 100;
     private static int tick;

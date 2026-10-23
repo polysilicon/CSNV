@@ -31,7 +31,8 @@ final class NetworkStats {
         PLAYTIME("⌚ Playtime"), PLAYER_KILLS("⚔ Player Kills"), MOB_KILLS("☠ Mob Kills"), DEATHS("✝ Deaths"),
         BLOCKS_MINED("⛏ Blocks Mined"), DISTANCE("➶ Distance Travelled"), JUMPS("⬆ Jumps"), MONEY("$ Richest (Factions)"),
         BALATRO_BLINDS("🃏 Balatro: Blinds Cleared"), BALATRO_HAND("🃏 Balatro: Best Hand"), BALATRO_WINS("🃏 Balatro: Wins"),
-        OUTBREAK_WAVE("☣ Outbreak: Best Wave"), PVP_STREAK("⚔ PvP: Best Kill Streak"), UNO_WINS("🃏 UNO: Wins");
+        OUTBREAK_WAVE("☣ Outbreak: Best Wave"), PVP_STREAK("⚔ PvP: Best Kill Streak"), UNO_WINS("🃏 UNO: Wins"),
+        DUEL_RATING("⚔ Duels: Rating"), KITS_MASTERED("★ PvP: Characters Mastered");
         final String title;
         Cat(String title) { this.title = title; }
     }
@@ -140,7 +141,8 @@ final class NetworkStats {
                 if (name != null) out.computeIfAbsent(name.toLowerCase(Locale.ROOT), k -> new Row(name)).total[Cat.UNO_WINS.ordinal()] += all.getLong(id + ".wins");
             }
         }
-        // PvP server scoreboard: Outbreak best wave (pve.best) and best kill streak (pvp.best)
+        // PvP server scoreboard: Outbreak best wave (pve.best), best kill streak (pvp.best), duel rating (pvp.elo),
+        // characters mastered (pvp.mastered)
         Path sb = root.resolve(cfg().getString("pvp-scoreboard", "CrispyPvP01/Minecraft/world/data/minecraft/scoreboard.dat"));
         if (Files.isRegularFile(sb)) {
             try (var in = new java.io.DataInputStream(new java.io.BufferedInputStream(new java.util.zip.GZIPInputStream(Files.newInputStream(sb))))) {
@@ -150,7 +152,13 @@ final class NetworkStats {
                 Object scores = data instanceof Map<?, ?> d ? d.get("PlayerScores") : null;
                 if (scores instanceof List<?> l) for (Object o : l) {
                     if (!(o instanceof Map<?, ?> e) || !(e.get("Name") instanceof String name) || name.startsWith("#")) continue;
-                    Cat c = "pve.best".equals(e.get("Objective")) ? Cat.OUTBREAK_WAVE : "pvp.best".equals(e.get("Objective")) ? Cat.PVP_STREAK : null;
+                    Cat c = switch (String.valueOf(e.get("Objective"))) {
+                        case "pve.best" -> Cat.OUTBREAK_WAVE;
+                        case "pvp.best" -> Cat.PVP_STREAK;
+                        case "pvp.elo" -> Cat.DUEL_RATING;
+                        case "pvp.mastered" -> Cat.KITS_MASTERED;
+                        default -> null;
+                    };
                     if (c == null || !(e.get("Score") instanceof Number n)) continue;
                     Row r = out.computeIfAbsent(name.toLowerCase(Locale.ROOT), k -> new Row(name));
                     r.total[c.ordinal()] = Math.max(r.total[c.ordinal()], n.longValue());
@@ -276,7 +284,7 @@ final class NetworkStats {
         int n = Math.max(1, cfg().getInt("top", 10));
         StringBuilder s = new StringBuilder("&d&lCrispyAnarchy Stats\n&e&l").append(c.title).append("\n&7")
                 .append(c == Cat.MONEY ? "Factions" : c.name().startsWith("BALATRO") ? "Lobby · /balatro" : c == Cat.UNO_WINS ? "Lobby · /uno"
-                        : c == Cat.OUTBREAK_WAVE || c == Cat.PVP_STREAK ? "PvP server" : "All servers").append("\n");
+                        : c == Cat.OUTBREAK_WAVE || c == Cat.PVP_STREAK || c == Cat.DUEL_RATING || c == Cat.KITS_MASTERED ? "PvP server" : "All servers").append("\n");
         List<Row> top = top(c, n);
         if (top.isEmpty()) s.append("\n&8No data yet");
         for (int i = 0; i < top.size(); i++) {

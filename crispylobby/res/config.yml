@@ -123,6 +123,8 @@ cosmetics:
     unstoppable:  {display: "&c[Unstoppable]", icon: BLAZE_POWDER, stat: PVP_STREAK, top: 1}
     highroller:   {display: "&6[High Roller]", icon: GOLD_NUGGET, stat: BALATRO_BLINDS, top: 1}
     cardshark:    {display: "&c[Card Shark]", icon: PAPER, stat: UNO_WINS, top: 1}
+    champion:     {display: "&6&l[Champion]", icon: GOLDEN_HELMET, stat: DUEL_RATING, top: 1}
+    kitmaster:    {display: "&e[Kit Master]", icon: NETHER_STAR, stat: KITS_MASTERED, min: 1}
     topvoter:     {display: "&d&l[Top Voter]", icon: NETHER_STAR, stat: VOTES, top: 1}
   # "joined-before" tags: a player qualifies if the earliest date found here (relative to network-stats.instances-dir)
   # is before that date: advancement timestamps, the firstPlayed time Paper left in old player files, and those files'

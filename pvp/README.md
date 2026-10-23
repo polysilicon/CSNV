@@ -192,6 +192,8 @@ Every character has its own mastery XP (`pvp.mx<kit id>`): +10 per PvP kill and 
 - Leaving mid-duel (`/spawn`, disconnecting) is a forfeit. If your opponent logs out, you win by walkover with no
   rating change.
 - `/trigger pvp.duelstats` shows your rating and record.
+- The lobby has a **⚔ Duel Rating** leaderboard (top 5 `pvp.elo`, mod 1.4.2) next to the other three, and the network
+  lobby's earned tags include **[Champion]** (#1 duel rating) and **[Kit Master]** (mastered a character).
 
 ## Outbreak (PvE waves)
 - **Progression** (Arsenal):
