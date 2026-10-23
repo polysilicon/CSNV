@@ -114,55 +114,70 @@ def suit(mats, prot, dye=None, trim=None, extra=None):
         out.append(f"item replace entity @s armor.{slot} with {item(f'{m}_{piece}', enchants=e, extra=','.join(comps))}")
     return out
 def model(m): return f'minecraft:item_model="minecraft:{m}"'
+HEADS = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "heads.json")))   # kit key -> skin texture value
+def head(key, name, color):
+    """The character's head as the helmet: diamond-helmet armor and Protection IV, so it costs no defence."""
+    comps = [f'minecraft:profile={{properties:[{{name:"textures",value:"{HEADS[key]}"}}]}}',
+             f'minecraft:custom_name={{"text":"{name}","color":"{color}","italic":false}}',
+             'minecraft:enchantments={"minecraft:protection":4}',
+             'minecraft:attribute_modifiers=[{type:"minecraft:armor",amount:3,operation:"add_value",id:"pvp:head_armor",slot:"head"},'
+             '{type:"minecraft:armor_toughness",amount:2,operation:"add_value",id:"pvp:head_tough",slot:"head"}]']
+    return [f"item replace entity @s armor.head with minecraft:player_head[{','.join(comps)}]"]
+def size(scale): return [f"attribute @s minecraft:scale modifier add pvp:size {round(scale - 1, 3)} add_value"]
 AB = abilities.give
 def ab_line(*keys): return " · ".join(abilities.ABILITIES[k][0] for k in keys)
 
 # Franchise kits: Star Wars, video games, Smash Bros. Two right-click ability items each (abilities.py); no cyberware.
 FRANCHISE_KITS = [
-    (11, "jedi", "Jedi Knight", "aqua", "breeze_rod", ["Lightsaber: Sharpness V · robes · Jump Boost II", ab_line("force_push", "mind_trick")],
-     [f"give @s {item('netherite_sword', 'Lightsaber', 'aqua', {'sharpness': 5}, model('breeze_rod'))}", AB("force_push"), AB("mind_trick")]
-     + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "diamond"}, 4, dye=9137994, extra={"feet": {"feather_falling": 4}})
-     + passive("jump_boost", 1), []),
-    (12, "sith", "Sith Lord", "dark_red", "blaze_rod", ["Red lightsaber: Sharpness V, Fire Aspect · dark robes", ab_line("force_lightning", "force_choke")],
-     [f"give @s {item('netherite_sword', 'Sith Lightsaber', 'red', {'sharpness': 5, 'fire_aspect': 1}, model('blaze_rod'))}", AB("force_lightning"), AB("force_choke")]
-     + suit({"head": "netherite", "chest": "leather", "legs": "leather", "feet": "netherite"}, 4, dye=1908001), []),
-    (13, "link", "Hero of Hyrule", "green", "shield", ["Master Sword, Hylian Shield, bow · green tunic", ab_line("spin_attack", "hookshot")],
-     [f"give @s {item('diamond_sword', 'Master Sword', 'aqua', {'sharpness': 4, 'smite': 3})}", AB("spin_attack"), AB("hookshot"),
-      f"give @s {item('bow', 'Hero Bow', 'green', {'power': 4, 'infinity': 1})}", "give @s minecraft:arrow 1",
+    (11, "jedi", "Jedi Knight", "aqua", "breeze_rod", ["Lightsaber: Sharpness V, Double Strike II · robes: Dodge II", ab_line("force_push", "mind_trick")],
+     [f"give @s {item('netherite_sword', 'Lightsaber', 'aqua', {'sharpness': 5, CE + 'doublestrike': 2}, model('breeze_rod'))}", AB("force_push"), AB("mind_trick")]
+     + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "diamond"}, 4, dye=9137994,
+            extra={"chest": {CE + "dodge": 2}, "feet": {"feather_falling": 4}})
+     + head("jedi", "Jedi Knight", "aqua") + passive("jump_boost", 1), []),
+    (12, "sith", "Sith Lord", "dark_red", "blaze_rod", ["Red lightsaber: Sharpness V, Demonic Lifesteal III, Paralyze II", ab_line("force_lightning", "force_choke")],
+     [f"give @s {item('netherite_sword', 'Sith Lightsaber', 'red', {'sharpness': 5, 'fire_aspect': 1, CE + 'demoniclifesteal': 3, CE + 'paralyze': 2}, model('blaze_rod'))}",
+      AB("force_lightning"), AB("force_choke")]
+     + suit({"head": "netherite", "chest": "leather", "legs": "leather", "feet": "netherite"}, 4, dye=1908001) + head("sith", "Sith Lord", "dark_red"), []),
+    (13, "link", "Hero of Hyrule", "green", "shield", ["Master Sword (Blessed III), Hylian Shield, bow (Eagle Eye III)", ab_line("spin_attack", "hookshot")],
+     [f"give @s {item('diamond_sword', 'Master Sword', 'aqua', {'sharpness': 4, 'smite': 3, CE + 'blessed': 3})}", AB("spin_attack"), AB("hookshot"),
+      f"give @s {item('bow', 'Hero Bow', 'green', {'power': 4, 'infinity': 1, CE + 'eagleeye': 3})}", "give @s minecraft:arrow 1",
       f"item replace entity @s weapon.offhand with {item('shield', 'Hylian Shield', 'blue')}"]
-     + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "iron"}, 4, dye=4237864), []),
-    (14, "spartan", "Spartan", "dark_green", "turtle_helmet", ["Assault rifle, energy sword · MJOLNIR armor", "Frag Grenade · energy shield recharges"],
-     [f"give @s {item('crossbow', 'MA5 Assault Rifle', 'dark_green', {'quick_charge': 3, 'piercing': 1})}", AB("frag_grenade"),
+     + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "iron"}, 4, dye=4237864, extra={"feet": {CE + "springs": 2}})
+     + head("link", "Hero of Hyrule", "green"), []),
+    (14, "spartan", "Spartan", "dark_green", "turtle_helmet", ["Assault rifle (Eagle Eye III), energy sword · MJOLNIR armor (Armored III) · tall", "Frag Grenade · energy shield recharges"],
+     [f"give @s {item('crossbow', 'MA5 Assault Rifle', 'dark_green', {'quick_charge': 3, 'piercing': 1, CE + 'eagleeye': 3})}", AB("frag_grenade"),
       f"give @s {item('diamond_sword', 'Energy Sword', 'aqua', {'sharpness': 3})}", "give @s minecraft:arrow 64"]
-     + suit("netherite", 2, trim=("emerald", "sentry")), []),
-    (15, "doom", "Doom Slayer", "red", "netherite_axe", ["Super Shotgun, Crucible blade · Praetor Suit", ab_line("chainsaw", "rip_tear") + " · kills heal"],
+     + suit("netherite", 2, trim=("emerald", "sentry"), extra={"chest": {CE + "armored": 3}}) + head("spartan", "Master Chief", "dark_green") + size(1.1), []),
+    (15, "doom", "Doom Slayer", "red", "netherite_axe", ["Super Shotgun, Crucible (Bleed IV, Rage III) · Praetor Suit (Tank II)", ab_line("chainsaw", "rip_tear") + " · kills heal"],
      [f"give @s {item('crossbow', 'Super Shotgun', 'red', {'multishot': 1, 'quick_charge': 2})}", AB("chainsaw"), AB("rip_tear"),
-      f"give @s {item('netherite_sword', 'Crucible', 'dark_red', {'sharpness': 4, 'fire_aspect': 1})}", "give @s minecraft:arrow 64"]
-     + suit("netherite", 3, trim=("emerald", "ward")), []),
-    (16, "witcher", "Witcher", "gray", "iron_sword", ["Steel + silver swords (Smite V), 2 Swallow potions", ab_line("igni", "quen")],
-     [f"give @s {item('diamond_sword', 'Steel Sword', 'gray', {'sharpness': 5})}", AB("igni"), AB("quen"),
+      f"give @s {item('netherite_sword', 'Crucible', 'dark_red', {'sharpness': 4, 'fire_aspect': 1, CE + 'bleed': 4, CE + 'rage': 3})}", "give @s minecraft:arrow 64"]
+     + suit("netherite", 3, trim=("emerald", "ward"), extra={"legs": {CE + "tank": 2}}) + head("doom", "Doom Slayer", "red"), []),
+    (16, "witcher", "Witcher", "gray", "iron_sword", ["Steel sword (Cleave III, Bleed III) + silver sword (Smite V), 2 Swallow potions", ab_line("igni", "quen")],
+     [f"give @s {item('diamond_sword', 'Steel Sword', 'gray', {'sharpness': 5, CE + 'cleave': 3, CE + 'bleed': 3})}", AB("igni"), AB("quen"),
       f"give @s {item('golden_sword', 'Silver Sword', 'white', {'smite': 5, 'sharpness': 2})}", potion("potion", "strong_regeneration", 2)]
-     + suit("chainmail", 4), []),
-    (17, "mario", "Mario", "red", "red_mushroom", ["Hammer (mace) · overalls · Resistance I", ab_line("fireball", "super_jump")],
-     [f"give @s {item('mace', 'Hammer', 'red', {'density': 2, 'breach': 1})}", AB("fireball"), AB("super_jump")]
-     + suit("leather", 4, dye={"head": 13184550, "chest": 13184550, "legs": 3949738, "feet": 8606770}) + passive("resistance"), []),
-    (18, "pikachu", "Pikachu", "yellow", "yellow_dye", ["Iron Tail: Sharpness IV, Knockback II · Speed I", ab_line("thunder_jolt", "quick_attack")],
-     [f"give @s {item('iron_sword', 'Iron Tail', 'yellow', {'sharpness': 4, 'knockback': 2})}", AB("thunder_jolt"), AB("quick_attack")]
-     + suit("leather", 4, dye=16701501) + passive("speed") + passive("resistance"), []),
-    (19, "kirby", "Kirby", "light_purple", "pink_dye", ["Star Rod (sword) · Jump Boost II, Resistance I", ab_line("inhale", "stone")],
-     [f"give @s {item('diamond_sword', 'Star Rod', 'light_purple', {'sharpness': 4})}", AB("inhale"), AB("stone")]
-     + suit("leather", 4, dye=15961002) + passive("jump_boost", 1) + passive("resistance"), []),
-    (20, "samus", "Samus", "gold", "golden_helmet", ["Arm Cannon (bow), Varia Suit (gold Prot IV)", ab_line("charge_shot", "screw_attack")],
-     [f"give @s {item('bow', 'Arm Cannon', 'gold', {'power': 4, 'infinity': 1})}", AB("charge_shot"), AB("screw_attack"),
+     + suit("chainmail", 4, extra={"chest": {CE + "dodge": 2}}) + head("witcher", "Geralt of Rivia", "gray"), []),
+    (17, "mario", "Mario", "red", "red_mushroom", ["Hammer (Pummel II) · Springs III boots · Resistance I · short", ab_line("fireball", "super_jump")],
+     [f"give @s {item('mace', 'Hammer', 'red', {'density': 2, 'breach': 1, CE + 'pummel': 2})}", AB("fireball"), AB("super_jump")]
+     + suit("leather", 4, dye={"head": 13184550, "chest": 13184550, "legs": 3949738, "feet": 8606770}, extra={"feet": {CE + "springs": 3}})
+     + head("mario", "Mario", "red") + passive("resistance") + size(0.85), []),
+    (18, "pikachu", "Pikachu", "yellow", "yellow_dye", ["Iron Tail: Sharpness IV, Paralyze III (static) · Speed I · tiny", ab_line("thunder_jolt", "quick_attack")],
+     [f"give @s {item('iron_sword', 'Iron Tail', 'yellow', {'sharpness': 4, 'knockback': 2, CE + 'paralyze': 3})}", AB("thunder_jolt"), AB("quick_attack")]
+     + suit("leather", 4, dye=16701501) + head("pikachu", "Pikachu", "yellow") + passive("speed") + passive("resistance") + size(0.6), []),
+    (19, "kirby", "Kirby", "light_purple", "pink_dye", ["Star Rod (Devour III) · Antigravity II boots · Jump Boost II · tiny", ab_line("inhale", "stone")],
+     [f"give @s {item('diamond_sword', 'Star Rod', 'light_purple', {'sharpness': 4, CE + 'devour': 3})}", AB("inhale"), AB("stone")]
+     + suit("leather", 4, dye=15961002, extra={"feet": {CE + "antigravity": 2}}) + head("kirby", "Kirby", "light_purple")
+     + passive("jump_boost", 1) + passive("resistance") + size(0.6), []),
+    (20, "samus", "Samus", "gold", "golden_helmet", ["Arm Cannon (Explosive II, Eagle Eye III) · Varia Suit (Reinforced III)", ab_line("charge_shot", "screw_attack")],
+     [f"give @s {item('bow', 'Arm Cannon', 'gold', {'power': 4, 'infinity': 1, CE + 'explosive': 2, CE + 'eagleeye': 3})}", AB("charge_shot"), AB("screw_attack"),
       f"give @s {item('iron_sword', enchants={'sharpness': 2})}", "give @s minecraft:arrow 1"]
-     + suit("golden", 4), []),
+     + suit("golden", 4, extra={"chest": {CE + "reinforced": 3}}) + head("samus", "Samus Aran", "gold") + size(1.08), []),
 ]
 FOOD = ["give @s minecraft:cooked_beef 16", "give @s minecraft:golden_apple 2"]
 # id, key, name, colour, menu icon, blurb lines, item commands, implants (one per body slot)
 KITS = [
     (1, "samurai", "Edgerunner", "aqua", "netherite_sword", ["Katana: Sharpness V, Lifesteal III, Double Strike II", "Cyberware: Sandevistan, Mantis Blades, Reflex Tuner, Kiroshi"],
      [f"give @s {item('netherite_sword', 'Edgerunner Katana', 'aqua', {'sharpness': 5, CE + 'lifesteal': 3, CE + 'doublestrike': 2})}"]
-     + armor("diamond", 3), ["sandy", "mantis", "reflex", "kiroshi"]),
+     + armor("diamond", 3) + head("edgerunner", "David Martinez", "aqua"), ["sandy", "mantis", "reflex", "kiroshi"]),
     (2, "tank", "Juggernaut", "gray", "netherite_chestplate", ["Netherite Prot IV, Armored III, Tank II, shield", "Health Boost II (+4 hearts)"],
      [f"give @s {item('netherite_sword', 'Breaker', 'gray', {'sharpness': 3})}", f"item replace entity @s weapon.offhand with {item('shield')}"]
      + armor("netherite", 4, {"chest": {CE + "armored": 3}, "legs": {CE + "tank": 2}}) + passive("health_boost", 1) + ["effect give @s minecraft:instant_health 1 3 true"], []),
@@ -233,7 +248,7 @@ UP_BOOST = {   # per tier, added to the existing enchants; kind -> (item tag/id,
     "mace": ("minecraft:mace", {"density": 1, "breach": 1}, {"wind_burst": 1}),
 }
 VETERAN_PER_WAVE, VETERAN_MAX = 25, 1000   # extra starting points per best wave reached
-PERK_RESET = ["attribute @s minecraft:max_health modifier remove pvp:jug", "attribute @s minecraft:max_health modifier remove pvp:arm",
+PERK_RESET = ["attribute @s minecraft:scale modifier remove pvp:size", "attribute @s minecraft:max_health modifier remove pvp:jug", "attribute @s minecraft:max_health modifier remove pvp:arm",
               "tag @s remove pve.jug", "tag @s remove pve.cola", "tag @s remove pve.dt", "tag @s remove pve.phd", "scoreboard players set @s pve.arm 0"]
 # Outbreak shop: id, name, colour, icon, cost, lore, commands (run as the buyer), one-per-life tag (checked before paying)
 SHOP = [
@@ -318,14 +333,21 @@ def build():
 
     # ------------------------------------------------------------------ menus (opened by /pvpmenu)
     kit_lore = lambda k: k[5] + ["", "Click to pick"]
+    def kit_icon(k, lore):   # character kits show their head
+        it = icon(k[4], k[2], k[3], lore)
+        hk = {"samurai": "edgerunner"}.get(k[1], k[1])
+        if hk in HEADS:
+            it["id"] = "minecraft:player_head"
+            it["components"]["minecraft:profile"] = {"properties": [{"name": "textures", "value": HEADS[hk]}]}
+        return it
     menus = {
         "kits": {"title": {"text": "⚔ Pick a kit", "color": "dark_aqua"}, "rows": 6, "fill": PANE,
                  "custom_kits": {"slots": CUSTOM_SLOTS, "cmd": "trigger pvp.kit set %d"}, "items":
-                 [{"slot": KIT_SLOT[k[0]], "item": icon(k[4], k[2], k[3], kit_lore(k)), "cmd": f"trigger pvp.kit set {k[0]}"} for k in KITS]
+                 [{"slot": KIT_SLOT[k[0]], "item": kit_icon(k, kit_lore(k)), "cmd": f"trigger pvp.kit set {k[0]}"} for k in KITS]
                  + [{"slot": 49, "item": icon("zombie_head", "☣ Outbreak (PvE)", "green", ["Fight waves of mobs solo or with a team", "Click to pick a map"]), "cmd": "pvpmenu pve_maps"}]},
         "pve": {"title": {"text": "☣ Outbreak: pick your loadout", "color": "dark_green"}, "rows": 6, "fill": PANE,
                 "custom_kits": {"slots": CUSTOM_SLOTS, "cmd": "trigger pve.join set %d"}, "items":
-                [{"slot": KIT_SLOT[k[0]], "item": icon(k[4], k[2], k[3], k[5] + ["", "Click to queue with this kit"]), "cmd": f"trigger pve.join set {k[0]}"} for k in KITS]
+                [{"slot": KIT_SLOT[k[0]], "item": kit_icon(k, k[5] + ["", "Click to queue with this kit"]), "cmd": f"trigger pve.join set {k[0]}"} for k in KITS]
                 + [{"slot": 47, "item": icon("barrier", "Leave the queue", "red", ["Stop waiting for the next Outbreak"], False), "cmd": "trigger pve.join set 99"},
                    {"slot": 45, "item": icon("filled_map", "Back to maps", "yellow", ["Pick a different map"], False), "cmd": "pvpmenu pve_maps"},
                    {"slot": 49, "item": icon("zombie_head", "How Outbreak works", "green", [

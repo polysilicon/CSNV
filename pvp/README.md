@@ -53,6 +53,30 @@ The menu shows all 20 kits mixed together in three rows; custom kits go on the r
 | Kirby | Star sword, Jump Boost II, Resistance I | **Inhale** (suck in + 5 dmg + 2 hearts, 10 s), **Stone** (immune 3 s + slam, 12 s) |
 | Samus | Arm Cannon (bow), Varia Suit (gold) | **Charge Shot** (explosive, 6 s), **Screw Attack** (spin up + 6 dmg, 8 s) |
 
+**Character heads, enchants and sizes**:
+- Each character kit wears its character's head as the helmet. The head has diamond-helmet armor and Protection IV,
+  so it costs no defence.
+- The heads are also the kit icons in both menus.
+- The textures come from the Head Index (`/head`) minecraft-heads.com cache, picked into `heads.json`. Edgerunner
+  wears David Martinez.
+- Custom enchants:
+
+  | Kit | Custom enchants |
+  |---|---|
+  | Jedi | Double Strike II, Dodge II |
+  | Sith | Demonic Lifesteal III, Paralyze II |
+  | Link | Blessed III, Eagle Eye III, Springs II |
+  | Spartan | Eagle Eye III, Armored III |
+  | Doom Slayer | Bleed IV, Rage III, Tank II |
+  | Witcher | Cleave III, Bleed III, Dodge II |
+  | Mario | Pummel II, Springs III |
+  | Pikachu | Paralyze III |
+  | Kirby | Devour III, Antigravity II |
+  | Samus | Explosive II, Eagle Eye III, Reinforced III |
+
+- Sizes (`scale` modifier `pvp:size`, removed on `to_lobby`, going down and Outbreak entry): Pikachu and Kirby 0.6×,
+  Mario 0.85×, Spartan 1.1×, Samus 1.08×.
+
 **Cyberpunk kits** (Edgerunner, Netrunner) keep their cyberware:
 
 | Kit | Gear | Cyberware |
