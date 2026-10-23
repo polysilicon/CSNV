@@ -3,6 +3,6 @@
   "minVersion": "0.8",
   "package": "crispy.chattags.mixin",
   "compatibilityLevel": "JAVA_21",
-  "server": ["ChatNameMixin"],
+  "server": ["ChatNameMixin", "CombatHitMixin", "CombatTickMixin"],
   "injectors": { "defaultRequire": 1 }
 }

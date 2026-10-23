@@ -10,8 +10,11 @@
 - DeluxeHub's own tablist on the Lobby is switched off (`tablist.enabled: false`) so it doesn't overwrite TAB.
 - Apply edits with `btab reload` in the proxy console (no restart).
 
-## CrispyTags (`proxy/crispytags`, 1.1.0)
+## CrispyTags (`proxy/crispytags`, 1.2.0)
 - Shows the lobby's cosmetic tags after names in the tab list and on name tags (through TAB), from the lobby's `tags.json`.
 - Owns `/vote` and `/cosmetics` on every server: off the lobby it connects the player to `lobby`
   (`-Dcrispytags.lobby` to change), then hands the command line to CrispyLobby on the `crispy:vote` plugin channel,
   which opens the menu. On the lobby it hands it over straight away.
+- Not in combat (1.2.0): before sending anyone to the lobby it reads `Minecraft/crispy_combat.json` of the server
+  they're on (written by `crispy_chattags` on the Fabric servers and CrispyFactions on Factions) and refuses with
+  "You can't use /vote in combat (Ns left)". No file (or a server not in its list) means no check.

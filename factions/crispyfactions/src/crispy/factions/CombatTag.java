@@ -70,7 +70,28 @@ public class CombatTag implements Listener {
         tag(victim); tag(a);
     }
 
+    /** crispy_combat.json in the server folder (lowercase name -> epoch ms when free), read by the CrispyTags proxy
+     *  plugin so the network-wide /vote and /cosmetics can't be used to leave a fight. Rewritten only when it changes. */
+    static final java.nio.file.Path FILE = java.nio.file.Path.of("crispy_combat.json");
+    String lastFile;
+    void writeFile() {
+        StringBuilder b = new StringBuilder("{");
+        for (Map.Entry<UUID, Long> en : until.entrySet()) {
+            Player p = Bukkit.getPlayer(en.getKey());
+            if (p != null) b.append(b.length() > 1 ? "," : "").append('"').append(p.getName().toLowerCase(Locale.ROOT)).append("\":").append(en.getValue());
+        }
+        String json = b.append('}').toString();
+        if (json.equals(lastFile)) return;
+        try {
+            java.nio.file.Path tmp = FILE.resolveSibling("crispy_combat.json.tmp");
+            java.nio.file.Files.writeString(tmp, json);
+            java.nio.file.Files.move(tmp, FILE, java.nio.file.StandardCopyOption.REPLACE_EXISTING, java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+            lastFile = json;
+        } catch (Exception ignored) {}
+    }
+
     void tick() {
+        writeFile();
         if (until.isEmpty()) return;
         long now = System.currentTimeMillis();
         for (Iterator<Map.Entry<UUID, Long>> it = until.entrySet().iterator(); it.hasNext(); ) {

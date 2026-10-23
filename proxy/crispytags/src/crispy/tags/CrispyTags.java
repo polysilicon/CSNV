@@ -33,6 +33,11 @@ public class CrispyTags {
     static final Path FILE = Path.of(System.getProperty("crispytags.file",
             "/AMPStorage/.ampdata/instances/CrispyLobby01/Minecraft/plugins/CrispyLobby/tags.json"));
     static final String LOBBY = System.getProperty("crispytags.lobby", "lobby");
+    static final Path INSTANCES = Path.of(System.getProperty("crispytags.instances", "/AMPStorage/.ampdata/instances"));
+    /** Velocity server name -> AMP instance; each writes Minecraft/crispy_combat.json (name -> epoch ms when out of
+     *  combat): the crispy_chattags mod on the Fabric servers, CrispyFactions' combat tag on Factions. */
+    static final Map<String, String> INSTANCE = Map.of("og", "CrispyAnarchy01", "vanilla", "Vanilla01", "pvp", "CrispyPvP01",
+            "factions", "Factions01", "falling", "Falling01");
     static final MinecraftChannelIdentifier CHANNEL = MinecraftChannelIdentifier.from("crispy:vote");
     final ProxyServer proxy;
     Map<String, String> tags = Map.of();
@@ -83,6 +88,11 @@ public class CrispyTags {
             byte[] line = (name + (inv.arguments().length > 0 ? " " + String.join(" ", inv.arguments()) : "")).getBytes(StandardCharsets.UTF_8);
             Optional<ServerConnection> cur = p.getCurrentServer();
             if (cur.isPresent() && cur.get().getServerInfo().getName().equalsIgnoreCase(LOBBY)) { cur.get().sendPluginMessage(CHANNEL, line); return; }
+            long left = cur.map(c -> combatLeft(c.getServerInfo().getName(), p.getUsername())).orElse(0L);
+            if (left > 0) {
+                p.sendMessage(Component.text("You can't use /" + name + " in combat (" + (left + 999) / 1000 + "s left).", NamedTextColor.RED));
+                return;
+            }
             Optional<RegisteredServer> lobby = proxy.getServer(LOBBY);
             if (lobby.isEmpty()) { p.sendMessage(Component.text("The lobby isn't available right now.", NamedTextColor.RED)); return; }
             p.sendMessage(Component.text("Taking you to the lobby for /" + name + "...", NamedTextColor.LIGHT_PURPLE));
@@ -98,6 +108,17 @@ public class CrispyTags {
             String a = inv.arguments().length == 0 ? "" : inv.arguments()[0].toLowerCase(Locale.ROOT);
             return inv.arguments().length <= 1 ? subs.stream().filter(x -> x.startsWith(a)).toList() : List.of();
         }
+    }
+    /** Milliseconds until this player is out of combat on that server, 0 if not in combat (or the server has no file). */
+    static long combatLeft(String server, String player) {
+        String inst = INSTANCE.get(server.toLowerCase(Locale.ROOT));
+        if (inst == null) return 0;
+        try {
+            Map<String, Long> m = new Gson().fromJson(Files.readString(INSTANCES.resolve(inst).resolve("Minecraft/crispy_combat.json")),
+                    new TypeToken<Map<String, Long>>() {}.getType());
+            Long u = m == null ? null : m.get(player.toLowerCase(Locale.ROOT));
+            return u == null ? 0 : Math.max(0, u - System.currentTimeMillis());
+        } catch (Exception e) { return 0; }
     }
     static String join(String original, String tag) { return (original == null ? "" : original) + " " + tag; }
 }

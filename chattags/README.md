@@ -5,6 +5,9 @@ These show the vote-cosmetic tags bought in the lobby (`/cosmetics`) before the 
 with no bot change. Both versions read the lobby's `plugins/CrispyLobby/tags.json` and re-read it when it changes.
 
 - `fabric/` is the `crispy_chattags` mod for Anarchy, Vanilla, Falling and PvP.
+  - Combat state (1.4.0): hitting or being hit by a player puts both in combat for 15 s; on PvP, being in a duel
+    (`pvp.duel`) or an Outbreak run (`pve.in`) counts too. Once a second it writes `crispy_combat.json` in the server
+    folder (name -> epoch ms when free), which the CrispyTags proxy plugin checks before `/vote` or `/cosmetics`.
   - A mixin on `ServerGamePacketListenerImpl.broadcastChatMessage` swaps the chat-type name for "tag + name".
   - Join, leave and death messages keep the plain name, which the bot uses to track players.
   - Styled Chat (on Anarchy and Vanilla) formats chat itself, so the mixin doesn't apply there. Instead the mod

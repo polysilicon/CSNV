@@ -28,7 +28,7 @@ prime-time raid windows, no pay-to-win.
 | Chunky | 1.4.40 | pre-generation |
 | mcMMO | 2.3.002 | RPG skills (built from the GPL source, commit 25474dc) |
 | ViaVersion / ViaBackwards | 5.12.x | newer clients |
-| **CrispyFactions** (custom) | 1.3.0 | raid window, obsidian durability, Aegis Star, collector hopper, item bans, `/nv`, AFK, combat tag, cases, votes |
+| **CrispyFactions** (custom) | 1.3.1 | raid window, obsidian durability, Aegis Star, collector hopper, item bans, `/nv`, AFK, combat tag, cases, votes |
 | HMCWraps | — | *not installed*: download from SpigotMC/Polymart and drop into `plugins/` |
 
 `install_plugins.sh` downloads everything except HMCWraps; `configure.py` applies every setting below.
@@ -155,6 +155,8 @@ Starting balance $500.
 (no water streams, no item entities). Break it to get the collector back.
 
 ## PvP combat tag (CrispyFactions 1.1.0)
+- 1.3.1: the tag is also written to `crispy_combat.json` in the server folder, so the network-wide `/vote` and
+  `/cosmetics` (a proxy command the server never sees) refuse while you're tagged.
 - Hitting or being hit by a player (melee, bow, snowball, rod) tags **both** players for **15 s**; the action bar counts down.
 - While tagged you can't:
   - run escape commands: `/spawn`, `/home`, `/back`, `/warp`, `/tpa…`, `/f home`, `/f stuck`, `/echest`, `/kit`, `/fly` and more (`combat-tag.blocked-commands`);
