@@ -355,6 +355,33 @@ ABILITIES = {
         "effect give @s minecraft:strength 6 1", "effect give @s minecraft:resistance 6 0", "effect give @s minecraft:speed 6 0",
         "particle minecraft:dust{color:[0.8,0.0,0.0],scale:1.0} ~ ~1 ~ 0.4 0.8 0.4 0 40",
         snd("entity.warden.heartbeat", 1, 1), snd("block.note_block.bit", 1, 1.6), bar("HELLO, FRIEND.", "red")]),
+    # ---------------------------------------------------------------- The Sopranos / SpongeBob / Futurama
+    "gabagool": ("Gabagool", "gold", "porkchop", 15, ["A little gabagool.", "Instant Health I · Regeneration II 4 s · full hunger"], [
+        "effect give @s minecraft:instant_health 1 0", "effect give @s minecraft:regeneration 4 1", "effect give @s minecraft:saturation 1 9 true",
+        "particle minecraft:item{item:\"minecraft:porkchop\"} ~ ~1.6 ~ 0.2 0.1 0.2 0.05 10",
+        snd("entity.generic.eat", 1, 0.7), bar("GABAGOOL!", "gold")]),
+    "whack": ("Whack", "dark_red", "flint", 14, ["Puts out a hit on the enemy you aim at.", "16 blocks · 6 damage · Wither I + Slowness II + glowing 4 s"], [
+        *ray(32),
+        hit(damage(6)), hit("effect give @s minecraft:wither 4 0"), hit("effect give @s minecraft:slowness 4 1"), hit("effect give @s minecraft:glowing 4 0"),
+        hit("particle minecraft:smoke ~ ~1 ~ 0.3 0.5 0.3 0.02 25"),
+        snd("entity.firework_rocket.blast", 1, 0.5), snd("entity.generic.explode", 0.3, 1.8), bar("IT'S JUST BUSINESS", "dark_red")]),
+    "krabby_patty": ("Krabby Patty", "yellow", "bread", 15, ["Fresh off the grill.", "Instant Health I · Regeneration II 5 s · full hunger"], [
+        "effect give @s minecraft:instant_health 1 0", "effect give @s minecraft:regeneration 5 1", "effect give @s minecraft:saturation 1 9 true",
+        "particle minecraft:item{item:\"minecraft:bread\"} ~ ~1.6 ~ 0.2 0.1 0.2 0.05 10",
+        snd("entity.generic.eat", 1, 1.2), snd("block.note_block.chime", 1, 1.6), bar("I'M READY!", "yellow")]),
+    "bubble_blower": ("Bubble Blower", "aqua", "glass_bottle", 8, ["Blows three bubbles.", "Each pops with knockback"], [
+        *shoot("wind_charge", 0.9, "", (-10, 0, 10)),
+        "execute anchored eyes run particle minecraft:bubble_pop ^ ^ ^1.5 0.4 0.3 0.4 0.05 30",
+        snd("block.bubble_column.upwards_inside", 1, 1.4), snd("entity.player.breath", 1, 1.6), bar("BUBBLES!", "aqua")]),
+    "shiny_metal": ("Bite My Shiny Metal Ass", "gray", "iron_ingot", 18, ["Taunts everyone around you.", "8 blocks · Weakness I + glowing 6 s · you: Resistance I 6 s"], [
+        around(8, "effect give @s minecraft:weakness 6 0"), around(8, "effect give @s minecraft:glowing 6 0"),
+        "effect give @s minecraft:resistance 6 0",
+        "particle minecraft:wax_off ~ ~1 ~ 0.6 0.8 0.6 0.5 30",
+        snd("block.anvil.land", 0.6, 1.6), snd("entity.iron_golem.hurt", 1, 1.4), bar("BITE MY SHINY METAL ASS!", "gray")]),
+    "olde_fortran": ("Olde Fortran", "gold", "experience_bottle", 20, ["Fuels up on malt liquor.", "Strength I + Speed I + Regeneration I 8 s"], [
+        "effect give @s minecraft:strength 8 0", "effect give @s minecraft:speed 8 0", "effect give @s minecraft:regeneration 8 0",
+        "particle minecraft:flame ~ ~0.3 ~ 0.2 0.1 0.2 0.03 15",
+        snd("entity.generic.drink", 1, 0.8), snd("entity.player.burp", 1, 0.6), bar("OLDE FORTRAN", "gold")]),
 }
 
 

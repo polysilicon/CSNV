@@ -251,6 +251,17 @@ FRANCHISE_KITS = [
      [f"give @s {item('iron_sword', 'Pocketknife', 'gray', {'sharpness': 4, CE + 'poison': 1})}", AB("blackout"), AB("mr_robot")]
      + suit("leather", 4, dye={"head": 1908001, "chest": 1908001, "legs": 3355443, "feet": 5592405}, extra={"chest": {CE + "dodge": 2}})
      + head("elliot", "Elliot Alderson", "dark_gray") + passive("night_vision"), []),
+    (41, "tony", "Tony Soprano", "dark_red", "flint", ["Baseball Bat (Sharpness IV, Knockback I) · bathrobe · Health Boost I · a bit big", ab_line("gabagool", "whack")],
+     [f"give @s {item('iron_sword', 'Baseball Bat', 'dark_red', {'sharpness': 4, 'knockback': 1}, model('stick'))}", AB("gabagool"), AB("whack")]
+     + suit("leather", 4, dye={"head": 15790320, "chest": 15790320, "legs": 15790320, "feet": 6045219})
+     + head("tony", "Tony Soprano", "dark_red") + passive("health_boost") + ["effect give @s minecraft:instant_health 1 1 true"] + size(1.1), []),
+    (42, "spongebob", "SpongeBob", "yellow", "bread", ["Golden Spatula (Sharpness IV, Knockback II) · Springs II · Jump Boost I · small", ab_line("krabby_patty", "bubble_blower")],
+     [f"give @s {item('golden_shovel', 'Golden Spatula', 'gold', {'sharpness': 4, 'knockback': 2})}", AB("krabby_patty"), AB("bubble_blower")]
+     + suit("leather", 4, dye={"head": 16701501, "chest": 16777215, "legs": 9127187, "feet": 1908001}, extra={"chest": {CE + "dodge": 2}, "feet": {CE + "springs": 2}})
+     + head("spongebob", "SpongeBob", "yellow") + passive("jump_boost") + size(0.8), []),
+    (43, "bender", "Bender", "gray", "iron_ingot", ["Bent Girder (axe: Sharpness IV, Cleave II) · metal body (iron Prot IV, Armored II) · Fire Resistance", ab_line("shiny_metal", "olde_fortran")],
+     [f"give @s {item('iron_axe', 'Bent Girder', 'gray', {'sharpness': 4, CE + 'cleave': 2})}", AB("shiny_metal"), AB("olde_fortran")]
+     + suit("iron", 4, extra={"chest": {CE + "armored": 2}}) + head("bender", "Bender", "gray") + passive("fire_resistance"), []),
 ]
 FOOD = ["give @s minecraft:cooked_beef 16", "give @s minecraft:golden_apple 2"]
 # id, key, name, colour, menu icon, blurb lines, item commands, implants (one per body slot)
@@ -296,14 +307,14 @@ TEST_KIT = [
     "tellraw @s [{\"text\":\"Kit: \",\"color\":\"gray\"},{\"text\":\"David (test)\",\"color\":\"dark_red\",\"bold\":true},"
     "{\"text\":\" · Cyberskeleton, Sandevistan, Kiroshi, Reflex Tuner. Swap the crossbows into both hands to dual-fire.\",\"color\":\"gray\"}]",
 ]
-# kit menu order: grouped by franchise, rows of 3 / 7 / 9 / 7 / 7
-KIT_ORDER = [38, 39, 40,                          # Hank Hill, Leela, Elliot
+# kit menu order: grouped by franchise, rows of 5 / 7 / 9 / 7 / 8
+KIT_ORDER = [42, 38, 39, 43, 40,                  # SpongeBob, Hank Hill, Leela, Bender, Elliot
              11, 12, 35, 29, 1, 5, 27,              # Jedi, Sith, Darth Maul, Mandalorian | Edgerunner, Lucy, Rebecca
              23, 13, 14, 15, 16, 22, 3, 26, 30,     # Adam Smasher | Link, Spartan, Doom Slayer, Witcher, Courier Six, Sniper, Herobrine, Red
              17, 18, 19, 20, 28, 24, 31,            # Mario, Pikachu, Kirby, Samus, Donkey Kong, Sonic | Spider-Man
-             21, 32, 33, 34, 36, 25, 37]            # Randy Marsh, Shrek, Peter Griffin, Homer, Mr. Krabs | Walter White, Saul Goodman
-KIT_SLOT = dict(zip(KIT_ORDER, [3, 4, 5, 10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34,
-                                37, 38, 39, 40, 41, 42, 43]))
+             21, 32, 33, 34, 36, 25, 37, 41]        # Randy Marsh, Shrek, Peter Griffin, Homer, Mr. Krabs | Walter White, Saul Goodman, Tony Soprano
+KIT_SLOT = dict(zip(KIT_ORDER, [2, 3, 4, 5, 6, 10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34,
+                                37, 38, 39, 40, 41, 42, 43, 44]))
 # Upgrades (points per tier I / II / III). Pack-a-Punch works on the held weapon (the tier is stored on the item);
 # armor upgrades are per player (pve.arm). Both are lost when you go down, since your kit is handed out again.
 WEAPON_UP = [2000, 4000, 7500]

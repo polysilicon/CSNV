@@ -17,7 +17,7 @@ AMP rewrites `server.properties` on start, so change game settings through AMP, 
 
 ## How it plays
 - Players spawn in a safe stone hub at 0 101 0, where they're immune to damage and can't deal any.
-- **Kit Dealer** (left NPC) opens a chest menu of 33 character kits. Click one and you're dropped at one of 8 random arena
+- **Kit Dealer** (left NPC) opens a chest menu of 36 character kits. Click one and you're dropped at one of 8 random arena
   spawns with 3 s of spawn protection.
 - **Outbreak** (right NPC) opens the map menu: pick one of the four maps (or Random),
   then pick a kit to queue.
@@ -32,7 +32,7 @@ AMP rewrites `server.properties` on start, so change game settings through AMP, 
   Best Outbreak Wave (`pve.best`). The mod rewrites them every 5 s. `pvp:admin/place_leaderboard` re-places them.
 
 ### Kits
-Every kit is a character. The menu shows all 33 in five rows (3 / 7 / 9 / 7 / 7), roughly grouped by franchise. The
+Every kit is a character. The menu shows all 36 in five rows (5 / 7 / 9 / 7 / 8), roughly grouped by franchise. The
 classic kits with no character (Juggernaut, Berserker, Medic, Pyro, Ranger, Shinobi, Skyhammer) were removed.
 
 **Franchise kits** have two **ability items** each (`abilities.py`):
@@ -76,7 +76,7 @@ classic kits with no character (Juggernaut, Berserker, Medic, Pyro, Ranger, Shin
   | Samus | Explosive II, Eagle Eye III, Reinforced III |
 
 - Sizes (`scale` modifier `pvp:size`, removed on `to_lobby`, going down and Outbreak entry): Pikachu and Kirby 0.6×,
-  Mario 0.85×, Spartan 1.1×, Samus 1.08×, Adam Smasher 1.3×, Sonic 0.8×, Rebecca 0.75×, Donkey Kong 1.25×, Red 0.7×, Shrek 1.3×, Peter Griffin and Homer 1.1×, Mr. Krabs 0.9×.
+  Mario 0.85×, Spartan 1.1×, Samus 1.08×, Adam Smasher 1.3×, Sonic 0.8×, Rebecca 0.75×, Donkey Kong 1.25×, Red 0.7×, Shrek 1.3×, Peter Griffin and Homer 1.1×, Mr. Krabs 0.9×, Tony Soprano 1.1×, SpongeBob 0.8×.
 
 **Other kits**:
 
@@ -101,6 +101,9 @@ classic kits with no character (Juggernaut, Berserker, Medic, Pyro, Ranger, Shin
 | Hank Hill (King of the Hill) | Grill Spatula (iron shovel: Sharpness IV, Fire Aspect), white tee and jeans (Explosive Immunity III), Fire Resistance | **Propane Tank** (explosive throw, 10 s), **I'm Gonna Kick Your Ass** (Strength II + Speed I 6 s, knocks back enemies within 3 blocks, 22 s) |
 | Leela (Futurama) | No weapon: martial arts, fists +6 at sword speed; white top, black pants (Dodge II, Springs I), Speed I | **Martial Arts Kick** (dash, 7 dmg + knockback up close, 7 s), **Laser Pistol** (20 blocks: 5 dmg + glowing 2 s, 5 s) |
 | Elliot (Mr. Robot) | Pocketknife (Sharpness IV, Poison I), black hoodie (Dodge II), Night Vision; Elliot head (MineSkin upload) | **Blackout** (12 blocks: Darkness 6 s, Blindness 2 s, Slowness I 3 s, 22 s), **Mr. Robot** (Strength II + Resistance I + Speed I 6 s, 25 s) |
+| Tony Soprano (The Sopranos) | Baseball Bat (Sharpness IV, Knockback I), white bathrobe, Health Boost I, 1.1×; placeholder "Mafia Boss" head (no Tony in the head database) | **Gabagool** (Instant Health I, Regeneration II 4 s, full hunger, 15 s), **Whack** (16 blocks: 6 dmg, Wither I + Slowness II + glowing 4 s, 14 s) |
+| SpongeBob | Golden Spatula (Sharpness IV, Knockback II), white shirt and brown shorts (Dodge II, Springs II), Jump Boost I, 0.8× | **Krabby Patty** (Instant Health I, Regeneration II 5 s, full hunger, 15 s), **Bubble Blower** (3 wind-charge bubbles that pop with knockback, 8 s) |
+| Bender (Futurama) | Bent Girder (iron axe: Sharpness IV, Cleave II), metal body (iron Prot IV, Armored II), Fire Resistance | **Bite My Shiny Metal Ass** (8 blocks: Weakness I + glowing 6 s; you: Resistance I 6 s, 18 s), **Olde Fortran** (Strength I + Speed I + Regeneration I 8 s, 20 s) |
 
 Randy's head came from a skin uploaded to MineSkin (no Randy in the head database). The same works for any character:
 upload the skin at mineskin.org and put its texture value in `heads.json`.
