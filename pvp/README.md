@@ -75,7 +75,7 @@ The menu shows all 20 kits mixed together in three rows; custom kits go on the r
   | Samus | Explosive II, Eagle Eye III, Reinforced III |
 
 - Sizes (`scale` modifier `pvp:size`, removed on `to_lobby`, going down and Outbreak entry): Pikachu and Kirby 0.6×,
-  Mario 0.85×, Spartan 1.1×, Samus 1.08×, Adam Smasher 1.3×, Sonic 0.8×, Rebecca 0.75×, Donkey Kong 1.25×.
+  Mario 0.85×, Spartan 1.1×, Samus 1.08×, Adam Smasher 1.3×, Sonic 0.8×, Rebecca 0.75×, Donkey Kong 1.25×, Red 0.7×.
 
 **Other kits**:
 
@@ -88,6 +88,7 @@ The menu shows all 20 kits mixed together in three rows; custom kits go on the r
 | Herobrine (Minecraft) | Diamond sword (Sharpness V, Fire Aspect), Steve-coloured leather, Night Vision | **Smite** (24 blocks: 7 lightning dmg + Blindness 2 s, 10 s), **Haunt** (teleport behind the nearest enemy within 16 blocks, blinds them, you go invisible 2 s, 12 s) |
 | Donkey Kong | No weapon: fists +8 damage at axe speed; brown leather with a red tie, Tank II, 1.25× | **Giant Punch** (4 blocks: 12 dmg, launches, 9 s), **Ground Pound** (5 blocks: 6 dmg, Slowness III 2 s, pops them up, 10 s) |
 | Mandalorian | Amban Rifle (crossbow: Piercing III, Eagle Eye III), Darksaber (Sharpness V), Beskar (iron Prot IV, quartz trim, Armored III), Din Djarin head | **Jetpack** (launch + Slow Falling 6 s, 9 s), **Flamethrower** (4 blocks: 5 fire dmg + 3 fireballs, 9 s) |
+| Red (Angry Birds) | Slingshot (bow: Power IV, Punch II, Infinity), beak: fists +5 at sword speed, red leather with a cream belly, Jump Boost I, 0.7× | **Fling** (slingshots you forward; crashing into an enemy or landing deals 7 dmg + knockback within 3 blocks, 8 s), **Battle Cry** (6 blocks: 4 dmg + knockback + Slowness I; you: Strength I + Speed I 6 s, 18 s) |
 
 Randy's head came from a skin uploaded to MineSkin (no Randy in the head database). The same works for any character:
 upload the skin at mineskin.org and put its texture value in `heads.json`.

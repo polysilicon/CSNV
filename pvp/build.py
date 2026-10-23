@@ -202,6 +202,11 @@ FRANCHISE_KITS = [
       f"give @s {item('netherite_sword', 'Darksaber', 'dark_gray', {'sharpness': 5})}", "give @s minecraft:arrow 64"]
      + suit("iron", 4, trim=("quartz", "sentry"), extra={"chest": {CE + "armored": 3}, "feet": {"feather_falling": 4}})
      + head("mando", "Din Djarin", "gray"), []),
+    (30, "red", "Red", "red", "red_dye", ["Slingshot bow (Punch II) · beak: fists +5 (sword speed) · Jump Boost I · small", ab_line("fling", "battle_cry")],
+     [f"give @s {item('bow', 'Slingshot', 'red', {'power': 4, 'punch': 2, 'infinity': 1})}", AB("fling"), AB("battle_cry"), "give @s minecraft:arrow 1",
+      "attribute @s minecraft:attack_damage modifier add pvp:fists 5 add_value", "attribute @s minecraft:attack_speed modifier add pvp:fists -2.4 add_value"]
+     + suit("leather", 4, dye={"head": 12986408, "chest": 12986408, "legs": 16247203, "feet": 12986408}, extra={"feet": {"feather_falling": 4}})
+     + head("red", "Red", "red") + passive("jump_boost") + size(0.7), []),
 ]
 FOOD = ["give @s minecraft:cooked_beef 16", "give @s minecraft:golden_apple 2"]
 # id, key, name, colour, menu icon, blurb lines, item commands, implants (one per body slot)
@@ -271,13 +276,13 @@ TEST_KIT = [
     "tellraw @s [{\"text\":\"Kit: \",\"color\":\"gray\"},{\"text\":\"David (test)\",\"color\":\"dark_red\",\"bold\":true},"
     "{\"text\":\" · Cyberskeleton, Sandevistan, Kiroshi, Reflex Tuner. Swap the crossbows into both hands to dual-fire.\",\"color\":\"gray\"}]",
 ]
-# kit menu order: franchises and classics mixed, rows of 7 / 9 / 7 / 6
+# kit menu order: franchises and classics mixed, rows of 7 / 9 / 7 / 7
 KIT_ORDER = [11, 1, 17, 2, 13, 18, 3,          # Jedi, Edgerunner, Mario, Juggernaut, Link, Pikachu, Sniper
              12, 21, 4, 14, 23, 19, 6, 22, 5,  # Sith, Randy Marsh, Berserker, Spartan, Adam Smasher, Kirby, Medic, Courier Six, Netrunner
              15, 7, 20, 8, 16, 9, 10,          # Doom Slayer, Pyro, Samus, Ranger, Witcher, Shinobi, Skyhammer
-             24, 25, 27, 26, 28, 29]           # Sonic, Walter White, Rebecca | Herobrine, Donkey Kong, Mandalorian
+             24, 25, 27, 30, 26, 28, 29]       # Sonic, Walter White, Rebecca, Red, Herobrine, Donkey Kong, Mandalorian
 KIT_SLOT = dict(zip(KIT_ORDER, [10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34,
-                                37, 38, 39, 41, 42, 43]))
+                                37, 38, 39, 40, 41, 42, 43]))
 CUSTOM_SLOTS = [0, 1, 2, 3, 4, 5, 6, 7, 8]   # admin-made kits (/pvpkit create), ids 101+: the top row
 
 # Upgrades (points per tier I / II / III). Pack-a-Punch works on the held weapon (the tier is stored on the item);

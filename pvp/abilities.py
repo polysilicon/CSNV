@@ -218,6 +218,16 @@ ABILITIES = {
         *shoot("small_fireball", 1.0, ",acceleration_power:0.0d", (-8, 0, 8)),
         "execute anchored eyes run particle minecraft:flame ^ ^ ^2 0.6 0.4 0.6 0.05 60",
         snd("item.firecharge.use", 1, 0.6), snd("entity.blaze.burn", 1, 0.8), bar("THIS IS THE WAY", "gold")]),
+    # ---------------------------------------------------------------- Angry Birds
+    "fling": ("Fling", "red", "string", 8, ["Slingshots you forward like a bird.", "Crash into enemies or land: 7 damage within 3 blocks"], [
+        "tag @s add pvp.sling", "scoreboard players set @s pvp.ft 0", DASH, LAUNCH, "effect give @s minecraft:resistance 2 1 true",
+        "particle minecraft:cloud ~ ~0.3 ~ 0.3 0.1 0.3 0.05 12",
+        snd("item.crossbow.shoot", 1, 0.6), snd("entity.parrot.ambient", 1, 0.6), bar("FLING", "red")]),
+    "battle_cry": ("Battle Cry", "dark_red", "red_dye", 18, ["Lets out a furious squawk.", "6 blocks · 4 damage + knockback · you: Strength I + Speed I 6 s"], [
+        around(6, damage(4)), around(6, PUSH), around(6, "effect give @s minecraft:slowness 2 0"),
+        "effect give @s minecraft:strength 6 0", "effect give @s minecraft:speed 6 0",
+        "particle minecraft:angry_villager ~ ~1.2 ~ 1.5 0.6 1.5 0 15",
+        snd("entity.ravager.roar", 1, 1.8), snd("entity.parrot.hurt", 1, 0.5), bar("BATTLE CRY", "dark_red")]),
 }
 
 
@@ -326,6 +336,8 @@ def build(fn, wj, lobby_box):
         f"execute as @a[scores={{pvp.rgt=1}}] run function {NS}:ability/regive",
         "scoreboard players remove @a[scores={pvp.rgt=2..}] pvp.rgt 1",
         f"execute as @e[type=minecraft:armor_stand,tag=pvp.nade] at @s run function {NS}:ability/nade_tick",
+        # Fling: the bird hits whatever it crashes into (or the ground)
+        f"execute as @a[tag=pvp.sling] at @s run function {NS}:ability/sling_tick",
         # ability fireballs that missed: gone after PROJ_LIFE ticks
         "scoreboard players add @e[tag=pvp.proj] pvp.ft 1",
         f"kill @e[tag=pvp.proj,scores={{pvp.ft={PROJ_LIFE}..}}]",
@@ -333,6 +345,17 @@ def build(fn, wj, lobby_box):
         f"execute as @a[scores={{pvp.gk=1..}}] {has('chainsaw')} at @s run function {NS}:ability/glory",
         "scoreboard players set @a[scores={pvp.gk=1..}] pvp.gk 0",
     ])
+    fn("ability/sling_tick", [
+        "tag @s add pvp.caster", "scoreboard players add @s pvp.ft 1",
+        f"execute if score @s pvp.ft matches 3.. if entity @e[distance=..2,{TGT}] run return run function {NS}:ability/sling_hit",
+        f"execute if score @s pvp.ft matches 5.. if entity @s[nbt={{OnGround:1b}}] run return run function {NS}:ability/sling_hit",
+        f"execute if score @s pvp.ft matches 60.. run return run function {NS}:ability/sling_end",
+        "tag @s remove pvp.caster"])
+    fn("ability/sling_hit", [around(3, damage(7)), around(3, PUSH),
+                             "particle minecraft:poof ~ ~0.5 ~ 1 0.4 1 0.05 25", "particle minecraft:item{item:\"minecraft:feather\"} ~ ~1 ~ 0.6 0.5 0.6 0.1 15",
+                             snd("entity.player.attack.knockback", 1, 0.6), snd("entity.parrot.hurt", 1, 0.8),
+                             f"function {NS}:ability/sling_end"])
+    fn("ability/sling_end", ["tag @s remove pvp.sling", "tag @s remove pvp.caster", "scoreboard players set @s pvp.ft 0"])
     fn("ability/glory", ["effect give @s minecraft:instant_health 1 0 true", "effect give @s minecraft:speed 3 1 true",
                          "particle minecraft:heart ~ ~1.5 ~ 0.4 0.3 0.4 0 6", "playsound minecraft:entity.player.levelup player @s ~ ~ ~ 0.6 1.8",
                          "title @s actionbar {\"text\":\"◆ GLORY KILL\",\"color\":\"red\",\"bold\":true}"])
