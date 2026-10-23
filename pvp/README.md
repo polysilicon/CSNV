@@ -32,8 +32,7 @@ AMP rewrites `server.properties` on start, so change game settings through AMP, 
   Best Outbreak Wave (`pve.best`). The mod rewrites them every 5 s. `pvp:admin/place_leaderboard` re-places them.
 
 ### Kits
-The menu has three rows: Star Wars | video games, Smash Bros | cyberpunk, and classics. Labels on the left name each
-row.
+The menu shows all 20 kits mixed together in three rows; custom kits go on the row below.
 
 **Franchise kits** have two **ability items** each (`abilities.py`):
 - They're in the hotbar. Right-click to use one.

@@ -213,12 +213,11 @@ TEST_KIT = [
     "tellraw @s [{\"text\":\"Kit: \",\"color\":\"gray\"},{\"text\":\"David (test)\",\"color\":\"dark_red\",\"bold\":true},"
     "{\"text\":\" · Cyberskeleton, Sandevistan, Kiroshi, Reflex Tuner. Swap the crossbows into both hands to dual-fire.\",\"color\":\"gray\"}]",
 ]
-KIT_SLOT = {11: 10, 12: 11, 13: 13, 14: 14, 15: 15, 16: 16,          # Star Wars | video games
-            17: 19, 18: 20, 19: 21, 20: 22, 1: 24, 5: 25,            # Smash Bros | cyberpunk
-            2: 28, 3: 29, 4: 30, 6: 31, 7: 32, 8: 33, 9: 34, 10: 35}  # classics
-KIT_LABELS = [(9, "book", "&bStar Wars &8| &aVideo games", ["&7Jedi, Sith, Link, Spartan,", "&7Doom Slayer, Witcher"]),
-              (18, "book", "&cSmash Bros &8| &3Cyberpunk", ["&7Mario, Pikachu, Kirby, Samus,", "&7Edgerunner, Netrunner (cyberware)"]),
-              (27, "book", "&7Classics", ["&7Custom enchants, no gimmicks"])]
+# kit menu order: franchises and classics mixed, rows of 7 / 6 / 7
+KIT_ORDER = [11, 1, 17, 2, 13, 18, 3,      # Jedi, Edgerunner, Mario, Juggernaut, Link, Pikachu, Sniper
+             12, 4, 14, 19, 6, 5,          # Sith, Berserker, Spartan, Kirby, Medic, Netrunner
+             15, 7, 20, 8, 16, 9, 10]      # Doom Slayer, Pyro, Samus, Ranger, Witcher, Shinobi, Skyhammer
+KIT_SLOT = dict(zip(KIT_ORDER, [10, 11, 12, 13, 14, 15, 16, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34]))
 CUSTOM_SLOTS = [36, 37, 38, 39, 40, 41, 42, 43, 44]   # admin-made kits (/pvpkit create), ids 101+
 
 # Upgrades (points per tier I / II / III). Pack-a-Punch works on the held weapon (the tier is stored on the item);
@@ -323,12 +322,10 @@ def build():
         "kits": {"title": {"text": "⚔ Pick a kit", "color": "dark_aqua"}, "rows": 6, "fill": PANE,
                  "custom_kits": {"slots": CUSTOM_SLOTS, "cmd": "trigger pvp.kit set %d"}, "items":
                  [{"slot": KIT_SLOT[k[0]], "item": icon(k[4], k[2], k[3], kit_lore(k)), "cmd": f"trigger pvp.kit set {k[0]}"} for k in KITS]
-                 + [{"slot": s, "item": icon(i, n, "white", l, False), "cmd": ""} for (s, i, n, l) in KIT_LABELS]
                  + [{"slot": 49, "item": icon("zombie_head", "☣ Outbreak (PvE)", "green", ["Fight waves of mobs solo or with a team", "Click to pick a map"]), "cmd": "pvpmenu pve_maps"}]},
         "pve": {"title": {"text": "☣ Outbreak: pick your loadout", "color": "dark_green"}, "rows": 6, "fill": PANE,
                 "custom_kits": {"slots": CUSTOM_SLOTS, "cmd": "trigger pve.join set %d"}, "items":
                 [{"slot": KIT_SLOT[k[0]], "item": icon(k[4], k[2], k[3], k[5] + ["", "Click to queue with this kit"]), "cmd": f"trigger pve.join set {k[0]}"} for k in KITS]
-                + [{"slot": s, "item": icon(i, n, "white", l, False), "cmd": ""} for (s, i, n, l) in KIT_LABELS]
                 + [{"slot": 47, "item": icon("barrier", "Leave the queue", "red", ["Stop waiting for the next Outbreak"], False), "cmd": "trigger pve.join set 99"},
                    {"slot": 45, "item": icon("filled_map", "Back to maps", "yellow", ["Pick a different map"], False), "cmd": "pvpmenu pve_maps"},
                    {"slot": 49, "item": icon("zombie_head", "How Outbreak works", "green", [
