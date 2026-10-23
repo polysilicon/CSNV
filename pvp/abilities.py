@@ -354,7 +354,7 @@ ABILITIES = {
         "effect give @s minecraft:invisibility 6 0 true", "effect give @s minecraft:speed 6 0 true",
         "particle minecraft:dust{color:[0.7,0.6,1.0],scale:1.0} ~ ~1 ~ 0.3 0.8 0.3 0 40",
         snd("block.beacon.power_select", 0.8, 2), snd("entity.illusioner.mirror_move", 1, 1.4), bar("OPTICAL CAMO", "light_purple")]),
-    "overclock": ("Overclock", "aqua", "observer", 20, ["Push your chrome past the limit.", "Strength II + Speed II 6 s · costs 2 hearts"], [
+    "overclock": ("Overclock", "aqua", "observer", 20, ["Push your chrome past the limit.", "Strength II + Speed II 6 s · costs some health"], [
         "damage @s 4 minecraft:magic", "effect give @s minecraft:strength 6 1", "effect give @s minecraft:speed 6 1",
         "effect give @s minecraft:nausea 2 0 true",
         "particle minecraft:dust{color:[0.2,1.0,0.9],scale:1.2} ~ ~1 ~ 0.4 0.8 0.4 0 40", "particle minecraft:electric_spark ~ ~1 ~ 0.4 0.8 0.4 0.3 25",
