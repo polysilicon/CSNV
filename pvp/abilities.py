@@ -308,15 +308,14 @@ ABILITIES = {
         around(6, "effect give @s minecraft:weakness 4 0"), "effect give @s minecraft:strength 5 0",
         "particle minecraft:item{item:\"minecraft:gold_nugget\"} ~ ~1.5 ~ 2 0.6 2 0.1 40",
         snd("entity.experience_orb.pickup", 1, 0.6), snd("block.chain.place", 1, 0.8), bar("MONEY! MONEY! MONEY!", "gold")]),
-    "better_call": ("Better Call Saul", "yellow", "paper", 30, ["Two loyal 'clients' fight for you.", "Tamed wolves · attack whoever you fight · 20 s"], [
-        *[l for _ in range(2) for l in (
-            "summon minecraft:wolf ~ ~ ~ {Tags:[\"pvp.client\",\"pvp.cnew\"],CustomName:\"Saul's Client\",PersistenceRequired:1b,"
-            "attributes:[{id:\"minecraft:attack_damage\",base:5.0d},{id:\"minecraft:max_health\",base:16.0d}],Health:16.0f}",
-            "data modify entity @n[type=minecraft:wolf,tag=pvp.cnew] Owner set from entity @s UUID",
-            "execute if entity @s[team=pve] run team join pve @n[type=minecraft:wolf,tag=pvp.cnew]",
-            "tag @e[type=minecraft:wolf,tag=pvp.cnew] remove pvp.cnew")],
-        "particle minecraft:happy_villager ~ ~1 ~ 1 0.5 1 0 20",
-        snd("entity.wolf.ambient", 1, 1), snd("block.note_block.chime", 1, 1.2), bar("BETTER CALL SAUL!", "yellow")]),
+    "served": ("You've Been Served", "yellow", "paper", 16, ["Serves papers to the enemy you aim at.", "16 blocks · 5 damage · Weakness II + glowing 5 s · you heal 4"], [
+        *ray(32),
+        hit(damage(5, "magic")), hit("effect give @s minecraft:weakness 5 1"), hit("effect give @s minecraft:glowing 5 0"),
+        hit("particle minecraft:item{item:\"minecraft:paper\"} ~ ~1.2 ~ 0.3 0.4 0.3 0.1 20"),
+        "execute if entity @e[tag=pvp.hit] run effect give @s minecraft:instant_health 1 0",
+        "execute anchored eyes run particle minecraft:item{item:\"minecraft:paper\"} ^ ^ ^2 0.1 0.1 1 0.05 12",
+        "execute unless entity @e[tag=pvp.hit] run " + snd("item.book.page_turn", 0.6, 0.6),
+        snd("entity.villager.work_cartographer", 1, 1.2), snd("block.note_block.bell", 1, 1.2), bar("YOU'VE BEEN SERVED", "yellow")]),
     "loophole": ("Loophole", "gold", "book", 20, ["Finds a loophole: untouchable for 1.5 s.", "Clears Slowness, Weakness, Poison, Wither, Blindness · Speed II 3 s"], [
         *[f"effect clear @s minecraft:{e}" for e in ("slowness", "weakness", "poison", "wither", "blindness", "nausea", "levitation")],
         "effect give @s minecraft:resistance 2 4 true", "effect give @s minecraft:speed 3 1",
@@ -485,7 +484,10 @@ def build(fn, wj, lobby_box):
         ])
     # 1.0 ability items were paper (and clashed with cyberware): swap any still in inventories for the clay-ball ones
     old = lambda k: f"minecraft:paper[minecraft:custom_data~{{pvp_ab:\"{k}\"}}]"
-    fn("ability/migrate", [l for k in ABILITIES for l in (
+    fn("ability/migrate", [
+        # Saul's old wolf "clients" (that ability was replaced): no owner first, so nobody gets a death message
+        "execute as @e[type=minecraft:wolf,tag=pvp.client] run data remove entity @s Owner", "kill @e[type=minecraft:wolf,tag=pvp.client]"]
+       + [l for k in ABILITIES for l in (
         f"execute as @a if items entity @s container.* {old(k)} run loot give @s loot {NS}:ability/{k}",
         f"execute as @a if items entity @s weapon.offhand {old(k)} run loot give @s loot {NS}:ability/{k}",
         f"clear @a {old(k)}")]
@@ -530,11 +532,6 @@ def build(fn, wj, lobby_box):
         f"execute as @e[type=minecraft:armor_stand,tag=pvp.nade] at @s run function {NS}:ability/nade_tick",
         # Fling: the bird hits whatever it crashes into (or the ground)
         f"execute as @a[tag=pvp.sling] at @s run function {NS}:ability/sling_tick",
-        # Saul's clients leave after 20 s
-        "scoreboard players add @e[type=minecraft:wolf,tag=pvp.client] pvp.ft 1",
-        "execute at @e[type=minecraft:wolf,tag=pvp.client,scores={pvp.ft=400..}] run particle minecraft:poof ~ ~0.5 ~ 0.3 0.3 0.3 0.02 8",
-        "execute as @e[type=minecraft:wolf,tag=pvp.client,scores={pvp.ft=400..}] run data remove entity @s Owner",   # no death message
-        "kill @e[type=minecraft:wolf,tag=pvp.client,scores={pvp.ft=400..}]",
         # ability fireballs that missed: gone after PROJ_LIFE ticks
         "scoreboard players add @e[tag=pvp.proj] pvp.ft 1",
         f"kill @e[tag=pvp.proj,scores={{pvp.ft={PROJ_LIFE}..}}]",

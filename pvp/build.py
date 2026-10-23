@@ -247,8 +247,8 @@ FRANCHISE_KITS = [
       "attribute @s minecraft:attack_speed modifier add pvp:fists -2.4 add_value"]
      + suit("leather", 4, dye={"head": 13184550, "chest": 6134752, "legs": 9127187, "feet": 1908001}, extra={"chest": {CE + "armored": 2}})
      + head("krabs", "Mr. Krabs", "red") + size(0.9), []),
-    (37, "saul", "Saul Goodman", "yellow", "paper", ["Gavel (mace: Density II) · loud suit (Dodge II) · Speed I", ab_line("better_call", "loophole", "fingertips")],
-     [f"give @s {item('mace', 'Gavel', 'gold', {'density': 2, 'breach': 1})}", AB("better_call"), AB("loophole"), AB("fingertips")]
+    (37, "saul", "Saul Goodman", "yellow", "paper", ["Gavel (mace: Density II) · loud suit (Dodge II) · Speed I", ab_line("served", "loophole", "fingertips")],
+     [f"give @s {item('mace', 'Gavel', 'gold', {'density': 2, 'breach': 1})}", AB("served"), AB("loophole"), AB("fingertips")]
      + suit("leather", 3, dye={"head": 14329120, "chest": 14329120, "legs": 14329120, "feet": 1908001}, extra={"chest": {CE + "dodge": 2}})
      + head("saul", "Saul Goodman", "yellow") + passive("speed"), []),
     (38, "hank", "Hank Hill", "aqua", "lantern", ["Grill spatula (Sharpness IV, Fire Aspect) · white tee, jeans · Fire Resistance", ab_line("propane", "kick_your_ass")],
