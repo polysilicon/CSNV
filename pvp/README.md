@@ -32,7 +32,7 @@ AMP rewrites `server.properties` on start, so change game settings through AMP, 
   Best Outbreak Wave (`pve.best`). The mod rewrites them every 5 s. `pvp:admin/place_leaderboard` re-places them.
 
 ### Kits
-Every kit is a character. The menu shows all 36 in five rows (5 / 7 / 9 / 7 / 8), roughly grouped by franchise. The
+Every kit is a character. The menu shows all 36 in four full rows of 9, with the top and bottom rows left empty, roughly grouped by franchise. The
 classic kits with no character (Juggernaut, Berserker, Medic, Pyro, Ranger, Shinobi, Skyhammer) were removed.
 
 **Franchise kits** have two **ability items** each (`abilities.py`):

@@ -307,15 +307,12 @@ TEST_KIT = [
     "tellraw @s [{\"text\":\"Kit: \",\"color\":\"gray\"},{\"text\":\"David (test)\",\"color\":\"dark_red\",\"bold\":true},"
     "{\"text\":\" · Cyberskeleton, Sandevistan, Kiroshi, Reflex Tuner. Swap the crossbows into both hands to dual-fire.\",\"color\":\"gray\"}]",
 ]
-# kit menu order: grouped by franchise, rows of 5 / 7 / 9 / 7 / 8
-KIT_ORDER = [42, 38, 39, 43, 40,                  # SpongeBob, Hank Hill, Leela, Bender, Elliot
-             11, 12, 35, 29, 1, 5, 27,              # Jedi, Sith, Darth Maul, Mandalorian | Edgerunner, Lucy, Rebecca
-             23, 13, 14, 15, 16, 22, 3, 26, 30,     # Adam Smasher | Link, Spartan, Doom Slayer, Witcher, Courier Six, Sniper, Herobrine, Red
-             17, 18, 19, 20, 28, 24, 31,            # Mario, Pikachu, Kirby, Samus, Donkey Kong, Sonic | Spider-Man
-             21, 32, 33, 34, 36, 25, 37, 41]        # Randy Marsh, Shrek, Peter Griffin, Homer, Mr. Krabs | Walter White, Saul Goodman, Tony Soprano
-KIT_SLOT = dict(zip(KIT_ORDER, [2, 3, 4, 5, 6, 10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34,
-                                37, 38, 39, 40, 41, 42, 43, 44]))
-# Upgrades (points per tier I / II / III). Pack-a-Punch works on the held weapon (the tier is stored on the item);
+# kit menu order: four full rows of 9 (slots 9-44), grouped by franchise; the top and bottom rows stay empty
+KIT_ORDER = [11, 12, 35, 29, 1, 5, 27, 23, 40,     # Jedi, Sith, Darth Maul, Mandalorian | Edgerunner, Lucy, Rebecca, Adam Smasher, Elliot
+             13, 14, 15, 16, 22, 3, 26, 30, 24,    # Link, Spartan, Doom Slayer, Witcher, Courier Six, Sniper, Herobrine, Red, Sonic
+             17, 18, 19, 20, 28, 31, 32, 39, 43,   # Mario, Pikachu, Kirby, Samus, Donkey Kong | Spider-Man, Shrek | Leela, Bender
+             21, 33, 34, 38, 42, 36, 25, 37, 41]   # Randy Marsh, Peter Griffin, Homer, Hank Hill, SpongeBob, Mr. Krabs | Walter White, Saul Goodman, Tony Soprano
+KIT_SLOT = dict(zip(KIT_ORDER, range(9, 45)))# Upgrades (points per tier I / II / III). Pack-a-Punch works on the held weapon (the tier is stored on the item);
 # armor upgrades are per player (pve.arm). Both are lost when you go down, since your kit is handed out again.
 WEAPON_UP = [2000, 4000, 7500]
 ARMOR_UP = [1500, 3000, 6000]
