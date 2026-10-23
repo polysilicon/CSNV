@@ -255,9 +255,10 @@ KITS = [
     (4, "berserker", "Berserker", "red", "netherite_axe", ["Axe: Sharpness V, Cleave III, Bleed III, Rage II", "Speed I"],
      [f"give @s {item('netherite_axe', 'Ripper', 'red', {'sharpness': 5, CE + 'cleave': 3, CE + 'bleed': 3, CE + 'rage': 2})}"]
      + armor("diamond", 3) + passive("speed"), []),
-    (5, "assassin", "Netrunner", "dark_purple", "diamond_sword", ["Blade: Sharpness IV, Assassin III, Poison II + Invisibility", "Cyberware: Sandevistan, Lynx Paws, Reflex Tuner, Kiroshi"],
-     [f"give @s {item('diamond_sword', 'Monowire', 'dark_purple', {'sharpness': 4, CE + 'assassin': 3, CE + 'poison': 2})}", potion("splash_potion", "invisibility")]
-     + armor({"head": "diamond", "chest": "leather", "legs": "leather", "feet": "diamond"}, 2, dye=1908001), ["sandy", "lynx", "reflex", "kiroshi"]),
+    (5, "assassin", "Lucy", "light_purple", "diamond_sword", ["Monowire: Sharpness IV, Assassin III, Poison II · Dodge II", "Cyberware: Lynx Paws, Reflex Tuner, Kiroshi · " + ab_line("short_circuit", "optical_camo")],
+     [f"give @s {item('diamond_sword', 'Monowire', 'light_purple', {'sharpness': 4, CE + 'assassin': 3, CE + 'poison': 2})}", AB("short_circuit"), AB("optical_camo")]
+     + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "diamond"}, 3, dye=15790320, extra={"chest": {CE + "dodge": 2}})
+     + head("lucy", "Lucy", "light_purple"), ["lynx", "reflex", "kiroshi"]),
     (6, "medic", "Medic", "light_purple", "glistering_melon_slice", ["Lifesteal sword, Angelic III chest, 4 healing + 2 regen", "Regeneration I"],
      [f"give @s {item('netherite_sword', 'Scalpel', 'light_purple', {'sharpness': 3, CE + 'lifesteal': 2})}",
       potion("splash_potion", "strong_healing", 4), potion("potion", "regeneration", 2)]
@@ -310,7 +311,7 @@ TEST_KIT = [
 # kit menu order: franchises and classics mixed, rows of 7 / 7 / 9 / 7 / 7
 KIT_ORDER = [36, 31, 32, 35, 33, 34, 37,          # Mr. Krabs, Spider-Man, Shrek, Darth Maul, Peter Griffin, Homer, Saul Goodman
              11, 1, 17, 2, 13, 18, 3,          # Jedi, Edgerunner, Mario, Juggernaut, Link, Pikachu, Sniper
-             12, 21, 4, 14, 23, 19, 6, 22, 5,  # Sith, Randy Marsh, Berserker, Spartan, Adam Smasher, Kirby, Medic, Courier Six, Netrunner
+             12, 21, 4, 14, 23, 19, 6, 22, 5,  # Sith, Randy Marsh, Berserker, Spartan, Adam Smasher, Kirby, Medic, Courier Six, Lucy
              15, 7, 20, 8, 16, 9, 10,          # Doom Slayer, Pyro, Samus, Ranger, Witcher, Shinobi, Skyhammer
              24, 25, 27, 30, 26, 28, 29]       # Sonic, Walter White, Rebecca, Red, Herobrine, Donkey Kong, Mandalorian
 KIT_SLOT = dict(zip(KIT_ORDER, [1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34,
@@ -417,7 +418,7 @@ def build():
     kit_lore = lambda k: k[5] + ["", "Click to pick"]
     def kit_icon(k, lore):   # character kits show their head
         it = icon(k[4], k[2], k[3], lore)
-        hk = {"samurai": "edgerunner"}.get(k[1], k[1])
+        hk = {"samurai": "edgerunner", "assassin": "lucy"}.get(k[1], k[1])
         if hk in HEADS:
             it["id"] = "minecraft:player_head"
             it["components"]["minecraft:profile"] = {"properties": [{"name": "textures", "value": HEADS[hk]}]}

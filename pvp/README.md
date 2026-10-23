@@ -100,12 +100,12 @@ The menu shows all 20 kits mixed together in three rows; custom kits go on the r
 Randy's head came from a skin uploaded to MineSkin (no Randy in the head database). The same works for any character:
 upload the skin at mineskin.org and put its texture value in `heads.json`.
 
-**Cyberpunk kits** (Edgerunner, Netrunner, Adam Smasher, Rebecca) keep their cyberware:
+**Cyberpunk kits** (Edgerunner, Lucy, Adam Smasher, Rebecca) keep their cyberware:
 
 | Kit | Gear | Cyberware |
 |---|---|---|
 | Edgerunner | Katana: Sharpness V, Lifesteal III, Double Strike II | Sandevistan, Mantis Blades, Reflex Tuner, Kiroshi |
-| Netrunner | Sword: Sharpness IV, Assassin III, Poison II, plus Invisibility | Sandevistan, Lynx Paws, Reflex Tuner, Kiroshi |
+| Lucy (was Netrunner) | Monowire (diamond sword: Sharpness IV, Assassin III, Poison II), white bodysuit (Dodge II), Lucyna head; abilities **Short Circuit** (quickhack: 20 blocks, 5 dmg, Slowness II 2 s, glowing 3 s, 8 s) and **Optical Camo** (Invisibility + Speed I 6 s, 25 s) | Lynx Paws, Reflex Tuner, Kiroshi |
 | Adam Smasher | Militech Heavy Cannon (crossbow: Quick Charge III, Multishot, Piercing II), Arasaka Breaker (axe: Sharpness IV, Cleave III), netherite Prot III with a redstone rib trim (chest: Armored III, Explosive Immunity III), Adam Smasher head (MineSkin upload), 1.3× size | Projectile Launch System (sneak + jump), Sandevistan (double-tap sneak), Subdermal Armor, Titanium Bones |
 | Rebecca | Guts (crossbow: Multishot, Quick Charge III, Piercing I), Pistol (crossbow, Eagle Eye II), black leather with pink boots (Dodge II), 0.75× | Gorilla Arms, Reinforced Tendons, Reflex Tuner, Kiroshi |
 

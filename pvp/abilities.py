@@ -308,6 +308,17 @@ ABILITIES = {
         hit("particle minecraft:electric_spark ~ ~1 ~ 0.4 0.7 0.4 0.5 50"),
         snd("entity.lightning_bolt.thunder", 0.3, 2), snd("block.respawn_anchor.deplete", 0.8, 1.8),
         bar("LIGHTNING BOLTS SHOOT FROM MY FINGERTIPS", "aqua")]),
+    # ---------------------------------------------------------------- Edgerunners (Lucy)
+    "short_circuit": ("Short Circuit", "aqua", "repeater", 8, ["Quickhack: fries the enemy you aim at.", "20 blocks · 5 damage · Slowness II 2 s · revealed 3 s"], [
+        *ray(40),
+        hit(damage(5, "lightning_bolt")), hit("effect give @s minecraft:slowness 2 1"), hit("effect give @s minecraft:glowing 3 0"),
+        hit("particle minecraft:electric_spark ~ ~1 ~ 0.3 0.6 0.3 0.4 40"),
+        hit("particle minecraft:dust{color:[0.3,1.0,1.0],scale:1.0} ~ ~1.8 ~ 0.3 0.2 0.3 0 20"),
+        snd("block.beacon.deactivate", 1, 2), snd("block.respawn_anchor.deplete", 0.6, 2), bar("QUICKHACK: SHORT CIRCUIT", "aqua")]),
+    "optical_camo": ("Optical Camo", "light_purple", "glass_pane", 25, ["Bends light around you.", "Invisibility + Speed I 6 s"], [
+        "effect give @s minecraft:invisibility 6 0 true", "effect give @s minecraft:speed 6 0 true",
+        "particle minecraft:dust{color:[0.7,0.6,1.0],scale:1.0} ~ ~1 ~ 0.3 0.8 0.3 0 40",
+        snd("block.beacon.power_select", 0.8, 2), snd("entity.illusioner.mirror_move", 1, 1.4), bar("OPTICAL CAMO", "light_purple")]),
 }
 
 
