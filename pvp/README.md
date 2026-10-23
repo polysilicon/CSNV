@@ -155,7 +155,12 @@ All kit gear is unbreakable, and every kit also gets 16 steak and 2 golden apple
   - **Pack-a-Punch** upgrades the weapon in your hand, tier I / II / III for 2,000 / 4,000 / 7,500 points. Each tier adds
     Sharpness +2 (swords and axes), Power +2 (bows), Piercing and Quick Charge +1 (crossbows), Impaling +2 (tridents) or
     Density and Breach +1 (maces). Tier III also adds Fire Aspect II, Flame + Punch, Multishot, Channeling or Wind Burst.
-    The tier is stored on the item (`custom_data.pvp_tier`) and shown as gold lore stars.
+    The tier is stored on the item as `custom_model_data` strings (`pvp_tier1`..`3`) and shown as gold lore stars. It
+    used to be `custom_data.pvp_tier`, but crispy_enchants' migration wipes small `custom_data` every 2 s, so the tier
+    vanished and tier I could be bought again and again.
+  - **Guns** (gun abilities) can be Pack-a-Punched too, for the same prices: hold any gun and it upgrades **all** your
+    guns (score `pve.gun`, since a gun item is swapped for a fresh one after every shot). Tier I +40 % damage, II +80 %,
+    III +120 % and hits slow the target. Like the armor upgrade, it resets when you go down.
   - **Armor Upgrade**, for 1,500 / 3,000 / 6,000 points: I gives +1 Protection and Unbreaking on everything you wear,
     II gives Resistance I, and III gives +2 hearts.
   - Perks: **Double Tap** (Strength I, 3,000) and **PhD Flopper** (Fire Resistance + Jump Boost, 1,500), alongside

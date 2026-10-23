@@ -53,12 +53,23 @@ def shoot(entity, speed, extra="", spread=(0,)):
 PROJ_LIFE = 40
 
 
+GUN_TIER_BOOST = [0, 0.4, 0.8, 1.2]   # Pack-a-Punch gun tiers (Outbreak): extra damage; tier III also slows on hit
+GUNS = []                             # keys of the gun abilities (filled in below)
+def tiered(dmg, cmd):
+    """Damage lines for each Pack-a-Punch gun tier (score pve.gun on the caster; unset = tier 0). cmd(d) -> command."""
+    out = [f"execute unless score @s pve.gun matches 1.. run {cmd(dmg)}"]
+    for t in (1, 2, 3):
+        out.append(f"execute if score @s pve.gun matches {t} run {cmd(round(dmg * (1 + GUN_TIER_BOOST[t]), 1))}")
+    return out
+
+
 def gun(name, color, model, cd, dmg, rng, what, sound, pitch=1.0, on_hit=()):
     """A hitscan gun: right-click fires a bullet (with a tracer) at the first enemy along your aim, up to rng blocks."""
     extra = [h[0] for h in on_hit if h[0]]
     return (name, color, model, cd, [what, f"{rng} blocks · {dmg} damage" + (f" · {', '.join(extra)}" if extra else "")], [
         "scoreboard players set #tr pvp 1", *ray(rng * 2), "scoreboard players set #tr pvp 0",
-        hit(damage(dmg, "arrow")), *[hit(h[1]) for h in on_hit],
+        *tiered(dmg, lambda d: hit(damage(d, "arrow"))), *[hit(h[1]) for h in on_hit],
+        "execute if score @s pve.gun matches 3 run " + hit("effect give @s minecraft:slowness 1 1"),
         hit("particle minecraft:damage_indicator ~ ~1 ~ 0.2 0.3 0.2 0.1 3"),
         "execute anchored eyes run particle minecraft:smoke ^ ^-0.1 ^0.9 0.03 0.03 0.03 0.01 4",
         f"playsound minecraft:{sound} player @a[distance=..48] ~ ~ ~ 1 {pitch}"])
@@ -67,7 +78,8 @@ def gun(name, color, model, cd, dmg, rng, what, sound, pitch=1.0, on_hit=()):
 def shotgun(name, color, model, cd, dmg, rng, what, sound, pitch=1.0):
     """A shotgun: a blast hitting every enemy in a cone in front of you, with knockback."""
     return (name, color, model, cd, [what, f"{round(rng * 2)} blocks · {dmg} damage to everything in front · knockback"], [
-        cone(rng, damage(dmg, "arrow")), cone(rng, PUSH),
+        *tiered(dmg, lambda d: cone(rng, damage(d, "arrow"))), cone(rng, PUSH),
+        "execute if score @s pve.gun matches 3 run " + cone(rng, "effect give @s minecraft:slowness 1 1"),
         f"execute anchored eyes run particle minecraft:crit ^ ^ ^{rng} 0.8 0.5 0.8 0.3 40",
         "execute anchored eyes run particle minecraft:large_smoke ^ ^-0.1 ^1 0.1 0.1 0.1 0.02 6",
         f"playsound minecraft:{sound} player @a[distance=..48] ~ ~ ~ 1 {pitch}"])
@@ -419,6 +431,9 @@ ABILITIES = {
         "particle minecraft:flame ~ ~0.3 ~ 0.2 0.1 0.2 0.03 15",
         snd("entity.generic.drink", 1, 0.8), snd("entity.player.burp", 1, 0.6), bar("OLDE FORTRAN", "gold")]),
 }
+
+
+GUNS += [k for k, v in ABILITIES.items() if any("pve.gun" in l for l in v[5])]   # gun() and shotgun() abilities
 
 
 BASE = "minecraft:clay_ball"

@@ -340,7 +340,7 @@ PERK_RESET = ["attribute @s minecraft:scale modifier remove pvp:size", "attribut
               "attribute @s minecraft:max_health modifier remove pvp:size_hp", "attribute @s minecraft:knockback_resistance modifier remove pvp:size_kb",
               "attribute @s minecraft:movement_speed modifier remove pvp:size_spd", "attribute @s minecraft:attack_damage modifier remove pvp:fists",
               "attribute @s minecraft:attack_speed modifier remove pvp:fists", "attribute @s minecraft:max_health modifier remove pvp:jug", "attribute @s minecraft:max_health modifier remove pvp:arm",
-              "tag @s remove pve.jug", "tag @s remove pve.cola", "tag @s remove pve.dt", "tag @s remove pve.phd", "scoreboard players set @s pve.arm 0"]
+              "tag @s remove pve.jug", "tag @s remove pve.cola", "tag @s remove pve.dt", "tag @s remove pve.phd", "scoreboard players set @s pve.arm 0", "scoreboard players set @s pve.gun 0"]
 # Outbreak shop: id, name, colour, icon, cost, lore, commands (run as the buyer), one-per-life tag (checked before paying)
 SHOP = [
     (1, "Golden Apple", "gold", "golden_apple", 500, "One golden apple", ["give @s minecraft:golden_apple 1"], None),
@@ -487,7 +487,7 @@ def build():
             "pvp dummy", "pvp.kit trigger", "pvp.spawn trigger", "pvp.kn playerKillCount", "pvp.dead deathCount",
             "pvp.left minecraft.custom:minecraft.leave_game", "pvp.streak dummy", "pvp.best dummy",
             "pvp.hurt minecraft.custom:minecraft.damage_taken", "pvp.ct dummy",
-            "pve dummy", "pve.join trigger", "pve.buy trigger", "pve.k totalKillCount", "pve.kit dummy", "pve.best dummy", "pve.arm dummy", "pve.map dummy"]],
+            "pve dummy", "pve.join trigger", "pve.buy trigger", "pve.k totalKillCount", "pve.kit dummy", "pve.best dummy", "pve.arm dummy", "pve.gun dummy", "pve.map dummy"]],
         'scoreboard objectives add pvp.kills playerKillCount {"text":"⚔ Kills","color":"aqua","bold":true}',
         'scoreboard objectives add pve.pts dummy {"text":"☣ Points","color":"green","bold":true}',
         "scoreboard objectives setdisplay sidebar pvp.kills",
@@ -768,12 +768,14 @@ def build_upgrades():
     def em(enchants): return {"function": "minecraft:set_enchantments", "add": True,
                               "enchantments": {(k if ":" in k else "minecraft:" + k): v for k, v in enchants.items()}}
     # weapon: find the kind first (so nothing is charged for an item that can't be upgraded), then the tier
-    w = ["scoreboard players set #k pve 0"]
+    # a gun ability in the hand upgrades the player's guns instead (see pve/up/gun)
+    w = [*[f"execute if items entity @s weapon.mainhand {abilities.sel(k)} run return run function {P}/gun" for k in abilities.GUNS],
+         "scoreboard players set #k pve 0"]
     for n, (kind, (match, _, _)) in enumerate(UP_BOOST.items(), 1):
         w.append(f"execute if score #k pve matches 0 if items entity @s weapon.mainhand {match} run scoreboard players set #k pve {n}")
-    w += [f"execute if score #k pve matches 0 run return run {say('@s', 'Hold a sword, axe, bow, crossbow, trident or mace to Pack-a-Punch it.', 'red')}",
+    w += [f"execute if score #k pve matches 0 run return run {say('@s', 'Hold a sword, axe, bow, crossbow, trident, mace or gun to Pack-a-Punch it.', 'red')}",
           "scoreboard players set #t pve 0",
-          *[f"execute if items entity @s weapon.mainhand *[minecraft:custom_data~{{pvp_tier:{t}}}] run scoreboard players set #t pve {t}" for t in (1, 2, 3)],
+          *[f"execute if items entity @s weapon.mainhand *[minecraft:custom_model_data={{strings:[\"pvp_tier{t}\"]}}] run scoreboard players set #t pve {t}" for t in (1, 2, 3)],
           f"execute if score #t pve matches 3.. run return run {say('@s', 'That weapon is already fully upgraded (tier III).', 'gold')}",
           *[f"execute if score #t pve matches {t} run return run function {P}/weapon_t{t + 1}" for t in (0, 1, 2)]]
     fn("pve/up/weapon", w)
@@ -786,7 +788,8 @@ def build_upgrades():
             wj(f"data/{NS}/item_modifier/up/{kind}_t{t}.json", mods)
             lines.append(f"execute if score #k pve matches {n} run item modify entity @s weapon.mainhand {NS}:up/{kind}_t{t}")
         wj(f"data/{NS}/item_modifier/up/tier{t}.json", [
-            {"function": "minecraft:set_custom_data", "tag": f"{{pvp_tier:{t}}}"},
+            # the tier marker: not custom_data, which crispy_enchants' migration wipes (that let tier I be bought again and again)
+            {"function": "minecraft:set_components", "components": {"minecraft:custom_model_data": {"strings": [f"pvp_tier{t}"]}}},
             {"function": "minecraft:set_lore", "mode": "append",
              "lore": [{"text": f"{'★' * t} Pack-a-Punched: tier {roman[t - 1]}", "color": "gold", "italic": False}]}])
         lines += [f"item modify entity @s weapon.mainhand {NS}:up/tier{t}",
@@ -795,6 +798,21 @@ def build_upgrades():
                   "particle minecraft:totem_of_undying ~ ~1 ~ 0.4 0.6 0.4 0.3 30",
                   say("@s", f"Weapon upgraded to tier {roman[t - 1]}." + (" Next: " + f"{WEAPON_UP[t]:,} points." if t < 3 else " Maxed out!"), "gold")]
         fn(f"pve/up/weapon_t{t}", lines)
+    # guns: a gun item is swapped for a fresh one after every shot, so the tier is on the player (pve.gun) and covers
+    # all their guns; it resets when they go down, like the armor upgrade
+    pct = lambda t: f"+{round(abilities.GUN_TIER_BOOST[t] * 100)} % gun damage" + (", hits slow" if t == 3 else "")
+    fn("pve/up/gun", ["scoreboard players add @s pve.gun 0",
+                      f"execute if score @s pve.gun matches 3.. run return run {say('@s', 'Your guns are already fully upgraded (tier III).', 'gold')}",
+                      *[f"execute if score @s pve.gun matches {t - 1} run return run function {P}/gun_t{t}" for t in (1, 2, 3)]])
+    for t in (1, 2, 3):
+        cost = WEAPON_UP[t - 1]
+        fn(f"pve/up/gun_t{t}", [
+            f"execute if score @s pve.pts matches ..{cost - 1} run return run {afford(f'Pack-a-Punch {roman[t - 1]}', cost)}",
+            f"scoreboard players remove @s pve.pts {cost}", f"scoreboard players set @s pve.gun {t}",
+            f"title @s actionbar {tj({'text': '★' * t + ' PACK-A-PUNCH ' + roman[t - 1] + ': ' + pct(t), 'color': 'gold', 'bold': True})}",
+            "playsound minecraft:block.anvil.use player @s ~ ~ ~ 1 0.8", "playsound minecraft:block.beacon.power_select player @s ~ ~ ~ 1 1.4",
+            "particle minecraft:totem_of_undying ~ ~1 ~ 0.4 0.6 0.4 0.3 30",
+            say("@s", f"All your guns upgraded to tier {roman[t - 1]} ({pct(t)})." + (f" Next: {WEAPON_UP[t]:,} points." if t < 3 else " Maxed out!"), "gold")])
     # armor: I = +1 Protection on every worn piece, II = Resistance I, III = +2 hearts (all until you go down)
     wj(f"data/{NS}/item_modifier/up/armor.json", [em({"protection": 1}), em({"unbreaking": 1})])
     arm = {1: [*[f"item modify entity @s armor.{sl} {NS}:up/armor" for sl in ("head", "chest", "legs", "feet")]],
