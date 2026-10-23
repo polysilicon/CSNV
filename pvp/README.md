@@ -77,6 +77,16 @@ The menu shows all 20 kits mixed together in three rows; custom kits go on the r
 - Sizes (`scale` modifier `pvp:size`, removed on `to_lobby`, going down and Outbreak entry): Pikachu and Kirby 0.6×,
   Mario 0.85×, Spartan 1.1×, Samus 1.08×.
 
+**Other kits**:
+
+| Kit | Gear | Abilities |
+|---|---|---|
+| Randy Marsh (South Park) | No weapon: fists +7 damage at sword attack speed; leather outfit; **Sandevistan** cyberware (double-tap sneak) | **Tegridy** (Regeneration II + Speed I 6 s, 20 s) |
+| Courier Six (Fallout: New Vegas) | Lucky (revolver crossbow, Eagle Eye III), Machete (Bleed II), Ranger armor + Desert Ranger head | **V.A.T.S.** (enemies within 12 blocks: Slowness III + glowing 5 s; you: Strength I, 18 s), **Stimpak** (Instant Health II + Regeneration II, 15 s) |
+
+Randy has no head yet (none in the head database). Add his texture value to `heads.json` as `randy` and give the kit
+`head("randy", ...)`.
+
 **Cyberpunk kits** (Edgerunner, Netrunner) keep their cyberware:
 
 | Kit | Gear | Cyberware |

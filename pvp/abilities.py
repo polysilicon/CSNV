@@ -149,6 +149,20 @@ ABILITIES = {
         LAUNCH, around(3, damage(6)), around(3, PUSH),
         "particle minecraft:electric_spark ~ ~1 ~ 0.6 1 0.6 0.4 50",
         snd("entity.breeze.wind_burst", 1, 1.4), bar("SCREW ATTACK", "aqua")]),
+    # ---------------------------------------------------------------- South Park / Fallout
+    "tegridy": ("Tegridy", "green", "fern", 20, ["Samples some Tegridy Farms product.", "Regeneration II + Speed I for 6 s"], [
+        "effect give @s minecraft:regeneration 6 1", "effect give @s minecraft:speed 6 0",
+        "particle minecraft:campfire_cosy_smoke ~ ~1.8 ~ 0.2 0.2 0.2 0.01 12",
+        snd("entity.player.breath", 1, 0.6), bar("TEGRIDY", "green")]),
+    "vats": ("V.A.T.S.", "green", "spyglass", 18, ["Slows time for every enemy near you.", "12 blocks · Slowness III + glowing 5 s · you: Strength I"], [
+        around(12, "effect give @s minecraft:slowness 5 2"), around(12, "effect give @s minecraft:glowing 5 0"),
+        "effect give @s minecraft:strength 5 0",
+        "particle minecraft:happy_villager ~ ~1 ~ 4 1 4 0 40",
+        snd("block.beacon.activate", 1, 1.6), snd("block.note_block.bit", 1, 0.8), bar("V.A.T.S. ENGAGED", "green")]),
+    "stimpak": ("Stimpak", "red", "glistering_melon_slice", 15, ["Injects a Stimpak.", "Instant Health II + Regeneration II 4 s"], [
+        "effect give @s minecraft:instant_health 1 1", "effect give @s minecraft:regeneration 4 1",
+        "particle minecraft:heart ~ ~1.5 ~ 0.4 0.3 0.4 0 6",
+        snd("entity.bee.sting", 1, 1.4), bar("STIMPAK", "red")]),
 }
 
 
