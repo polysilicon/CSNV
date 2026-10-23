@@ -228,6 +228,51 @@ ABILITIES = {
         "effect give @s minecraft:strength 6 0", "effect give @s minecraft:speed 6 0",
         "particle minecraft:angry_villager ~ ~1.2 ~ 1.5 0.6 1.5 0 15",
         snd("entity.ravager.roar", 1, 1.8), snd("entity.parrot.hurt", 1, 0.5), bar("BATTLE CRY", "dark_red")]),
+    # ---------------------------------------------------------------- Marvel / DreamWorks / Family Guy / Simpsons / Star Wars
+    "web_shot": ("Web Shot", "white", "cobweb", 9, ["Webs up the enemy you aim at.", "20 blocks · stuck in place 2 s · 3 damage"], [
+        *ray(40),
+        hit(damage(3)), hit("effect give @s minecraft:slowness 2 6"), hit("effect give @s minecraft:mining_fatigue 2 2"),
+        hit("particle minecraft:item{item:\"minecraft:cobweb\"} ~ ~1 ~ 0.4 0.6 0.4 0.05 30"),
+        "execute anchored eyes run particle minecraft:item{item:\"minecraft:string\"} ^ ^ ^2 0.1 0.1 0.1 0.2 15",
+        snd("entity.spider.step", 1, 1.6), snd("block.wool.place", 1, 0.6), bar("THWIP", "white")]),
+    "web_swing": ("Web Swing", "red", "tripwire_hook", 7, ["Swings you forward on a web line.", "Then Slow Falling 3 s"], [
+        DASH, LAUNCH, "effect give @s minecraft:slow_falling 3 0 true", "effect give @s minecraft:speed 3 1 true",
+        "execute anchored eyes run particle minecraft:item{item:\"minecraft:string\"} ^ ^1 ^4 0.1 1 0.1 0.05 20",
+        snd("entity.fishing_bobber.throw", 1, 0.6), snd("entity.breeze.jump", 0.6, 1.4), bar("WEB SWING", "red")]),
+    "swamp_roar": ("Swamp Roar", "green", "slime_ball", 14, ["Roars at everyone around you.", "6 blocks · 4 damage + knockback · Nausea 4 s + Slowness I 3 s"], [
+        around(6, damage(4)), around(6, PUSH), around(6, "effect give @s minecraft:nausea 4 0"), around(6, "effect give @s minecraft:slowness 3 0"),
+        "particle minecraft:item_slime ~ ~1.5 ~ 1.5 0.5 1.5 0.1 40",
+        snd("entity.ravager.roar", 1, 0.7), snd("entity.slime.squish", 1, 0.5), bar("WHAT ARE YOU DOING IN MY SWAMP?!", "green")]),
+    "onion_layers": ("Onion Layers", "dark_green", "beetroot", 20, ["Ogres are like onions: they have layers.", "8 absorption hearts 12 s · Resistance I 6 s"], [
+        "effect clear @s minecraft:absorption", "effect give @s minecraft:absorption 12 3", "effect give @s minecraft:resistance 6 0",
+        "particle minecraft:composter ~ ~1 ~ 0.5 0.8 0.5 0 25",
+        snd("block.composter.fill_success", 1, 0.6), bar("LAYERS", "dark_green")]),
+    "chicken_fight": ("Chicken Fight", "yellow", "cooked_chicken", 30, ["Time to fight the giant chicken.", "Strength II + Resistance I + Speed I 10 s"], [
+        "effect give @s minecraft:strength 10 1", "effect give @s minecraft:resistance 10 0", "effect give @s minecraft:speed 10 0",
+        "particle minecraft:item{item:\"minecraft:feather\"} ~ ~1 ~ 0.8 0.8 0.8 0.1 30",
+        snd("entity.chicken.hurt", 1, 0.5), snd("entity.player.attack.strong", 1, 0.8), bar("CHICKEN FIGHT", "yellow")]),
+    "surfin_bird": ("Surfin' Bird", "aqua", "music_disc_cat", 20, ["Everyone near you hears the word.", "8 blocks · Nausea 6 s · Slowness II 4 s · Weakness I 4 s"], [
+        around(8, "effect give @s minecraft:nausea 6 0"), around(8, "effect give @s minecraft:slowness 4 1"), around(8, "effect give @s minecraft:weakness 4 0"),
+        "particle minecraft:note ~ ~2 ~ 3 1 3 1 30",
+        snd("block.note_block.bass", 1, 0.5), snd("block.note_block.didgeridoo", 1, 0.8), bar("THE BIRD IS THE WORD", "aqua")]),
+    "donut": ("Donut", "light_purple", "cookie", 14, ["Mmm... donuts.", "Instant Health I · Regeneration II 4 s · full hunger"], [
+        "effect give @s minecraft:instant_health 1 0", "effect give @s minecraft:regeneration 4 1", "effect give @s minecraft:saturation 1 9 true",
+        "particle minecraft:item{item:\"minecraft:cookie\"} ~ ~1.6 ~ 0.2 0.1 0.2 0.05 10",
+        snd("entity.generic.eat", 1, 0.8), snd("entity.player.burp", 1, 0.7), bar("MMM... DONUTS", "light_purple")]),
+    "belly_bump": ("Belly Bump", "yellow", "honeycomb", 8, ["Bumps everyone in front of you.", "6 blocks · 5 damage + big knockback"], [
+        cone(3, damage(5)), cone(3, PUSH), cone(3, "effect give @s minecraft:levitation 1 0"),
+        "execute anchored eyes run particle minecraft:poof ^ ^-0.6 ^1.5 0.6 0.3 0.6 0.05 15",
+        snd("entity.slime.jump", 1, 0.5), snd("entity.player.attack.knockback", 1, 0.6), bar("D'OH!", "yellow")]),
+    "saber_throw": ("Saber Throw", "red", "redstone_torch", 9, ["Hurls your saber at the enemy you aim at.", "16 blocks · 8 damage · Slowness I 2 s"], [
+        *ray(32),
+        hit(damage(8)), hit("effect give @s minecraft:slowness 2 0"),
+        hit("particle minecraft:dust{color:[1.0,0.0,0.0],scale:1.5} ~ ~1 ~ 0.4 0.6 0.4 0 30"),
+        "execute anchored eyes run particle minecraft:dust{color:[1.0,0.1,0.1],scale:1.2} ^ ^ ^3 0.1 0.1 2 0 30",
+        snd("item.trident.throw", 1, 0.7), snd("block.beacon.ambient", 1, 2), bar("SABER THROW", "red")]),
+    "saber_spin": ("Saber Spin", "dark_red", "nether_wart", 7, ["Spins your double-bladed saber.", "3.5 blocks · 7 damage · knockback"], [
+        around(3.5, damage(7)), around(3.5, PUSH),
+        "particle minecraft:dust{color:[1.0,0.0,0.0],scale:1.5} ~ ~1 ~ 1.5 0.2 1.5 0 50", "particle minecraft:sweep_attack ~ ~1 ~ 1 0 1 0 4",
+        snd("entity.player.attack.sweep", 1, 0.6), snd("block.beacon.ambient", 1, 2), bar("SABER SPIN", "dark_red")]),
 }
 
 

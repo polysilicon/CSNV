@@ -207,6 +207,28 @@ FRANCHISE_KITS = [
       "attribute @s minecraft:attack_damage modifier add pvp:fists 5 add_value", "attribute @s minecraft:attack_speed modifier add pvp:fists -2.4 add_value"]
      + suit("leather", 4, dye={"head": 12986408, "chest": 12986408, "legs": 16247203, "feet": 12986408}, extra={"feet": {"feather_falling": 4}})
      + head("red", "Red", "red") + passive("jump_boost") + size(0.7), []),
+    (31, "spiderman", "Spider-Man", "red", "cobweb", ["No weapon: fists +6 (sword speed) · Dodge III · Springs II · Jump Boost II", ab_line("web_shot", "web_swing")],
+     [AB("web_shot"), AB("web_swing"), "attribute @s minecraft:attack_damage modifier add pvp:fists 6 add_value", "attribute @s minecraft:attack_speed modifier add pvp:fists -2.4 add_value"]
+     + suit("leather", 4, dye={"head": 13184550, "chest": 13184550, "legs": 2068440, "feet": 13184550},
+            extra={"chest": {CE + "dodge": 3}, "feet": {CE + "springs": 2, "feather_falling": 4}})
+     + head("spiderman", "Spider-Man", "red") + passive("jump_boost", 1), []),
+    (32, "shrek", "Shrek", "green", "slime_ball", ["No weapon: fists +8 (axe speed) · Tank II · Health Boost I · big", ab_line("swamp_roar", "onion_layers")],
+     [AB("swamp_roar"), AB("onion_layers"), "attribute @s minecraft:attack_damage modifier add pvp:fists 8 add_value", "attribute @s minecraft:attack_speed modifier add pvp:fists -2.8 add_value"]
+     + suit("leather", 3, dye={"head": 9349946, "chest": 6045219, "legs": 9127187, "feet": 3811599}, extra={"legs": {CE + "tank": 2}})
+     + head("shrek", "Shrek", "green") + passive("health_boost") + ["effect give @s minecraft:instant_health 1 1 true"] + size(1.3), []),
+    (33, "peter", "Peter Griffin", "green", "cooked_chicken", ["No weapon: fists +6 (sword speed) · 2 Pawtucket Patriot (Strength) · Health Boost I", ab_line("chicken_fight", "surfin_bird")],
+     [AB("chicken_fight"), AB("surfin_bird"), "attribute @s minecraft:attack_damage modifier add pvp:fists 6 add_value", "attribute @s minecraft:attack_speed modifier add pvp:fists -2.4 add_value", potion("potion", "strength", 2)]
+     + suit("leather", 3, dye={"head": 16777215, "chest": 16777215, "legs": 3828013, "feet": 3355443})
+     + head("peter", "Peter Griffin", "green") + passive("health_boost") + ["effect give @s minecraft:instant_health 1 1 true"] + size(1.1), []),
+    (34, "homer", "Homer Simpson", "yellow", "cookie", ["Plutonium Rod (Poison II) · Health Boost I · a bit big", ab_line("donut", "belly_bump")],
+     [f"give @s {item('iron_sword', 'Plutonium Rod', 'green', {'sharpness': 4, CE + 'poison': 2}, model('end_rod'))}", AB("donut"), AB("belly_bump")]
+     + suit("leather", 3, dye={"head": 16777215, "chest": 16777215, "legs": 2068440, "feet": 5592405})
+     + head("homer", "Homer Simpson", "yellow") + passive("health_boost") + ["effect give @s minecraft:instant_health 1 1 true"] + size(1.1), []),
+    (35, "maul", "Darth Maul", "dark_red", "redstone_torch", ["Double-bladed saber: Sharpness V, Double Strike III, Sweeping III · Speed I", ab_line("saber_throw", "saber_spin")],
+     [f"give @s {item('netherite_sword', 'Double-Bladed Lightsaber', 'red', {'sharpness': 5, 'sweeping_edge': 3, CE + 'doublestrike': 3}, model('blaze_rod'))}",
+      AB("saber_throw"), AB("saber_spin")]
+     + suit("leather", 4, dye=1908001, extra={"chest": {CE + "dodge": 2}, "feet": {CE + "springs": 1}})
+     + head("maul", "Darth Maul", "dark_red") + passive("speed"), []),
 ]
 FOOD = ["give @s minecraft:cooked_beef 16", "give @s minecraft:golden_apple 2"]
 # id, key, name, colour, menu icon, blurb lines, item commands, implants (one per body slot)
@@ -276,14 +298,14 @@ TEST_KIT = [
     "tellraw @s [{\"text\":\"Kit: \",\"color\":\"gray\"},{\"text\":\"David (test)\",\"color\":\"dark_red\",\"bold\":true},"
     "{\"text\":\" · Cyberskeleton, Sandevistan, Kiroshi, Reflex Tuner. Swap the crossbows into both hands to dual-fire.\",\"color\":\"gray\"}]",
 ]
-# kit menu order: franchises and classics mixed, rows of 7 / 9 / 7 / 7
-KIT_ORDER = [11, 1, 17, 2, 13, 18, 3,          # Jedi, Edgerunner, Mario, Juggernaut, Link, Pikachu, Sniper
+# kit menu order: franchises and classics mixed, rows of 5 / 7 / 9 / 7 / 7
+KIT_ORDER = [31, 32, 35, 33, 34,                  # Spider-Man, Shrek, Darth Maul, Peter Griffin, Homer
+             11, 1, 17, 2, 13, 18, 3,          # Jedi, Edgerunner, Mario, Juggernaut, Link, Pikachu, Sniper
              12, 21, 4, 14, 23, 19, 6, 22, 5,  # Sith, Randy Marsh, Berserker, Spartan, Adam Smasher, Kirby, Medic, Courier Six, Netrunner
              15, 7, 20, 8, 16, 9, 10,          # Doom Slayer, Pyro, Samus, Ranger, Witcher, Shinobi, Skyhammer
              24, 25, 27, 30, 26, 28, 29]       # Sonic, Walter White, Rebecca, Red, Herobrine, Donkey Kong, Mandalorian
-KIT_SLOT = dict(zip(KIT_ORDER, [10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34,
+KIT_SLOT = dict(zip(KIT_ORDER, [2, 3, 4, 5, 6, 10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34,
                                 37, 38, 39, 40, 41, 42, 43]))
-CUSTOM_SLOTS = [0, 1, 2, 3, 4, 5, 6, 7, 8]   # admin-made kits (/pvpkit create), ids 101+: the top row
 
 # Upgrades (points per tier I / II / III). Pack-a-Punch works on the held weapon (the tier is stored on the item);
 # armor upgrades are per player (pve.arm). Both are lost when you go down, since your kit is handed out again.
@@ -393,10 +415,10 @@ def build():
         return it
     menus = {
         "kits": {"title": {"text": "⚔ Pick a kit", "color": "dark_aqua"}, "rows": 6, "fill": PANE,
-                 "custom_kits": {"slots": CUSTOM_SLOTS, "cmd": "trigger pvp.kit set %d"}, "items":
+                 "items":
                  [{"slot": KIT_SLOT[k[0]], "item": kit_icon(k, kit_lore(k)), "cmd": f"trigger pvp.kit set {k[0]}"} for k in KITS]},
         "pve": {"title": {"text": "☣ Outbreak: pick your loadout", "color": "dark_green"}, "rows": 6, "fill": PANE,
-                "custom_kits": {"slots": CUSTOM_SLOTS, "cmd": "trigger pve.join set %d"}, "items":
+                "items":
                 [{"slot": KIT_SLOT[k[0]], "item": kit_icon(k, k[5] + ["", "Click to queue with this kit"]), "cmd": f"trigger pve.join set {k[0]}"} for k in KITS]
                 + [{"slot": 47, "item": icon("barrier", "Leave the queue", "red", ["Stop waiting for the next Outbreak"], False), "cmd": "trigger pve.join set 99"},
                    {"slot": 45, "item": icon("filled_map", "Back to maps", "yellow", ["Pick a different map"], False), "cmd": "pvpmenu pve_maps"},

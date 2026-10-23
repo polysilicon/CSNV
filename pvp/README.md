@@ -75,7 +75,7 @@ The menu shows all 20 kits mixed together in three rows; custom kits go on the r
   | Samus | Explosive II, Eagle Eye III, Reinforced III |
 
 - Sizes (`scale` modifier `pvp:size`, removed on `to_lobby`, going down and Outbreak entry): Pikachu and Kirby 0.6×,
-  Mario 0.85×, Spartan 1.1×, Samus 1.08×, Adam Smasher 1.3×, Sonic 0.8×, Rebecca 0.75×, Donkey Kong 1.25×, Red 0.7×.
+  Mario 0.85×, Spartan 1.1×, Samus 1.08×, Adam Smasher 1.3×, Sonic 0.8×, Rebecca 0.75×, Donkey Kong 1.25×, Red 0.7×, Shrek 1.3×, Peter Griffin and Homer 1.1×.
 
 **Other kits**:
 
@@ -89,6 +89,11 @@ The menu shows all 20 kits mixed together in three rows; custom kits go on the r
 | Donkey Kong | No weapon: fists +8 damage at axe speed; brown leather with a red tie, Tank II, 1.25× | **Giant Punch** (4 blocks: 12 dmg, launches, 9 s), **Ground Pound** (5 blocks: 6 dmg, Slowness III 2 s, pops them up, 10 s) |
 | Mandalorian | Amban Rifle (crossbow: Piercing III, Eagle Eye III), Darksaber (Sharpness V), Beskar (iron Prot IV, quartz trim, Armored III), Din Djarin head | **Jetpack** (launch + Slow Falling 6 s, 9 s), **Flamethrower** (4 blocks: 5 fire dmg + 3 fireballs, 9 s) |
 | Red (Angry Birds) | Slingshot (bow: Power IV, Punch II, Infinity), beak: fists +5 at sword speed, red leather with a cream belly, Jump Boost I, 0.7× | **Fling** (slingshots you forward; crashing into an enemy or landing deals 7 dmg + knockback within 3 blocks, 8 s), **Battle Cry** (6 blocks: 4 dmg + knockback + Slowness I; you: Strength I + Speed I 6 s, 18 s) |
+| Spider-Man | No weapon: fists +6 at sword speed; red and blue suit (Dodge III, Springs II), Jump Boost II | **Web Shot** (20 blocks: 3 dmg, stuck in place 2 s, 9 s), **Web Swing** (swing forward + Slow Falling 3 s + Speed II, 7 s) |
+| Shrek | No weapon: fists +8 at axe speed; vest (Tank II), Health Boost I, 1.3× | **Swamp Roar** (6 blocks: 4 dmg, knockback, Nausea 4 s, Slowness I 3 s, 14 s), **Onion Layers** (8 absorption hearts 12 s + Resistance I 6 s, 20 s) |
+| Peter Griffin (Family Guy) | No weapon: fists +6 at sword speed; 2 Strength potions ("Pawtucket Patriot"), Health Boost I, 1.1× | **Chicken Fight** (Strength II + Resistance I + Speed I 10 s, 30 s), **Surfin' Bird** (8 blocks: Nausea 6 s, Slowness II + Weakness I 4 s, 20 s) |
+| Homer Simpson | Plutonium Rod (iron sword: Sharpness IV, Poison II), Health Boost I, 1.1× | **Donut** (Instant Health I, Regeneration II 4 s, full hunger, 14 s), **Belly Bump** (6 blocks in front: 5 dmg + big knockback, 8 s) |
+| Darth Maul (Star Wars) | Double-Bladed Lightsaber (netherite: Sharpness V, Sweeping Edge III, Double Strike III), black robes (Dodge II, Springs I), Speed I | **Saber Throw** (16 blocks: 8 dmg + Slowness I 2 s, 9 s), **Saber Spin** (3.5 blocks: 7 dmg + knockback, 7 s) |
 
 Randy's head came from a skin uploaded to MineSkin (no Randy in the head database). The same works for any character:
 upload the skin at mineskin.org and put its texture value in `heads.json`.
@@ -284,7 +289,8 @@ from `/function cyber:admin/give`. Then run:
 /pvpkit list              ids, authors, item and implant counts
 /pvpkit delete <id>
 ```
-- Up to 9 custom kits show, in the top row of both the Kit Dealer and the Outbreak kit menus.
+- Custom kits are not shown in the kit menus for now (the menus are full of character kits). Give one with
+  `pvpkit give <id>`, or add `custom_kits` back to the menus in `build.py`.
 - They're given exactly as saved, with gear in the same slots and implants installed.
 - Ids start at 101.
 - They're stored in the world (`pvp:customkits`), so `/reload` and datapack updates keep them.
