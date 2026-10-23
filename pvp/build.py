@@ -238,6 +238,19 @@ FRANCHISE_KITS = [
      [f"give @s {item('mace', 'Gavel', 'gold', {'density': 2, 'breach': 1})}", AB("better_call"), AB("loophole"), AB("fingertips")]
      + suit("leather", 3, dye={"head": 14329120, "chest": 14329120, "legs": 14329120, "feet": 1908001}, extra={"chest": {CE + "dodge": 2}})
      + head("saul", "Saul Goodman", "yellow") + passive("speed"), []),
+    (38, "hank", "Hank Hill", "aqua", "lantern", ["Grill spatula (Sharpness IV, Fire Aspect) · white tee, jeans · Fire Resistance", ab_line("propane", "kick_your_ass")],
+     [f"give @s {item('iron_shovel', 'Grill Spatula', 'aqua', {'sharpness': 4, 'fire_aspect': 1})}", AB("propane"), AB("kick_your_ass")]
+     + suit("leather", 4, dye={"head": 16777215, "chest": 16777215, "legs": 3949738, "feet": 6045219}, extra={"chest": {CE + "explosiveimmunity": 3}})
+     + head("hank", "Hank Hill", "aqua") + passive("fire_resistance"), []),
+    (39, "leela", "Leela", "light_purple", "rabbit_foot", ["No weapon: martial arts, fists +6 (sword speed) · Dodge II · Speed I", ab_line("leela_kick", "laser_pistol")],
+     [AB("leela_kick"), AB("laser_pistol"), "attribute @s minecraft:attack_damage modifier add pvp:fists 6 add_value",
+      "attribute @s minecraft:attack_speed modifier add pvp:fists -2.4 add_value"]
+     + suit("leather", 4, dye={"head": 16777215, "chest": 16777215, "legs": 1908001, "feet": 1908001}, extra={"chest": {CE + "dodge": 2}, "feet": {CE + "springs": 1}})
+     + head("leela", "Leela", "light_purple") + passive("speed"), []),
+    (40, "elliot", "Elliot", "dark_gray", "command_block", ["Pocketknife (Sharpness IV, Poison I) · black hoodie (Dodge II) · Night Vision", ab_line("blackout", "mr_robot")],
+     [f"give @s {item('iron_sword', 'Pocketknife', 'gray', {'sharpness': 4, CE + 'poison': 1})}", AB("blackout"), AB("mr_robot")]
+     + suit("leather", 4, dye={"head": 1908001, "chest": 1908001, "legs": 3355443, "feet": 5592405}, extra={"chest": {CE + "dodge": 2}})
+     + head("elliot", "Elliot Alderson", "dark_gray") + passive("night_vision"), []),
 ]
 FOOD = ["give @s minecraft:cooked_beef 16", "give @s minecraft:golden_apple 2"]
 # id, key, name, colour, menu icon, blurb lines, item commands, implants (one per body slot)
@@ -283,12 +296,13 @@ TEST_KIT = [
     "tellraw @s [{\"text\":\"Kit: \",\"color\":\"gray\"},{\"text\":\"David (test)\",\"color\":\"dark_red\",\"bold\":true},"
     "{\"text\":\" · Cyberskeleton, Sandevistan, Kiroshi, Reflex Tuner. Swap the crossbows into both hands to dual-fire.\",\"color\":\"gray\"}]",
 ]
-# kit menu order: grouped by franchise, rows of 7 / 9 / 7 / 7
-KIT_ORDER = [11, 12, 35, 29, 1, 5, 27,              # Jedi, Sith, Darth Maul, Mandalorian | Edgerunner, Lucy, Rebecca
+# kit menu order: grouped by franchise, rows of 3 / 7 / 9 / 7 / 7
+KIT_ORDER = [38, 39, 40,                          # Hank Hill, Leela, Elliot
+             11, 12, 35, 29, 1, 5, 27,              # Jedi, Sith, Darth Maul, Mandalorian | Edgerunner, Lucy, Rebecca
              23, 13, 14, 15, 16, 22, 3, 26, 30,     # Adam Smasher | Link, Spartan, Doom Slayer, Witcher, Courier Six, Sniper, Herobrine, Red
              17, 18, 19, 20, 28, 24, 31,            # Mario, Pikachu, Kirby, Samus, Donkey Kong, Sonic | Spider-Man
              21, 32, 33, 34, 36, 25, 37]            # Randy Marsh, Shrek, Peter Griffin, Homer, Mr. Krabs | Walter White, Saul Goodman
-KIT_SLOT = dict(zip(KIT_ORDER, [10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34,
+KIT_SLOT = dict(zip(KIT_ORDER, [3, 4, 5, 10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34,
                                 37, 38, 39, 40, 41, 42, 43]))
 # Upgrades (points per tier I / II / III). Pack-a-Punch works on the held weapon (the tier is stored on the item);
 # armor upgrades are per player (pve.arm). Both are lost when you go down, since your kit is handed out again.

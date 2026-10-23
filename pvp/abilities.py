@@ -328,6 +328,33 @@ ABILITIES = {
         around(40, "effect give @s minecraft:glowing 6 0"),
         "particle minecraft:end_rod ~ ~1.6 ~ 0.3 0.3 0.3 0.02 10",
         snd("block.note_block.hat", 1, 0.6), snd("item.spyglass.use", 1, 0.8), bar("PROFESSIONALS HAVE STANDARDS", "dark_green")]),
+    # ---------------------------------------------------------------- King of the Hill / Futurama / Mr. Robot
+    "propane": ("Propane Tank", "aqua", "lantern", 10, ["Lobs a propane tank that blows up.", "Explodes where it hits"], [
+        *shoot("fireball", 1.0, ",ExplosionPower:1b,acceleration_power:0.0d"),
+        snd("entity.snowball.throw", 1, 0.5), snd("block.fire.ambient", 1, 1.4), bar("PROPANE AND PROPANE ACCESSORIES", "aqua")]),
+    "kick_your_ass": ("I'm Gonna Kick Your Ass", "red", "leather", 22, ["Hank has had it.", "Strength II + Speed I 6 s · knocks back enemies within 3 blocks"], [
+        "effect give @s minecraft:strength 6 1", "effect give @s minecraft:speed 6 0", around(3, PUSH),
+        "particle minecraft:angry_villager ~ ~2 ~ 0.4 0.3 0.4 0 6",
+        snd("entity.villager.no", 1, 0.6), snd("entity.player.attack.strong", 1, 0.8), bar("I'M GONNA KICK YOUR ASS!", "red")]),
+    "leela_kick": ("Martial Arts Kick", "light_purple", "rabbit_foot", 7, ["A flying kick forward.", "Dash · 7 damage + knockback up close"], [
+        DASH, cone(3, damage(7)), cone(3, PUSH),
+        "particle minecraft:sweep_attack ^ ^1 ^1.5 0 0 0 0 1", "particle minecraft:crit ~ ~1 ~ 0.4 0.4 0.4 0.3 15",
+        snd("entity.player.attack.knockback", 1, 1.2), snd("entity.breeze.jump", 1, 1.4), bar("HI-YAH!", "light_purple")]),
+    "laser_pistol": ("Laser Pistol", "red", "prismarine_shard", 5, ["Zaps the enemy you aim at.", "20 blocks · 5 damage · glowing 2 s"], [
+        *ray(40),
+        hit(damage(5, "magic")), hit("effect give @s minecraft:glowing 2 0"),
+        hit("particle minecraft:dust{color:[1.0,0.1,0.1],scale:1.2} ~ ~1 ~ 0.3 0.5 0.3 0 25"),
+        "execute anchored eyes run particle minecraft:dust{color:[1.0,0.2,0.2],scale:0.8} ^ ^ ^3 0.05 0.05 2 0 30",
+        snd("block.beacon.deactivate", 1, 2), snd("entity.guardian.attack", 0.5, 2), bar("PEW", "red")]),
+    "blackout": ("Blackout", "dark_gray", "command_block", 22, ["Hacks the grid around you.", "12 blocks · Darkness 6 s + Blindness 2 s + Slowness I 3 s"], [
+        around(12, "effect give @s minecraft:darkness 6 0"), around(12, "effect give @s minecraft:blindness 2 0"),
+        around(12, "effect give @s minecraft:slowness 3 0"),
+        "particle minecraft:dust{color:[0.0,1.0,0.3],scale:0.8} ~ ~1.5 ~ 3 1 3 0 60",
+        snd("block.beacon.deactivate", 1, 0.6), snd("block.note_block.bit", 1, 0.5), bar("FSOCIETY", "dark_gray")]),
+    "mr_robot": ("Mr. Robot", "red", "black_dye", 25, ["Your other self takes over.", "Strength II + Resistance I 6 s · Speed I"], [
+        "effect give @s minecraft:strength 6 1", "effect give @s minecraft:resistance 6 0", "effect give @s minecraft:speed 6 0",
+        "particle minecraft:dust{color:[0.8,0.0,0.0],scale:1.0} ~ ~1 ~ 0.4 0.8 0.4 0 40",
+        snd("entity.warden.heartbeat", 1, 1), snd("block.note_block.bit", 1, 1.6), bar("HELLO, FRIEND.", "red")]),
 }
 
 

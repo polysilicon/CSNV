@@ -17,7 +17,7 @@ AMP rewrites `server.properties` on start, so change game settings through AMP, 
 
 ## How it plays
 - Players spawn in a safe stone hub at 0 101 0, where they're immune to damage and can't deal any.
-- **Kit Dealer** (left NPC) opens a chest menu of 30 character kits. Click one and you're dropped at one of 8 random arena
+- **Kit Dealer** (left NPC) opens a chest menu of 33 character kits. Click one and you're dropped at one of 8 random arena
   spawns with 3 s of spawn protection.
 - **Outbreak** (right NPC) opens the map menu: pick one of the four maps (or Random),
   then pick a kit to queue.
@@ -32,7 +32,7 @@ AMP rewrites `server.properties` on start, so change game settings through AMP, 
   Best Outbreak Wave (`pve.best`). The mod rewrites them every 5 s. `pvp:admin/place_leaderboard` re-places them.
 
 ### Kits
-Every kit is a character. The menu shows all 30 in four rows (7 / 9 / 7 / 7), roughly grouped by franchise. The
+Every kit is a character. The menu shows all 33 in five rows (3 / 7 / 9 / 7 / 7), roughly grouped by franchise. The
 classic kits with no character (Juggernaut, Berserker, Medic, Pyro, Ranger, Shinobi, Skyhammer) were removed.
 
 **Franchise kits** have two **ability items** each (`abilities.py`):
@@ -98,6 +98,9 @@ classic kits with no character (Juggernaut, Berserker, Medic, Pyro, Ranger, Shin
 | Mr. Krabs (SpongeBob) | No weapon: claws +6 at sword speed; red shell, blue shirt (Armored II), 0.9× | **Claw Pinch** (4 blocks: 8 dmg + Slowness II 2 s, 7 s), **Money Grab** (6 blocks: pulls enemies 2 blocks in, Weakness I 4 s; you: Strength I 5 s, 14 s) |
 | Saul Goodman (Better Call Saul) | Gavel (mace: Density II, Breach I), loud yellow suit (Dodge II), Speed I | **Better Call Saul** (2 tamed wolf "clients" fight for you for 20 s, 30 s), **Loophole** (untouchable 1.5 s, clears Slowness/Weakness/Poison/Wither/Blindness/Nausea, Speed II 3 s, 20 s), **Fingertip Lightning** ("lightning bolts shoot from my fingertips": 16 blocks, 6 lightning dmg, arcs for 3 dmg to enemies within 3 blocks of the target, 10 s) |
 | Sniper (Team Fortress 2, was the classic Sniper) | Sniper Rifle (bow: Power V, Infinity, Lethal Sniper III, Lightning Arrows II), Kukri (Sharpness III, Bleed I), red shirt and brown vest, RED Sniper head, Night Vision | **Jarate** (thrown splash: Weakness II + glowing 8 s, Slowness I 3 s, 16 s), **Focus** (every enemy within 40 blocks glows 6 s, 20 s) |
+| Hank Hill (King of the Hill) | Grill Spatula (iron shovel: Sharpness IV, Fire Aspect), white tee and jeans (Explosive Immunity III), Fire Resistance | **Propane Tank** (explosive throw, 10 s), **I'm Gonna Kick Your Ass** (Strength II + Speed I 6 s, knocks back enemies within 3 blocks, 22 s) |
+| Leela (Futurama) | No weapon: martial arts, fists +6 at sword speed; white top, black pants (Dodge II, Springs I), Speed I | **Martial Arts Kick** (dash, 7 dmg + knockback up close, 7 s), **Laser Pistol** (20 blocks: 5 dmg + glowing 2 s, 5 s) |
+| Elliot (Mr. Robot) | Pocketknife (Sharpness IV, Poison I), black hoodie (Dodge II), Night Vision; placeholder "Hooded Man" head (no Elliot in the head database) | **Blackout** (12 blocks: Darkness 6 s, Blindness 2 s, Slowness I 3 s, 22 s), **Mr. Robot** (Strength II + Resistance I + Speed I 6 s, 25 s) |
 
 Randy's head came from a skin uploaded to MineSkin (no Randy in the head database). The same works for any character:
 upload the skin at mineskin.org and put its texture value in `heads.json`.
