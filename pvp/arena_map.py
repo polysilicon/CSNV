@@ -61,6 +61,18 @@ def gate_at(x, z):
     return None
 
 
+def clean_seat(x, z, k):
+    """A stair only where it makes a straight run: both side neighbours are the same row facing the same way, and
+    the step in front of it is the row below (otherwise the game bends stairs into corner shapes)."""
+    f = facing_in(x, z)
+    fx, fz = DIRS[f]
+    if row(x + fx, z + fz) != k - 1: return False
+    for (sx, sz) in ((fz, fx), (-fz, -fx)):   # the two sideways neighbours
+        n = (x + sx, z + sz)
+        if row(*n) != k or facing_in(*n) != f: return False
+    return True
+
+
 def colosseum(spawns=SPAWNS):
     rnd = random.Random(21)
     g = ArenaGrid([], spawns)
@@ -149,8 +161,10 @@ def colosseum(spawns=SPAWNS):
             aisle = min(a % 30, 30 - a % 30) * math.pi / 180 * dist(x, z) < 0.8
             if aisle:
                 g.put(x, h, z, "chiseled_sandstone")
-            else:
-                g.put(x, h, z, f"sandstone_stairs[facing={OPP[facing_in(x, z)]}]")
+            elif clean_seat(x, z, k):
+                g.put(x, h, z, f"sandstone_stairs[facing={OPP[facing_in(x, z)]},shape=straight]")
+            else:   # where the circle's steps don't line up, a flat terrace block instead of a twisted stair
+                g.put(x, h, z, "cut_sandstone")
                 if n % 3 == 0 and rnd.random() < 0.05: g.put(x, h + 1, z, rnd.choice(["red_carpet", "yellow_carpet", "white_carpet"]))
             if n == STANDS: g.put(x, h + 1, z, "sandstone_wall")   # the rim parapet
     # flag poles and braziers along the rim
