@@ -17,9 +17,9 @@ AMP rewrites `server.properties` on start, so change game settings through AMP, 
 
 ## How it plays
 - Players spawn in a safe stone hub at 0 101 0, where they're immune to damage and can't deal any.
-- **Kit Dealer** (left NPC) opens a chest menu of 20 kits. Click one and you're dropped at one of 8 random arena
+- **Kit Dealer** (left NPC) opens a chest menu of 30 character kits. Click one and you're dropped at one of 8 random arena
   spawns with 3 s of spawn protection.
-- **Outbreak** (right NPC, or the zombie head in the kit menu) opens the map menu: pick one of the four maps (or Random),
+- **Outbreak** (right NPC) opens the map menu: pick one of the four maps (or Random),
   then pick a kit to queue.
 - PvP kills:
   - heal the killer and give 10 s of Absorption and a golden apple;
@@ -32,7 +32,8 @@ AMP rewrites `server.properties` on start, so change game settings through AMP, 
   Best Outbreak Wave (`pve.best`). The mod rewrites them every 5 s. `pvp:admin/place_leaderboard` re-places them.
 
 ### Kits
-The menu shows all 20 kits mixed together in three rows; custom kits go on the row below.
+Every kit is a character. The menu shows all 30 in four rows (7 / 9 / 7 / 7), roughly grouped by franchise. The
+classic kits with no character (Juggernaut, Berserker, Medic, Pyro, Ranger, Shinobi, Skyhammer) were removed.
 
 **Franchise kits** have two **ability items** each (`abilities.py`):
 - They're in the hotbar (clay balls with their own look, so they never clash with cyberware). Right-click to use one;
@@ -109,18 +110,6 @@ upload the skin at mineskin.org and put its texture value in `heads.json`.
 | Lucy (was Netrunner) | Monowire (diamond sword: Sharpness IV, Assassin III, Poison II), white bodysuit (Dodge II), Lucyna head; abilities **Short Circuit** (quickhack: 20 blocks, 5 dmg, Slowness II 2 s, glowing 3 s, 8 s) and **Optical Camo** (Invisibility + Speed I 6 s, 25 s) | Lynx Paws, Reflex Tuner, Kiroshi |
 | Adam Smasher | Militech Heavy Cannon (crossbow: Quick Charge III, Multishot, Piercing II), Arasaka Breaker (axe: Sharpness IV, Cleave III), netherite Prot III with a redstone rib trim (chest: Armored III, Explosive Immunity III), Adam Smasher head (MineSkin upload), 1.3× size | Projectile Launch System (sneak + jump), Sandevistan (double-tap sneak), Subdermal Armor, Titanium Bones |
 | Rebecca | Guts (crossbow: Multishot, Quick Charge III, Piercing I), Pistol (crossbow, Eagle Eye II), black leather with pink boots (Dodge II), 0.75× | Gorilla Arms, Reinforced Tendons, Reflex Tuner, Kiroshi |
-
-**Classic kits** have no cyberware, just custom enchants and one passive effect:
-
-| Kit | Gear | Passive |
-|---|---|---|
-| Juggernaut | Sword + shield, netherite Prot IV with Armored III / Tank II | Health Boost II |
-| Berserker | Axe: Sharpness V, Cleave III, Bleed III, Rage II | Speed I |
-| Medic | Lifesteal sword, Angelic III chest, 4 Healing II + 2 Regen | Regeneration I |
-| Pyro | Fire Aspect II + Execute sword, Flame bow, Fire Prot IV | Fire Resistance |
-| Ranger | Crossbow: Quick Charge III, Multishot, Longbow II, Venom II | Speed I |
-| Shinobi | Shadow Assassin + Featherweight sword, 8 pearls, Dodge/Trickster, Springs/Gears | Speed II |
-| Skyhammer | Mace: Density IV, Wind Burst II, 16 wind charges | Jump Boost II |
 
 All kit gear is unbreakable, and every kit also gets 16 steak and 2 golden apples.
 
@@ -291,7 +280,7 @@ from `/function cyber:admin/give`. Then run:
 /pvpkit list              ids, authors, item and implant counts
 /pvpkit delete <id>
 ```
-- Custom kits are not shown in the kit menus for now (the menus are full of character kits). Give one with
+- Custom kits are not shown in the kit menus for now . Give one with
   `pvpkit give <id>`, or add `custom_kits` back to the menus in `build.py`.
 - They're given exactly as saved, with gear in the same slots and implants installed.
 - Ids start at 101.

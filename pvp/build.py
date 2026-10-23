@@ -245,41 +245,15 @@ KITS = [
     (1, "samurai", "Edgerunner", "aqua", "netherite_sword", ["Katana: Sharpness V, Lifesteal III, Double Strike II", "Cyberware: Sandevistan, Mantis Blades, Reflex Tuner, Kiroshi"],
      [f"give @s {item('netherite_sword', 'Edgerunner Katana', 'aqua', {'sharpness': 5, CE + 'lifesteal': 3, CE + 'doublestrike': 2})}"]
      + armor("diamond", 3) + head("edgerunner", "David Martinez", "aqua"), ["sandy", "mantis", "reflex", "kiroshi"]),
-    (2, "tank", "Juggernaut", "gray", "netherite_chestplate", ["Netherite Prot IV, Armored III, Tank II, shield", "Health Boost II (+4 hearts)"],
-     [f"give @s {item('netherite_sword', 'Breaker', 'gray', {'sharpness': 3})}", f"item replace entity @s weapon.offhand with {item('shield')}"]
-     + armor("netherite", 4, {"chest": {CE + "armored": 3}, "legs": {CE + "tank": 2}}) + passive("health_boost", 1) + ["effect give @s minecraft:instant_health 1 3 true"], []),
     (3, "sniper", "Sniper", "dark_red", "bow", ["Sniper Rifle (bow: Power V, Lethal Sniper III, Lightning Arrows II) + Kukri · Night Vision", ab_line("jarate", "focus")],
      [f"give @s {item('bow', 'Sniper Rifle', 'dark_red', {'power': 5, 'infinity': 1, CE + 'lethalsniper': 3, CE + 'lightningarrows': 2})}",
       AB("jarate"), AB("focus"), f"give @s {item('iron_sword', 'Kukri', 'gray', {'sharpness': 3, CE + 'bleed': 1})}", "give @s minecraft:arrow 1"]
      + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "diamond"}, 3, dye={"head": 6045219, "chest": 11141120, "legs": 6045219})
      + head("sniper", "Sniper", "dark_red") + passive("night_vision"), []),
-    (4, "berserker", "Berserker", "red", "netherite_axe", ["Axe: Sharpness V, Cleave III, Bleed III, Rage II", "Speed I"],
-     [f"give @s {item('netherite_axe', 'Ripper', 'red', {'sharpness': 5, CE + 'cleave': 3, CE + 'bleed': 3, CE + 'rage': 2})}"]
-     + armor("diamond", 3) + passive("speed"), []),
     (5, "assassin", "Lucy", "light_purple", "diamond_sword", ["Monowire: Sharpness IV, Assassin III, Poison II · Dodge II", "Cyberware: Lynx Paws, Reflex Tuner, Kiroshi · " + ab_line("short_circuit", "optical_camo")],
      [f"give @s {item('diamond_sword', 'Monowire', 'light_purple', {'sharpness': 4, CE + 'assassin': 3, CE + 'poison': 2})}", AB("short_circuit"), AB("optical_camo")]
      + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "diamond"}, 3, dye=15790320, extra={"chest": {CE + "dodge": 2}})
      + head("lucy", "Lucy", "light_purple"), ["lynx", "reflex", "kiroshi"]),
-    (6, "medic", "Medic", "light_purple", "glistering_melon_slice", ["Lifesteal sword, Angelic III chest, 4 healing + 2 regen", "Regeneration I"],
-     [f"give @s {item('netherite_sword', 'Scalpel', 'light_purple', {'sharpness': 3, CE + 'lifesteal': 2})}",
-      potion("splash_potion", "strong_healing", 4), potion("potion", "regeneration", 2)]
-     + armor("diamond", 3, {"chest": {CE + "angelic": 3}}) + passive("regeneration"), []),
-    (7, "pyro", "Pyro", "gold", "blaze_powder", ["Fire Aspect II + Execute sword, Flame bow, Fire Prot IV", "Fire Resistance"],
-     [f"give @s {item('netherite_sword', 'Incinerator', 'gold', {'sharpness': 4, 'fire_aspect': 2, CE + 'execute': 3})}",
-      f"give @s {item('bow', enchants={'power': 3, 'flame': 1, 'infinity': 1})}", "give @s minecraft:arrow 1"]
-     + armor("diamond", 2, {s: {"fire_protection": 4} for s in ("head", "chest", "legs", "feet")}) + passive("fire_resistance"), []),
-    (8, "ranger", "Ranger", "dark_green", "crossbow", ["Crossbow: Quick Charge III, Multishot, Longbow II, Venom II", "Speed I"],
-     [f"give @s {item('crossbow', 'Deadeye', 'dark_green', {'quick_charge': 3, 'multishot': 1, CE + 'longbow': 2, CE + 'venom': 2})}",
-      f"give @s {item('iron_axe', enchants={'sharpness': 3})}", "give @s minecraft:arrow 64"]
-     + armor("diamond", 2, {"feet": {CE + "springs": 2}}) + passive("speed"), []),
-    (9, "shinobi", "Shinobi", "dark_gray", "ender_pearl", ["Shadow Assassin blade, 8 ender pearls, Dodge + Trickster", "Speed II"],
-     [f"give @s {item('diamond_sword', 'Kage', 'dark_gray', {'sharpness': 4, CE + 'shadowassassin': 3, CE + 'featherweight': 2})}", "give @s minecraft:ender_pearl 8"]
-     + armor({"head": "diamond", "chest": "leather", "legs": "leather", "feet": "diamond"}, 2,
-             {"chest": {CE + "dodge": 3, CE + "trickster": 3}, "feet": {CE + "springs": 3, CE + "gears": 2}}, dye=3355443) + passive("speed", 1),
-     []),
-    (10, "skyhammer", "Skyhammer", "blue", "mace", ["Mace: Density IV, Wind Burst II, 16 wind charges", "Jump Boost II"],
-     [f"give @s {item('mace', 'Skyhammer', 'blue', {'density': 4, 'wind_burst': 2})}", "give @s minecraft:wind_charge 16"]
-     + armor("netherite", 3, {"feet": {"feather_falling": 4}}) + passive("jump_boost", 1), []),
     (23, "smasher", "Adam Smasher", "dark_red", "netherite_chestplate", ["Heavy cannon (Multishot) + Arasaka axe (Cleave III) · full-borg frame (Armored III) · huge",
      "Cyberware: Projectile Launcher, Sandevistan, Subdermal Armor, Titanium Bones"],
      [f"give @s {item('crossbow', 'Militech Heavy Cannon', 'dark_red', {'quick_charge': 3, 'multishot': 1, 'piercing': 2})}",
@@ -309,15 +283,13 @@ TEST_KIT = [
     "tellraw @s [{\"text\":\"Kit: \",\"color\":\"gray\"},{\"text\":\"David (test)\",\"color\":\"dark_red\",\"bold\":true},"
     "{\"text\":\" · Cyberskeleton, Sandevistan, Kiroshi, Reflex Tuner. Swap the crossbows into both hands to dual-fire.\",\"color\":\"gray\"}]",
 ]
-# kit menu order: franchises and classics mixed, rows of 7 / 7 / 9 / 7 / 7
-KIT_ORDER = [36, 31, 32, 35, 33, 34, 37,          # Mr. Krabs, Spider-Man, Shrek, Darth Maul, Peter Griffin, Homer, Saul Goodman
-             11, 1, 17, 2, 13, 18, 3,          # Jedi, Edgerunner, Mario, Juggernaut, Link, Pikachu, Sniper
-             12, 21, 4, 14, 23, 19, 6, 22, 5,  # Sith, Randy Marsh, Berserker, Spartan, Adam Smasher, Kirby, Medic, Courier Six, Lucy
-             15, 7, 20, 8, 16, 9, 10,          # Doom Slayer, Pyro, Samus, Ranger, Witcher, Shinobi, Skyhammer
-             24, 25, 27, 30, 26, 28, 29]       # Sonic, Walter White, Rebecca, Red, Herobrine, Donkey Kong, Mandalorian
-KIT_SLOT = dict(zip(KIT_ORDER, [1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34,
+# kit menu order: grouped by franchise, rows of 7 / 9 / 7 / 7
+KIT_ORDER = [11, 12, 35, 29, 1, 5, 27,              # Jedi, Sith, Darth Maul, Mandalorian | Edgerunner, Lucy, Rebecca
+             23, 13, 14, 15, 16, 22, 3, 26, 30,     # Adam Smasher | Link, Spartan, Doom Slayer, Witcher, Courier Six, Sniper, Herobrine, Red
+             17, 18, 19, 20, 28, 24, 31,            # Mario, Pikachu, Kirby, Samus, Donkey Kong, Sonic | Spider-Man
+             21, 32, 33, 34, 36, 25, 37]            # Randy Marsh, Shrek, Peter Griffin, Homer, Mr. Krabs | Walter White, Saul Goodman
+KIT_SLOT = dict(zip(KIT_ORDER, [10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34,
                                 37, 38, 39, 40, 41, 42, 43]))
-
 # Upgrades (points per tier I / II / III). Pack-a-Punch works on the held weapon (the tier is stored on the item);
 # armor upgrades are per player (pve.arm). Both are lost when you go down, since your kit is handed out again.
 WEAPON_UP = [2000, 4000, 7500]
@@ -554,11 +526,12 @@ def build():
              "{\"text\":\" · right-click your ability items\",\"color\":\"gray\"}]" if any("loot pvp:ability/" in l for l in items) else "{\"text\":\"\"}]"),
             *(["tellraw @s {\"text\":\"Double-tap sneak to activate your Operating System implant.\",\"color\":\"dark_gray\"}"]
               if any(i in ("sandy", "berserk") for i in implants) else [])])
-    pick += [f"execute if score #k pvp matches 1..{len(KITS)} run scoreboard players set #ok pvp 1",
+    pick += [*[f"execute if score #k pvp matches {k[0]} run scoreboard players set #ok pvp 1" for k in KITS],
              f"execute if score #k pvp matches 101.. run function {NS}:kit/custom",
              f"execute if score #ok pvp matches 1 run function {NS}:arena/enter",
              f"execute unless score #ok pvp matches 1 run {say('@s', 'That kit no longer exists.', 'red')}"]
     fn("kit/pick", pick)
+    fn("kit/valid_pve", [f"execute if score #j pve matches {k[0]} run return 1" for k in KITS] + ["return 0"])   # #j pve is a real kit id
     # admin-made kits are given by the mod ("pvpkit give <id>", ids 101+)
     fn("kit/custom", ["execute store result storage pvp:tmp k int 1 run scoreboard players get #k pvp", f"function {NS}:kit/custom_give with storage pvp:tmp"])
     fn("kit/custom_give", ["$execute store result score #ok pvp run pvpkit give $(k)"])
@@ -843,7 +816,7 @@ def build_pve():
         f"execute if entity @s[tag=pve.in] run return run {say('@s', 'You are already in the Outbreak.', 'red')}",
         f"execute unless entity @s[{LOBBY_BOX}] run return run {say('@s', 'Join the Outbreak from the lobby (/spawn).', 'red')}",
         f"execute if score #j pve matches {TEST_KIT_ID} unless entity @s[tag=pvp.tester] run return 0",
-        f"execute unless score #j pve matches 1..{len(KITS)} unless score #j pve matches 101..199 unless score #j pve matches {TEST_KIT_ID} run return 0",
+        f"execute unless score #j pve matches 101..199 unless score #j pve matches {TEST_KIT_ID} unless function {NS}:kit/valid_pve run return 0",
         "scoreboard players operation @s pve.kit = #j pve", "tag @s add pve.q",
         f"execute unless score @s pve.map matches 1..{len(OUTBREAK_MAPS)} run scoreboard players operation @s pve.map = #map pve",
         f"execute unless score @s pve.map matches 1..{len(OUTBREAK_MAPS)} run scoreboard players set @s pve.map 1",
