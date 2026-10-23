@@ -31,11 +31,6 @@ IMPLANT_KEYS = ["kiroshi", "subdermal", "titanium", "lungs", "gorilla", "mantis"
                 "heart", "sandy", "berserk", "launcher", "cyberskeleton", "neuro"]   # cyber:item/<key> loot tables (cyberskeleton: PvP test-only)
 VELOCITY_MAX, VELOCITY_CAP = 5, 20   # Velocity enchant: +20% arrow speed per level; levels above the cap (via /fe) count as the cap
 LOBBY_BOX = box(0, 0, LOBBY_R, LOBBY_Y - 1, 20)
-# lobby portals (decorative): x, z, frame, glass, label, label colour
-PORTALS = [(-10, -4, "polished_blackstone_bricks", "red_stained_glass", "Star Wars", "red"),
-           (-10, 4, "mossy_stone_bricks", "lime_stained_glass", "Video Games", "green"),
-           (10, -4, "smooth_quartz", "yellow_stained_glass", "Smash Bros", "gold"),
-           (10, 4, "black_concrete", "cyan_stained_glass", "Cyberpunk", "aqua")]
 ARENA_BOX = box(ACX, ACZ, AR, AY - 1, 35)
 # Outbreak maps: same size and layout (spawns, mob windows, Arsenal in the middle), 100 blocks apart along z.
 # id, key, name, colour, menu icon, centre z, extra mobs (min wave, roll <=, type, extra NBT) tried before the normal pool
@@ -510,8 +505,6 @@ def build():
                                               {"text": "   Outbreak: ", "color": "green"}, {"text": "waves of mobs, solo or team", "color": "gray"},
                                               {"text": "\nStar Wars · Zelda · Halo · Doom · Witcher · Smash Bros · Cyberpunk", "color": "yellow"},
                                               {"text": "\nCustom enchants in every kit · /spawn to return", "color": "dark_gray"}]),
-        *[f"summon minecraft:text_display {px + (0.5 if px < 0 else 0.5)} {LOBBY_Y + 7.2} {pz + 0.5} {{Tags:[\"pvp.holo\"],billboard:\"center\","
-          f"text:{tj({'text': label, 'color': col, 'bold': True})}}}" for (px, pz, _, _, label, col) in PORTALS],
     ])
     L, Y = LOBBY_R, LOBBY_Y
     lobby = [f"fill {-L} {Y} {-L} {L} {Y} {L} minecraft:polished_andesite",
@@ -527,12 +520,6 @@ def build():
     B = L + 1   # invisible walls so nobody falls off
     lobby += [f"fill {-B} {Y + 1} {-B} {B} {Y + 15} {-B} minecraft:barrier", f"fill {-B} {Y + 1} {B} {B} {Y + 15} {B} minecraft:barrier",
               f"fill {-B} {Y + 1} {-B} {-B} {Y + 15} {B} minecraft:barrier", f"fill {B} {Y + 1} {-B} {B} {Y + 15} {B} minecraft:barrier"]
-    for (px, pz, frame, glass, _, _) in PORTALS:   # a portal per kit universe on the east and west edges
-        s_ = 1 if px > 0 else -1
-        lobby += [f"fill {px} {Y + 1} {pz - 2} {px} {Y + 5} {pz + 2} minecraft:{frame}",
-                  f"fill {px} {Y + 1} {pz - 1} {px} {Y + 4} {pz + 1} minecraft:{glass}",
-                  f"fill {px - s_} {Y} {pz - 1} {px - s_} {Y} {pz + 1} minecraft:{frame}",
-                  f"setblock {px} {Y + 6} {pz} minecraft:lantern"]
     fn("admin/build_lobby", lobby + [f"function {NS}:admin/place_npc"])
 
     x1, x2, z1, z2 = ACX - AR, ACX + AR, ACZ - AR, ACZ + AR

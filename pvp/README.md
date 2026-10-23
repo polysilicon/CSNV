@@ -16,8 +16,7 @@ instance was deleted after a backup to `/AMPStorage/backups/Bending01-20261019.t
 AMP rewrites `server.properties` on start, so change game settings through AMP, not the file.
 
 ## How it plays
-- Players spawn in a safe stone hub at 0 101 0, where they're immune to damage and can't deal any. Four decorative
-  portals (Star Wars, Video Games, Smash Bros, Cyberpunk) stand on the east and west edges.
+- Players spawn in a safe stone hub at 0 101 0, where they're immune to damage and can't deal any.
 - **Kit Dealer** (left NPC) opens a chest menu of 20 kits. Click one and you're dropped at one of 8 random arena
   spawns with 3 s of spawn protection.
 - **Outbreak** (right NPC, or the zombie head in the kit menu) opens the map menu: pick one of the four maps (or Random),
