@@ -298,6 +298,16 @@ ABILITIES = {
         "effect give @s minecraft:resistance 2 4 true", "effect give @s minecraft:speed 3 1",
         "particle minecraft:enchant ~ ~1 ~ 0.4 0.8 0.4 0.6 40",
         snd("item.book.page_turn", 1, 0.8), snd("block.note_block.bell", 1, 1.6), bar("IT'S ALL ABOUT LOOPHOLES", "gold")]),
+    "fingertips": ("Fingertip Lightning", "aqua", "glow_ink_sac", 10, ["Lightning bolts shoot from your fingertips.", "16 blocks · 6 damage · arcs to enemies within 3 blocks of it (3 damage)"], [
+        *ray(32),
+        "execute anchored eyes run particle minecraft:electric_spark ^ ^ ^2 0.1 0.1 1.5 0.3 40",
+        "execute anchored eyes run particle minecraft:electric_spark ^ ^ ^5 0.1 0.1 2 0.3 40",
+        f"execute at @e[tag=pvp.hit,limit=1] as @e[distance=..3,{TGT},tag=!pvp.hit] at @s run {damage(3, 'lightning_bolt')}",
+        f"execute at @e[tag=pvp.hit,limit=1] as @e[distance=..3,{TGT},tag=!pvp.hit] at @s run particle minecraft:electric_spark ~ ~1 ~ 0.3 0.5 0.3 0.3 15",
+        hit(damage(6, "lightning_bolt")), hit("effect give @s minecraft:slowness 1 1"),
+        hit("particle minecraft:electric_spark ~ ~1 ~ 0.4 0.7 0.4 0.5 50"),
+        snd("entity.lightning_bolt.thunder", 0.3, 2), snd("block.respawn_anchor.deplete", 0.8, 1.8),
+        bar("LIGHTNING BOLTS SHOOT FROM MY FINGERTIPS", "aqua")]),
 }
 
 
