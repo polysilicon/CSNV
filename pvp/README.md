@@ -75,7 +75,7 @@ The menu shows all 20 kits mixed together in three rows; custom kits go on the r
   | Samus | Explosive II, Eagle Eye III, Reinforced III |
 
 - Sizes (`scale` modifier `pvp:size`, removed on `to_lobby`, going down and Outbreak entry): Pikachu and Kirby 0.6×,
-  Mario 0.85×, Spartan 1.1×, Samus 1.08×.
+  Mario 0.85×, Spartan 1.1×, Samus 1.08×, Adam Smasher 1.3×.
 
 **Other kits**:
 
@@ -87,12 +87,13 @@ The menu shows all 20 kits mixed together in three rows; custom kits go on the r
 Randy's head came from a skin uploaded to MineSkin (no Randy in the head database). The same works for any character:
 upload the skin at mineskin.org and put its texture value in `heads.json`.
 
-**Cyberpunk kits** (Edgerunner, Netrunner) keep their cyberware:
+**Cyberpunk kits** (Edgerunner, Netrunner, Adam Smasher) keep their cyberware:
 
 | Kit | Gear | Cyberware |
 |---|---|---|
 | Edgerunner | Katana: Sharpness V, Lifesteal III, Double Strike II | Sandevistan, Mantis Blades, Reflex Tuner, Kiroshi |
 | Netrunner | Sword: Sharpness IV, Assassin III, Poison II, plus Invisibility | Sandevistan, Lynx Paws, Reflex Tuner, Kiroshi |
+| Adam Smasher | Militech Heavy Cannon (crossbow: Quick Charge III, Multishot, Piercing II), Arasaka Breaker (axe: Sharpness IV, Cleave III), netherite Prot III with a redstone rib trim (chest: Armored III, Explosive Immunity III), gunmetal cyborg head, 1.3× size | Projectile Launch System (sneak + jump), Berserk (double-tap sneak), Subdermal Armor, Titanium Bones |
 
 **Classic kits** have no cyberware, just custom enchants and one passive effect:
 

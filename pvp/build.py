@@ -219,6 +219,12 @@ KITS = [
     (10, "skyhammer", "Skyhammer", "blue", "mace", ["Mace: Density IV, Wind Burst II, 16 wind charges", "Jump Boost II"],
      [f"give @s {item('mace', 'Skyhammer', 'blue', {'density': 4, 'wind_burst': 2})}", "give @s minecraft:wind_charge 16"]
      + armor("netherite", 3, {"feet": {"feather_falling": 4}}) + passive("jump_boost", 1), []),
+    (23, "smasher", "Adam Smasher", "dark_red", "netherite_chestplate", ["Heavy cannon (Multishot) + Arasaka axe (Cleave III) · full-borg frame (Armored III) · huge",
+     "Cyberware: Projectile Launcher, Berserk, Subdermal Armor, Titanium Bones"],
+     [f"give @s {item('crossbow', 'Militech Heavy Cannon', 'dark_red', {'quick_charge': 3, 'multishot': 1, 'piercing': 2})}",
+      f"give @s {item('netherite_axe', 'Arasaka Breaker', 'red', {'sharpness': 4, CE + 'cleave': 3})}", "give @s minecraft:arrow 64"]
+     + suit("netherite", 3, trim=("redstone", "rib"), extra={"chest": {CE + "armored": 3, CE + "explosiveimmunity": 3}})
+     + head("smasher", "Adam Smasher", "dark_red") + size(1.3), ["launcher", "berserk", "subdermal", "titanium"]),
 ] + FRANCHISE_KITS
 # Admin-only test kits: never in a menu. /function pvp:admin/test_david queues you for Outbreak with it.
 TEST_KIT_ID = 60
@@ -236,11 +242,11 @@ TEST_KIT = [
     "tellraw @s [{\"text\":\"Kit: \",\"color\":\"gray\"},{\"text\":\"David (test)\",\"color\":\"dark_red\",\"bold\":true},"
     "{\"text\":\" · Cyberskeleton, Sandevistan, Kiroshi, Reflex Tuner. Swap the crossbows into both hands to dual-fire.\",\"color\":\"gray\"}]",
 ]
-# kit menu order: franchises and classics mixed, rows of 7 / 8 / 7
+# kit menu order: franchises and classics mixed, rows of 7 / 9 / 7
 KIT_ORDER = [11, 1, 17, 2, 13, 18, 3,          # Jedi, Edgerunner, Mario, Juggernaut, Link, Pikachu, Sniper
-             12, 21, 4, 14, 19, 6, 22, 5,      # Sith, Randy Marsh, Berserker, Spartan | Kirby, Medic, Courier Six, Netrunner
+             12, 21, 4, 14, 23, 19, 6, 22, 5,  # Sith, Randy Marsh, Berserker, Spartan, Adam Smasher, Kirby, Medic, Courier Six, Netrunner
              15, 7, 20, 8, 16, 9, 10]          # Doom Slayer, Pyro, Samus, Ranger, Witcher, Shinobi, Skyhammer
-KIT_SLOT = dict(zip(KIT_ORDER, [10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34]))
+KIT_SLOT = dict(zip(KIT_ORDER, [10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34]))
 CUSTOM_SLOTS = [36, 37, 38, 39, 40, 41, 42, 43, 44]   # admin-made kits (/pvpkit create), ids 101+
 
 # Upgrades (points per tier I / II / III). Pack-a-Punch works on the held weapon (the tier is stored on the item);
