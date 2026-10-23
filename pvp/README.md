@@ -96,6 +96,7 @@ The menu shows all 20 kits mixed together in three rows; custom kits go on the r
 | Darth Maul (Star Wars) | Double-Bladed Lightsaber (netherite: Sharpness V, Sweeping Edge III, Double Strike III), black robes (Dodge II, Springs I), Speed I | **Saber Throw** (16 blocks: 8 dmg + Slowness I 2 s, 9 s), **Saber Spin** (3.5 blocks: 7 dmg + knockback, 7 s) |
 | Mr. Krabs (SpongeBob) | No weapon: claws +6 at sword speed; red shell, blue shirt (Armored II), 0.9× | **Claw Pinch** (4 blocks: 8 dmg + Slowness II 2 s, 7 s), **Money Grab** (6 blocks: pulls enemies 2 blocks in, Weakness I 4 s; you: Strength I 5 s, 14 s) |
 | Saul Goodman (Better Call Saul) | Gavel (mace: Density II, Breach I), loud yellow suit (Dodge II), Speed I | **Better Call Saul** (2 tamed wolf "clients" fight for you for 20 s, 30 s), **Loophole** (untouchable 1.5 s, clears Slowness/Weakness/Poison/Wither/Blindness/Nausea, Speed II 3 s, 20 s), **Fingertip Lightning** ("lightning bolts shoot from my fingertips": 16 blocks, 6 lightning dmg, arcs for 3 dmg to enemies within 3 blocks of the target, 10 s) |
+| Sniper (Team Fortress 2, was the classic Sniper) | Sniper Rifle (bow: Power V, Infinity, Lethal Sniper III, Lightning Arrows II), Kukri (Sharpness III, Bleed I), red shirt and brown vest, RED Sniper head, Night Vision | **Jarate** (thrown splash: Weakness II + glowing 8 s, Slowness I 3 s, 16 s), **Focus** (every enemy within 40 blocks glows 6 s, 20 s) |
 
 Randy's head came from a skin uploaded to MineSkin (no Randy in the head database). The same works for any character:
 upload the skin at mineskin.org and put its texture value in `heads.json`.
@@ -114,7 +115,6 @@ upload the skin at mineskin.org and put its texture value in `heads.json`.
 | Kit | Gear | Passive |
 |---|---|---|
 | Juggernaut | Sword + shield, netherite Prot IV with Armored III / Tank II | Health Boost II |
-| Sniper | Bow: Power V, Infinity, Lethal Sniper III, Lightning Arrows II | Night Vision |
 | Berserker | Axe: Sharpness V, Cleave III, Bleed III, Rage II | Speed I |
 | Medic | Lifesteal sword, Angelic III chest, 4 Healing II + 2 Regen | Regeneration I |
 | Pyro | Fire Aspect II + Execute sword, Flame bow, Fire Prot IV | Fire Resistance |

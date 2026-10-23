@@ -248,10 +248,11 @@ KITS = [
     (2, "tank", "Juggernaut", "gray", "netherite_chestplate", ["Netherite Prot IV, Armored III, Tank II, shield", "Health Boost II (+4 hearts)"],
      [f"give @s {item('netherite_sword', 'Breaker', 'gray', {'sharpness': 3})}", f"item replace entity @s weapon.offhand with {item('shield')}"]
      + armor("netherite", 4, {"chest": {CE + "armored": 3}, "legs": {CE + "tank": 2}}) + passive("health_boost", 1) + ["effect give @s minecraft:instant_health 1 3 true"], []),
-    (3, "sniper", "Sniper", "green", "bow", ["Bow: Power V, Lethal Sniper III, Lightning Arrows II", "Night Vision"],
-     [f"give @s {item('bow', 'Overwatch', 'green', {'power': 5, 'infinity': 1, CE + 'lethalsniper': 3, CE + 'lightningarrows': 2})}",
-      f"give @s {item('iron_sword', enchants={'sharpness': 2})}", "give @s minecraft:arrow 1"]
-     + armor("diamond", 2) + passive("night_vision"), []),
+    (3, "sniper", "Sniper", "dark_red", "bow", ["Sniper Rifle (bow: Power V, Lethal Sniper III, Lightning Arrows II) + Kukri · Night Vision", ab_line("jarate", "focus")],
+     [f"give @s {item('bow', 'Sniper Rifle', 'dark_red', {'power': 5, 'infinity': 1, CE + 'lethalsniper': 3, CE + 'lightningarrows': 2})}",
+      AB("jarate"), AB("focus"), f"give @s {item('iron_sword', 'Kukri', 'gray', {'sharpness': 3, CE + 'bleed': 1})}", "give @s minecraft:arrow 1"]
+     + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "diamond"}, 3, dye={"head": 6045219, "chest": 11141120, "legs": 6045219})
+     + head("sniper", "Sniper", "dark_red") + passive("night_vision"), []),
     (4, "berserker", "Berserker", "red", "netherite_axe", ["Axe: Sharpness V, Cleave III, Bleed III, Rage II", "Speed I"],
      [f"give @s {item('netherite_axe', 'Ripper', 'red', {'sharpness': 5, CE + 'cleave': 3, CE + 'bleed': 3, CE + 'rage': 2})}"]
      + armor("diamond", 3) + passive("speed"), []),

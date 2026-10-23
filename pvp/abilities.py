@@ -319,6 +319,15 @@ ABILITIES = {
         "effect give @s minecraft:invisibility 6 0 true", "effect give @s minecraft:speed 6 0 true",
         "particle minecraft:dust{color:[0.7,0.6,1.0],scale:1.0} ~ ~1 ~ 0.3 0.8 0.3 0 40",
         snd("block.beacon.power_select", 0.8, 2), snd("entity.illusioner.mirror_move", 1, 1.4), bar("OPTICAL CAMO", "light_purple")]),
+    # ---------------------------------------------------------------- Team Fortress 2
+    "jarate": ("Jarate", "yellow", "honey_bottle", 16, ["Throws a jar of... something.", "Splash: Weakness II + glowing 8 s, Slowness I 3 s"], [
+        *shoot("splash_potion", 0.9, ',Item:{id:"minecraft:splash_potion",count:1,components:{"minecraft:potion_contents":{custom_color:15128576,'
+               'custom_effects:[{id:"minecraft:weakness",amplifier:1b,duration:160},{id:"minecraft:glowing",duration:160},{id:"minecraft:slowness",duration:60}]}}}'),
+        snd("entity.splash_potion.throw", 1, 0.7), bar("JARATE!", "yellow")]),
+    "focus": ("Focus", "dark_green", "compass", 20, ["Spots every enemy in the area.", "40 blocks · they glow 6 s"], [
+        around(40, "effect give @s minecraft:glowing 6 0"),
+        "particle minecraft:end_rod ~ ~1.6 ~ 0.3 0.3 0.3 0.02 10",
+        snd("block.note_block.hat", 1, 0.6), snd("item.spyglass.use", 1, 0.8), bar("PROFESSIONALS HAVE STANDARDS", "dark_green")]),
 }
 
 
