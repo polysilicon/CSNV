@@ -640,7 +640,7 @@ def orbital(mob_points, spawns):
             g.b[(x, y, z)] = b
         g.b[(x, CEIL, z)] = "gray_concrete"
         for y in range(CEIL + 1, 31): g.b[(x, y, z)] = "barrier"
-    # mob windows in the outer hull: bars where each mob point meets the hull, smoke behind them
+    # mob windows in the outer hull: bars where each mob point meets the hull (no campfires on this map)
     for (mx, mz) in mob_points:
         an = math.atan2(mz, mx)
         for k in (-1, 0, 1):
@@ -649,8 +649,6 @@ def orbital(mob_points, spawns):
             if (wx, wz) not in hull: continue
             g.windows.append((wx, wz))
             for y in (1, 2, 3): g.b[(wx, y, wz)] = "iron_bars"
-            bx, bz = round(32.9 * math.cos(an) + tx), round(32.9 * math.sin(an) + tz)
-            if (bx, bz) not in hull and abs(bx) <= R + 1 and abs(bz) <= R + 1: g.b[(bx, 1, bz)] = "campfire[lit=true]"
 
     # ---- hub: reactor columns on the diagonals, a ring of consoles, hanging lights
     for (x, z) in ((6, 6), (-6, -6), (6, -6), (-6, 6)):
