@@ -133,8 +133,11 @@ All kit gear is unbreakable, and every kit also gets 16 steak and 2 golden apple
   - **Veteran bonus**: you start each run with 500 points + 25 per wave of your best run (`pve.best`), capped at +1,000.
 - **Queue**: the first player to queue starts a 10 s countdown, and anyone who queues meanwhile joins the same run.
   If you queue during a run, you drop in at the next wave break.
-- **Maps**: four arenas of the same size, each with 12 barred mob windows, the player spawns and the **Arsenal** in
-  the middle, but with their own layout. Each player's pick is kept in `pve.map`.
+- **Maps**: four arenas of the same size (65 × 65 inside, walls at ±33 from the centre), each with 12 barred mob
+  windows on the outer walls, the player spawns and the **Arsenal** in the middle, but with their own layout. They were
+  45 × 45 until the character kits' jumps and dashes needed more room: each map's original design fills the middle
+  and an outer ring of themed cover (ruined pillars, rock outcrops, kiosks and parked cars, lava pools and basalt)
+  surrounds it. Each player's pick is kept in `pve.map`.
   - The first player to queue decides the run's map, and the lobby is told which map is starting.
   - Anyone who queues after that joins the run already under way, whatever they picked, and is told so.
   - **Back to maps** (slot 45) in the kit menu goes back to the map menu.
@@ -169,8 +172,16 @@ All kit gear is unbreakable, and every kit also gets 16 steak and 2 golden apple
   - 100 per kill;
   - a 100 × wave bonus for everyone still standing when a wave is cleared.
 - **Arsenal**: Golden Apple 500, Med Kit 750, Ammo 250, Strength 1,000, Juggernog (+3 hearts) 2,500,
-  Speed Cola 2,000, Mystery Box 950 (one of four wonder weapons), Ray Bow 5,000, Rations (16 steak) 100.
+  Speed Cola 2,000, Mystery Box 950 (see below), Ray Bow 5,000, Rations (16 steak) 100.
   Juggernog and Speed Cola are one per life, and you aren't charged if you already have one.
+- **Mystery Box** (950): 14 rolls with equal odds, announced to the whole run.
+  - Wonder weapons: Excalibur (Sharpness VII sword), Thunderfang (Impaling V trident), Wunderwaffe (Piercing IV
+    multishot crossbow + 64 arrows), Thundergun (Density V mace + 16 wind charges).
+  - Character gear: Lightsaber (Sharpness VI, Double Strike II), Darksaber (Sharpness VII, Fire Aspect), Arasaka
+    Breaker (Sharpness VI axe, Cleave III).
+  - Character abilities: Propane Tank, Jarate, Laser Pistol, Fingertip Lightning, Charge Shot, Krabby Patty. They
+    work like the kits' ability items, and like all gear they're lost when you go down.
+  - Teddy Bear: nothing, and half the points (475) back.
 - **Food**: Rations in the Arsenal, plus 4 steak for every survivor whenever a wave is cleared.
 - **Cleanup**: the map is force-loaded for the length of a run, so when the last player leaves or goes down every mob is
   killed. Any `pve.mob` found while no wave is running (for example, one saved in a chunk that loads later) is

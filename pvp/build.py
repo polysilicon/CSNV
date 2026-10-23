@@ -17,7 +17,7 @@ LOBBY_Y = 100                  # lobby floor; players stand at LOBBY_Y + 1, cent
 LOBBY_R = 11                   # lobby platform half-size
 AY = -61                       # arena floors (superflat grass level); players stand at AY + 1
 ACX, ACZ, AR = 0, 100, 30      # PvP arena centre and half-size
-PCX, PCZ, PR = 0, 300, 22      # Outbreak (PvE) arena centre and half-size
+PCX, PCZ, PR = 0, 300, 32      # Outbreak (PvE) arena centre and half-size (outer walls at ±33)
 KIT_NPC = (-3.5, LOBBY_Y + 1, -6.5)
 PVE_NPC = (4.5, LOBBY_Y + 1, -6.5)
 SHOP_NPC = (PCX + 0.5, AY + 2, PCZ + 0.5)
@@ -76,7 +76,7 @@ ARENA_TRIM = {"cyan": "chiseled_sandstone", "magenta": "cut_red_sandstone", "yel
               "light_blue": "cut_sandstone", "lime": "red_sandstone"}   # building colour -> colosseum trim block
 # Outbreak: player spawns around the Arsenal, mob windows just inside the walls, ruins for cover
 PVE_SPAWNS = [(4, 4, -45), (-4, 4, 45), (4, -4, -135), (-4, -4, 135)]
-MOB_POINTS = [(20, 0), (-20, 0), (0, 20), (0, -20), (20, 12), (20, -12), (-20, 12), (-20, -12), (12, 20), (-12, 20), (12, -20), (-12, -20)]
+MOB_POINTS = [(30, 0), (-30, 0), (0, 30), (0, -30), (30, 16), (30, -16), (-30, 16), (-30, -16), (16, 30), (-16, 30), (16, -30), (-16, -30)]
 RUINS = [(-12, -12, -8, -11, 3, "mossy_stone_bricks"), (8, -14, 9, -8, 2, "cobblestone"), (-14, 6, -13, 12, 3, "stone_bricks"),
          (10, 10, 14, 11, 2, "mossy_cobblestone"), (-4, 14, 4, 15, 2, "cracked_stone_bricks"), (-4, -16, 4, -15, 2, "cracked_stone_bricks"),
          (15, -3, 16, 3, 3, "mossy_stone_bricks"), (-17, -3, -16, 3, 2, "cobblestone"), (5, 4, 6, 8, 2, "mossy_cobblestone"),
@@ -338,7 +338,7 @@ SHOP = [
         "attribute @s minecraft:max_health modifier add pvp:jug 6 add_value", "effect give @s minecraft:instant_health 1 1"], "pve.jug"),
     (6, "Speed Cola", "green", "lime_dye", 2000, "Speed I + Haste II until you go down", [
         "effect give @s minecraft:speed infinite 0 true", "effect give @s minecraft:haste infinite 1 true"], "pve.cola"),
-    (7, "Mystery Box", "light_purple", "chest", 950, "A random wonder weapon", ["function pvp:pve/box"], None),
+    (7, "Mystery Box", "light_purple", "chest", 950, "A random wonder weapon or character ability", ["function pvp:pve/box"], None),
     (8, "Ray Bow", "aqua", "bow", 5000, "Power X, Flame, Infinity, Punch II", [
         f"give @s {item('bow', 'Ray Bow', 'aqua', {'power': 10, 'flame': 1, 'infinity': 1, 'punch': 2})}", "give @s minecraft:arrow 1"], None),
     (9, "Rations", "yellow", "cooked_beef", 100, "16 steak", ["give @s minecraft:cooked_beef 16"], None),
@@ -354,11 +354,24 @@ SHOP = [
 ]
 SHOP_SLOTS = [10, 11, 12, 13, 14, 15, 16, 21, 23, 19, 20, 24, 25]
 WAVE_FOOD = 4   # steak for every survivor when a wave is cleared
-BOX = [   # Mystery Box rolls
-    f"give @s {item('netherite_sword', 'Excalibur', 'gold', {'sharpness': 7, 'sweeping_edge': 3})}",
-    f"give @s {item('trident', 'Thunderfang', 'aqua', {'impaling': 5, 'loyalty': 3})}",
-    f"give @s {item('crossbow', 'Wunderwaffe', 'yellow', {'quick_charge': 3, 'multishot': 1, 'piercing': 4})}\ngive @s minecraft:arrow 64",
-    f"give @s {item('mace', 'Thundergun', 'blue', {'density': 5, 'wind_burst': 3})}\ngive @s minecraft:wind_charge 16",
+# Mystery Box rolls (equal odds): name, colour, commands. Wonder weapons, gear and abilities from the character
+# kits, and the Teddy Bear (nothing, half the points back).
+BOX = [
+    ("Excalibur", "gold", [f"give @s {item('netherite_sword', 'Excalibur', 'gold', {'sharpness': 7, 'sweeping_edge': 3})}"]),
+    ("Thunderfang", "aqua", [f"give @s {item('trident', 'Thunderfang', 'aqua', {'impaling': 5, 'loyalty': 3})}"]),
+    ("Wunderwaffe", "yellow", [f"give @s {item('crossbow', 'Wunderwaffe', 'yellow', {'quick_charge': 3, 'multishot': 1, 'piercing': 4})}", "give @s minecraft:arrow 64"]),
+    ("Thundergun", "blue", [f"give @s {item('mace', 'Thundergun', 'blue', {'density': 5, 'wind_burst': 3})}", "give @s minecraft:wind_charge 16"]),
+    ("Lightsaber", "aqua", [f"give @s {item('netherite_sword', 'Lightsaber', 'aqua', {'sharpness': 6, CE + 'doublestrike': 2}, model('breeze_rod'))}"]),
+    ("Darksaber", "dark_gray", [f"give @s {item('netherite_sword', 'Darksaber', 'dark_gray', {'sharpness': 7, 'fire_aspect': 1})}"]),
+    ("Arasaka Breaker", "red", [f"give @s {item('netherite_axe', 'Arasaka Breaker', 'red', {'sharpness': 6, CE + 'cleave': 3})}"]),
+    ("Propane Tank", "aqua", [abilities.give("propane")]),
+    ("Jarate", "yellow", [abilities.give("jarate")]),
+    ("Laser Pistol", "red", [abilities.give("laser_pistol")]),
+    ("Fingertip Lightning", "aqua", [abilities.give("fingertips")]),
+    ("Charge Shot", "gold", [abilities.give("charge_shot")]),
+    ("Krabby Patty", "yellow", [abilities.give("krabby_patty")]),
+    ("Teddy Bear", "gold", ["scoreboard players add @s pve.pts 475", "playsound minecraft:entity.panda.ambient player @s ~ ~ ~ 1 0.7",
+                             "tellraw @s {\"text\":\"Bye bye! The box gave you a teddy bear (475 points back).\",\"color\":\"gray\",\"italic\":true}"]),
 ]
 
 OUT = None
@@ -788,7 +801,7 @@ def smoke_puffs():
     out = []
     for (i, _, _, _, _, cz, _) in OUTBREAK_MAPS:
         for (dx, dz) in MOB_POINTS:
-            if abs(dx) == 20: x, z, d = PCX + (PR + 1) * (1 if dx > 0 else -1) + 0.5 + (0.8 if dx > 0 else -0.8), cz + dz + 0.5, "0.1 0.6 0.7"
+            if abs(dx) > abs(dz): x, z, d = PCX + (PR + 1) * (1 if dx > 0 else -1) + 0.5 + (0.8 if dx > 0 else -0.8), cz + dz + 0.5, "0.1 0.6 0.7"
             else: x, z, d = PCX + dx + 0.5, cz + (PR + 1) * (1 if dz > 0 else -1) + 0.5 + (0.8 if dz > 0 else -0.8), "0.7 0.6 0.1"
             out.append(f"execute if score #state pve matches 2..3 if score #map pve matches {i} run particle minecraft:large_smoke {x} {AY + 2.5} {z} {d} 0.01 12")
     return out
@@ -1080,8 +1093,10 @@ def build_pve():
     fn("pve/buy", buy)
     box = ["execute store result score #r pve run random value 1..%d" % len(BOX),
            "playsound minecraft:block.chest.open player @s ~ ~ ~ 1 0.8"]
-    for n, b in enumerate(BOX, 1):
-        fn(f"pve/box/{n}", b.split("\n"))
+    for n, (bname, bcolor, bcmds) in enumerate(BOX, 1):
+        fn(f"pve/box/{n}", bcmds + [
+            f"tellraw @a[tag=pve.in] [{{\"selector\":\"@s\",\"color\":\"white\"}},{{\"text\":\" got \",\"color\":\"gray\"}},"
+            f"{{\"text\":\"{bname}\",\"color\":\"{bcolor}\",\"bold\":true}},{{\"text\":\" from the Mystery Box\",\"color\":\"gray\"}}]"])
         box.append(f"execute if score #r pve matches {n} run function {P}/box/{n}")
     fn("pve/box", box)
 

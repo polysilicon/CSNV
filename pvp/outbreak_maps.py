@@ -1,7 +1,8 @@
 """Outbreak map layouts (imported by build.py).
 
 Each map is drawn into a Grid of blocks relative to the map centre:
-- dx and dz run from -23 to 23, with the outer walls at ±23;
+- dx and dz run from -33 to 33, with the outer walls at ±33;
+- each map's designed centre fills about ±22; the ring outside it (to ±32) has more cover in the same theme;
 - dy 0 is the floor layer, and players stand on dy 1.
 
 commands() turns a grid into setblock/fill commands. It works out fence, wall and pane connections itself, since a
@@ -14,7 +15,7 @@ import math
 import random
 from collections import defaultdict, deque
 
-R = 22          # interior half-size; the outer wall is at ±23
+R = 32          # interior half-size; the outer wall is at ±33
 WALL_H = 6      # wall rows dy 0..5 (build.py's walls() puts barrier above)
 
 # blocks you can walk through, and blocks that need another block to hold them up
@@ -86,12 +87,12 @@ def base(mob_points, spawns, wallfn, fire="campfire"):
             for y in range(WALL_H):
                 g.b[(x, y, z)] = wallfn(x, y, z, t)
     for (dx, dz) in mob_points:
-        if abs(dx) == 20: cells = [((R + 1) * (1 if dx > 0 else -1), dz + k) for k in (-1, 0, 1)]
+        if abs(dx) > abs(dz): cells = [((R + 1) * (1 if dx > 0 else -1), dz + k) for k in (-1, 0, 1)]
         else: cells = [(dx + k, (R + 1) * (1 if dz > 0 else -1)) for k in (-1, 0, 1)]
         for (x, z) in cells:
             g.windows.append((x, z))
             for y in (1, 2, 3): g.b[(x, y, z)] = "iron_bars"
-        if abs(dx) == 20: s, along = (1 if dx > 0 else -1), "z"
+        if abs(dx) > abs(dz): s, along = (1 if dx > 0 else -1), "z"
         else: s, along = (1 if dz > 0 else -1), "x"
         b, c = R + 1, dz if along == "z" else dx
         for k in range(-2, 3):
@@ -115,7 +116,7 @@ def wall_sides():
         yield (t, -R), "north", t
 
 
-def near_window(t, gap=2): return any(abs(t - w) <= gap for w in (-12, 0, 12))
+def near_window(t, gap=2): return any(abs(t - w) <= gap for w in (-16, 0, 16))
 
 
 def line(x1, z1, x2, z2):
@@ -199,9 +200,24 @@ def ruins(mob_points, spawns):
             g.put(x, 1, z, "chiseled_stone_bricks" if n == 0 else "stone_brick_slab[type=bottom]" if n == len(cells) - 1 else rnd.choice(["stone_bricks", "mossy_stone_bricks"]))
         x, z = cells[1]
         g.put(x, 2, z, "candle[candles=3,lit=true]")
+    # outer ring: a second, more ruined colonnade and more fallen columns
+    for k in range(16):
+        a = math.radians(k * 22.5 + 11)
+        px, pz = round(26 * math.cos(a)), round(26 * math.sin(a))
+        g.put(px, 0, pz, "chiseled_stone_bricks")
+        h = 6 if k % 4 == 0 else rnd.randint(2, 4)
+        for y in range(1, h): g.put(px, y, pz, rnd.choice(["stone_bricks", "mossy_stone_bricks", "cracked_stone_bricks"]))
+        g.put(px, h, pz, "chiseled_stone_bricks" if h == 6 else "cracked_stone_bricks")
+        g.put(px, h + 1, pz, "soul_lantern" if h < 6 else "lantern")
+        for (ox, oz) in rnd.sample(list(DIRS.values()), 2):
+            g.put(px + ox, 1, pz + oz, rnd.choice(["stone_brick_slab[type=bottom]", "cobblestone_slab[type=bottom]", "mossy_cobblestone"]))
+    for cells in ([(x, 20) for x in range(18, 23)], [(x, -20) for x in range(-22, -17)], [(20, z) for z in range(-23, -18)],
+                  [(-20, z) for z in range(18, 23)]):
+        for n, (x, z) in enumerate(cells):
+            g.put(x, 1, z, "chiseled_stone_bricks" if n == 0 else "stone_brick_slab[type=bottom]" if n == len(cells) - 1 else rnd.choice(["stone_bricks", "mossy_stone_bricks"]))
     # buttresses along the outer wall
     for (x, z), d, t in wall_sides():
-        if t in (-18, -6, 6, 18):
+        if t in (-24, -8, 8, 24):
             for y in range(1, 6): g.put(x, y, z, "stone_bricks")
             g.put(x, 6, z, f"stone_brick_stairs[facing={d}]")
             ox, oz = DIRS[d]
@@ -258,7 +274,9 @@ def mine(mob_points, spawns):
     # rock outcrops: steep sides (rubble, then a 3-high step) so nobody can climb on top
     shape = Noise(6, 2)
     for (cx, cz, r) in ((-9, -9, 3.2), (9, 8, 2.6), (2, -10, 2.0), (-10, 3, 2.2), (10, -3, 2.0),
-                        (19, -19, 2.8), (-19, 19, 2.8), (-19, -19, 2.2), (19, 19, 2.2)):
+                        (19, -19, 2.8), (-19, 19, 2.8), (-19, -19, 2.2), (19, 19, 2.2),
+                        (25, -6, 3.0), (-25, 7, 3.0), (7, 25, 2.6), (-6, -25, 2.6), (26, 24, 2.4), (-24, -26, 2.4),
+                        (24, -26, 2.2), (-26, 24, 2.2), (22, 10, 1.8), (-22, -10, 1.8)):
         peak = None
         for x in range(math.floor(cx - r * 1.4), math.ceil(cx + r * 1.4) + 1):
             for z in range(math.floor(cz - r * 1.4), math.ceil(cz + r * 1.4) + 1):
@@ -276,15 +294,16 @@ def mine(mob_points, spawns):
             g.put(x, h + 2, z, "pointed_dripstone[vertical_direction=up,thickness=tip]")
     # stalagmite clusters on the open floor
     thick = {1: ["tip"], 2: ["frustum", "tip"], 3: ["base", "frustum", "tip"]}
-    for _ in range(14):
-        x, z = rnd.randint(-20, 20), rnd.randint(-20, 20)
+    for _ in range(26):
+        x, z = rnd.randint(-30, 30), rnd.randint(-30, 30)
         for (ox, oz) in rnd.sample([(0, 0), (1, 0), (0, 1), (-1, 0), (0, -1)], rnd.randint(1, 3)):
             X, Z = x + ox, z + oz
             if near_rail(X, Z) or g.protected(X, Z) or not g.empty(X, 1, Z): continue
             g.put(X, 0, Z, "dripstone_block")
             for y, th in enumerate(thick[rnd.choice([1, 2, 2, 3])], 1): g.put(X, y, Z, f"pointed_dripstone[vertical_direction=up,thickness={th}]")
     # toxic waste barrels with green candles
-    for (x, z) in ((-6, -13), (12, -9), (-12, 10), (7, 12), (-20, -6), (20, 5), (5, 20), (-5, -20)):
+    for (x, z) in ((-6, -13), (12, -9), (-12, 10), (7, 12), (-20, -6), (20, 5), (5, 20), (-5, -20),
+                   (27, 12), (-27, -13), (12, -27), (-13, 27), (20, 28), (-28, 20)):
         for (ox, oz) in [(0, 0)] + rnd.sample([(1, 0), (0, 1), (-1, 0), (0, -1)], 2):
             X, Z = x + ox, z + oz
             if near_rail(X, Z) or g.protected(X, Z) or not g.empty(X, 1, Z): continue
@@ -306,10 +325,10 @@ def mine(mob_points, spawns):
             for y in range(1, max(3, h - i) + 1): g.put(X, y, Z, rocks(X + y, Z))
     for (x, z) in g.floor():
         c = max(abs(x), abs(z))
-        if c < 19: continue
-        if over(x, z) > {22: 0.15, 21: 0.35, 20: 0.55, 19: 0.75}[c]:
+        if c < R - 3: continue
+        if over(x, z) > {R: 0.15, R - 1: 0.35, R - 2: 0.55, R - 3: 0.75}[c]:
             g.put(x, 6, z, rocks(x, z + 6))
-            if c >= 21: g.put(x, 7, z, rocks(x + 7, z))
+            if c >= R - 1: g.put(x, 7, z, rocks(x + 7, z))
     for (x, z) in g.floor():
         if g.get(x, 6, z) and not g.get(x, 5, z) and rnd.random() < 0.3:
             if rnd.random() < 0.5: g.put(x, 5, z, "pointed_dripstone[vertical_direction=down,thickness=tip]")
@@ -325,7 +344,7 @@ def neon(mob_points, spawns):
     glowing sign, a noodle bar, a car park and an arcade with a rooftop billboard."""
     rnd = random.Random(13)
     def wallfn(x, y, z, t):
-        if abs(t) == 17 and 1 <= y <= 5: return "sea_lantern"
+        if abs(t) == 24 and 1 <= y <= 5: return "sea_lantern"
         return "magenta_concrete" if y == 4 else "black_concrete"
     g = base(mob_points, spawns, wallfn)
     for (x, z) in g.floor():
@@ -343,7 +362,8 @@ def neon(mob_points, spawns):
         if lo == 5 and ax >= 5 and az >= 5: g.put(x, 1, z, "smooth_stone_slab[type=bottom]")   # kerb
     # lamps
     for (x, z) in [(sx * 6, sz * 6) for sx in (-1, 1) for sz in (-1, 1)] + [(sx * 6, sz * 16) for sx in (-1, 1) for sz in (-1, 1)] \
-            + [(sx * 16, sz * 6) for sx in (-1, 1) for sz in (-1, 1)]:
+            + [(sx * 16, sz * 6) for sx in (-1, 1) for sz in (-1, 1)] + [(sx * 6, sz * 26) for sx in (-1, 1) for sz in (-1, 1)] \
+            + [(sx * 26, sz * 6) for sx in (-1, 1) for sz in (-1, 1)]:
         for y in range(1, 5): g.put(x, y, z, "polished_blackstone_wall")
         g.put(x, 5, z, "sea_lantern")
         g.put(x, 6, z, "polished_blackstone_slab[type=bottom]")
@@ -428,11 +448,32 @@ def neon(mob_points, spawns):
     for (x, z), d, t in wall_sides():
         if 4 <= abs(t) <= 8:
             for y in (3, 4, 5): g.put(x, y, z, f"{colours[(n // 15) % 8]}_glazed_terracotta")
-        elif abs(t) == 17:
+        elif abs(t) == 24:
             for y in range(1, 6): g.put(x, y, z, "light_blue_stained_glass")
         n += 1
+    # kiosks in the outer corners: neon boxes with a door facing the middle
+    for n, (sx, sz) in enumerate(((1, 1), (-1, -1), (1, -1), (-1, 1))):
+        col = ["magenta", "cyan", "lime", "orange"][n]
+        xs, zs = sorted((sx * 21, sx * 26)), sorted((sz * 21, sz * 26))
+        for x in range(xs[0], xs[1] + 1):
+            for z in range(zs[0], zs[1] + 1):
+                edge = x in xs or z in zs
+                for y in range(1, 6):
+                    if y <= 3 and not edge: continue
+                    g.put(x, y, z, f"{col}_stained_glass" if edge and y in (2, 3) and not (x in xs and z in zs) else
+                          "sea_lantern" if y == 5 and (x + z) % 3 == 0 else "black_concrete")
+        dx_, dz_ = sx * 21, sz * 23
+        for y in (1, 2): g.put(dx_, y, dz_, "air"); g.put(dx_, y, dz_ + sz, "air")
+    # parked cars along the outer roads
+    for (x0, z0, body) in ((-3, 24, "blue"), (2, -28, "red"), (24, 2, "white"), (-28, -3, "yellow")):
+        along_x = abs(x0) > abs(z0)
+        for a in range(4):
+            for b in range(2):
+                x, z = (x0 + a, z0 + b) if along_x else (x0 + b, z0 + a)
+                g.put(x, 1, z, f"{body}_concrete")
+                if 0 < a < 3: g.put(x, 2, z, "gray_stained_glass")
     # alley clutter
-    for (x, z) in ((21, 21), (-21, -21), (21, -21), (-21, 21), (18, 21), (-21, 18)):
+    for (x, z) in ((30, 30), (-30, -30), (30, -30), (-30, 30), (18, 21), (-21, 18), (30, 10), (-30, -10)):
         g.put(x, 1, z, rnd.choice(["barrel[facing=up]", "composter", "cauldron"]))
     return g
 
@@ -492,7 +533,7 @@ def hellfort(mob_points, spawns):
         ox, oz = DIRS[f]
         g.put(x - 2 * ox, 3, z - 2 * oz, f"soul_wall_torch[facing={ {'west': 'east', 'east': 'west', 'north': 'south', 'south': 'north'}[f] }]")
     # fenced lava pools
-    for (cx, cz) in ((17, -17), (-17, 17)):
+    for (cx, cz) in ((17, -17), (-17, 17), (26, 9), (-26, -9), (9, -26), (-9, 26)):
         for x in range(cx - 2, cx + 3):
             for z in range(cz - 2, cz + 3):
                 if max(abs(x - cx), abs(z - cz)) <= 1: g.put(x, 0, z, "lava")
@@ -501,8 +542,9 @@ def hellfort(mob_points, spawns):
                     g.put(x, 1, z, "nether_brick_fence")
         for (x, z) in ((cx - 2, cz - 2), (cx + 2, cz + 2)): g.put(x, 2, z, "soul_lantern")
     # basalt columns with blackstone skirts
-    for n, (x, z) in enumerate(((14, 4), (14, -4), (-14, 4), (-14, -4), (4, 14), (-4, 14), (4, -14), (-4, -14))):
-        h = [3, 5, 4, 6, 5, 3, 6, 4][n]
+    for n, (x, z) in enumerate(((14, 4), (14, -4), (-14, 4), (-14, -4), (4, 14), (-4, 14), (4, -14), (-4, -14),
+                                (24, 24), (-24, -24), (24, -20), (-20, 24), (27, -2), (-27, 2), (2, 27), (-2, -27))):
+        h = [3, 5, 4, 6, 5, 3, 6, 4, 7, 6, 5, 7, 4, 5, 6, 4][n]
         for y in range(1, h + 1): g.put(x, y, z, "polished_basalt[axis=y]")
         g.put(x, h + 1, z, "soul_lantern")
         for (ox, oz) in DIRS.values():
@@ -525,7 +567,7 @@ def hellfort(mob_points, spawns):
     for (x, z) in ((15, 15), (18, 17)): g.put(x, 0, z, "netherrack"); g.put(x, 1, z, "fire")
     # buttresses with soul lanterns along the outer wall
     for (x, z), d, t in wall_sides():
-        if t in (-18, -6, 6, 18):
+        if t in (-24, -8, 8, 24):
             for y in range(1, 6): g.put(x, y, z, "red_nether_bricks")
             g.put(x, 6, z, "soul_lantern")
     return g
