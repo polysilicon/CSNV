@@ -331,3 +331,47 @@ def check(g, spawns=SPAWNS):
     for (sx, sz, _) in SPECTATE:
         assert row(sx, sz) and row(sx, sz) >= 2, f"spectator spot {sx},{sz} isn't on the stands"
     return len(seen)
+
+
+# ---------------------------------------------------------------------------------------------- duel pits
+PIT_R = 14            # floor radius of a duel pit
+PIT_SPAWNS = [(-10, 0, -90), (10, 0, 90)]   # challenger, opponent (facing each other)
+
+
+class PitGrid(om.Grid):
+    def put(self, x, y, z, block, force=False):
+        if abs(x) > PIT_R + 3 or abs(z) > PIT_R + 3: return
+        if y >= 1 and not force and any(max(abs(x - sx), abs(z - sz)) <= 1 for (sx, sz, _) in PIT_SPAWNS): return
+        self.b[(x, y, z)] = block
+
+
+def duel_pit():
+    """A small round sandstone pit for 1v1 duels: mosaic floor, a wall with torches and banners, barrier above and a
+    lid, and four columns for cover."""
+    g = PitGrid([], PIT_SPAWNS)
+    E = PIT_R + 2
+    for x in range(-E, E + 1):
+        for z in range(-E, E + 1):
+            d = dist(x, z)
+            if d <= PIT_R + 0.5:
+                ring = int(d)
+                b = ("chiseled_red_sandstone" if ring == 0 else "cut_red_sandstone" if ring in (3, 9) else
+                     "smooth_red_sandstone" if ring == PIT_R else "smooth_sandstone" if ring < 3 else "sandstone" if (x + z) % 2 else "smooth_sandstone")
+                if 4 <= ring <= 8 and (angle(x, z) % 45 < 4 or angle(x, z) % 45 > 41): b = "orange_terracotta"
+                g.put(x, 0, z, b)
+                g.put(x, 21, z, "barrier", force=True)   # lid
+            elif d <= PIT_R + 1.6:   # the wall
+                g.put(x, 0, z, "cut_sandstone")
+                for y in range(1, 6): g.put(x, y, z, "cut_red_sandstone" if y == 3 else "chiseled_sandstone" if y == 5 else "smooth_sandstone", force=True)
+                for y in range(6, 21): g.put(x, y, z, "barrier", force=True)
+                g.put(x, 21, z, "barrier", force=True)
+    for k in range(16):   # torches and banners on the inside of the wall
+        deg = k * 22.5
+        x, z = round(PIT_R * math.cos(math.radians(deg))), round(PIT_R * math.sin(math.radians(deg)))
+        f = facing_in(x, z)
+        if k % 2 == 0: g.put(x, 4, z, f"wall_torch[facing={f}]")
+        else: g.put(x, 4, z, f"red_wall_banner[facing={f}]")
+    for (x, z) in ((0, 6), (0, -6), (5, 0), (-5, 0)):   # cover: columns
+        for y in range(1, 5): g.put(x, y, z, "chiseled_sandstone" if y in (1, 4) else "smooth_quartz")
+        g.put(x, 5, z, "lantern")
+    return g

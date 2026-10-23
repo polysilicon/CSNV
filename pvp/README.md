@@ -172,6 +172,27 @@ upload the skin at mineskin.org and put its texture value in `heads.json`.
 
 All kit gear is unbreakable, and every kit also gets 16 steak and 2 golden apples.
 
+## Kit mastery
+Every character has its own mastery XP (`pvp.mx<kit id>`): +10 per PvP kill and +1 per Outbreak kill while playing it
+(`pvp.cur` is the character you last picked).
+- Levels I / II / III / IV / V at 50 / 150 / 400 / 800 / 1,500 XP. V is **Master**.
+- Level-ups show a title and a chat line; reaching Master is announced to everyone and counts in `pvp.mastered`.
+- Picking a kit shows your stars and progress for that character, with a link to `/trigger pvp.mastery`, which lists
+  every character you've played.
+- Masters get a sparkle aura while playing that character and a gold star in kill streak announcements.
+
+## Duels
+- In the lobby everyone gets a **⚔ Duel Challenge** item (hotbar slot 9). Look at a player within 8 blocks and
+  right-click to challenge them. They get clickable **[Accept] / [Decline]** (`/trigger pvp.duela` / `pvp.dueld`), and
+  the challenge expires after 30 s.
+- Accepting takes both players to a free duel pit (three small round pits at x -300, z 0 / 60 / 120;
+  `admin/build_duels`). Each fights as the character they last picked, or a random one, with 3 s of grace.
+- The first to die loses. Ratings are ELO (`pvp.elo`, start 1000, K 32), with wins and losses in `pvp.dwin` /
+  `pvp.dloss`, and the result is announced.
+- Leaving mid-duel (`/spawn`, disconnecting) is a forfeit. If your opponent logs out, you win by walkover with no
+  rating change.
+- `/trigger pvp.duelstats` shows your rating and record.
+
 ## Outbreak (PvE waves)
 - **Progression** (Arsenal):
   - **Pack-a-Punch** upgrades the weapon in your hand, tier I / II / III for 2,000 / 4,000 / 7,500 points. Each tier adds
@@ -191,7 +212,7 @@ All kit gear is unbreakable, and every kit also gets 16 steak and 2 golden apple
   - **Veteran bonus**: you start each run with 500 points + 25 per wave of your best run (`pve.best`), capped at +1,000.
 - **Queue**: the first player to queue starts a 10 s countdown, and anyone who queues meanwhile joins the same run.
   If you queue during a run, you drop in at the next wave break.
-- **Maps**: four arenas of the same size (65 × 65 inside, walls at ±33 from the centre), each with 12 barred mob
+- **Maps**: five arenas of the same size (65 × 65 inside, walls at ±33 from the centre), each with 12 barred mob
   windows on the outer walls, the player spawns and the **Arsenal** in the middle, but with their own layout. They were
   45 × 45 until the character kits' jumps and dashes needed more room: each map's original design fills the middle
   and an outer ring of themed cover (ruined pillars, rock outcrops, kiosks and parked cars, lava pools and basalt)
@@ -206,6 +227,7 @@ All kit gear is unbreakable, and every kit also gets 16 steak and 2 golden apple
   | Toxic Mine | 0, -60, 400 | cave: rock outcrops, stalagmites, an overhang with stalactites, a mine-cart loop under timber frames, toxic barrels, slime sludge puddles (they slow you) | cave spiders (wave 2+), silverfish (wave 4+) |
   | Neon City | 0, -60, 500 | crossroads with crosswalks, kerbs and street lamps; a tower with a glowing sign, a noodle bar, a car park, an arcade with a rooftop billboard | pillagers (wave 3+), vindicators (wave 5+) |
   | Hellfort | 0, -60, 600 | you start inside a walled keep with four arched gates and corner towers; outside are fenced lava pools, basalt columns, a giant ribcage and a ruined portal | wither skeletons (wave 3+), blazes (wave 4+) |
+  | Orbital Station | 0, -60, 700 | space station: white panel decks with lit seams and glowing copper grates, a reactor ring of iron columns around the Arsenal, four glass-walled labs with consoles, cargo crates, copper pipes and bulbs, dark viewports | endermites (wave 2+), strays with bows (wave 4+) |
 
   Behind each window is a smoke vent: a campfire (soul campfire in Hellfort) outside the bars, with solid wall behind it,
   so you can't see out to the other maps. During a run, smoke puffs also drift across the bars.
@@ -245,6 +267,11 @@ All kit gear is unbreakable, and every kit also gets 16 steak and 2 golden apple
     work like the kits' ability items, and like all gear they're lost when you go down.
   - Guns (the kits' gun abilities, see Guns above): MA5 Assault Rifle, Super Shotgun, Lucky, Trunk M60, Amban Rifle.
   - Teddy Bear: nothing, and half the points (475) back.
+- **Co-op revive**: going down leaves a glowing marker where you fell. A teammate crouching next to it for 3 s revives you
+  there (with your kit) and gets +250 points. Otherwise you're back at the start of the next wave as before.
+- **The Annihilator quest**: every boss wave cleared gives each survivor a **Power Cell**. Three Power Cells at the
+  Arsenal (**Assemble: Annihilator**) build the Annihilator, a gun ability (50 blocks, 24 damage, 8 more to everything
+  within 3 blocks of the hit, 0.8 s) that can be Pack-a-Punched like the other guns.
 - **Food**: Rations in the Arsenal, plus 4 steak for every survivor whenever a wave is cleared.
 - **Cleanup**: the map is force-loaded for the length of a run, so when the last player leaves or goes down every mob is
   killed. Any `pve.mob` found while no wave is running (for example, one saved in a chunk that loads later) is

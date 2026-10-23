@@ -347,7 +347,16 @@ UP_BOOST = {   # per tier, added to the existing enchants; kind -> (item tag/id,
 VETERAN_PER_WAVE, VETERAN_MAX = 25, 1000
 # Kit mastery: XP per character (score pvp.mx<kit id>), +10 per PvP kill and +1 per Outbreak kill with that kit.
 MASTERY = [50, 150, 400, 800, 1500]      # XP for levels I..V (V = Master)
-MASTERY_PVP, MASTERY_PVE = 10, 1   # extra starting points per best wave reached
+MASTERY_PVP, MASTERY_PVE = 10, 1
+# Duels: three private pits west of everything; ELO rating (K = 32) in pvp.elo, starting at 1000
+DUEL_PITS = [(-300, 0), (-300, 60), (-300, 120)]
+DUEL_K, DUEL_START = 32, 1000
+DUEL_ITEM = ('minecraft:flint[minecraft:item_model="minecraft:iron_sword",minecraft:max_stack_size=1,minecraft:enchantment_glint_override=true,'
+             'minecraft:custom_name={"text":"⚔ Duel Challenge","color":"gold","bold":true,"italic":false},'
+             'minecraft:lore=[{"text":"Look at a player and right-click","color":"gray","italic":false},'
+             '{"text":"to challenge them to a 1v1 duel.","color":"gray","italic":false}],'
+             'minecraft:consumable={consume_seconds:0.05f,animation:"none",has_consume_particles:false,sound:"minecraft:intentionally_empty"},'
+             'minecraft:use_cooldown={seconds:2f,cooldown_group:"pvp:duel"}]')   # extra starting points per best wave reached
 PERK_RESET = ["tag @s remove pvp.master", "attribute @s minecraft:scale modifier remove pvp:size", "attribute @s minecraft:attack_damage modifier remove pvp:size_dmg",
               "attribute @s minecraft:max_health modifier remove pvp:size_hp", "attribute @s minecraft:knockback_resistance modifier remove pvp:size_kb",
               "attribute @s minecraft:movement_speed modifier remove pvp:size_spd", "attribute @s minecraft:attack_damage modifier remove pvp:fists",
@@ -505,7 +514,9 @@ def build():
             "pvp dummy", "pvp.kit trigger", "pvp.spawn trigger", "pvp.kn playerKillCount", "pvp.dead deathCount",
             "pvp.left minecraft.custom:minecraft.leave_game", "pvp.streak dummy", "pvp.best dummy",
             "pvp.hurt minecraft.custom:minecraft.damage_taken", "pvp.ct dummy",
-            "pvp.cur dummy", "pvp.mastery trigger", "pvp.mastered dummy", *[f"pvp.mx{k[0]} dummy" for k in KITS],
+            "pvp.cur dummy", "pvp.mastery trigger", "pvp.mastered dummy",
+            "pvp.elo dummy", "pvp.dwin dummy", "pvp.dloss dummy", "pvp.dfrom dummy", "pvp.dtm dummy", "pvp.dpit dummy",
+            "pvp.duela trigger", "pvp.dueld trigger", "pvp.duelstats trigger", *[f"pvp.mx{k[0]} dummy" for k in KITS],
             "pve dummy", "pve.join trigger", "pve.buy trigger", "pve.k totalKillCount", "pve.kit dummy", "pve.best dummy", "pve.arm dummy", "pve.gun dummy", "pve.map dummy", "pve.rv dummy"]],
         'scoreboard objectives add pvp.kills playerKillCount {"text":"⚔ Kills","color":"aqua","bold":true}',
         'scoreboard objectives add pve.pts dummy {"text":"☣ Points","color":"green","bold":true}',
@@ -532,6 +543,11 @@ def build():
         f"execute as @a[scores={{pvp.kit=1..}}] at @s run function {NS}:kit/pick",
         f"execute as @a[scores={{pvp.spawn=1..}}] run function {NS}:trigger_lobby",
         "scoreboard players enable @a pvp.mastery", f"execute as @a[scores={{pvp.mastery=1..}}] run function {NS}:mastery/list",
+        "scoreboard players enable @a pvp.duela", "scoreboard players enable @a pvp.dueld", "scoreboard players enable @a pvp.duelstats",
+        f"execute as @a[scores={{pvp.duela=1..}}] run function {NS}:duel/accept", f"execute as @a[scores={{pvp.dueld=1..}}] run function {NS}:duel/decline",
+        f"execute as @a[scores={{pvp.duelstats=1..}}] run function {NS}:duel/stats",
+        "scoreboard players remove @a[scores={pvp.dtm=1..}] pvp.dtm 1",
+        f"execute as @a[scores={{pvp.dtm=1}}] run function {NS}:duel/expire",
         f"execute as @a[x={SPEC_PORTAL[0]},y={SPEC_PORTAL[1]},z={SPEC_PORTAL[2]},dx=0,dy=2,dz=2,tag=!pvp.spec] run function {NS}:spectate",
         "scoreboard players set @a[scores={pvp.hurt=1..}] pvp.ct 200", "scoreboard players set @a[scores={pvp.hurt=1..}] pvp.hurt 0",
         "scoreboard players remove @a[scores={pvp.ct=1..}] pvp.ct 1",
@@ -548,15 +564,18 @@ def build():
         "effect give @a[tag=pvp.spec] minecraft:saturation 3 0 true",
         f"execute as @a[tag=pvp.spec] unless entity @s[{STANDS_BOX}] run function {NS}:to_lobby",
         # anyone (in adventure) outside the lobby and both arenas goes back to the lobby
-        f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[{ARENA_BOX}] {" ".join(f"unless entity @s[{b}]" for b in PVE_BOXES.values())} unless entity @s[tag=pvp.admin,{ROOM_BOX}] unless entity @s[tag=pvp.spec,{STANDS_BOX}] run function {NS}:to_lobby",
+        f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[{ARENA_BOX}] {" ".join(f"unless entity @s[{b}]" for b in PVE_BOXES.values())} unless entity @s[tag=pvp.admin,{ROOM_BOX}] unless entity @s[tag=pvp.spec,{STANDS_BOX}] unless entity @s[tag=pvp.duel] run function {NS}:to_lobby",
         f"function {NS}:pve/second",
         f"function {NS}:ability/second",
+        f"execute as @a[{LOBBY_BOX},tag=!pvp.spec] unless items entity @s container.* minecraft:flint unless items entity @s weapon.offhand minecraft:flint run item replace entity @s hotbar.8 with {DUEL_ITEM}",
+        f"function {NS}:duel/check",
         f"execute as @a[tag=pvp.master] at @s unless entity @s[{LOBBY_BOX}] run particle minecraft:wax_on ~ ~1 ~ 0.35 0.6 0.35 0 5",
         f"particle minecraft:reverse_portal {SPEC_PORTAL[0] + 0.5} {SPEC_PORTAL[1] + 1.5} 0.5 0.1 0.9 0.9 0.05 40",
         # NPC clicks are advancements; clear any left granted so an NPC can never get stuck for a player
         "advancement revoke @a only pvp:npc", "advancement revoke @a only pvp:pvenpc", "advancement revoke @a only pvp:shopnpc",
     ])
     fn("to_lobby", [
+        f"execute if entity @s[tag=pvp.duel] run function {NS}:duel/forfeit",
         "scoreboard players add @s pve.best 0",
         "execute if entity @s[tag=pve.in] if score #state pve matches 2..3 if score #wave pve > @s pve.best run scoreboard players operation @s pve.best = #wave pve",
         "clear @s", "effect clear @s", "function cyber:admin/reset", "gamemode adventure @s",
@@ -576,6 +595,7 @@ def build():
     fn("respawned", [
         "scoreboard players set @s pvp.dead 0",
         f"execute if entity @s[tag=pve.in] run return run function {NS}:pve/downed",
+        f"execute if entity @s[tag=pvp.duel] run return run function {NS}:duel/lose",
         "execute if score @s pvp.streak matches 3.. run tellraw @a [{\"selector\":\"@s\",\"color\":\"yellow\"},{\"text\":\"'s \",\"color\":\"gray\"},"
         "{\"score\":{\"name\":\"@s\",\"objective\":\"pvp.streak\"},\"color\":\"gold\"},{\"text\":\" kill streak was ended.\",\"color\":\"gray\"}]",
         "scoreboard players set @s pvp.streak 0",
@@ -617,6 +637,7 @@ def build():
              f"execute unless score #ok pvp matches 1 run {say('@s', 'That kit no longer exists.', 'red')}"]
     fn("kit/pick", pick)
     build_mastery()
+    build_duels()
     fn("kit/valid_pve", [f"execute if score #j pve matches {k[0]} run return 1" for k in KITS] + ["return 0"])   # #j pve is a real kit id
     # admin-made kits are given by the mod ("pvpkit give <id>", ids 101+)
     fn("kit/custom", ["execute store result storage pvp:tmp k int 1 run scoreboard players get #k pvp", f"function {NS}:kit/custom_give with storage pvp:tmp"])
@@ -803,6 +824,133 @@ def walls(cx, cz, r, block, stripe):
 def afford(name, cost):
     return (f"tellraw @s [{{\"text\":\"{name} costs {cost:,} points (you have \",\"color\":\"red\"}},"
             "{\"score\":{\"name\":\"@s\",\"objective\":\"pve.pts\"},\"color\":\"white\"},{\"text\":\").\",\"color\":\"red\"}]")
+
+
+def build_duels():
+    """1v1 duels: the Duel Challenge item (lobby), accept/decline, three pits, ELO, forfeits and walkovers."""
+    D = f"{NS}:duel"
+    say_ = lambda who, parts: f"tellraw {who} {tj(parts)}"
+    elo_init = "execute unless score @s pvp.elo matches -99999.. run scoreboard players set @s pvp.elo %d" % DUEL_START
+    wj(f"data/{NS}/advancement/duel_use.json", {"criteria": {"c": {"trigger": "minecraft:consume_item",
+        "conditions": {"item": {"items": "minecraft:flint"}}}}, "rewards": {"function": f"{NS}:duel/use"}})
+    fn("duel/use", [
+        f"advancement revoke @s only {NS}:duel_use",
+        f"execute unless entity @s[{LOBBY_BOX}] run return 0",
+        "execute unless score @s pvp.id matches 1.. store result score @s pvp.id run scoreboard players add #nextid pvp 1",
+        "tag @s add pvp.caster", "scoreboard players set #ray pvp 16", f"execute at @s run function {NS}:ability/ray_start",
+        f"execute unless entity @a[tag=pvp.hit] run {say('@s', 'Look at a player in the lobby and right-click to challenge them.', 'gray')}",
+        f"execute as @a[tag=pvp.hit,limit=1] run function {D}/challenged",
+        "tag @s remove pvp.caster", "tag @e[tag=pvp.hit] remove pvp.hit"])
+    fn("duel/challenged", [   # as the target; the challenger is the nearest player tagged... found by id
+        "tag @a remove pvp.dsend", "execute as @a[tag=pvp.caster] run tag @s add pvp.dsend",
+        f"execute if entity @s[tag=pvp.duel] run return run tellraw @a[tag=pvp.dsend] {tj({'text': 'They are already in a duel.', 'color': 'red'})}",
+        f"execute unless entity @s[{LOBBY_BOX}] run return run tellraw @a[tag=pvp.dsend] {tj({'text': 'They need to be in the lobby.', 'color': 'red'})}",
+        "execute unless score @s pvp.id matches 1.. store result score @s pvp.id run scoreboard players add #nextid pvp 1",
+        "scoreboard players operation @s pvp.dfrom = @p[tag=pvp.dsend] pvp.id", "scoreboard players set @s pvp.dtm 600",
+        "tellraw @a[tag=pvp.dsend] " + tj([{"text": "⚔ Duel challenge sent to ", "color": "gold"}, {"selector": "@s", "color": "yellow"},
+                                         {"text": " (30 s to accept).", "color": "gray"}]),
+        "tellraw @s " + tj([{"text": "⚔ ", "color": "gold"}, {"selector": "@a[tag=pvp.dsend]", "color": "yellow"},
+                            {"text": " challenges you to a duel! ", "color": "gold"},
+                            {"text": "[Accept]", "color": "green", "bold": True, "click_event": {"action": "run_command", "command": "/trigger pvp.duela"},
+                             "hover_event": {"action": "show_text", "value": "Fight them 1v1 in a duel pit"}},
+                            {"text": " "},
+                            {"text": "[Decline]", "color": "red", "bold": True, "click_event": {"action": "run_command", "command": "/trigger pvp.dueld"}}]),
+        "playsound minecraft:item.goat_horn.sound.0 player @s ~ ~ ~ 0.6 1.2", "tag @a remove pvp.dsend"])
+    fn("duel/expire", ["scoreboard players set @s pvp.dfrom 0", "scoreboard players set @s pvp.dtm 0",
+                       say("@s", "The duel challenge expired.", "gray")])
+    fn("duel/decline", ["scoreboard players set @s pvp.dueld 0",
+                        "execute unless score @s pvp.dfrom matches 1.. run return 0",
+                        "scoreboard players operation #from pvp = @s pvp.dfrom", "tag @s add pvp.ddec",
+                        "execute as @a if score @s pvp.id = #from pvp run tellraw @s " + tj([{"selector": "@a[tag=pvp.ddec]", "color": "yellow"}, {"text": " declined your duel.", "color": "gray"}]),
+                        "tag @s remove pvp.ddec",
+                        "scoreboard players set @s pvp.dfrom 0", "scoreboard players set @s pvp.dtm 0", say("@s", "Duel declined.", "gray")])
+    acc = ["scoreboard players set @s pvp.duela 0",
+           f"execute unless score @s pvp.dfrom matches 1.. run return run {say('@s', 'You have no duel challenge to accept.', 'gray')}",
+           "scoreboard players operation #from pvp = @s pvp.dfrom", "scoreboard players set @s pvp.dfrom 0", "scoreboard players set @s pvp.dtm 0",
+           "tag @a remove pvp.da", "tag @a remove pvp.db",
+           "execute as @a if score @s pvp.id = #from pvp run tag @s add pvp.da", "tag @s add pvp.db",
+           f"execute unless entity @a[tag=pvp.da,{LOBBY_BOX},tag=!pvp.duel] run return run {say('@s', 'They are no longer in the lobby.', 'red')}",
+           f"execute unless entity @s[{LOBBY_BOX}] run return run {say('@s', 'You need to be in the lobby.', 'red')}",
+           "scoreboard players set #pit pvp 0"]
+    for n in range(len(DUEL_PITS), 0, -1):
+        acc.append(f"execute unless score #duel{n} pvp matches 1 run scoreboard players set #pit pvp {n}")
+    acc += [f"execute if score #pit pvp matches 0 run return run tellraw @a[tag=pvp.da] {tj({'text': 'All duel pits are busy, try again in a moment.', 'color': 'red'})}",
+            f"execute if score #pit pvp matches 0 run return run {say('@s', 'All duel pits are busy, try again in a moment.', 'red')}",
+            f"function {D}/start"]
+    fn("duel/accept", acc)
+    # start: both players into pit #pit, A (challenger) and B (accepter)
+    st = [*[f"execute if score #pit pvp matches {n} run scoreboard players set #duel{n} pvp 1" for n in range(1, len(DUEL_PITS) + 1)],
+          "scoreboard players operation @a[tag=pvp.da] pvp.dpit = #pit pvp", "scoreboard players operation @a[tag=pvp.db] pvp.dpit = #pit pvp",
+          f"execute as @a[tag=pvp.da] run function {D}/prep", f"execute as @a[tag=pvp.db] run function {D}/prep"]
+    for n, (px, pz) in enumerate(DUEL_PITS, 1):
+        (ax, az, ay), (bx, bz, by) = arena_map.PIT_SPAWNS
+        st += [f"execute if score #pit pvp matches {n} run tp @a[tag=pvp.da] {px + ax + 0.5} {AY + 1} {pz + az + 0.5} {ay} 0",
+               f"execute if score #pit pvp matches {n} run tp @a[tag=pvp.db] {px + bx + 0.5} {AY + 1} {pz + bz + 0.5} {by} 0"]
+    st += ["tellraw @a " + tj([{"text": "⚔ ", "color": "gold"}, {"selector": "@a[tag=pvp.da]", "color": "yellow"}, {"text": " and ", "color": "gray"},
+                             {"selector": "@a[tag=pvp.db]", "color": "yellow"}, {"text": " are dueling!", "color": "gold"}]),
+           "tag @a remove pvp.da", "tag @a remove pvp.db"]
+    fn("duel/start", st)
+    # prep: as each dueler, a kit (their last character, or a random one), 3 s of grace
+    kit_ids = [k[0] for k in KITS]
+    fn("duel/prep", [elo_init, "tag @s add pvp.duel", "tag @s remove pve.q", "clear @s", "effect clear @s", "function cyber:admin/reset", *PERK_RESET,
+                     "gamemode adventure @s",
+                     f"execute unless score @s pvp.cur matches 1.. store result score #r pvp run random value 1..{len(kit_ids)}",
+                     *[f"execute unless score @s pvp.cur matches 1.. if score #r pvp matches {i} run scoreboard players set @s pvp.cur {kid}" for i, kid in enumerate(kit_ids, 1)],
+                     *[f"execute if score @s pvp.cur matches {k[0]} run function {NS}:kit/{k[1]}" for k in KITS],
+                     "effect give @s minecraft:resistance 3 4 true", "effect give @s minecraft:weakness 3 255 true",
+                     "scoreboard players set @s pvp.ct 0", "scoreboard players set @s pvp.streak 0",
+                     "title @s title {\"text\":\"DUEL\",\"color\":\"gold\",\"bold\":true}", "title @s subtitle {\"text\":\"Fight in 3 seconds\",\"color\":\"gray\"}"])
+    # ELO: expected score from the rating gap (loser - winner), in 25-point steps
+    delta = []
+    for d in range(-400, 425, 25):
+        e_w = 1 / (1 + 10 ** (d / 400))
+        lo = "" if d == -400 else str(d - 12)
+        hi = "" if d == 400 else str(d + 12)
+        delta.append(f"execute if score #d pvp matches {lo}..{hi} run scoreboard players set #delta pvp {max(1, round(DUEL_K * (1 - e_w)))}")
+    # lose: as the loser (died, forfeited); the winner is the other dueler in the same pit
+    fn("duel/lose", ["scoreboard players set @s pvp.dead 0", "scoreboard players operation #pit pvp = @s pvp.dpit", "tag @s remove pvp.duel",
+                     "tag @a remove pvp.dw", "execute as @a[tag=pvp.duel] if score @s pvp.dpit = #pit pvp run tag @s add pvp.dw",
+                     f"execute if entity @a[tag=pvp.dw] run function {D}/result",
+                     f"execute if entity @a[tag=pvp.dw] run function {D}/free",   # (a walkover already freed the pit)
+                     "scoreboard players set @s pvp.dpit 0", f"function {NS}:to_lobby"])
+    fn("duel/forfeit", [say("@s", "You left the duel: that counts as a loss.", "red"), f"function {D}/lose"])
+    fn("duel/result", [   # as the loser; @a[tag=pvp.dw] is the winner
+        elo_init, f"execute as @a[tag=pvp.dw] run {elo_init}",
+        "scoreboard players operation #d pvp = @s pvp.elo", "scoreboard players operation #d pvp -= @p[tag=pvp.dw] pvp.elo", *delta,
+        "scoreboard players operation @a[tag=pvp.dw] pvp.elo += #delta pvp", "scoreboard players operation @s pvp.elo -= #delta pvp",
+        "scoreboard players add @a[tag=pvp.dw] pvp.dwin 1", "scoreboard players add @s pvp.dloss 1",
+        "tellraw @a " + tj([{"text": "⚔ ", "color": "gold"}, {"selector": "@a[tag=pvp.dw]", "color": "green"}, {"text": " won a duel against ", "color": "gray"},
+                            {"selector": "@s", "color": "red"}, {"text": " (+", "color": "gray"}, {"score": {"name": "#delta", "objective": "pvp"}, "color": "gold"},
+                            {"text": " rating)", "color": "gray"}]),
+        "execute as @a[tag=pvp.dw] run title @s title {\"text\":\"VICTORY\",\"color\":\"gold\",\"bold\":true}",
+        "title @s title {\"text\":\"DEFEAT\",\"color\":\"red\",\"bold\":true}",
+        "execute as @a[tag=pvp.dw] at @s run playsound minecraft:ui.toast.challenge_complete player @s ~ ~ ~ 1 1",
+        f"execute as @a[tag=pvp.dw] run function {D}/send_home"])
+    fn("duel/send_home", ["tag @s remove pvp.duel", "scoreboard players set @s pvp.dpit 0", "tag @s remove pvp.dw", f"function {NS}:to_lobby"])
+    fn("duel/free", [f"execute if score #pit pvp matches {n} run scoreboard players set #duel{n} pvp 0" for n in range(1, len(DUEL_PITS) + 1)])
+    # every second: a pit with one dueler left (the other logged out) is a walkover; an empty busy pit is freed
+    chk = []
+    for n in range(1, len(DUEL_PITS) + 1):
+        chk += [f"execute store result score #c pvp if entity @a[tag=pvp.duel,scores={{pvp.dpit={n}}}]",
+                f"execute if score #c pvp matches 1 as @a[tag=pvp.duel,scores={{pvp.dpit={n}}}] run function {D}/walkover",
+                f"execute if score #c pvp matches 0 run scoreboard players set #duel{n} pvp 0"]
+    fn("duel/check", chk)
+    fn("duel/walkover", [say("@s", "Your opponent left the duel, so you win (no rating change).", "gold"),
+                         "scoreboard players add @s pvp.dwin 1", "scoreboard players operation #pit pvp = @s pvp.dpit", f"function {D}/free",
+                         f"function {D}/send_home"])
+    fn("duel/stats", ["scoreboard players set @s pvp.duelstats 0", elo_init, "scoreboard players add @s pvp.dwin 0", "scoreboard players add @s pvp.dloss 0",
+                      "tellraw @s " + tj([{"text": "⚔ Duel rating: ", "color": "gold"}, {"score": {"name": "@s", "objective": "pvp.elo"}, "color": "white", "bold": True},
+                                          {"text": "  ·  ", "color": "dark_gray"}, {"score": {"name": "@s", "objective": "pvp.dwin"}, "color": "green"},
+                                          {"text": " wins, ", "color": "gray"}, {"score": {"name": "@s", "objective": "pvp.dloss"}, "color": "red"},
+                                          {"text": " losses", "color": "gray"}])])
+    # building the pits (admin; force-load them first)
+    g = arena_map.duel_pit()
+    for n, (px, pz) in enumerate(DUEL_PITS, 1):
+        E = arena_map.PIT_R + 3
+        fn(f"admin/build_duel_{n}", [f"fill {px - E} {AY + 1} {pz - E} {px + E} {AY + 22} {pz + E} minecraft:air",
+                                     f"fill {px - E} {AY - 1} {pz - E} {px + E} {AY} {pz + E} minecraft:sandstone"]
+           + outbreak_maps.commands(g, px, AY, pz))
+    fn("admin/build_duels", [f"function {NS}:admin/build_duel_{n}" for n in range(1, len(DUEL_PITS) + 1)])
 
 
 def build_mastery():
