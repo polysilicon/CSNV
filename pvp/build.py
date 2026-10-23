@@ -124,7 +124,24 @@ def head(key, name, color):
              'minecraft:attribute_modifiers=[{type:"minecraft:armor",amount:3,operation:"add_value",id:"pvp:head_armor",slot:"head"},'
              '{type:"minecraft:armor_toughness",amount:2,operation:"add_value",id:"pvp:head_tough",slot:"head"}]']
     return [f"item replace entity @s armor.head with minecraft:player_head[{','.join(comps)}]"]
-def size(scale): return [f"attribute @s minecraft:scale modifier add pvp:size {round(scale - 1, 3)} add_value"]
+SIZE_MODS = ("size_dmg", "size_hp", "size_kb", "size_spd")
+def size_stats(scale):
+    """What a size does besides the model: big characters hit harder, have more health and knockback resistance but
+    are slower; small ones are faster but hit softer and have less health. d is the size change (1.3x -> 0.3)."""
+    d = scale - 1
+    return {"dmg": round(d * 0.5, 3),                        # attack damage, x total: 1.3x -> +15 %, 0.6x -> -20 %
+            "hp": round(d * 20) if d > 0 else round(d * 10),   # max health: 1.3x -> +6 (3 hearts), 0.6x -> -4
+            "kb": round(d, 3) if d > 0 else 0,                 # knockback resistance: 1.3x -> +0.3
+            "spd": round(-d * 0.3, 3)}                         # movement speed, x base: 1.3x -> -9 %, 0.6x -> +12 %
+def size(scale):
+    st = size_stats(scale)
+    out = [f"attribute @s minecraft:scale modifier add pvp:size {round(scale - 1, 3)} add_value",
+           f"attribute @s minecraft:attack_damage modifier add pvp:size_dmg {st['dmg']} add_multiplied_total",
+           f"attribute @s minecraft:movement_speed modifier add pvp:size_spd {st['spd']} add_multiplied_base"]
+    if st["hp"]: out.append(f"attribute @s minecraft:max_health modifier add pvp:size_hp {st['hp']} add_value")
+    if st["kb"]: out.append(f"attribute @s minecraft:knockback_resistance modifier add pvp:size_kb {st['kb']} add_value")
+    if st["hp"] > 0: out.append("effect give @s minecraft:instant_health 1 1 true")   # fill the extra hearts
+    return out
 AB = abilities.give
 def ab_line(*keys): return " · ".join(abilities.ABILITIES[k][0] for k in keys)
 
@@ -326,7 +343,9 @@ UP_BOOST = {   # per tier, added to the existing enchants; kind -> (item tag/id,
     "mace": ("minecraft:mace", {"density": 1, "breach": 1}, {"wind_burst": 1}),
 }
 VETERAN_PER_WAVE, VETERAN_MAX = 25, 1000   # extra starting points per best wave reached
-PERK_RESET = ["attribute @s minecraft:scale modifier remove pvp:size", "attribute @s minecraft:attack_damage modifier remove pvp:fists",
+PERK_RESET = ["attribute @s minecraft:scale modifier remove pvp:size", "attribute @s minecraft:attack_damage modifier remove pvp:size_dmg",
+              "attribute @s minecraft:max_health modifier remove pvp:size_hp", "attribute @s minecraft:knockback_resistance modifier remove pvp:size_kb",
+              "attribute @s minecraft:movement_speed modifier remove pvp:size_spd", "attribute @s minecraft:attack_damage modifier remove pvp:fists",
               "attribute @s minecraft:attack_speed modifier remove pvp:fists", "attribute @s minecraft:max_health modifier remove pvp:jug", "attribute @s minecraft:max_health modifier remove pvp:arm",
               "tag @s remove pve.jug", "tag @s remove pve.cola", "tag @s remove pve.dt", "tag @s remove pve.phd", "scoreboard players set @s pve.arm 0"]
 # Outbreak shop: id, name, colour, icon, cost, lore, commands (run as the buyer), one-per-life tag (checked before paying)

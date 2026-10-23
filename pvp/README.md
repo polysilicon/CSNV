@@ -75,8 +75,22 @@ classic kits with no character (Juggernaut, Berserker, Medic, Pyro, Ranger, Shin
   | Kirby | Devour III, Antigravity II |
   | Samus | Explosive II, Eagle Eye III, Reinforced III |
 
-- Sizes (`scale` modifier `pvp:size`, removed on `to_lobby`, going down and Outbreak entry): Pikachu and Kirby 0.6×,
-  Mario 0.85×, Spartan 1.1×, Samus 1.08×, Adam Smasher 1.3×, Sonic 0.8×, Rebecca 0.75×, Donkey Kong 1.25×, Red 0.7×, Shrek 1.3×, Peter Griffin and Homer 1.1×, Mr. Krabs 0.9×, Tony Soprano 1.1×, SpongeBob 0.8×.
+- Sizes (`scale` modifier `pvp:size`, all removed on `to_lobby`, going down and Outbreak entry). Size changes stats
+  too (`size_stats()` in `build.py`, modifiers `pvp:size_dmg/_hp/_kb/_spd`): big characters hit harder, have more
+  health and knockback resistance but are slower; small ones are faster but hit softer with less health.
+
+  | Kit | Size | Damage | Health | Knockback res. | Speed |
+  |---|---|---|---|---|---|
+  | Pikachu, Kirby | 0.6× | −20 % | −2 hearts | | +12 % |
+  | Red | 0.7× | −15 % | −1.5 hearts | | +9 % |
+  | Rebecca | 0.75× | −12 % | −1 heart | | +7.5 % |
+  | Sonic, SpongeBob | 0.8× | −10 % | −1 heart | | +6 % |
+  | Mario | 0.85× | −8 % | −1 heart | | +4.5 % |
+  | Mr. Krabs | 0.9× | −5 % | −½ heart | | +3 % |
+  | Samus | 1.08× | +4 % | +1 heart | +8 % | −2.4 % |
+  | Spartan, Peter Griffin, Homer, Tony Soprano | 1.1× | +5 % | +1 heart | +10 % | −3 % |
+  | Donkey Kong | 1.25× | +12 % | +2.5 hearts | +25 % | −7.5 % |
+  | Shrek, Adam Smasher | 1.3× | +15 % | +3 hearts | +30 % | −9 % |
 
 **Other kits**:
 
