@@ -41,6 +41,7 @@ final class NetworkStats {
         final String name;
         final long[] total = new long[Cat.values().length];
         final Map<String, Long> playtimeByServer = new TreeMap<>();
+        final Map<String, Long> mastery = new HashMap<>();   // PvP objective (pvp.mx<kit id>) -> mastery XP
         Row(String name) { this.name = name; }
     }
 
@@ -142,7 +143,7 @@ final class NetworkStats {
             }
         }
         // PvP server scoreboard: Outbreak best wave (pve.best), best kill streak (pvp.best), duel rating (pvp.elo),
-        // characters mastered (pvp.mastered)
+        // characters mastered (pvp.mastered), and each character's mastery XP (pvp.mx<kit id>)
         Path sb = root.resolve(cfg().getString("pvp-scoreboard", "CrispyPvP01/Minecraft/world/data/minecraft/scoreboard.dat"));
         if (Files.isRegularFile(sb)) {
             try (var in = new java.io.DataInputStream(new java.io.BufferedInputStream(new java.util.zip.GZIPInputStream(Files.newInputStream(sb))))) {
@@ -152,6 +153,11 @@ final class NetworkStats {
                 Object scores = data instanceof Map<?, ?> d ? d.get("PlayerScores") : null;
                 if (scores instanceof List<?> l) for (Object o : l) {
                     if (!(o instanceof Map<?, ?> e) || !(e.get("Name") instanceof String name) || name.startsWith("#")) continue;
+                    String obj = String.valueOf(e.get("Objective"));
+                    if (obj.startsWith("pvp.mx") && e.get("Score") instanceof Number n) {   // per-character mastery XP (mastery tags)
+                        out.computeIfAbsent(name.toLowerCase(Locale.ROOT), k -> new Row(name)).mastery.merge(obj, n.longValue(), Math::max);
+                        continue;
+                    }
                     Cat c = switch (String.valueOf(e.get("Objective"))) {
                         case "pve.best" -> Cat.OUTBREAK_WAVE;
                         case "pvp.best" -> Cat.PVP_STREAK;
@@ -190,6 +196,8 @@ final class NetworkStats {
     }
 
     boolean loaded() { return updatedAt > 0; }
+    /** A PvP mastery objective (pvp.mx<kit id>) for this player, 0 if none. */
+    long mastery(String name, String objective) { Row r = rows.get(name.toLowerCase(Locale.ROOT)); return r == null ? 0 : r.mastery.getOrDefault(objective, 0L); }
     long value(String name, Cat c) { Row r = rows.get(name.toLowerCase(Locale.ROOT)); return r == null ? 0 : r.total[c.ordinal()]; }
     /** 1-based rank in a category, or 0 if the player has nothing there. */
     int rank(String name, Cat c) {

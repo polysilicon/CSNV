@@ -9,3 +9,9 @@
 - Server names are prettified with `placeholder-output-replacements` for `%server%`.
 - DeluxeHub's own tablist on the Lobby is switched off (`tablist.enabled: false`) so it doesn't overwrite TAB.
 - Apply edits with `btab reload` in the proxy console (no restart).
+
+## CrispyTags (`proxy/crispytags`, 1.1.0)
+- Shows the lobby's cosmetic tags after names in the tab list and on name tags (through TAB), from the lobby's `tags.json`.
+- Owns `/vote` and `/cosmetics` on every server: off the lobby it connects the player to `lobby`
+  (`-Dcrispytags.lobby` to change), then hands the command line to CrispyLobby on the `crispy:vote` plugin channel,
+  which opens the menu. On the lobby it hands it over straight away.

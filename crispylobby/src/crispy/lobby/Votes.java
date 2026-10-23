@@ -55,11 +55,14 @@ public class Votes implements Listener {
     }
     record Server(String key, String label, Material icon, Rcon rcon, List<String> reward, List<String> commands) {}
     /** A tag costs vote points, or (earned tags) has a requirement instead: an advancement, a network stat milestone
-     *  (stat + min) or a ranking (stat + top: wearable only while you hold it). stat "VOTES" = this month's votes. */
+     *  (stat + min) or a ranking (stat + top: wearable only while you hold it). stat "VOTES" = this month's votes.
+     *  Mastery tags (score + min) unlock at that much mastery XP on a PvP objective (pvp.mx<kit id>); they have their
+     *  own page, and head = a player-head texture for the icon. */
     record Tag(String id, String display, int cost, Material icon, String joinedBefore, String note,
-               String advancement, String stat, long min, int top) {
-        boolean earned() { return advancement != null || stat != null; }
+               String advancement, String stat, long min, int top, String score, String head) {
+        boolean earned() { return advancement != null || stat != null || score != null; }
         boolean ranked() { return stat != null && top > 0; }
+        String page() { return score != null ? "mtags" : earned() ? "etags" : "tags"; }
     }
     record NameColor(String id, String name, String code, int cost, Material icon) {}
     // what each retired trail cost, for the refund
@@ -141,7 +144,7 @@ public class Votes implements Listener {
             }
             tags.put(k, new Tag(k, ts.getString(k + ".display", k), ts.getInt(k + ".cost", 5), mat(ts.getString(k + ".icon"), Material.NAME_TAG),
                     ts.getString(k + ".joined-before"), ts.getString(k + ".note"), ts.getString(k + ".advancement"),
-                    ts.getString(k + ".stat"), ts.getLong(k + ".min"), ts.getInt(k + ".top")));
+                    ts.getString(k + ".stat"), ts.getLong(k + ".min"), ts.getInt(k + ".top"), ts.getString(k + ".score"), ts.getString(k + ".head")));
         }
         firstSeen.clear();
         ConfigurationSection cs = plugin.getConfig().getConfigurationSection("cosmetics.name-colors");
@@ -152,8 +155,17 @@ public class Votes implements Listener {
     }
     static Material mat(String s, Material def) { Material m = s == null ? null : Material.matchMaterial(s); return m == null ? def : m; }
 
+    /** The CrispyTags proxy plugin owns /vote and /cosmetics network-wide: it brings the player to the lobby and sends
+     *  the command line ("vote top", "cosmetics") here on this channel. Anything sent here only runs those two commands
+     *  as that player, so a message straight from a client can't do more than typing them. */
+    static final String CHANNEL = "crispy:vote";
     void start() {
         Bukkit.getMessenger().registerOutgoingPluginChannel(plugin, "BungeeCord");
+        Bukkit.getMessenger().registerIncomingPluginChannel(plugin, CHANNEL, (ch, p, data) -> {
+            String[] w = new String(data, java.nio.charset.StandardCharsets.UTF_8).trim().split("\\s+");
+            if (w.length == 0 || !(w[0].equalsIgnoreCase("vote") || w[0].equalsIgnoreCase("cosmetics"))) return;
+            Bukkit.getScheduler().runTask(plugin, () -> { if (p.isOnline()) command(p, w[0], Arrays.copyOfRange(w, 1, w.length)); });
+        });
         Bukkit.getScheduler().runTaskTimer(plugin, this::cycle, 100L, 100L);
     }
     void stop() { save(); worker.shutdownNow(); servers.values().forEach(s -> s.rcon().close()); }
@@ -334,6 +346,17 @@ public class Votes implements Listener {
         it.setItemMeta(meta);
         return it;
     }
+    /** A tag's icon: a textured player head when it has one. */
+    ItemStack tagItem(Tag t, List<String> lore, boolean glow) {
+        ItemStack it = item(t.head() != null ? Material.PLAYER_HEAD : t.icon(), t.display(), lore, glow);
+        if (t.head() != null && it.getItemMeta() instanceof org.bukkit.inventory.meta.SkullMeta sm) {
+            com.destroystokyo.paper.profile.PlayerProfile prof = Bukkit.createProfile(UUID.nameUUIDFromBytes(t.head().getBytes()), t.id().length() > 16 ? t.id().substring(0, 16) : t.id());
+            prof.setProperty(new com.destroystokyo.paper.profile.ProfileProperty("textures", t.head()));
+            sm.setPlayerProfile(prof);
+            it.setItemMeta(sm);
+        }
+        return it;
+    }
     Menu menu(String kind, int rows, String title) {
         Menu m = new Menu(kind);
         m.inv = Bukkit.createInventory(m, rows * 9, c(title));
@@ -373,6 +396,8 @@ public class Votes implements Listener {
         p.openInventory(m.inv);
     }
 
+    static final int[] MGRID = java.util.stream.IntStream.range(9, 45).toArray();   // mastery page: 4 full rows, like the PvP kit menu
+    static final long MASTERY_XP = 1500;   // PvP mastery level V (pvp/build.py MASTERY)
     static final int[] GRID = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
     ItemStack pointsItem(PD pd) {
         return item(Material.AMETHYST_SHARD, "&d&l" + pd.points + " vote point" + (pd.points == 1 ? "" : "s"),
@@ -389,7 +414,7 @@ public class Votes implements Listener {
         long ownColors = colors.keySet().stream().filter(k -> pd.owned.contains("color:" + k)).count();
         put(m, 11, item(tg == null ? Material.NAME_TAG : tg.icon(), "&f&lTags", List.of("&7Shown with your name in chat, the tab", "&7list and above your head, everywhere.", "",
                 "&7Wearing: " + (tg == null ? "&8none" : tg.display()), "&7Owned: &f" + ownTags + "&7/" + tags.size(), "",
-                "&7Buy them with points, or &6earn &7them", "&7with advancements and top stats.", "", "&eClick to browse"), tg != null), "tags");
+                "&7Buy them with points, or &6earn &7them", "&7with advancements, top stats and", "&7mastering PvP characters.", "", "&eClick to browse"), tg != null), "tags");
         put(m, 13, pointsItem(pd), null);
         put(m, 15, item(nc == null ? Material.WHITE_DYE : nc.icon(), "&f&lName colours", List.of("&7Your name in colour in chat on", "&7every server (and in cross-chat).", "",
                 "&7Using: " + (nc == null ? "&8none" : colored(nc.name(), nc.code())), "&7Owned: &f" + ownColors + "&7/" + colors.size(), "", "&eClick to browse"), nc != null), "colors");
@@ -397,15 +422,20 @@ public class Votes implements Listener {
         p.openInventory(m.inv);
     }
 
-    void openTags(Player p) { openTags(p, false); }
-    /** Tags, two pages: the shop (vote points) and earned tags (advancements, milestones, rankings). */
-    void openTags(Player p, boolean earned) {
+    void openTags(Player p) { openTags(p, "tags"); }
+    /** Tags, three pages: the shop (vote points, "tags"), earned tags (advancements, milestones, rankings, "etags") and
+     *  mastery tags (one per PvP character, "mtags", laid out like the PvP kit menu). */
+    void openTags(Player p, String page) {
         PD pd = pd(p.getName());
-        Menu m = menu(earned ? "etags" : "tags", 6, (earned ? "&6&lEarned tags" : "&f&lTag shop") + " &8(&d" + pd.points + " points&8)");
-        Set<String> advs = earned ? advancements(p) : Set.of();
+        boolean earned = !page.equals("tags"), mastery = page.equals("mtags");
+        Menu m = menu(page, 6, (mastery ? "&e&lMastery tags" : earned ? "&6&lEarned tags" : "&f&lTag shop") + " &8(&d" + pd.points + " points&8)");
+        Set<String> advs = earned && !mastery ? advancements(p) : Set.of();
+        int[] grid = mastery ? MGRID : GRID;
+        if (mastery) put(m, 4, item(Material.NETHER_STAR, "&e&lMastery tags", List.of("&7Master a character on the PvP server", "&7(level V, &f" + String.format("%,d", MASTERY_XP) + " &7mastery XP)",
+                "&7to unlock its tag, worn on every server.", "", "&7+10 XP per PvP kill, +1 per Outbreak kill.", "&f/trigger pvp.mastery &7on PvP shows yours."), false), null);
         int i = 0;
         for (Tag t : tags.values()) {
-            if (t.earned() != earned || i >= GRID.length) continue;
+            if (!t.page().equals(page) || i >= grid.length) continue;
             boolean own = pd.owned.contains("tag:" + t.id()), on = t.id().equals(pd.tag);
             List<String> lore = new ArrayList<>(List.of("&7Preview: &f<" + t.display() + " &f" + p.getName() + "> hi"));
             if (earned) {
@@ -423,10 +453,11 @@ public class Votes implements Listener {
                 lore.add(on ? "&aWearing &7- click to take off" : own ? "&eOwned &7- click to wear" : "&7Cost: &d" + t.cost() + " points");
                 if (!own && pd.points < t.cost()) lore.add("&cNot enough points");
             }
-            put(m, GRID[i++], item(t.icon(), t.display(), lore, on), "tag:" + t.id());
+            put(m, grid[i++], tagItem(t, lore, on), "tag:" + t.id());
         }
-        put(m, 46, item(Material.NAME_TAG, "&f&lTag shop", List.of("&7Tags bought with vote points"), !earned), "tags");
-        put(m, 52, item(Material.EXPERIENCE_BOTTLE, "&6&lEarned tags", List.of("&7Unlocked by advancements, milestones", "&7and being top of a leaderboard"), earned), "etags");
+        put(m, 46, item(Material.NAME_TAG, "&f&lTag shop", List.of("&7Tags bought with vote points"), page.equals("tags")), "tags");
+        put(m, 52, item(Material.EXPERIENCE_BOTTLE, "&6&lEarned tags", List.of("&7Unlocked by advancements, milestones", "&7and being top of a leaderboard"), page.equals("etags")), "etags");
+        put(m, 53, item(Material.NETHER_STAR, "&e&lMastery tags", List.of("&7One for every PvP character:", "&7master it to unlock its tag"), mastery), "mtags");
         if (pd.tag != null) put(m, 48, item(Material.BARRIER, "&cTake off your tag", List.of(), false), "off:tag");
         put(m, 49, item(Material.ARROW, "&7Back", List.of(), false), "cosmetics");
         put(m, 50, pointsItem(pd), null);
@@ -436,7 +467,8 @@ public class Votes implements Listener {
     // ------------------------------------------------------------------ earned tags
     List<String> requirement(Tag t) {
         List<String> l = new ArrayList<>();
-        if (t.advancement() != null) l.add("&7Advancement: &f" + (t.note() != null ? t.note() : t.advancement()));
+        if (t.score() != null) { l.add("&7Master &f" + (t.note() != null ? t.note() : t.id()) + " &7on the PvP server"); l.add("&8" + String.format("%,d", t.min()) + " mastery XP with that character"); }
+        else if (t.advancement() != null) l.add("&7Advancement: &f" + (t.note() != null ? t.note() : t.advancement()));
         else if ("VOTES".equals(t.stat())) l.add("&7Be the &f#1 voter &7this month");
         else if (t.stat() != null) {
             NetworkStats.Cat c = NetworkStats.Cat.valueOf(t.stat());
@@ -460,6 +492,11 @@ public class Votes implements Listener {
     /** null if the player meets the tag's requirement, else a lore line saying where they stand. */
     String lockReason(Player p, Tag t, Set<String> advs) {
         if (t.advancement() != null) return advs.contains(t.advancement()) ? null : "&cNot unlocked yet";
+        if (t.score() != null) {
+            if (!plugin.stats.loaded()) return "&8Stats are loading, try again in a minute";
+            long v = plugin.stats.mastery(p.getName(), t.score());
+            return v >= t.min() ? null : "&cYou: &f" + String.format("%,d", v) + " &8/ " + String.format("%,d", t.min()) + " XP";
+        }
         if ("VOTES".equals(t.stat())) {
             int r = voteRank(p.getName());
             return r > 0 && r <= Math.max(1, t.top()) ? null : "&cYou're " + (r == 0 ? "not ranked yet" : "#" + r) + " this month";
@@ -537,15 +574,14 @@ public class Votes implements Listener {
         if (a.equals("links")) { p.closeInventory(); links(p); }
         else if (a.equals("top")) { p.closeInventory(); top(p); }
         else if (a.equals("cosmetics")) openCosmetics(p);
-        else if (a.equals("tags")) openTags(p, false);
-        else if (a.equals("etags")) openTags(p, true);
+        else if (a.equals("tags") || a.equals("etags") || a.equals("mtags")) openTags(p, a);
         else if (a.equals("colors")) openColors(p);
         else if (a.startsWith("off:")) {
             PD pd = pd(p.getName());
             if (a.equals("off:tag")) pd.tag = null; else pd.color = null;
             writeTags(); save();
             p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 1f);
-            if (a.equals("off:tag")) openTags(p, m.kind.equals("etags")); else openColors(p);
+            if (a.equals("off:tag")) openTags(p, m.kind); else openColors(p);
         }
         else if (a.equals("back")) open(p);
         else if (a.startsWith("claim:")) claim(p, a.substring(6), e.isShiftClick());
@@ -618,7 +654,7 @@ public class Votes implements Listener {
                 p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.6f, 1.2f);
             } else p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 1f);
             pd.tag = wearing ? null : id; writeTags(); save();
-            openTags(p, true);
+            openTags(p, et.page());
             return;
         }
         int cost = isTag ? (tags.containsKey(id) ? tags.get(id).cost() : -1) : (colors.containsKey(id) ? colors.get(id).cost() : -1);
@@ -633,7 +669,7 @@ public class Votes implements Listener {
         if (isTag) { pd.tag = id.equals(pd.tag) ? null : id; writeTags(); }
         else { pd.color = id.equals(pd.color) ? null : id; writeTags(); }
         save();
-        if (isTag) openTags(p, false); else openColors(p);
+        if (isTag) openTags(p, "tags"); else openColors(p);
     }
 
     void links(CommandSender s) {
