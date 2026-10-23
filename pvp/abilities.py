@@ -7,7 +7,8 @@ An ability is an item in the hotbar: right-click to use it.
   runs while the item is still in the hand: it works out which ability that is from the item model
   and runs pvp:ability/use/<key>, which remembers the ability and the selected hotbar slot. The last used item is
   kept in storage pvp:debug for troubleshooting.
-- Next tick pvp:ability/regive puts the item back in that slot, or the offhand if it came from there, otherwise the
+- 3 ticks later pvp:ability/regive puts the item back in that slot (not sooner: if the slot is emptied and refilled
+  before the server syncs the inventory, the client never hears about either change and keeps showing it empty), or the offhand if it came from there, otherwise the
   inventory. Never twice, and never in the lobby.
 
 Effects run as the caster, at the caster, tagged pvp.caster. Targets:
@@ -184,7 +185,7 @@ def build(fn, wj, lobby_box):
         fn(f"ability/use/{key}", [
             f"scoreboard players set @s pvp.abk {idx}",
             "execute store result score @s pvp.abs run data get entity @s SelectedItemSlot",
-            "tag @s add pvp.regive", "tag @s add pvp.caster",
+            "scoreboard players set @s pvp.rgt 3", "tag @s add pvp.caster",
             f"execute at @s run function {NS}:ability/fx/{key}",
             "tag @s remove pvp.caster", "tag @e[tag=pvp.hit] remove pvp.hit",
         ])
@@ -199,7 +200,7 @@ def build(fn, wj, lobby_box):
        + [f"execute if items entity @s {h} {sel(k)} run return run function {NS}:ability/use/{k}"
           for h in ("weapon.mainhand", "weapon.offhand") for k in ABILITIES])
     # give the used item back (it was consumed): its hotbar slot, else the offhand, else anywhere
-    fn("ability/regive", ["tag @s remove pvp.regive"] + [
+    fn("ability/regive", ["scoreboard players set @s pvp.rgt 0"] + [
         f"execute if score @s pvp.abk matches {i} run return run function {NS}:ability/regive/{k}" for i, k in enumerate(ABILITIES, 1)])
     for k in ABILITIES:
         mine = sel(k)
@@ -253,7 +254,8 @@ def build(fn, wj, lobby_box):
     # passives, keyed off carrying the kit's ability items (so they end with the kit)
     has = lambda k: f"if items entity @s container.* {sel(k)}"
     fn("ability/tick", [
-        f"execute as @a[tag=pvp.regive] run function {NS}:ability/regive",
+        f"execute as @a[scores={{pvp.rgt=1}}] run function {NS}:ability/regive",
+        "scoreboard players remove @a[scores={pvp.rgt=2..}] pvp.rgt 1",
         f"execute as @e[type=minecraft:armor_stand,tag=pvp.nade] at @s run function {NS}:ability/nade_tick",
         # Doom Slayer: every kill heals (glory kill)
         f"execute as @a[scores={{pvp.gk=1..}}] {has('chainsaw')} at @s run function {NS}:ability/glory",
@@ -276,4 +278,4 @@ def build(fn, wj, lobby_box):
     fn("ability/shield_up", ["effect clear @s minecraft:absorption", "effect give @s minecraft:absorption infinite 1 true",
                              "playsound minecraft:block.beacon.power_select player @s ~ ~ ~ 0.6 1.8",
                              "title @s actionbar {\"text\":\"◆ Shields recharged\",\"color\":\"dark_green\"}"])
-    return ["pvp.abk dummy", "pvp.abs dummy", "pvp.id dummy", "pvp.ft dummy", "pvp.gk totalKillCount", "pvp.dmg minecraft.custom:minecraft.damage_taken", "pvp.sh dummy"]
+    return ["pvp.rgt dummy", "pvp.abk dummy", "pvp.abs dummy", "pvp.id dummy", "pvp.ft dummy", "pvp.gk totalKillCount", "pvp.dmg minecraft.custom:minecraft.damage_taken", "pvp.sh dummy"]
