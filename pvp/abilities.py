@@ -359,7 +359,6 @@ ABILITIES = {
     "m60": gun("Trunk M60", "dark_gray", "netherite_shovel", 0.25, 3, 32, "The machine gun from the trunk.", "entity.firework_rocket.blast", 1.8),
     "amban": gun("Amban Rifle", "gray", "iron_shovel", 2.5, 12, 60, "Disintegration sniper rifle.", "block.beacon.deactivate", 1.8,
                  [("glowing 3 s", "effect give @s minecraft:glowing 3 0"), ("", "particle minecraft:electric_spark ~ ~1 ~ 0.3 0.5 0.3 0.3 20")]),
-    "sniper_rifle": gun("Sniper Rifle", "dark_red", "diamond_shovel", 3.0, 14, 80, "Professionals have standards.", "entity.generic.explode", 2.0),
     # ---------------------------------------------------------------- King of the Hill / Futurama / Mr. Robot
     "propane": ("Propane Tank", "aqua", "lantern", 10, ["Lobs a propane tank that blows up.", "Explodes where it hits"], [
         *shoot("fireball", 1.0, ",ExplosionPower:1b,acceleration_power:0.0d"),

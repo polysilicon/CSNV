@@ -67,9 +67,8 @@ along your aim, so there are no arrows to carry. Shotguns hit everything in a sh
 | Pistol | Rebecca | 28 | 3 | 0.35 s | |
 | Trunk M60 | Walter White | 32 | 3 | 0.25 s | |
 | Amban Rifle | Mandalorian | 60 | 12 | 2.5 s | glowing 3 s |
-| Sniper Rifle | Sniper | 80 | 14 | 3 s | |
 
-Bows that aren't guns stay bows: Link's Hero Bow, Red's Slingshot and Samus's Arm Cannon.
+Bows stay bows: Link's Hero Bow, Red's Slingshot, Samus's Arm Cannon and the Sniper's Sniper Rifle.
 
 **Character heads, enchants and sizes**:
 - Each character kit wears its character's head as the helmet. The head has diamond-helmet armor and Protection IV,
@@ -128,7 +127,7 @@ Bows that aren't guns stay bows: Link's Hero Bow, Red's Slingshot and Samus's Ar
 | Darth Maul (Star Wars) | Double-Bladed Lightsaber (netherite: Sharpness V, Sweeping Edge III, Double Strike III), black robes (Dodge II, Springs I), Speed I | **Saber Throw** (16 blocks: 8 dmg + Slowness I 2 s, 9 s), **Saber Spin** (3.5 blocks: 7 dmg + knockback, 7 s) |
 | Mr. Krabs (SpongeBob) | No weapon: claws +6 at sword speed; red shell, blue shirt (Armored II), 0.9× | **Claw Pinch** (4 blocks: 8 dmg + Slowness II 2 s, 7 s), **Money Grab** (6 blocks: pulls enemies 2 blocks in, Weakness I 4 s; you: Strength I 5 s, 14 s) |
 | Saul Goodman (Better Call Saul) | Gavel (mace: Density II, Breach I), loud yellow suit (Dodge II), Speed I | **Better Call Saul** (2 tamed wolf "clients" fight for you for 20 s, 30 s), **Loophole** (untouchable 1.5 s, clears Slowness/Weakness/Poison/Wither/Blindness/Nausea, Speed II 3 s, 20 s), **Fingertip Lightning** ("lightning bolts shoot from my fingertips": 16 blocks, 6 lightning dmg, arcs for 3 dmg to enemies within 3 blocks of the target, 10 s) |
-| Sniper (Team Fortress 2, was the classic Sniper) | Sniper Rifle (gun ability), Kukri (Sharpness III, Bleed I), red shirt and brown vest, RED Sniper head, Night Vision | **Jarate** (thrown splash: Weakness II + glowing 8 s, Slowness I 3 s, 16 s), **Focus** (every enemy within 40 blocks glows 6 s, 20 s) |
+| Sniper (Team Fortress 2, was the classic Sniper) | Sniper Rifle (bow: Power V, Infinity, Lethal Sniper III, Lightning Arrows II), Kukri (Sharpness III, Bleed I), red shirt and brown vest, RED Sniper head, Night Vision | **Jarate** (thrown splash: Weakness II + glowing 8 s, Slowness I 3 s, 16 s), **Focus** (every enemy within 40 blocks glows 6 s, 20 s) |
 | Hank Hill (King of the Hill) | Grill Spatula (iron shovel: Sharpness IV, Fire Aspect), white tee and jeans (Explosive Immunity III), Fire Resistance | **Propane Tank** (explosive throw, 10 s), **I'm Gonna Kick Your Ass** (Strength II + Speed I 6 s, knocks back enemies within 3 blocks, 22 s) |
 | Leela (Futurama) | No weapon: martial arts, fists +6 at sword speed; white top, black pants (Dodge II, Springs I), Speed I | **Martial Arts Kick** (dash, 7 dmg + knockback up close, 7 s), **Laser Pistol** (20 blocks: 5 dmg + glowing 2 s, 5 s) |
 | Elliot (Mr. Robot) | Pocketknife (Sharpness IV, Poison I), black hoodie (Dodge II), Night Vision; Elliot head (MineSkin upload) | **Blackout** (12 blocks: Darkness 6 s, Blindness 2 s, Slowness I 3 s, 22 s), **Mr. Robot** (Strength II + Resistance I + Speed I 6 s, 25 s) |
