@@ -220,11 +220,11 @@ KITS = [
      [f"give @s {item('mace', 'Skyhammer', 'blue', {'density': 4, 'wind_burst': 2})}", "give @s minecraft:wind_charge 16"]
      + armor("netherite", 3, {"feet": {"feather_falling": 4}}) + passive("jump_boost", 1), []),
     (23, "smasher", "Adam Smasher", "dark_red", "netherite_chestplate", ["Heavy cannon (Multishot) + Arasaka axe (Cleave III) · full-borg frame (Armored III) · huge",
-     "Cyberware: Projectile Launcher, Berserk, Subdermal Armor, Titanium Bones"],
+     "Cyberware: Projectile Launcher, Sandevistan, Subdermal Armor, Titanium Bones"],
      [f"give @s {item('crossbow', 'Militech Heavy Cannon', 'dark_red', {'quick_charge': 3, 'multishot': 1, 'piercing': 2})}",
       f"give @s {item('netherite_axe', 'Arasaka Breaker', 'red', {'sharpness': 4, CE + 'cleave': 3})}", "give @s minecraft:arrow 64"]
      + suit("netherite", 3, trim=("redstone", "rib"), extra={"chest": {CE + "armored": 3, CE + "explosiveimmunity": 3}})
-     + head("smasher", "Adam Smasher", "dark_red") + size(1.3), ["launcher", "berserk", "subdermal", "titanium"]),
+     + head("smasher", "Adam Smasher", "dark_red") + size(1.3), ["launcher", "sandy", "subdermal", "titanium"]),
 ] + FRANCHISE_KITS
 # Admin-only test kits: never in a menu. /function pvp:admin/test_david queues you for Outbreak with it.
 TEST_KIT_ID = 60
