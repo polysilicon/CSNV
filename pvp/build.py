@@ -58,7 +58,7 @@ MAP_LORE = {
     "mine": ["Abandoned toxic mine", "Rock outcrops, mine-cart loop", "Sludge puddles slow you down", "Extra: cave spiders, silverfish"],
     "neon": ["Night-time crossroads", "Tower, noodle bar, car park, arcade", "Extra: pillagers, vindicators"],
     "hellfort": ["Nether keep with four gates", "Lava pools, basalt, a giant ribcage", "Extra: wither skeletons, blazes"],
-    "orbital": ["A wheel-shaped space station: no square here", "Round hub, four spokes, an outer ring", "Mobs come in from the ring", "Extra: endermites, strays"],
+    "orbital": ["A roofed, wheel-shaped space station", "Round hub, four wide spokes, an outer ring", "Labs, cryo pods, server racks, hydroponics", "Mobs come in from the ring", "Extra: endermites, strays"],
 }
 POWERUP_CHANCE = 4       # % of kills that drop a power-up
 POWERUP_SECS = 30        # Insta-Kill / Double Points length
@@ -86,6 +86,9 @@ MOB_POINTS = [(30, 0), (-30, 0), (0, 30), (0, -30), (30, 16), (30, -16), (-30, 1
 # a map that isn't a square courtyard has its own mob points (the same number): the Orbital Station's are on its ring
 MAP_POINTS = {"orbital": outbreak_maps.ORBITAL_POINTS}
 def map_points(key): return MAP_POINTS.get(key, MOB_POINTS)
+# where downed players float (spectating): high over open maps, inside the hub under the Orbital Station's roof
+DOWNED_Y = {"orbital": outbreak_maps.ORBITAL_DOWNED_Y}
+def downed_y(key): return DOWNED_Y.get(key, 12)
 RUINS = [(-12, -12, -8, -11, 3, "mossy_stone_bricks"), (8, -14, 9, -8, 2, "cobblestone"), (-14, 6, -13, 12, 3, "stone_bricks"),
          (10, 10, 14, 11, 2, "mossy_cobblestone"), (-4, 14, 4, 15, 2, "cracked_stone_bricks"), (-4, -16, 4, -15, 2, "cracked_stone_bricks"),
          (15, -3, 16, 3, 3, "mossy_stone_bricks"), (-17, -3, -16, 3, 2, "cobblestone"), (5, 4, 6, 8, 2, "mossy_cobblestone"),
@@ -1088,7 +1091,7 @@ def smoke_puffs():
             if key in MAP_POINTS:
                 a = math.atan2(dz, dx)
                 out.append(f"execute if score #state pve matches 2..3 if score #map pve matches {i} run particle minecraft:large_smoke "
-                           f"{PCX + 32.4 * math.cos(a) + 0.5:.1f} {AY + 2.5} {cz + 32.4 * math.sin(a) + 0.5:.1f} 0.4 0.6 0.4 0.01 12")
+                           f"{PCX + 32.9 * math.cos(a) + 0.5:.1f} {AY + 2.5} {cz + 32.9 * math.sin(a) + 0.5:.1f} 0.4 0.6 0.4 0.01 12")
                 continue
             if abs(dx) > abs(dz): x, z, d = PCX + (PR + 1) * (1 if dx > 0 else -1) + 0.5 + (0.8 if dx > 0 else -0.8), cz + dz + 0.5, "0.1 0.6 0.7"
             else: x, z, d = PCX + dx + 0.5, cz + (PR + 1) * (1 if dz > 0 else -1) + 0.5 + (0.8 if dz > 0 else -0.8), "0.7 0.6 0.1"
@@ -1120,8 +1123,8 @@ def build_pve():
         "kill @e[type=minecraft:armor_stand,tag=pve.orphan]",
         f"execute if score #state pve matches 2..3 unless entity @a[tag=pve.in,tag=!pve.down] run function {P}/game_over",
         # downed spectators stay above the arena
-        *[f"execute if score #map pve matches {i} as @a[tag=pve.down] unless entity @s[{b}] run tp @s {PCX + 0.5} {AY + 12} {z + 0.5}"
-          for (i, _, _, _, _, z, _), b in zip(OUTBREAK_MAPS, PVE_BOXES.values())],
+        *[f"execute if score #map pve matches {i} as @a[tag=pve.down] unless entity @s[{b}] run tp @s {PCX + 0.5} {AY + downed_y(key)} {z + 0.5}"
+          for (i, key, _, _, _, z, _), b in zip(OUTBREAK_MAPS, PVE_BOXES.values())],
         # items players throw stay (they despawn normally after 5 minutes); anything else (mob leftovers) is cleared
         *[f"execute as @e[type=minecraft:item,{b},tag=!pve.pu] unless data entity @s Thrower run kill @s" for b in PVE_BOXES.values()],
         *[f"kill @e[type=minecraft:experience_orb,{b}]" for b in PVE_BOXES.values()],
@@ -1354,7 +1357,7 @@ def build_pve():
     # going down / coming back
     fn("pve/downed", [
         "tag @s add pve.down", f"function {P}/body", "gamemode spectator @s", *PERK_RESET,
-        *[f"execute if score #map pve matches {i} run tp @s {PCX + 0.5} {AY + 12} {z + 0.5}" for (i, _, _, _, _, z, _) in OUTBREAK_MAPS],
+        *[f"execute if score #map pve matches {i} run tp @s {PCX + 0.5} {AY + downed_y(key)} {z + 0.5}" for (i, key, _, _, _, z, _) in OUTBREAK_MAPS],
         "title @s title {\"text\":\"DOWN\",\"color\":\"dark_red\",\"bold\":true}",
         "title @s subtitle {\"text\":\"A teammate can revive you, or you're back next wave\",\"color\":\"gray\"}",
         "tellraw @a[tag=pve.in] [{\"selector\":\"@s\",\"color\":\"red\"},{\"text\":\" went down!\",\"color\":\"gray\"}]",
