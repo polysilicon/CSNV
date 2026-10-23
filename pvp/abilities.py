@@ -1,11 +1,12 @@
 """Kit abilities for crispy_pvp (imported by build.py).
 
 An ability is an item in the hotbar: right-click to use it.
-- It is paper with an item_model, a near-instant `consumable` and a `use_cooldown`, so the client shows the cooldown
-  sweep and the server enforces it.
-- Using it fires a consume_item advancement, whose reward runs pvp:ability/use/<key>.
-- `use_remainder` leaves a copy without the remainder in the same hand. Next tick pvp:ability/regive swaps that copy
-  for the full item, which marks the right hand without nesting remainders forever.
+- It is a clay ball (not paper, which the cyberware implants use) with an item_model, a near-instant `consumable` and
+  a `use_cooldown`, so the client shows the cooldown sweep and the server enforces it.
+- Using it fires a consume_item advancement, whose reward runs pvp:ability/use/<key>. That remembers the ability and
+  the selected hotbar slot.
+- Next tick pvp:ability/regive puts the item back in that slot, or the offhand if it came from there, otherwise the
+  inventory. Never twice, and never in the lobby.
 
 Effects run as the caster, at the caster, tagged pvp.caster. Targets:
 - skip non-living entities (entity tag pvp:not_target), the caster, and Outbreak teammates (team pve);
@@ -148,10 +149,11 @@ ABILITIES = {
 }
 
 
+BASE = "minecraft:clay_ball"
 def give(key): return f"loot give @s loot {NS}:ability/{key}"
 
 
-def item_components(key, with_remainder=True):
+def item_components(key):
     name, color, model, cd, lore, _ = ABILITIES[key]
     comps = {
         "minecraft:item_model": f"minecraft:{model}",
@@ -165,32 +167,47 @@ def item_components(key, with_remainder=True):
                                  "sound": "minecraft:intentionally_empty"},
         "minecraft:use_cooldown": {"seconds": cd, "cooldown_group": f"pvp:ab_{key}"},
     }
-    if with_remainder:
-        comps["minecraft:use_remainder"] = {"id": "minecraft:paper", "count": 1, "components": item_components(key, False)}
     return comps
 
 
-def build(fn, wj):
+def build(fn, wj, lobby_box):
     wj(f"data/{NS}/tags/entity_type/not_target.json", {"values": [f"minecraft:{t}" for t in NOT_TARGET]})
-    for key, (name, color, model, cd, lore, body) in ABILITIES.items():
+    for idx, (key, (name, color, model, cd, lore, body)) in enumerate(ABILITIES.items(), 1):
         wj(f"data/{NS}/loot_table/ability/{key}.json", {"pools": [{"rolls": 1, "entries": [{
-            "type": "minecraft:item", "name": "minecraft:paper",
+            "type": "minecraft:item", "name": BASE,
             "functions": [{"function": "minecraft:set_components", "components": item_components(key)}]}]}]})
         wj(f"data/{NS}/advancement/ability/{key}.json", {"criteria": {"c": {"trigger": "minecraft:consume_item", "conditions": {
-            "item": {"items": "minecraft:paper", "components": {"minecraft:custom_data": {"pvp_ab": key}}}}}},
+            "item": {"items": BASE, "components": {"minecraft:custom_data": {"pvp_ab": key}}}}}},
             "rewards": {"function": f"{NS}:ability/use/{key}"}})
         fn(f"ability/use/{key}", [
             f"advancement revoke @s only {NS}:ability/{key}",
+            f"scoreboard players set @s pvp.abk {idx}",
+            "execute store result score @s pvp.abs run data get entity @s SelectedItemSlot",
             "tag @s add pvp.regive", "tag @s add pvp.caster",
             f"execute at @s run function {NS}:ability/fx/{key}",
             "tag @s remove pvp.caster", "tag @e[tag=pvp.hit] remove pvp.hit",
         ])
         fn(f"ability/fx/{key}", body)
-    # the used item is now its remainder copy: swap it for the full item (keeps its slot)
+    # give the used item back (it was consumed): its hotbar slot, else the offhand, else anywhere
     fn("ability/regive", ["tag @s remove pvp.regive"] + [
-        f"execute if items entity @s {slot} minecraft:paper[minecraft:custom_data~{{pvp_ab:\"{k}\"}}] unless items entity @s {slot} "
-        f"*[minecraft:use_remainder] run loot replace entity @s {slot} loot {NS}:ability/{k}"
-        for k in ABILITIES for slot in ("weapon.mainhand", "weapon.offhand")])
+        f"execute if score @s pvp.abk matches {i} run return run function {NS}:ability/regive/{k}" for i, k in enumerate(ABILITIES, 1)])
+    for k in ABILITIES:
+        mine = f"*[minecraft:custom_data~{{pvp_ab:\"{k}\"}}]"
+        fn(f"ability/regive/{k}", [
+            f"execute if entity @s[{lobby_box}] run return 0",
+            f"execute if items entity @s container.* {mine} run return 0",
+            f"execute if items entity @s weapon.offhand {mine} run return 0",
+            *[f"execute if score @s pvp.abs matches {n} unless items entity @s hotbar.{n} * run return run loot replace entity @s hotbar.{n} loot {NS}:ability/{k}"
+              for n in range(9)],
+            f"execute unless items entity @s weapon.offhand * run return run loot replace entity @s weapon.offhand loot {NS}:ability/{k}",
+            f"loot give @s loot {NS}:ability/{k}",
+        ])
+    # 1.0 ability items were paper (and clashed with cyberware): swap any still in inventories for the clay-ball ones
+    old = lambda k: f"minecraft:paper[minecraft:custom_data~{{pvp_ab:\"{k}\"}}]"
+    fn("ability/migrate", [l for k in ABILITIES for l in (
+        f"execute as @a if items entity @s container.* {old(k)} run loot give @s loot {NS}:ability/{k}",
+        f"execute as @a if items entity @s weapon.offhand {old(k)} run loot give @s loot {NS}:ability/{k}",
+        f"clear @a {old(k)}")])
     # raycast: half-block steps from the eyes, stops at the first target or a solid block
     fn("ability/ray_start", [f"execute anchored eyes positioned ^ ^ ^0.5 run function {NS}:ability/ray"])
     fn("ability/ray", [
@@ -217,7 +234,7 @@ def build(fn, wj):
         "tag @a remove pvp.owner", "kill @s",
     ])
     # passives, keyed off carrying the kit's ability items (so they end with the kit)
-    has = lambda k: f"if items entity @s container.* minecraft:paper[minecraft:custom_data~{{pvp_ab:\"{k}\"}}]"
+    has = lambda k: f"if items entity @s container.* {BASE}[minecraft:custom_data~{{pvp_ab:\"{k}\"}}]"
     fn("ability/tick", [
         f"execute as @a[tag=pvp.regive] run function {NS}:ability/regive",
         f"execute as @e[type=minecraft:armor_stand,tag=pvp.nade] at @s run function {NS}:ability/nade_tick",
@@ -242,4 +259,4 @@ def build(fn, wj):
     fn("ability/shield_up", ["effect clear @s minecraft:absorption", "effect give @s minecraft:absorption infinite 1 true",
                              "playsound minecraft:block.beacon.power_select player @s ~ ~ ~ 0.6 1.8",
                              "title @s actionbar {\"text\":\"◆ Shields recharged\",\"color\":\"dark_green\"}"])
-    return ["pvp.id dummy", "pvp.ft dummy", "pvp.gk totalKillCount", "pvp.dmg minecraft.custom:minecraft.damage_taken", "pvp.sh dummy"]
+    return ["pvp.abk dummy", "pvp.abs dummy", "pvp.id dummy", "pvp.ft dummy", "pvp.gk totalKillCount", "pvp.dmg minecraft.custom:minecraft.damage_taken", "pvp.sh dummy"]

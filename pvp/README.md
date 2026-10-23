@@ -35,7 +35,8 @@ AMP rewrites `server.properties` on start, so change game settings through AMP, 
 The menu shows all 20 kits mixed together in three rows; custom kits go on the row below.
 
 **Franchise kits** have two **ability items** each (`abilities.py`):
-- They're in the hotbar. Right-click to use one.
+- They're in the hotbar (clay balls with their own look, so they never clash with cyberware). Right-click to use one;
+  it comes back to the same slot right after.
 - The item shows its cooldown sweep, like an ender pearl.
 - Abilities hit mobs and enemy players, never Outbreak teammates.
 

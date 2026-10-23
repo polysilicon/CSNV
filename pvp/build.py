@@ -351,7 +351,7 @@ def build():
              "advance_weather": "false", "show_advancement_messages": "false", "respawn_radius": "0", "locator_bar": "false",
              "spawn_phantoms": "false", "mob_griefing": "false", "spawn_wandering_traders": "false", "raids": "false",
              "spawn_patrols": "false", "ender_pearls_vanish_on_death": "true", "command_block_output": "false"}
-    ab_objectives = abilities.build(fn, wj)
+    ab_objectives = abilities.build(fn, wj, LOBBY_BOX)
     fn("load", [
         *[f"scoreboard objectives add {o}" for o in [
             *ab_objectives,
@@ -366,6 +366,7 @@ def build():
         "scoreboard objectives setdisplay sidebar.team.green pve.pts",
         'bossbar add pvp:boss {"text":"Abomination","color":"dark_red"}', "bossbar set pvp:boss color red", "bossbar set pvp:boss visible false",
         *[f"gamerule {k} {v}" for k, v in rules.items()],
+        f"function {NS}:ability/migrate",
         "time set 18000", "weather clear", f"setworldspawn 0 {LOBBY_Y + 1} 0", "scoreboard players set #t pvp 0",
         "scoreboard players set #100 pve 100", "scoreboard players set #5 pve 5", "scoreboard players set #20 pve 20", "scoreboard players set #4c pve 4", "scoreboard players set #2c pve 2", f"scoreboard players set #vet pve {VETERAN_PER_WAVE}",
         "execute unless score #state pve matches 0.. run scoreboard players set #state pve 0",
