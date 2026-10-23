@@ -229,6 +229,15 @@ FRANCHISE_KITS = [
       AB("saber_throw"), AB("saber_spin")]
      + suit("leather", 4, dye=1908001, extra={"chest": {CE + "dodge": 2}, "feet": {CE + "springs": 1}})
      + head("maul", "Darth Maul", "dark_red") + passive("speed"), []),
+    (36, "krabs", "Mr. Krabs", "red", "turtle_scute", ["No weapon: claws hit for +6 (sword speed) · shell (Armored II) · small", ab_line("claw_pinch", "money_grab")],
+     [AB("claw_pinch"), AB("money_grab"), "attribute @s minecraft:attack_damage modifier add pvp:fists 6 add_value",
+      "attribute @s minecraft:attack_speed modifier add pvp:fists -2.4 add_value"]
+     + suit("leather", 4, dye={"head": 13184550, "chest": 6134752, "legs": 9127187, "feet": 1908001}, extra={"chest": {CE + "armored": 2}})
+     + head("krabs", "Mr. Krabs", "red") + size(0.9), []),
+    (37, "saul", "Saul Goodman", "yellow", "paper", ["Gavel (mace: Density II) · loud suit (Dodge II) · Speed I", ab_line("better_call", "loophole")],
+     [f"give @s {item('mace', 'Gavel', 'gold', {'density': 2, 'breach': 1})}", AB("better_call"), AB("loophole")]
+     + suit("leather", 3, dye={"head": 14329120, "chest": 14329120, "legs": 14329120, "feet": 1908001}, extra={"chest": {CE + "dodge": 2}})
+     + head("saul", "Saul Goodman", "yellow") + passive("speed"), []),
 ]
 FOOD = ["give @s minecraft:cooked_beef 16", "give @s minecraft:golden_apple 2"]
 # id, key, name, colour, menu icon, blurb lines, item commands, implants (one per body slot)
@@ -298,13 +307,13 @@ TEST_KIT = [
     "tellraw @s [{\"text\":\"Kit: \",\"color\":\"gray\"},{\"text\":\"David (test)\",\"color\":\"dark_red\",\"bold\":true},"
     "{\"text\":\" · Cyberskeleton, Sandevistan, Kiroshi, Reflex Tuner. Swap the crossbows into both hands to dual-fire.\",\"color\":\"gray\"}]",
 ]
-# kit menu order: franchises and classics mixed, rows of 5 / 7 / 9 / 7 / 7
-KIT_ORDER = [31, 32, 35, 33, 34,                  # Spider-Man, Shrek, Darth Maul, Peter Griffin, Homer
+# kit menu order: franchises and classics mixed, rows of 7 / 7 / 9 / 7 / 7
+KIT_ORDER = [36, 31, 32, 35, 33, 34, 37,          # Mr. Krabs, Spider-Man, Shrek, Darth Maul, Peter Griffin, Homer, Saul Goodman
              11, 1, 17, 2, 13, 18, 3,          # Jedi, Edgerunner, Mario, Juggernaut, Link, Pikachu, Sniper
              12, 21, 4, 14, 23, 19, 6, 22, 5,  # Sith, Randy Marsh, Berserker, Spartan, Adam Smasher, Kirby, Medic, Courier Six, Netrunner
              15, 7, 20, 8, 16, 9, 10,          # Doom Slayer, Pyro, Samus, Ranger, Witcher, Shinobi, Skyhammer
              24, 25, 27, 30, 26, 28, 29]       # Sonic, Walter White, Rebecca, Red, Herobrine, Donkey Kong, Mandalorian
-KIT_SLOT = dict(zip(KIT_ORDER, [2, 3, 4, 5, 6, 10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34,
+KIT_SLOT = dict(zip(KIT_ORDER, [1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34,
                                 37, 38, 39, 40, 41, 42, 43]))
 
 # Upgrades (points per tier I / II / III). Pack-a-Punch works on the held weapon (the tier is stored on the item);

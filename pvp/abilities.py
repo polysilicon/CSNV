@@ -273,6 +273,31 @@ ABILITIES = {
         around(3.5, damage(7)), around(3.5, PUSH),
         "particle minecraft:dust{color:[1.0,0.0,0.0],scale:1.5} ~ ~1 ~ 1.5 0.2 1.5 0 50", "particle minecraft:sweep_attack ~ ~1 ~ 1 0 1 0 4",
         snd("entity.player.attack.sweep", 1, 0.6), snd("block.beacon.ambient", 1, 2), bar("SABER SPIN", "dark_red")]),
+    # ---------------------------------------------------------------- SpongeBob / Better Call Saul
+    "claw_pinch": ("Claw Pinch", "red", "turtle_scute", 7, ["Pinches the enemy right in front of you.", "4 blocks · 8 damage · Slowness II 2 s"], [
+        *ray(8),
+        hit(damage(8)), hit("effect give @s minecraft:slowness 2 1"),
+        hit("particle minecraft:damage_indicator ~ ~1 ~ 0.3 0.4 0.3 0.1 8"),
+        snd("entity.turtle.egg_crack", 1, 0.6), snd("entity.player.attack.crit", 1, 0.8), bar("PINCH", "red")]),
+    "money_grab": ("Money Grab", "gold", "raw_gold", 14, ["Drags everyone near you closer. Money!", "6 blocks · pulled 2 blocks in · Weakness I 4 s · you: Strength I 5 s"], [
+        f"execute as @e[distance=..6,{TGT}] at @s facing entity @p[tag=pvp.caster] feet run tp @s ^ ^ ^2",
+        around(6, "effect give @s minecraft:weakness 4 0"), "effect give @s minecraft:strength 5 0",
+        "particle minecraft:item{item:\"minecraft:gold_nugget\"} ~ ~1.5 ~ 2 0.6 2 0.1 40",
+        snd("entity.experience_orb.pickup", 1, 0.6), snd("block.chain.place", 1, 0.8), bar("MONEY! MONEY! MONEY!", "gold")]),
+    "better_call": ("Better Call Saul", "yellow", "paper", 30, ["Two loyal 'clients' fight for you.", "Tamed wolves · attack whoever you fight · 20 s"], [
+        *[l for _ in range(2) for l in (
+            "summon minecraft:wolf ~ ~ ~ {Tags:[\"pvp.client\",\"pvp.cnew\"],CustomName:\"Saul's Client\",PersistenceRequired:1b,"
+            "attributes:[{id:\"minecraft:attack_damage\",base:5.0d},{id:\"minecraft:max_health\",base:16.0d}],Health:16.0f}",
+            "data modify entity @n[type=minecraft:wolf,tag=pvp.cnew] Owner set from entity @s UUID",
+            "execute if entity @s[team=pve] run team join pve @n[type=minecraft:wolf,tag=pvp.cnew]",
+            "tag @e[type=minecraft:wolf,tag=pvp.cnew] remove pvp.cnew")],
+        "particle minecraft:happy_villager ~ ~1 ~ 1 0.5 1 0 20",
+        snd("entity.wolf.ambient", 1, 1), snd("block.note_block.chime", 1, 1.2), bar("BETTER CALL SAUL!", "yellow")]),
+    "loophole": ("Loophole", "gold", "book", 20, ["Finds a loophole: untouchable for 1.5 s.", "Clears Slowness, Weakness, Poison, Wither, Blindness · Speed II 3 s"], [
+        *[f"effect clear @s minecraft:{e}" for e in ("slowness", "weakness", "poison", "wither", "blindness", "nausea", "levitation")],
+        "effect give @s minecraft:resistance 2 4 true", "effect give @s minecraft:speed 3 1",
+        "particle minecraft:enchant ~ ~1 ~ 0.4 0.8 0.4 0.6 40",
+        snd("item.book.page_turn", 1, 0.8), snd("block.note_block.bell", 1, 1.6), bar("IT'S ALL ABOUT LOOPHOLES", "gold")]),
 }
 
 
@@ -383,6 +408,11 @@ def build(fn, wj, lobby_box):
         f"execute as @e[type=minecraft:armor_stand,tag=pvp.nade] at @s run function {NS}:ability/nade_tick",
         # Fling: the bird hits whatever it crashes into (or the ground)
         f"execute as @a[tag=pvp.sling] at @s run function {NS}:ability/sling_tick",
+        # Saul's clients leave after 20 s
+        "scoreboard players add @e[type=minecraft:wolf,tag=pvp.client] pvp.ft 1",
+        "execute at @e[type=minecraft:wolf,tag=pvp.client,scores={pvp.ft=400..}] run particle minecraft:poof ~ ~0.5 ~ 0.3 0.3 0.3 0.02 8",
+        "execute as @e[type=minecraft:wolf,tag=pvp.client,scores={pvp.ft=400..}] run data remove entity @s Owner",   # no death message
+        "kill @e[type=minecraft:wolf,tag=pvp.client,scores={pvp.ft=400..}]",
         # ability fireballs that missed: gone after PROJ_LIFE ticks
         "scoreboard players add @e[tag=pvp.proj] pvp.ft 1",
         f"kill @e[tag=pvp.proj,scores={{pvp.ft={PROJ_LIFE}..}}]",

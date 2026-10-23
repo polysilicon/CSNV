@@ -75,7 +75,7 @@ The menu shows all 20 kits mixed together in three rows; custom kits go on the r
   | Samus | Explosive II, Eagle Eye III, Reinforced III |
 
 - Sizes (`scale` modifier `pvp:size`, removed on `to_lobby`, going down and Outbreak entry): Pikachu and Kirby 0.6×,
-  Mario 0.85×, Spartan 1.1×, Samus 1.08×, Adam Smasher 1.3×, Sonic 0.8×, Rebecca 0.75×, Donkey Kong 1.25×, Red 0.7×, Shrek 1.3×, Peter Griffin and Homer 1.1×.
+  Mario 0.85×, Spartan 1.1×, Samus 1.08×, Adam Smasher 1.3×, Sonic 0.8×, Rebecca 0.75×, Donkey Kong 1.25×, Red 0.7×, Shrek 1.3×, Peter Griffin and Homer 1.1×, Mr. Krabs 0.9×.
 
 **Other kits**:
 
@@ -94,6 +94,8 @@ The menu shows all 20 kits mixed together in three rows; custom kits go on the r
 | Peter Griffin (Family Guy) | No weapon: fists +6 at sword speed; 2 Strength potions ("Pawtucket Patriot"), Health Boost I, 1.1× | **Chicken Fight** (Strength II + Resistance I + Speed I 10 s, 30 s), **Surfin' Bird** (8 blocks: Nausea 6 s, Slowness II + Weakness I 4 s, 20 s) |
 | Homer Simpson | Plutonium Rod (iron sword: Sharpness IV, Poison II), Health Boost I, 1.1× | **Donut** (Instant Health I, Regeneration II 4 s, full hunger, 14 s), **Belly Bump** (6 blocks in front: 5 dmg + big knockback, 8 s) |
 | Darth Maul (Star Wars) | Double-Bladed Lightsaber (netherite: Sharpness V, Sweeping Edge III, Double Strike III), black robes (Dodge II, Springs I), Speed I | **Saber Throw** (16 blocks: 8 dmg + Slowness I 2 s, 9 s), **Saber Spin** (3.5 blocks: 7 dmg + knockback, 7 s) |
+| Mr. Krabs (SpongeBob) | No weapon: claws +6 at sword speed; red shell, blue shirt (Armored II), 0.9× | **Claw Pinch** (4 blocks: 8 dmg + Slowness II 2 s, 7 s), **Money Grab** (6 blocks: pulls enemies 2 blocks in, Weakness I 4 s; you: Strength I 5 s, 14 s) |
+| Saul Goodman (Better Call Saul) | Gavel (mace: Density II, Breach I), loud yellow suit (Dodge II), Speed I | **Better Call Saul** (2 tamed wolf "clients" fight for you for 20 s, 30 s), **Loophole** (untouchable 1.5 s, clears Slowness/Weakness/Poison/Wither/Blindness/Nausea, Speed II 3 s, 20 s) |
 
 Randy's head came from a skin uploaded to MineSkin (no Randy in the head database). The same works for any character:
 upload the skin at mineskin.org and put its texture value in `heads.json`.
