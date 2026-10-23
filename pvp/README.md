@@ -67,6 +67,7 @@ along your aim, so there are no arrows to carry. Shotguns hit everything in a sh
 | Pistol | Rebecca | 28 | 3 | 0.35 s | |
 | Trunk M60 | Walter White | 32 | 3 | 0.25 s | |
 | Arm Cannon (Power Beam) | Samus | 36 | 5 | 0.5 s | |
+| Militech Handgun | David Martinez | 30 | 6 | 0.6 s | |
 | Amban Rifle | Mandalorian | 60 | 12 | 2.5 s | glowing 3 s |
 
 Bows stay bows: Link's Hero Bow, Red's Slingshot and the Sniper's Sniper Rifle.
@@ -139,11 +140,11 @@ Bows stay bows: Link's Hero Bow, Red's Slingshot and the Sniper's Sniper Rifle.
 Randy's head came from a skin uploaded to MineSkin (no Randy in the head database). The same works for any character:
 upload the skin at mineskin.org and put its texture value in `heads.json`.
 
-**Cyberpunk kits** (Edgerunner, Lucy, Adam Smasher, Rebecca) keep their cyberware:
+**Cyberpunk kits** (David Martinez, Lucy, Adam Smasher, Rebecca) keep their cyberware:
 
 | Kit | Gear | Cyberware |
 |---|---|---|
-| Edgerunner | Katana: Sharpness V, Lifesteal III, Double Strike II | Sandevistan, Mantis Blades, Reflex Tuner, Kiroshi |
+| David Martinez (was Edgerunner) | Cyber-arms: fists +6 at sword speed; yellow EMT jacket and black pants (Dodge II), David head; abilities **Militech Handgun** (gun: 30 blocks, 6 dmg, 0.6 s) and **Overclock** (Strength II + Speed II 6 s, costs 2 hearts, 20 s) | Sandevistan, Kiroshi, Reflex Tuner, Reinforced Tendons |
 | Lucy (was Netrunner) | Monowire (diamond sword: Sharpness IV, Assassin III, Poison II), white bodysuit (Dodge II), Lucyna head; abilities **Short Circuit** (quickhack: 20 blocks, 5 dmg, Slowness II 2 s, glowing 3 s, 8 s) and **Optical Camo** (Invisibility + Speed I 6 s, 25 s) | Lynx Paws, Reflex Tuner, Kiroshi |
 | Adam Smasher | Militech Heavy Cannon (gun ability), Arasaka Breaker (axe: Sharpness IV, Cleave III), netherite Prot III with a redstone rib trim (chest: Armored III, Explosive Immunity III), Adam Smasher head (MineSkin upload), 1.3× size | Projectile Launch System (sneak + jump), Sandevistan (double-tap sneak), Subdermal Armor, Titanium Bones |
 | Rebecca | Guts (shotgun ability) and Pistol (gun ability), black leather with pink boots (Dodge II), 0.75× | Gorilla Arms, Reinforced Tendons, Reflex Tuner, Kiroshi |

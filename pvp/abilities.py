@@ -354,6 +354,11 @@ ABILITIES = {
         "effect give @s minecraft:invisibility 6 0 true", "effect give @s minecraft:speed 6 0 true",
         "particle minecraft:dust{color:[0.7,0.6,1.0],scale:1.0} ~ ~1 ~ 0.3 0.8 0.3 0 40",
         snd("block.beacon.power_select", 0.8, 2), snd("entity.illusioner.mirror_move", 1, 1.4), bar("OPTICAL CAMO", "light_purple")]),
+    "overclock": ("Overclock", "aqua", "observer", 20, ["Push your chrome past the limit.", "Strength II + Speed II 6 s · costs 2 hearts"], [
+        "damage @s 4 minecraft:magic", "effect give @s minecraft:strength 6 1", "effect give @s minecraft:speed 6 1",
+        "effect give @s minecraft:nausea 2 0 true",
+        "particle minecraft:dust{color:[0.2,1.0,0.9],scale:1.2} ~ ~1 ~ 0.4 0.8 0.4 0 40", "particle minecraft:electric_spark ~ ~1 ~ 0.4 0.8 0.4 0.3 25",
+        snd("block.beacon.power_select", 1, 1.6), snd("entity.warden.heartbeat", 1, 1.4), bar("OVERCLOCK", "aqua")]),
     # ---------------------------------------------------------------- Team Fortress 2
     "jarate": ("Jarate", "yellow", "honey_bottle", 16, ["Throws a jar of... something.", "Splash: Weakness II + glowing 8 s, Slowness I 3 s"], [
         *shoot("splash_potion", 0.9, ',Item:{id:"minecraft:splash_potion",count:1,components:{"minecraft:potion_contents":{custom_color:15128576,'
@@ -374,6 +379,7 @@ ABILITIES = {
     "m60": gun("Trunk M60", "dark_gray", "netherite_shovel", 0.25, 3, 32, "The machine gun from the trunk.", "entity.firework_rocket.blast", 1.8),
     "power_beam": gun("Arm Cannon", "gold", "orange_dye", 0.5, 5, 36, "Samus's Power Beam.", "block.beacon.deactivate", 2.0,
                       [("", "particle minecraft:electric_spark ~ ~1 ~ 0.2 0.4 0.2 0.3 12")]),
+    "militech_handgun": gun("Militech Handgun", "yellow", "wooden_hoe", 0.6, 6, 30, "David's sidearm.", "entity.firework_rocket.blast", 1.3),
     "amban": gun("Amban Rifle", "gray", "iron_shovel", 2.5, 12, 60, "Disintegration sniper rifle.", "block.beacon.deactivate", 1.8,
                  [("glowing 3 s", "effect give @s minecraft:glowing 3 0"), ("", "particle minecraft:electric_spark ~ ~1 ~ 0.3 0.5 0.3 0.3 20")]),
     # ---------------------------------------------------------------- King of the Hill / Futurama / Mr. Robot

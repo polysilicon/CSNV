@@ -279,9 +279,13 @@ FRANCHISE_KITS = [
 FOOD = ["give @s minecraft:cooked_beef 16", "give @s minecraft:golden_apple 2"]
 # id, key, name, colour, menu icon, blurb lines, item commands, implants (one per body slot)
 KITS = [
-    (1, "samurai", "Edgerunner", "aqua", "netherite_sword", ["Katana: Sharpness V, Lifesteal III, Double Strike II", "Cyberware: Sandevistan, Mantis Blades, Reflex Tuner, Kiroshi"],
-     [f"give @s {item('netherite_sword', 'Edgerunner Katana', 'aqua', {'sharpness': 5, CE + 'lifesteal': 3, CE + 'doublestrike': 2})}"]
-     + armor("diamond", 3) + head("edgerunner", "David Martinez", "aqua"), ["sandy", "mantis", "reflex", "kiroshi"]),
+    (1, "samurai", "David Martinez", "yellow", "netherite_sword", ["Cyber-arms: fists +6 (sword speed) · yellow EMT jacket (Dodge II)",
+     "Cyberware: Sandevistan, Kiroshi, Reflex Tuner, Reinforced Tendons · " + ab_line("militech_handgun", "overclock")],
+     [AB("militech_handgun"), AB("overclock"), "attribute @s minecraft:attack_damage modifier add pvp:fists 6 add_value",
+      "attribute @s minecraft:attack_speed modifier add pvp:fists -2.4 add_value"]
+     + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "diamond"}, 4,
+            dye={"head": 1908001, "chest": 15909166, "legs": 1908001}, extra={"chest": {CE + "dodge": 2}})
+     + head("edgerunner", "David Martinez", "yellow"), ["sandy", "kiroshi", "reflex", "tendons"]),
     (3, "sniper", "Sniper", "dark_red", "bow", ["Sniper Rifle (bow: Power V, Lethal Sniper III, Lightning Arrows II) + Kukri · Night Vision", ab_line("jarate", "focus")],
      [f"give @s {item('bow', 'Sniper Rifle', 'dark_red', {'power': 5, 'infinity': 1, CE + 'lethalsniper': 3, CE + 'lightningarrows': 2})}",
       AB("jarate"), AB("focus"), f"give @s {item('iron_sword', 'Kukri', 'gray', {'sharpness': 3, CE + 'bleed': 1})}", "give @s minecraft:arrow 1"]
@@ -319,7 +323,7 @@ TEST_KIT = [
     "{\"text\":\" · Cyberskeleton, Sandevistan, Kiroshi, Reflex Tuner. Swap the crossbows into both hands to dual-fire.\",\"color\":\"gray\"}]",
 ]
 # kit menu order: four full rows of 9 (slots 9-44), grouped by franchise; the top and bottom rows stay empty
-KIT_ORDER = [11, 12, 35, 29, 1, 5, 27, 23, 40,     # Jedi, Sith, Darth Maul, Mandalorian | Edgerunner, Lucy, Rebecca, Adam Smasher, Elliot
+KIT_ORDER = [11, 12, 35, 29, 1, 5, 27, 23, 40,     # Jedi, Sith, Darth Maul, Mandalorian | David, Lucy, Rebecca, Adam Smasher, Elliot
              13, 14, 15, 16, 22, 3, 26, 30, 24,    # Link, Spartan, Doom Slayer, Witcher, Courier Six, Sniper, Herobrine, Red, Sonic
              17, 18, 19, 20, 28, 31, 32, 39, 43,   # Mario, Pikachu, Kirby, Samus, Donkey Kong | Spider-Man, Shrek | Leela, Bender
              21, 33, 34, 38, 42, 36, 25, 37, 41]   # Randy Marsh, Peter Griffin, Homer, Hank Hill, SpongeBob, Mr. Krabs | Walter White, Saul Goodman, Tony Soprano
