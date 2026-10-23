@@ -165,7 +165,6 @@ def colosseum(spawns=SPAWNS):
                 g.put(x, h, z, f"sandstone_stairs[facing={OPP[facing_in(x, z)]},shape=straight]")
             else:   # where the circle's steps don't line up, a flat terrace block instead of a twisted stair
                 g.put(x, h, z, "cut_sandstone")
-                if n % 3 == 0 and rnd.random() < 0.05: g.put(x, h + 1, z, rnd.choice(["red_carpet", "yellow_carpet", "white_carpet"]))
             if n == STANDS: g.put(x, h + 1, z, "sandstone_wall")   # the rim parapet
     # flag poles and braziers along the rim
     for k in range(48):
