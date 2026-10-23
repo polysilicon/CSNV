@@ -149,8 +149,8 @@ FRANCHISE_KITS = [
     (18, "pikachu", "Pikachu", "yellow", "yellow_dye", ["Iron Tail: Sharpness IV, Knockback II · Speed I", ab_line("thunder_jolt", "quick_attack")],
      [f"give @s {item('iron_sword', 'Iron Tail', 'yellow', {'sharpness': 4, 'knockback': 2})}", AB("thunder_jolt"), AB("quick_attack")]
      + suit("leather", 4, dye=16701501) + passive("speed") + passive("resistance"), []),
-    (19, "kirby", "Kirby", "light_purple", "pink_dye", ["Star sword · Jump Boost II, Resistance I", ab_line("inhale", "stone")],
-     [f"give @s {item('diamond_sword', 'Star Rod Sword', 'light_purple', {'sharpness': 4})}", AB("inhale"), AB("stone")]
+    (19, "kirby", "Kirby", "light_purple", "pink_dye", ["Star Rod (sword) · Jump Boost II, Resistance I", ab_line("inhale", "stone")],
+     [f"give @s {item('diamond_sword', 'Star Rod', 'light_purple', {'sharpness': 4})}", AB("inhale"), AB("stone")]
      + suit("leather", 4, dye=15961002) + passive("jump_boost", 1) + passive("resistance"), []),
     (20, "samus", "Samus", "gold", "golden_helmet", ["Arm Cannon (bow), Varia Suit (gold Prot IV)", ab_line("charge_shot", "screw_attack")],
      [f"give @s {item('bow', 'Arm Cannon', 'gold', {'power': 4, 'infinity': 1})}", AB("charge_shot"), AB("screw_attack"),

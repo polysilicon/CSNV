@@ -4,7 +4,7 @@ An ability is an item in the hotbar: right-click to use it.
 - It is a clay ball (not paper, which the cyberware implants use) with an item_model, a near-instant `consumable` and
   a `use_cooldown`, so the client shows the cooldown sweep and the server enforces it.
 - Using any of them fires one consume_item advancement (pvp:ability/used, matched on the base item only). Its reward
-  runs while the item is still in the hand: it works out which ability that is (by custom_data, else by item model)
+  runs while the item is still in the hand: it works out which ability that is from the item model
   and runs pvp:ability/use/<key>, which remembers the ability and the selected hotbar slot. The last used item is
   kept in storage pvp:debug for troubleshooting.
 - Next tick pvp:ability/regive puts the item back in that slot, or the offhand if it came from there, otherwise the
@@ -54,21 +54,21 @@ def bar(text, color): return f'title @s actionbar {{"text":"◆ {text}","color":
 # key: (name, colour, item model, cooldown s, lore, effect lines)
 ABILITIES = {
     # ---------------------------------------------------------------- Star Wars
-    "force_push": ("Force Push", "aqua", "wind_charge", 7, ["Throws everything in front of you back."], [
+    "force_push": ("Force Push", "aqua", "wind_charge", 7, ["Blasts enemies in front of you back.", "7 blocks · 2 damage · knockback"], [
         cone(3.5, damage(2, "magic")), cone(3.5, PUSH),
         "execute anchored eyes run particle minecraft:gust ^ ^ ^2 0.6 0.4 0.6 0 4",
         snd("entity.breeze.shoot", 1, 0.6), bar("FORCE PUSH", "aqua")]),
-    "mind_trick": ("Jedi Mind Trick", "aqua", "ender_eye", 15, ["Blinds and slows everyone in front", "of you for 4 seconds."], [
+    "mind_trick": ("Jedi Mind Trick", "aqua", "ender_eye", 15, ["Confuses enemies in front of you.", "8 blocks · Blindness, Slowness II, Nausea · 4 s"], [
         cone(4, "effect give @s minecraft:blindness 4 0"), cone(4, "effect give @s minecraft:slowness 4 1"),
         cone(4, "effect give @s minecraft:nausea 5 0"),
         "execute anchored eyes run particle minecraft:enchant ^ ^ ^2.5 1 0.6 1 0.5 60",
         snd("entity.illusioner.cast_spell", 1, 1.2), bar("THESE AREN'T THE DROIDS YOU'RE LOOKING FOR", "aqua")]),
-    "force_lightning": ("Force Lightning", "dark_purple", "lightning_rod", 9, ["Lightning arcs into everyone", "in front of you: 6 damage + slow."], [
+    "force_lightning": ("Force Lightning", "dark_purple", "lightning_rod", 9, ["Electrocutes enemies in front of you.", "8 blocks · 6 damage · Slowness II 2 s"], [
         cone(4, damage(6, "lightning_bolt")), cone(4, "effect give @s minecraft:slowness 2 1"),
         cone(4, "particle minecraft:electric_spark ~ ~1 ~ 0.3 0.6 0.3 0.3 30"),
         "execute anchored eyes run particle minecraft:electric_spark ^ ^ ^1.5 0.2 0.2 0.2 0.4 40",
         snd("entity.lightning_bolt.thunder", 0.3, 2), snd("block.respawn_anchor.deplete", 0.8, 1.6), bar("UNLIMITED POWER", "dark_purple")]),
-    "force_choke": ("Force Choke", "dark_red", "wither_rose", 14, ["Lifts the target you look at (16 blocks)", "and crushes it: 4 damage + Wither."], [
+    "force_choke": ("Force Choke", "dark_red", "wither_rose", 14, ["Lifts and chokes the enemy you aim at.", "16 blocks · 4 damage · Wither II 3 s"], [
         *ray(32),
         hit(damage(4, "magic")), hit("effect give @s minecraft:levitation 2 0"), hit("effect give @s minecraft:wither 3 1"),
         hit("particle minecraft:dust{color:[0.5,0.0,0.0],scale:1.2} ~ ~1.6 ~ 0.2 0.1 0.2 0 20"),
@@ -76,17 +76,17 @@ ABILITIES = {
         "execute unless entity @e[tag=pvp.hit] run " + snd("block.fire.extinguish", 0.5, 1.5),
         bar("I FIND YOUR LACK OF FAITH DISTURBING", "dark_red")]),
     # ---------------------------------------------------------------- video games
-    "spin_attack": ("Spin Attack", "green", "nautilus_shell", 6, ["Hits everything around you", "for 7 damage and knocks it back."], [
+    "spin_attack": ("Spin Attack", "green", "nautilus_shell", 6, ["Strikes everything around you.", "3.5 blocks · 7 damage · knockback"], [
         around(3.5, damage(7)), around(3.5, PUSH),
         "particle minecraft:sweep_attack ~1.5 ~1 ~ 0 0 0 0 1", "particle minecraft:sweep_attack ~-1.5 ~1 ~ 0 0 0 0 1",
         "particle minecraft:sweep_attack ~ ~1 ~1.5 0 0 0 0 1", "particle minecraft:sweep_attack ~ ~1 ~-1.5 0 0 0 0 1",
         snd("entity.player.attack.sweep", 1, 0.8), snd("item.trident.riptide_1", 0.6, 1.4), bar("SPIN ATTACK", "green")]),
-    "hookshot": ("Hookshot", "green", "lead", 8, ["Grabs the target you look at", "(18 blocks) and reels it in."], [
+    "hookshot": ("Hookshot", "green", "lead", 8, ["Pulls the enemy you aim at to you.", "18 blocks · Slowness III 1 s"], [
         *ray(36),
         "execute rotated ~ 0 positioned ^ ^ ^1.8 run tp @e[tag=pvp.hit,limit=1] ~ ~ ~",
         hit("effect give @s minecraft:slowness 1 2"), hit("particle minecraft:crit ~ ~1 ~ 0.3 0.5 0.3 0.2 15"),
         snd("item.crossbow.hit", 1, 0.7), snd("entity.fishing_bobber.retrieve", 1, 0.8), bar("HOOKSHOT", "green")]),
-    "frag_grenade": ("Frag Grenade", "dark_green", "tnt", 10, ["Throw a grenade: 10 damage to everything", "within 4 blocks where it lands."], [
+    "frag_grenade": ("Frag Grenade", "dark_green", "tnt", 10, ["Throws a grenade that explodes on landing.", "10 damage to everything within 4 blocks"], [
         "execute unless score @s pvp.id matches 1.. store result score @s pvp.id run scoreboard players add #nextid pvp 1",
         "execute anchored eyes positioned ^ ^ ^0.8 run summon minecraft:armor_stand ~ ~-0.6 ~ {Tags:[\"pvp.nade\",\"pvp.nnew\"],Small:1b,Invisible:1b,"
         "Invulnerable:1b,DisabledSlots:4144959,equipment:{head:{id:\"minecraft:tnt\",count:1}}}",
@@ -97,54 +97,54 @@ ABILITIES = {
         "execute if entity @s[team=pve] run tag @n[type=minecraft:armor_stand,tag=pvp.nnew] add pvp.npve",
         "tag @e[type=minecraft:armor_stand,tag=pvp.nnew] remove pvp.nnew",
         snd("entity.snowball.throw", 1, 0.6), bar("FRAG OUT", "dark_green")]),
-    "chainsaw": ("Chainsaw", "red", "shears", 12, ["Saw the target right in front of you", "(4 blocks) for 14 damage."], [
+    "chainsaw": ("Chainsaw", "red", "shears", 12, ["Saws the enemy right in front of you.", "4 blocks · 14 damage · +4 absorption hearts on a hit"], [
         *ray(8),
         hit(damage(14)), hit("particle minecraft:block{block_state:\"minecraft:redstone_block\"} ~ ~1 ~ 0.3 0.5 0.3 0.2 40"),
         "execute if entity @e[tag=pvp.hit] run effect give @s minecraft:absorption 8 1",
         snd("entity.ravager.attack", 1, 1.4), snd("block.grindstone.use", 1, 0.6), bar("RIP AND TEAR", "red")]),
-    "rip_tear": ("Berserk Rune", "dark_red", "redstone", 25, ["Strength II, Speed II and", "Resistance I for 6 seconds."], [
+    "rip_tear": ("Berserk Rune", "dark_red", "redstone", 25, ["Goes berserk for 6 seconds.", "Strength II · Speed II · Resistance I"], [
         "effect give @s minecraft:strength 6 1", "effect give @s minecraft:speed 6 1", "effect give @s minecraft:resistance 6 0",
         "particle minecraft:angry_villager ~ ~1 ~ 0.5 0.6 0.5 0 12",
         snd("entity.ravager.roar", 1, 0.8), bar("BERSERK", "dark_red")]),
-    "igni": ("Igni", "gold", "blaze_powder", 8, ["A fan of 3 fireballs that", "set targets alight."], [
+    "igni": ("Igni", "gold", "blaze_powder", 8, ["Casts a fan of 3 fireballs.", "Sets whatever they hit on fire"], [
         *shoot("small_fireball", 1.3, ",acceleration_power:0.0d", (-12, 0, 12)),
         snd("entity.blaze.shoot", 1, 0.8), bar("IGNI", "gold")]),
-    "quen": ("Quen", "yellow", "amethyst_shard", 16, ["A shield: 4 absorption hearts", "and Resistance I for 6 seconds."], [
+    "quen": ("Quen", "yellow", "amethyst_shard", 16, ["Raises a protective shield.", "4 absorption hearts (10 s) · Resistance I 6 s"], [
         "effect clear @s minecraft:absorption", "effect give @s minecraft:absorption 10 1", "effect give @s minecraft:resistance 6 0",
         "particle minecraft:totem_of_undying ~ ~1 ~ 0.5 0.8 0.5 0.1 30",
         snd("block.amethyst_block.chime", 1, 0.6), snd("block.beacon.power_select", 0.6, 1.6), bar("QUEN", "yellow")]),
     # ---------------------------------------------------------------- Smash Bros
-    "fireball": ("Fireball", "red", "fire_charge", 3, ["Throw a fireball."], [
+    "fireball": ("Fireball", "red", "fire_charge", 3, ["Throws a fireball.", "Sets whatever it hits on fire"], [
         *shoot("small_fireball", 1.0, ",acceleration_power:0.0d"), snd("entity.blaze.shoot", 0.8, 1.6), bar("FIREBALL", "red")]),
-    "super_jump": ("Super Jump Punch", "gold", "gold_nugget", 8, ["Leap up, uppercutting everything", "around you: 6 damage."], [
+    "super_jump": ("Super Jump Punch", "gold", "gold_nugget", 8, ["Leaps up with a rising uppercut.", "2.5 blocks · 6 damage · launches enemies up"], [
         LAUNCH, around(2.5, damage(6)), around(2.5, "effect give @s minecraft:levitation 1 3"),
         "particle minecraft:wax_on ~ ~1.5 ~ 0.4 0.6 0.4 0.1 20",
         snd("entity.experience_orb.pickup", 1, 1.8), snd("entity.player.attack.strong", 1, 1), bar("SUPER JUMP PUNCH", "gold")]),
-    "thunder_jolt": ("Thunder Jolt", "yellow", "glowstone_dust", 4, ["Zap the target you look at", "(16 blocks): 6 damage + slow."], [
+    "thunder_jolt": ("Thunder Jolt", "yellow", "glowstone_dust", 4, ["Zaps the enemy you aim at.", "16 blocks · 6 damage · Slowness II 2 s"], [
         *ray(32),
         hit(damage(6, "lightning_bolt")), hit("effect give @s minecraft:slowness 2 1"), hit("effect give @s minecraft:glowing 2 0"),
         hit("particle minecraft:electric_spark ~ ~1 ~ 0.3 0.6 0.3 0.4 40"),
         "execute anchored eyes run particle minecraft:electric_spark ^ ^ ^1 0.1 0.1 0.1 0.3 15",
         snd("item.trident.thunder", 0.4, 1.8), bar("PIKA!", "yellow")]),
-    "quick_attack": ("Quick Attack", "yellow", "feather", 6, ["Dash forward and gain Speed II", "for 2 seconds."], [
+    "quick_attack": ("Quick Attack", "yellow", "feather", 6, ["Dashes forward at high speed.", "Speed II for 2 s"], [
         DASH, "effect give @s minecraft:speed 2 1", "particle minecraft:cloud ~ ~0.2 ~ 0.3 0.1 0.3 0.05 15",
         snd("entity.breeze.jump", 1, 1.6), bar("QUICK ATTACK", "yellow")]),
-    "inhale": ("Inhale", "light_purple", "pink_petals", 10, ["Suck in the target you look at", "(10 blocks): 5 damage, +2 hearts for you."], [
+    "inhale": ("Inhale", "light_purple", "pink_petals", 10, ["Sucks in the enemy you aim at.", "10 blocks · 5 damage · +2 absorption hearts"], [
         *ray(20),
         "execute rotated ~ 0 positioned ^ ^ ^1.5 run tp @e[tag=pvp.hit,limit=1] ~ ~ ~",
         hit(damage(5)),
         "execute if entity @e[tag=pvp.hit] run effect give @s minecraft:absorption 10 0",
         "execute anchored eyes run particle minecraft:cloud ^ ^ ^2 0.6 0.4 0.6 0.05 25",
         snd("entity.player.breath", 1, 0.5), snd("entity.player.burp", 1, 1.2), bar("INHALE", "light_purple")]),
-    "stone": ("Stone", "gray", "cobblestone", 12, ["Turn to stone: immune for 3 seconds,", "and slam everything around you."], [
+    "stone": ("Stone", "gray", "cobblestone", 12, ["Turns you to stone and slams down.", "Immune but rooted 3 s · 6 damage within 3 blocks"], [
         "effect give @s minecraft:resistance 3 4", "effect give @s minecraft:slowness 3 5",
         around(3, damage(6)), around(3, PUSH),
         "particle minecraft:block{block_state:\"minecraft:stone\"} ~ ~0.5 ~ 1 0.3 1 0.2 50",
         snd("entity.iron_golem.damage", 1, 0.6), snd("block.stone.place", 1, 0.5), bar("STONE", "gray")]),
-    "charge_shot": ("Charge Shot", "gold", "magma_cream", 6, ["Fire an explosive plasma ball."], [
+    "charge_shot": ("Charge Shot", "gold", "magma_cream", 6, ["Fires an explosive plasma shot.", "Explodes where it hits"], [
         *shoot("fireball", 1.3, ",ExplosionPower:1b,acceleration_power:0.0d"), snd("entity.blaze.shoot", 1, 0.5),
         snd("block.beacon.deactivate", 0.6, 2), bar("CHARGE SHOT", "gold")]),
-    "screw_attack": ("Screw Attack", "aqua", "prismarine_crystals", 8, ["Spin upward, shredding everything", "around you: 6 damage."], [
+    "screw_attack": ("Screw Attack", "aqua", "prismarine_crystals", 8, ["Spins upward, hitting everything nearby.", "3 blocks · 6 damage · knockback"], [
         LAUNCH, around(3, damage(6)), around(3, PUSH),
         "particle minecraft:electric_spark ~ ~1 ~ 0.6 1 0.6 0.4 50",
         snd("entity.breeze.wind_burst", 1, 1.4), bar("SCREW ATTACK", "aqua")]),
@@ -153,6 +153,10 @@ ABILITIES = {
 
 BASE = "minecraft:clay_ball"
 def give(key): return f"loot give @s loot {NS}:ability/{key}"
+# Ability items are told apart by their item model (each is unique). They carry no custom_data on purpose:
+# crispy_enchants' migration (for old Advanced Enchantments items) strips lore lines and wipes custom_data from
+# any item with a few custom_data keys, every 2 seconds.
+def sel(key): return f'{BASE}[minecraft:item_model="minecraft:{ABILITIES[key][2]}"]'
 
 
 def item_components(key):
@@ -162,7 +166,6 @@ def item_components(key):
         "minecraft:custom_name": {"text": name, "color": color, "italic": False, "bold": True},
         "minecraft:lore": [{"text": l, "color": "gray", "italic": False} for l in lore]
                           + [{"text": f"Right-click · {cd} s cooldown", "color": "dark_gray", "italic": False}],
-        "minecraft:custom_data": {"pvp_ab": key},
         "minecraft:max_stack_size": 1,
         "minecraft:enchantment_glint_override": True,
         "minecraft:consumable": {"consume_seconds": 0.05, "animation": "none", "has_consume_particles": False,
@@ -193,15 +196,13 @@ def build(fn, wj, lobby_box):
                         "data modify storage pvp:debug last set value {}",
                         "data modify storage pvp:debug last.main set from entity @s SelectedItem",
                         "data modify storage pvp:debug last.off set from entity @s equipment.offhand"]
-       + [f"execute if items entity @s {h} *[minecraft:custom_data~{{pvp_ab:\"{k}\"}}] run return run function {NS}:ability/use/{k}"
-          for h in ("weapon.mainhand", "weapon.offhand") for k in ABILITIES]
-       + [f"execute if items entity @s {h} {BASE}[minecraft:item_model=\"minecraft:{v[2]}\"] run return run function {NS}:ability/use/{k}"
-          for h in ("weapon.mainhand", "weapon.offhand") for k, v in ABILITIES.items()])
+       + [f"execute if items entity @s {h} {sel(k)} run return run function {NS}:ability/use/{k}"
+          for h in ("weapon.mainhand", "weapon.offhand") for k in ABILITIES])
     # give the used item back (it was consumed): its hotbar slot, else the offhand, else anywhere
     fn("ability/regive", ["tag @s remove pvp.regive"] + [
         f"execute if score @s pvp.abk matches {i} run return run function {NS}:ability/regive/{k}" for i, k in enumerate(ABILITIES, 1)])
     for k in ABILITIES:
-        mine = f"*[minecraft:custom_data~{{pvp_ab:\"{k}\"}}]"
+        mine = sel(k)
         fn(f"ability/regive/{k}", [
             f"execute if entity @s[{lobby_box}] run return 0",
             f"execute if items entity @s container.* {mine} run return 0",
@@ -216,7 +217,14 @@ def build(fn, wj, lobby_box):
     fn("ability/migrate", [l for k in ABILITIES for l in (
         f"execute as @a if items entity @s container.* {old(k)} run loot give @s loot {NS}:ability/{k}",
         f"execute as @a if items entity @s weapon.offhand {old(k)} run loot give @s loot {NS}:ability/{k}",
-        f"clear @a {old(k)}")])
+        f"clear @a {old(k)}")]
+       # refresh held ability items (restores lore lines crispy_enchants' migration removed)
+       + [l for k in ABILITIES for l in (
+        f"execute as @a if items entity @s container.* {sel(k)} run tag @s add pvp.rf",
+        f"execute as @a if items entity @s weapon.offhand {sel(k)} run tag @s add pvp.rf",
+        f"clear @a[tag=pvp.rf] {sel(k)}",
+        f"execute as @a[tag=pvp.rf] run loot give @s loot {NS}:ability/{k}",
+        "tag @a remove pvp.rf")])
     # raycast: half-block steps from the eyes, stops at the first target or a solid block
     fn("ability/ray_start", [f"execute anchored eyes positioned ^ ^ ^0.5 run function {NS}:ability/ray"])
     fn("ability/ray", [
@@ -243,7 +251,7 @@ def build(fn, wj, lobby_box):
         "tag @a remove pvp.owner", "kill @s",
     ])
     # passives, keyed off carrying the kit's ability items (so they end with the kit)
-    has = lambda k: f"if items entity @s container.* {BASE}[minecraft:custom_data~{{pvp_ab:\"{k}\"}}]"
+    has = lambda k: f"if items entity @s container.* {sel(k)}"
     fn("ability/tick", [
         f"execute as @a[tag=pvp.regive] run function {NS}:ability/regive",
         f"execute as @e[type=minecraft:armor_stand,tag=pvp.nade] at @s run function {NS}:ability/nade_tick",
