@@ -15,6 +15,18 @@ instance was deleted after a backup to `/AMPStorage/backups/Bending01-20261019.t
 
 AMP rewrites `server.properties` on start, so change game settings through AMP, not the file.
 
+## Arena
+The PvP arena is a Roman colosseum (`arena_map.py`, drawn with the Outbreak map engine and built by
+`admin/build_arena`):
+- a sand-swept floor with a red-sandstone mosaic and spokes in the middle;
+- the wall lined with pilasters, torches and red banners, and a barred gladiator gate in the middle of each side;
+- eight rows of stepped stands outside the wall (scenery behind the barrier) with a parapet, braziers and banners;
+- cover in the same places as before: a columned emperor's pavilion with a brazier in the centre, four gladiator
+  barracks (arched doors, barred windows, weathered tops, awnings, supplies), spina walls with lamp columns, fallen
+  columns and crates, plus obelisks, date palms and lamp posts.
+
+`arena_map.check()` makes sure every spawn is clear and can walk to the centre.
+
 ## How it plays
 - Players spawn in a safe stone hub at 0 101 0, where they're immune to damage and can't deal any.
 - **Kit Dealer** (left NPC) opens a chest menu of 36 character kits. Click one and you're dropped at one of 8 random arena

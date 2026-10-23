@@ -8,7 +8,7 @@ Kit/arena PvP plus "Outbreak", a CoD-zombies style wave mode, both using Anarchy
 Menus are chest screens opened with /pvpmenu (crispy-pvp-spawn mod) from storage pvp:menus.
 """
 import json
-import abilities, outbreak_maps, os, random, shutil, sys
+import abilities, arena_map, outbreak_maps, os, random, shutil, sys
 
 NS = "pvp"
 PACK_FORMAT = [107, 0], [107, 1]
@@ -657,24 +657,14 @@ def build():
               f"fill {-B} {Y + 1} {-B} {-B} {Y + 15} {B} minecraft:barrier", f"fill {B} {Y + 1} {-B} {B} {Y + 15} {B} minecraft:barrier"]
     fn("admin/build_lobby", lobby + [f"function {NS}:admin/place_npc"])
 
-    x1, x2, z1, z2 = ACX - AR, ACX + AR, ACZ - AR, ACZ + AR
-    ar = [f"fill {x1} {AY + 1 + k} {z1} {x2} {AY + 5 + k} {z2} minecraft:air" for k in range(0, 30, 5)]   # fill is capped at 32768 blocks
-    ar.append(f"fill {x1} {AY} {z1} {x2} {AY} {z2} minecraft:smooth_sandstone")
-    for k in range(-AR, AR + 1, 6):
-        ar += [f"fill {ACX + k} {AY} {z1} {ACX + k} {AY} {z2} minecraft:cut_sandstone", f"fill {x1} {AY} {ACZ + k} {x2} {AY} {ACZ + k} minecraft:cut_sandstone"]
-    for i in range(-AR, AR + 1, 6):
-        for j in range(-AR, AR + 1, 6):
-            ar.append(f"setblock {ACX + i} {AY} {ACZ + j} minecraft:glowstone")
+    # the colosseum (arena_map.py): clear the floor and the stands around it, put up the walls, then draw it
+    S = AR + 1 + arena_map.STANDS + 1
+    ar = [f"fill {ACX - S} {AY + 1 + k} {ACZ - S} {ACX + S} {AY + 4 + k} {ACZ + S} minecraft:air" for k in range(0, 32, 4)]
+    ar.append(f"fill {ACX - AR} {AY} {ACZ - AR} {ACX + AR} {AY} {ACZ + AR} minecraft:smooth_sandstone")
     ar += walls(ACX, ACZ, AR, "sandstone", "chiseled_sandstone")
-    for (bx1, bz1, bx2, bz2, h, stripe, hollow) in BUILDINGS:
-        X1, X2, Q1, Q2 = ACX + bx1, ACX + bx2, ACZ + bz1, ACZ + bz2
-        ar.append(f"fill {X1} {AY + 1} {Q1} {X2} {AY + h} {Q2} minecraft:smooth_sandstone" + (" hollow" if hollow else ""))
-        ar.append(f"fill {X1} {AY + h} {Q1} {X2} {AY + h} {Q2} minecraft:{ARENA_TRIM[stripe]} outline")
-        if hollow:   # 3-wide, 2-high doorway in the middle of every wall, a light inside
-            mx, mz = (X1 + X2) // 2, (Q1 + Q2) // 2
-            ar += [f"fill {mx - 1} {AY + 1} {Q1} {mx + 1} {AY + 2} {Q1} minecraft:air", f"fill {mx - 1} {AY + 1} {Q2} {mx + 1} {AY + 2} {Q2} minecraft:air",
-                   f"fill {X1} {AY + 1} {mz - 1} {X1} {AY + 2} {mz + 1} minecraft:air", f"fill {X2} {AY + 1} {mz - 1} {X2} {AY + 2} {mz + 1} minecraft:air",
-                   f"setblock {mx} {AY} {mz} minecraft:glowstone"]
+    g = arena_map.colosseum(SPAWNS)
+    arena_map.check(g, SPAWNS)
+    ar += outbreak_maps.commands(g, ACX, AY, ACZ)
     fn("admin/build_arena", ar)
     fn("admin/build", [f"function {NS}:admin/build_lobby", f"function {NS}:admin/build_arena", f"function {NS}:admin/build_pve", f"function {NS}:admin/build_room"])
     build_room()
