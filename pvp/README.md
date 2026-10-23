@@ -11,14 +11,15 @@ instance was deleted after a backup to `/AMPStorage/backups/Bending01-20261019.t
 | Memory | 4 GB max, same idle-shrink flags as the other servers |
 | World | superflat; AMP settings: `Minecraft.WorldType=FLAT`, `Game.GameMode=adventure`, `StandaloneServer=False` |
 | Mods | fabric-api, fabric-permissions-api, FabricProxy-Lite (config copied from Anarchy), ferritecore, lithium, Moonrise, NoChatReports, spark |
-| Datapacks | `crispy_enchants` (copied from Anarchy), `crispy_cyberware` (built with `anarchy/cyberware/build.py --pvp`), `crispy_pvp` (this folder) |
+| Datapacks | `crispy_enchants` (copied from Anarchy), `crispy_cyberware` (built with `anarchy/cyberware/build.py --pvp`; used by the cyberpunk kits and the admin room), `crispy_pvp` (this folder) |
 
 AMP rewrites `server.properties` on start, so change game settings through AMP, not the file.
 
 ## How it plays
-- Players spawn in a safe neon lobby at 0 101 0, where they're immune to damage and can't deal any.
-- **Kit Dealer** (left NPC) opens a chest menu of 10 kits. Click one and you're dropped at one of 8 random PvP arena
-  spawns with 3 s of spawn protection. The kit's custom enchants and cyberware are already on.
+- Players spawn in a safe stone hub at 0 101 0, where they're immune to damage and can't deal any. Four decorative
+  portals (Star Wars, Video Games, Smash Bros, Cyberpunk) stand on the east and west edges.
+- **Kit Dealer** (left NPC) opens a chest menu of 20 kits. Click one and you're dropped at one of 8 random arena
+  spawns with 3 s of spawn protection.
 - **Outbreak** (right NPC, or the zombie head in the kit menu) opens the map menu: pick one of the four maps (or Random),
   then pick a kit to queue.
 - PvP kills:
@@ -27,22 +28,51 @@ AMP rewrites `server.properties` on start, so change game settings through AMP, 
   - the sidebar shows total kills.
 - Death, logout, `/spawn`, `/lobby` or `/trigger pvp.spawn` sends you back to the lobby, clearing your inventory and
   implants. `/spawn` and `/lobby` are blocked for 10 s after you take damage.
-- The PvP arena is a 61×61 neon city at night (centre 0, -60, 100).
+- The PvP arena is a 61×61 sandstone colosseum (centre 0, -60, 100).
 - **Leaderboards** on the south side of the lobby show the top 5 for Kills (`pvp.kills`), Best Kill Streak (`pvp.best`) and
   Best Outbreak Wave (`pve.best`). The mod rewrites them every 5 s. `pvp:admin/place_leaderboard` re-places them.
+
+### Kits
+The menu has three rows: Star Wars | video games, Smash Bros | cyberpunk, and classics. Labels on the left name each
+row.
+
+**Franchise kits** have two **ability items** each (`abilities.py`):
+- They're in the hotbar. Right-click to use one.
+- The item shows its cooldown sweep, like an ender pearl.
+- Abilities hit mobs and enemy players, never Outbreak teammates.
+
+| Kit | Gear | Abilities |
+|---|---|---|
+| Jedi Knight | Lightsaber (Sharpness V), robes, Jump Boost II | **Force Push** (cone knockback, 7 s), **Mind Trick** (blind + slow, 15 s) |
+| Sith Lord | Red lightsaber (Sharpness V, Fire Aspect) | **Force Lightning** (cone, 6 dmg + slow, 9 s), **Force Choke** (lift + Wither, 14 s) |
+| Hero of Hyrule | Master Sword, Hylian Shield, bow | **Spin Attack** (7 dmg around you, 6 s), **Hookshot** (reel a target in, 8 s) |
+| Spartan | Assault rifle (crossbow), energy sword, trimmed netherite | **Frag Grenade** (10 dmg where it lands, 10 s); passive **energy shield**: 4 absorption hearts that come back after 4 s without damage |
+| Doom Slayer | Super Shotgun (multishot), Crucible | **Chainsaw** (14 dmg up close, 12 s), **Berserk Rune** (Strength II/Speed II/Resistance, 25 s); passive **glory kills** (every kill heals) |
+| Witcher | Steel sword, silver sword (Smite V), 2 Swallow potions | **Igni** (3 fireballs, 8 s), **Quen** (shield, 16 s) |
+| Mario | Hammer (mace), overalls, Resistance I | **Fireball** (3 s), **Super Jump Punch** (leap + 6 dmg uppercut, 8 s) |
+| Pikachu | Iron Tail sword, Speed I, Resistance I | **Thunder Jolt** (zap 6 dmg, 4 s), **Quick Attack** (dash, 6 s) |
+| Kirby | Star sword, Jump Boost II, Resistance I | **Inhale** (suck in + 5 dmg + 2 hearts, 10 s), **Stone** (immune 3 s + slam, 12 s) |
+| Samus | Arm Cannon (bow), Varia Suit (gold) | **Charge Shot** (explosive, 6 s), **Screw Attack** (spin up + 6 dmg, 8 s) |
+
+**Cyberpunk kits** (Edgerunner, Netrunner) keep their cyberware:
 
 | Kit | Gear | Cyberware |
 |---|---|---|
 | Edgerunner | Katana: Sharpness V, Lifesteal III, Double Strike II | Sandevistan, Mantis Blades, Reflex Tuner, Kiroshi |
-| Juggernaut | Sword + shield, netherite Prot IV with Armored III / Tank II | Subdermal Armor, Titanium Bones, Second Heart, Lynx Paws |
-| Sniper | Bow: Power V, Infinity, Lethal Sniper III, Lightning Arrows II | Kiroshi, Reinforced Tendons, Biomonitor, Reflex Tuner |
-| Berserker | Axe: Sharpness V, Cleave III, Bleed III, Rage II | Gorilla Arms, Berserk, Titanium Bones |
 | Netrunner | Sword: Sharpness IV, Assassin III, Poison II, plus Invisibility | Sandevistan, Lynx Paws, Reflex Tuner, Kiroshi |
-| Medic | Lifesteal sword, Angelic III chest, 4 Healing II + 2 Regen | Biomonitor, Bionic Lungs, Kiroshi, Reflex Tuner |
-| Pyro | Fire Aspect II + Execute sword, Flame bow, Fire Prot IV | Gorilla Arms, Berserk, Biomonitor, Lynx Paws |
-| Ranger | Crossbow: Quick Charge III, Multishot, Longbow II, Venom II | Kiroshi, Reinforced Tendons, Reflex Tuner, Subdermal Armor |
-| Shinobi | Shadow Assassin + Featherweight sword, 8 pearls, Dodge/Trickster, Springs/Gears | Sandevistan, Lynx Paws, Kiroshi, Subdermal Armor |
-| Skyhammer | Mace: Density IV, Wind Burst II, 16 wind charges | Reinforced Tendons, Titanium Bones, Second Heart, Subdermal Armor |
+
+**Classic kits** have no cyberware, just custom enchants and one passive effect:
+
+| Kit | Gear | Passive |
+|---|---|---|
+| Juggernaut | Sword + shield, netherite Prot IV with Armored III / Tank II | Health Boost II |
+| Sniper | Bow: Power V, Infinity, Lethal Sniper III, Lightning Arrows II | Night Vision |
+| Berserker | Axe: Sharpness V, Cleave III, Bleed III, Rage II | Speed I |
+| Medic | Lifesteal sword, Angelic III chest, 4 Healing II + 2 Regen | Regeneration I |
+| Pyro | Fire Aspect II + Execute sword, Flame bow, Fire Prot IV | Fire Resistance |
+| Ranger | Crossbow: Quick Charge III, Multishot, Longbow II, Venom II | Speed I |
+| Shinobi | Shadow Assassin + Featherweight sword, 8 pearls, Dodge/Trickster, Springs/Gears | Speed II |
+| Skyhammer | Mace: Density IV, Wind Burst II, 16 wind charges | Jump Boost II |
 
 All kit gear is unbreakable, and every kit also gets 16 steak and 2 golden apples.
 
@@ -213,7 +243,7 @@ from `/function cyber:admin/give`. Then run:
 /pvpkit list              ids, authors, item and implant counts
 /pvpkit delete <id>
 ```
-- Up to 10 custom kits.
+- Up to 9 custom kits show (bottom row of the kit menus).
 - They show up in the bottom two rows of both the Kit Dealer and the Outbreak menus.
 - They're given exactly as saved, with gear in the same slots and implants installed.
 - Ids start at 101.

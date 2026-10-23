@@ -8,7 +8,7 @@ Kit/arena PvP plus "Outbreak", a CoD-zombies style wave mode, both using Anarchy
 Menus are chest screens opened with /pvpmenu (crispy-pvp-spawn mod) from storage pvp:menus.
 """
 import json
-import outbreak_maps, os, random, shutil, sys
+import abilities, outbreak_maps, os, random, shutil, sys
 
 NS = "pvp"
 PACK_FORMAT = [107, 0], [107, 1]
@@ -31,6 +31,11 @@ IMPLANT_KEYS = ["kiroshi", "subdermal", "titanium", "lungs", "gorilla", "mantis"
                 "heart", "sandy", "berserk", "launcher", "cyberskeleton", "neuro"]   # cyber:item/<key> loot tables (cyberskeleton: PvP test-only)
 VELOCITY_MAX, VELOCITY_CAP = 5, 20   # Velocity enchant: +20% arrow speed per level; levels above the cap (via /fe) count as the cap
 LOBBY_BOX = box(0, 0, LOBBY_R, LOBBY_Y - 1, 20)
+# lobby portals (decorative): x, z, frame, glass, label, label colour
+PORTALS = [(-10, -4, "polished_blackstone_bricks", "red_stained_glass", "Star Wars", "red"),
+           (-10, 4, "mossy_stone_bricks", "lime_stained_glass", "Video Games", "green"),
+           (10, -4, "smooth_quartz", "yellow_stained_glass", "Smash Bros", "gold"),
+           (10, 4, "black_concrete", "cyan_stained_glass", "Cyberpunk", "aqua")]
 ARENA_BOX = box(ACX, ACZ, AR, AY - 1, 35)
 # Outbreak maps: same size and layout (spawns, mob windows, Arsenal in the middle), 100 blocks apart along z.
 # id, key, name, colour, menu icon, centre z, extra mobs (min wave, roll <=, type, extra NBT) tried before the normal pool
@@ -72,6 +77,8 @@ BUILDINGS = [
     (-8, -1, -7, 1, 2, "lime", False), (7, -1, 8, 1, 2, "lime", False),
     (-1, -8, 1, -7, 2, "lime", False), (-1, 7, 1, 8, 2, "lime", False),
 ]
+ARENA_TRIM = {"cyan": "chiseled_sandstone", "magenta": "cut_red_sandstone", "yellow": "chiseled_red_sandstone",
+              "light_blue": "cut_sandstone", "lime": "red_sandstone"}   # building colour -> colosseum trim block
 # Outbreak: player spawns around the Arsenal, mob windows just inside the walls, ruins for cover
 PVE_SPAWNS = [(4, 4, -45), (-4, 4, 45), (4, -4, -135), (-4, -4, 135)]
 MOB_POINTS = [(20, 0), (-20, 0), (0, 20), (0, -20), (20, 12), (20, -12), (-20, 12), (-20, -12), (12, 20), (-12, 20), (12, -20), (-12, -20)]
@@ -99,46 +106,102 @@ def armor(mat, prot, extra=None, dye=None):
 def potion(kind, p, n=1): return f'give @s minecraft:{kind}[minecraft:potion_contents={{potion:"minecraft:{p}"}}] {n}'
 
 CE = "crispy_enchants:"
+def passive(effect, level=0): return [f"effect give @s minecraft:{effect} infinite {level} true"]
+def suit(mats, prot, dye=None, trim=None, extra=None):
+    """Armor with per-slot material and leather colour (dicts or single values) and an optional armor trim."""
+    out = []
+    for slot, piece in (("head", "helmet"), ("chest", "chestplate"), ("legs", "leggings"), ("feet", "boots")):
+        m = mats[slot] if isinstance(mats, dict) else mats
+        d = dye.get(slot) if isinstance(dye, dict) else dye
+        comps = [f"minecraft:dyed_color={d}"] if d is not None and m == "leather" else []
+        if trim and m != "leather": comps.append(f'minecraft:trim={{material:"minecraft:{trim[0]}",pattern:"minecraft:{trim[1]}"}}')
+        e = {"protection": prot, **((extra or {}).get(slot) or {})}
+        out.append(f"item replace entity @s armor.{slot} with {item(f'{m}_{piece}', enchants=e, extra=','.join(comps))}")
+    return out
+def model(m): return f'minecraft:item_model="minecraft:{m}"'
+AB = abilities.give
+def ab_line(*keys): return " · ".join(abilities.ABILITIES[k][0] for k in keys)
+
+# Franchise kits: Star Wars, video games, Smash Bros. Two right-click ability items each (abilities.py); no cyberware.
+FRANCHISE_KITS = [
+    (11, "jedi", "Jedi Knight", "aqua", "breeze_rod", ["Lightsaber: Sharpness V · robes · Jump Boost II", ab_line("force_push", "mind_trick")],
+     [f"give @s {item('netherite_sword', 'Lightsaber', 'aqua', {'sharpness': 5}, model('breeze_rod'))}", AB("force_push"), AB("mind_trick")]
+     + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "diamond"}, 4, dye=9137994, extra={"feet": {"feather_falling": 4}})
+     + passive("jump_boost", 1), []),
+    (12, "sith", "Sith Lord", "dark_red", "blaze_rod", ["Red lightsaber: Sharpness V, Fire Aspect · dark robes", ab_line("force_lightning", "force_choke")],
+     [f"give @s {item('netherite_sword', 'Sith Lightsaber', 'red', {'sharpness': 5, 'fire_aspect': 1}, model('blaze_rod'))}", AB("force_lightning"), AB("force_choke")]
+     + suit({"head": "netherite", "chest": "leather", "legs": "leather", "feet": "netherite"}, 4, dye=1908001), []),
+    (13, "link", "Hero of Hyrule", "green", "shield", ["Master Sword, Hylian Shield, bow · green tunic", ab_line("spin_attack", "hookshot")],
+     [f"give @s {item('diamond_sword', 'Master Sword', 'aqua', {'sharpness': 4, 'smite': 3})}", AB("spin_attack"), AB("hookshot"),
+      f"give @s {item('bow', 'Hero Bow', 'green', {'power': 4, 'infinity': 1})}", "give @s minecraft:arrow 1",
+      f"item replace entity @s weapon.offhand with {item('shield', 'Hylian Shield', 'blue')}"]
+     + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "iron"}, 4, dye=4237864), []),
+    (14, "spartan", "Spartan", "dark_green", "turtle_helmet", ["Assault rifle, energy sword · MJOLNIR armor", "Frag Grenade · energy shield recharges"],
+     [f"give @s {item('crossbow', 'MA5 Assault Rifle', 'dark_green', {'quick_charge': 3, 'piercing': 1})}", AB("frag_grenade"),
+      f"give @s {item('diamond_sword', 'Energy Sword', 'aqua', {'sharpness': 3})}", "give @s minecraft:arrow 64"]
+     + suit("netherite", 2, trim=("emerald", "sentry")), []),
+    (15, "doom", "Doom Slayer", "red", "netherite_axe", ["Super Shotgun, Crucible blade · Praetor Suit", ab_line("chainsaw", "rip_tear") + " · kills heal"],
+     [f"give @s {item('crossbow', 'Super Shotgun', 'red', {'multishot': 1, 'quick_charge': 2})}", AB("chainsaw"), AB("rip_tear"),
+      f"give @s {item('netherite_sword', 'Crucible', 'dark_red', {'sharpness': 4, 'fire_aspect': 1})}", "give @s minecraft:arrow 64"]
+     + suit("netherite", 3, trim=("emerald", "ward")), []),
+    (16, "witcher", "Witcher", "gray", "iron_sword", ["Steel + silver swords (Smite V), 2 Swallow potions", ab_line("igni", "quen")],
+     [f"give @s {item('diamond_sword', 'Steel Sword', 'gray', {'sharpness': 5})}", AB("igni"), AB("quen"),
+      f"give @s {item('golden_sword', 'Silver Sword', 'white', {'smite': 5, 'sharpness': 2})}", potion("potion", "strong_regeneration", 2)]
+     + suit("chainmail", 4), []),
+    (17, "mario", "Mario", "red", "red_mushroom", ["Hammer (mace) · overalls · Resistance I", ab_line("fireball", "super_jump")],
+     [f"give @s {item('mace', 'Hammer', 'red', {'density': 2, 'breach': 1})}", AB("fireball"), AB("super_jump")]
+     + suit("leather", 4, dye={"head": 13184550, "chest": 13184550, "legs": 3949738, "feet": 8606770}) + passive("resistance"), []),
+    (18, "pikachu", "Pikachu", "yellow", "yellow_dye", ["Iron Tail: Sharpness IV, Knockback II · Speed I", ab_line("thunder_jolt", "quick_attack")],
+     [f"give @s {item('iron_sword', 'Iron Tail', 'yellow', {'sharpness': 4, 'knockback': 2})}", AB("thunder_jolt"), AB("quick_attack")]
+     + suit("leather", 4, dye=16701501) + passive("speed") + passive("resistance"), []),
+    (19, "kirby", "Kirby", "light_purple", "pink_dye", ["Star sword · Jump Boost II, Resistance I", ab_line("inhale", "stone")],
+     [f"give @s {item('diamond_sword', 'Star Rod Sword', 'light_purple', {'sharpness': 4})}", AB("inhale"), AB("stone")]
+     + suit("leather", 4, dye=15961002) + passive("jump_boost", 1) + passive("resistance"), []),
+    (20, "samus", "Samus", "gold", "golden_helmet", ["Arm Cannon (bow), Varia Suit (gold Prot IV)", ab_line("charge_shot", "screw_attack")],
+     [f"give @s {item('bow', 'Arm Cannon', 'gold', {'power': 4, 'infinity': 1})}", AB("charge_shot"), AB("screw_attack"),
+      f"give @s {item('iron_sword', enchants={'sharpness': 2})}", "give @s minecraft:arrow 1"]
+     + suit("golden", 4), []),
+]
 FOOD = ["give @s minecraft:cooked_beef 16", "give @s minecraft:golden_apple 2"]
 # id, key, name, colour, menu icon, blurb lines, item commands, implants (one per body slot)
 KITS = [
-    (1, "samurai", "Edgerunner", "aqua", "netherite_sword", ["Katana: Sharpness V, Lifesteal III, Double Strike II", "Sandevistan, Mantis Blades, Reflex Tuner, Kiroshi"],
+    (1, "samurai", "Edgerunner", "aqua", "netherite_sword", ["Katana: Sharpness V, Lifesteal III, Double Strike II", "Cyberware: Sandevistan, Mantis Blades, Reflex Tuner, Kiroshi"],
      [f"give @s {item('netherite_sword', 'Edgerunner Katana', 'aqua', {'sharpness': 5, CE + 'lifesteal': 3, CE + 'doublestrike': 2})}"]
      + armor("diamond", 3), ["sandy", "mantis", "reflex", "kiroshi"]),
-    (2, "tank", "Juggernaut", "gray", "netherite_chestplate", ["Netherite Prot IV, Armored III, Tank II, shield", "Subdermal Armor, Titanium Bones, Second Heart, Lynx Paws"],
+    (2, "tank", "Juggernaut", "gray", "netherite_chestplate", ["Netherite Prot IV, Armored III, Tank II, shield", "Health Boost II (+4 hearts)"],
      [f"give @s {item('netherite_sword', 'Breaker', 'gray', {'sharpness': 3})}", f"item replace entity @s weapon.offhand with {item('shield')}"]
-     + armor("netherite", 4, {"chest": {CE + "armored": 3}, "legs": {CE + "tank": 2}}), ["subdermal", "titanium", "heart", "lynx"]),
-    (3, "sniper", "Sniper", "green", "bow", ["Bow: Power V, Lethal Sniper III, Lightning Arrows II", "Kiroshi, Reinforced Tendons, Biomonitor, Reflex Tuner"],
+     + armor("netherite", 4, {"chest": {CE + "armored": 3}, "legs": {CE + "tank": 2}}) + passive("health_boost", 1) + ["effect give @s minecraft:instant_health 1 3 true"], []),
+    (3, "sniper", "Sniper", "green", "bow", ["Bow: Power V, Lethal Sniper III, Lightning Arrows II", "Night Vision"],
      [f"give @s {item('bow', 'Overwatch', 'green', {'power': 5, 'infinity': 1, CE + 'lethalsniper': 3, CE + 'lightningarrows': 2})}",
       f"give @s {item('iron_sword', enchants={'sharpness': 2})}", "give @s minecraft:arrow 1"]
-     + armor("diamond", 2), ["kiroshi", "tendons", "biomon", "reflex"]),
-    (4, "berserker", "Berserker", "red", "netherite_axe", ["Axe: Sharpness V, Cleave III, Bleed III, Rage II", "Gorilla Arms, Berserk, Titanium Bones"],
+     + armor("diamond", 2) + passive("night_vision"), []),
+    (4, "berserker", "Berserker", "red", "netherite_axe", ["Axe: Sharpness V, Cleave III, Bleed III, Rage II", "Speed I"],
      [f"give @s {item('netherite_axe', 'Ripper', 'red', {'sharpness': 5, CE + 'cleave': 3, CE + 'bleed': 3, CE + 'rage': 2})}"]
-     + armor("diamond", 3), ["gorilla", "berserk", "titanium"]),
-    (5, "assassin", "Netrunner", "dark_purple", "diamond_sword", ["Blade: Sharpness IV, Assassin III, Poison II + Invisibility", "Sandevistan, Lynx Paws, Reflex Tuner, Kiroshi"],
+     + armor("diamond", 3) + passive("speed"), []),
+    (5, "assassin", "Netrunner", "dark_purple", "diamond_sword", ["Blade: Sharpness IV, Assassin III, Poison II + Invisibility", "Cyberware: Sandevistan, Lynx Paws, Reflex Tuner, Kiroshi"],
      [f"give @s {item('diamond_sword', 'Monowire', 'dark_purple', {'sharpness': 4, CE + 'assassin': 3, CE + 'poison': 2})}", potion("splash_potion", "invisibility")]
      + armor({"head": "diamond", "chest": "leather", "legs": "leather", "feet": "diamond"}, 2, dye=1908001), ["sandy", "lynx", "reflex", "kiroshi"]),
-    (6, "medic", "Medic", "light_purple", "glistering_melon_slice", ["Lifesteal sword, Angelic III chest, 4 healing + 2 regen", "Biomonitor, Bionic Lungs, Kiroshi, Reflex Tuner"],
+    (6, "medic", "Medic", "light_purple", "glistering_melon_slice", ["Lifesteal sword, Angelic III chest, 4 healing + 2 regen", "Regeneration I"],
      [f"give @s {item('netherite_sword', 'Scalpel', 'light_purple', {'sharpness': 3, CE + 'lifesteal': 2})}",
       potion("splash_potion", "strong_healing", 4), potion("potion", "regeneration", 2)]
-     + armor("diamond", 3, {"chest": {CE + "angelic": 3}}), ["biomon", "lungs", "kiroshi", "reflex"]),
-    (7, "pyro", "Pyro", "gold", "blaze_powder", ["Fire Aspect II + Execute sword, Flame bow, Fire Prot IV", "Gorilla Arms, Berserk, Biomonitor, Lynx Paws"],
+     + armor("diamond", 3, {"chest": {CE + "angelic": 3}}) + passive("regeneration"), []),
+    (7, "pyro", "Pyro", "gold", "blaze_powder", ["Fire Aspect II + Execute sword, Flame bow, Fire Prot IV", "Fire Resistance"],
      [f"give @s {item('netherite_sword', 'Incinerator', 'gold', {'sharpness': 4, 'fire_aspect': 2, CE + 'execute': 3})}",
       f"give @s {item('bow', enchants={'power': 3, 'flame': 1, 'infinity': 1})}", "give @s minecraft:arrow 1"]
-     + armor("diamond", 2, {s: {"fire_protection": 4} for s in ("head", "chest", "legs", "feet")}), ["gorilla", "berserk", "biomon", "lynx"]),
-    (8, "ranger", "Ranger", "dark_green", "crossbow", ["Crossbow: Quick Charge III, Multishot, Longbow II, Venom II", "Kiroshi, Reinforced Tendons, Reflex Tuner, Subdermal Armor"],
+     + armor("diamond", 2, {s: {"fire_protection": 4} for s in ("head", "chest", "legs", "feet")}) + passive("fire_resistance"), []),
+    (8, "ranger", "Ranger", "dark_green", "crossbow", ["Crossbow: Quick Charge III, Multishot, Longbow II, Venom II", "Speed I"],
      [f"give @s {item('crossbow', 'Deadeye', 'dark_green', {'quick_charge': 3, 'multishot': 1, CE + 'longbow': 2, CE + 'venom': 2})}",
       f"give @s {item('iron_axe', enchants={'sharpness': 3})}", "give @s minecraft:arrow 64"]
-     + armor("diamond", 2, {"feet": {CE + "springs": 2}}), ["kiroshi", "tendons", "reflex", "subdermal"]),
-    (9, "shinobi", "Shinobi", "dark_gray", "ender_pearl", ["Shadow Assassin blade, 8 ender pearls, Dodge + Trickster", "Sandevistan, Lynx Paws, Kiroshi, Subdermal Armor"],
+     + armor("diamond", 2, {"feet": {CE + "springs": 2}}) + passive("speed"), []),
+    (9, "shinobi", "Shinobi", "dark_gray", "ender_pearl", ["Shadow Assassin blade, 8 ender pearls, Dodge + Trickster", "Speed II"],
      [f"give @s {item('diamond_sword', 'Kage', 'dark_gray', {'sharpness': 4, CE + 'shadowassassin': 3, CE + 'featherweight': 2})}", "give @s minecraft:ender_pearl 8"]
      + armor({"head": "diamond", "chest": "leather", "legs": "leather", "feet": "diamond"}, 2,
-             {"chest": {CE + "dodge": 3, CE + "trickster": 3}, "feet": {CE + "springs": 3, CE + "gears": 2}}, dye=3355443),
-     ["sandy", "lynx", "kiroshi", "subdermal"]),
-    (10, "skyhammer", "Skyhammer", "blue", "mace", ["Mace: Density IV, Wind Burst II, 16 wind charges", "Reinforced Tendons, Titanium Bones, Second Heart, Subdermal"],
+             {"chest": {CE + "dodge": 3, CE + "trickster": 3}, "feet": {CE + "springs": 3, CE + "gears": 2}}, dye=3355443) + passive("speed", 1),
+     []),
+    (10, "skyhammer", "Skyhammer", "blue", "mace", ["Mace: Density IV, Wind Burst II, 16 wind charges", "Jump Boost II"],
      [f"give @s {item('mace', 'Skyhammer', 'blue', {'density': 4, 'wind_burst': 2})}", "give @s minecraft:wind_charge 16"]
-     + armor("netherite", 3, {"feet": {"feather_falling": 4}}), ["tendons", "titanium", "heart", "subdermal"]),
-]
+     + armor("netherite", 3, {"feet": {"feather_falling": 4}}) + passive("jump_boost", 1), []),
+] + FRANCHISE_KITS
 # Admin-only test kits: never in a menu. /function pvp:admin/test_david queues you for Outbreak with it.
 TEST_KIT_ID = 60
 TEST_KIT = [
@@ -155,8 +218,13 @@ TEST_KIT = [
     "tellraw @s [{\"text\":\"Kit: \",\"color\":\"gray\"},{\"text\":\"David (test)\",\"color\":\"dark_red\",\"bold\":true},"
     "{\"text\":\" · Cyberskeleton, Sandevistan, Kiroshi, Reflex Tuner. Swap the crossbows into both hands to dual-fire.\",\"color\":\"gray\"}]",
 ]
-KIT_SLOTS = [11, 12, 13, 14, 15, 20, 21, 22, 23, 24]
-CUSTOM_SLOTS = [29, 30, 31, 32, 33, 38, 39, 40, 41, 42]   # admin-made kits (/pvpkit create), ids 101+
+KIT_SLOT = {11: 10, 12: 11, 13: 13, 14: 14, 15: 15, 16: 16,          # Star Wars | video games
+            17: 19, 18: 20, 19: 21, 20: 22, 1: 24, 5: 25,            # Smash Bros | cyberpunk
+            2: 28, 3: 29, 4: 30, 6: 31, 7: 32, 8: 33, 9: 34, 10: 35}  # classics
+KIT_LABELS = [(9, "book", "&bStar Wars &8| &aVideo games", ["&7Jedi, Sith, Link, Spartan,", "&7Doom Slayer, Witcher"]),
+              (18, "book", "&cSmash Bros &8| &3Cyberpunk", ["&7Mario, Pikachu, Kirby, Samus,", "&7Edgerunner, Netrunner (cyberware)"]),
+              (27, "book", "&7Classics", ["&7Custom enchants, no gimmicks"])]
+CUSTOM_SLOTS = [36, 37, 38, 39, 40, 41, 42, 43, 44]   # admin-made kits (/pvpkit create), ids 101+
 
 # Upgrades (points per tier I / II / III). Pack-a-Punch works on the held weapon (the tier is stored on the item);
 # armor upgrades are per player (pve.arm). Both are lost when you go down, since your kit is handed out again.
@@ -259,11 +327,13 @@ def build():
     menus = {
         "kits": {"title": {"text": "⚔ Pick a kit", "color": "dark_aqua"}, "rows": 6, "fill": PANE,
                  "custom_kits": {"slots": CUSTOM_SLOTS, "cmd": "trigger pvp.kit set %d"}, "items":
-                 [{"slot": s, "item": icon(k[4], k[2], k[3], kit_lore(k)), "cmd": f"trigger pvp.kit set {k[0]}"} for s, k in zip(KIT_SLOTS, KITS)]
+                 [{"slot": KIT_SLOT[k[0]], "item": icon(k[4], k[2], k[3], kit_lore(k)), "cmd": f"trigger pvp.kit set {k[0]}"} for k in KITS]
+                 + [{"slot": s, "item": icon(i, n, "white", l, False), "cmd": ""} for (s, i, n, l) in KIT_LABELS]
                  + [{"slot": 49, "item": icon("zombie_head", "☣ Outbreak (PvE)", "green", ["Fight waves of mobs solo or with a team", "Click to pick a map"]), "cmd": "pvpmenu pve_maps"}]},
         "pve": {"title": {"text": "☣ Outbreak: pick your loadout", "color": "dark_green"}, "rows": 6, "fill": PANE,
                 "custom_kits": {"slots": CUSTOM_SLOTS, "cmd": "trigger pve.join set %d"}, "items":
-                [{"slot": s, "item": icon(k[4], k[2], k[3], k[5] + ["", "Click to queue with this kit"]), "cmd": f"trigger pve.join set {k[0]}"} for s, k in zip(KIT_SLOTS, KITS)]
+                [{"slot": KIT_SLOT[k[0]], "item": icon(k[4], k[2], k[3], k[5] + ["", "Click to queue with this kit"]), "cmd": f"trigger pve.join set {k[0]}"} for k in KITS]
+                + [{"slot": s, "item": icon(i, n, "white", l, False), "cmd": ""} for (s, i, n, l) in KIT_LABELS]
                 + [{"slot": 47, "item": icon("barrier", "Leave the queue", "red", ["Stop waiting for the next Outbreak"], False), "cmd": "trigger pve.join set 99"},
                    {"slot": 45, "item": icon("filled_map", "Back to maps", "yellow", ["Pick a different map"], False), "cmd": "pvpmenu pve_maps"},
                    {"slot": 49, "item": icon("zombie_head", "How Outbreak works", "green", [
@@ -289,8 +359,10 @@ def build():
              "advance_weather": "false", "show_advancement_messages": "false", "respawn_radius": "0", "locator_bar": "false",
              "spawn_phantoms": "false", "mob_griefing": "false", "spawn_wandering_traders": "false", "raids": "false",
              "spawn_patrols": "false", "ender_pearls_vanish_on_death": "true", "command_block_output": "false"}
+    ab_objectives = abilities.build(fn, wj)
     fn("load", [
         *[f"scoreboard objectives add {o}" for o in [
+            *ab_objectives,
             "pvp dummy", "pvp.kit trigger", "pvp.spawn trigger", "pvp.kn playerKillCount", "pvp.dead deathCount",
             "pvp.left minecraft.custom:minecraft.leave_game", "pvp.streak dummy", "pvp.best dummy",
             "pvp.hurt minecraft.custom:minecraft.damage_taken", "pvp.ct dummy",
@@ -311,6 +383,7 @@ def build():
 
     fn("tick", [
         "scoreboard players enable @a pvp.kit", "scoreboard players enable @a pvp.spawn",
+        f"function {NS}:ability/tick",
         f"execute as @a[tag=!pvp.seen] run function {NS}:to_lobby",
         f"execute as @a[scores={{pvp.left=1..}}] run function {NS}:to_lobby",
         f"execute as @e[type=minecraft:player,scores={{pvp.dead=1..}}] run function {NS}:respawned",
@@ -330,6 +403,7 @@ def build():
         # anyone (in adventure) outside the lobby and both arenas goes back to the lobby
         f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[{ARENA_BOX}] {" ".join(f"unless entity @s[{b}]" for b in PVE_BOXES.values())} unless entity @s[tag=pvp.admin,{ROOM_BOX}] run function {NS}:to_lobby",
         f"function {NS}:pve/second",
+        f"function {NS}:ability/second",
         # NPC clicks are advancements; clear any left granted so an NPC can never get stuck for a player
         "advancement revoke @a only pvp:npc", "advancement revoke @a only pvp:pvenpc", "advancement revoke @a only pvp:shopnpc",
     ])
@@ -380,7 +454,8 @@ def build():
         give.append(f"execute if score @s pve.kit matches {kid} run function {NS}:kit/{key}")
         fn(f"kit/{key}", items + FOOD + [f"function cyber:implant/{i}/kit" for i in implants] + [
             f"tellraw @s [{{\"text\":\"Kit: \",\"color\":\"gray\"}},{{\"text\":\"{name}\",\"color\":\"{color}\",\"bold\":true}},"
-            f"{{\"text\":\" (cyberware installed)\",\"color\":\"gray\"}}]",
+            + ("{\"text\":\" (cyberware installed)\",\"color\":\"gray\"}]" if implants else
+             "{\"text\":\" · right-click your ability items\",\"color\":\"gray\"}]" if any("loot pvp:ability/" in l for l in items) else "{\"text\":\"\"}]"),
             *(["tellraw @s {\"text\":\"Double-tap sneak to activate your Operating System implant.\",\"color\":\"dark_gray\"}"]
               if any(i in ("sandy", "berserk") for i in implants) else [])])
     pick += [f"execute if score #k pvp matches 1..{len(KITS)} run scoreboard players set #ok pvp 1",
@@ -430,44 +505,54 @@ def build():
         *npc("pvp.npc", KIT_NPC, "⚔ Kit Dealer ⚔", "aqua", "weaponsmith", "snow"),
         *npc("pvp.pvenpc", PVE_NPC, "☣ Outbreak ☣", "green", "cleric", "swamp"),
         "kill @e[tag=pvp.holo]",
-        holo(LOBBY_Y + 6, -LOBBY_R + 1.5, {"text": "CRISPY PVP", "color": "aqua", "bold": True}, 3),
+        holo(LOBBY_Y + 6, -LOBBY_R + 1.5, {"text": "CRISPY PVP", "color": "gold", "bold": True}, 3),
         holo(LOBBY_Y + 4.6, -LOBBY_R + 1.5, [{"text": "Kit Dealer: ", "color": "aqua"}, {"text": "PvP arena", "color": "gray"},
                                               {"text": "   Outbreak: ", "color": "green"}, {"text": "waves of mobs, solo or team", "color": "gray"},
-                                              {"text": "\nCustom enchants + cyberware in every kit · /spawn to return", "color": "dark_gray"}]),
+                                              {"text": "\nStar Wars · Zelda · Halo · Doom · Witcher · Smash Bros · Cyberpunk", "color": "yellow"},
+                                              {"text": "\nCustom enchants in every kit · /spawn to return", "color": "dark_gray"}]),
+        *[f"summon minecraft:text_display {px + (0.5 if px < 0 else 0.5)} {LOBBY_Y + 7.2} {pz + 0.5} {{Tags:[\"pvp.holo\"],billboard:\"center\","
+          f"text:{tj({'text': label, 'color': col, 'bold': True})}}}" for (px, pz, _, _, label, col) in PORTALS],
     ])
     L, Y = LOBBY_R, LOBBY_Y
-    lobby = [f"fill {-L} {Y} {-L} {L} {Y} {L} minecraft:black_concrete",
-             f"fill {-L} {Y} 0 {L} {Y} 0 minecraft:cyan_concrete", f"fill 0 {Y} {-L} 0 {Y} {L} minecraft:magenta_concrete",
-             f"fill {-L} {Y + 1} {-L} {L} {Y + 1} {L} minecraft:polished_blackstone_wall outline",
+    lobby = [f"fill {-L} {Y} {-L} {L} {Y} {L} minecraft:polished_andesite",
+             f"fill {-L} {Y} 0 {L} {Y} 0 minecraft:smooth_quartz", f"fill 0 {Y} {-L} 0 {Y} {L} minecraft:smooth_quartz",
+             f"fill -2 {Y} -2 2 {Y} 2 minecraft:chiseled_quartz_block", f"setblock 0 {Y} 0 minecraft:gold_block",
+             f"fill {-L} {Y + 1} {-L} {L} {Y + 1} {L} minecraft:polished_deepslate_wall outline",
              f"fill {-L + 1} {Y + 1} {-L + 1} {L - 1} {Y + 30} {L - 1} minecraft:air"]
     for a in (-L, L):
-        lobby += [f"fill {a} {Y} {-L} {a} {Y} {L} minecraft:light_blue_concrete", f"fill {-L} {Y} {a} {L} {Y} {a} minecraft:light_blue_concrete"]
+        lobby += [f"fill {a} {Y} {-L} {a} {Y} {L} minecraft:polished_deepslate", f"fill {-L} {Y} {a} {L} {Y} {a} minecraft:polished_deepslate"]
     for a in (-L + 1, 0, L - 1):
         for b in (-L + 1, 0, L - 1):
-            lobby.append(f"setblock {a} {Y} {b} minecraft:sea_lantern")
+            lobby.append(f"setblock {a} {Y} {b} minecraft:ochre_froglight")
     B = L + 1   # invisible walls so nobody falls off
     lobby += [f"fill {-B} {Y + 1} {-B} {B} {Y + 15} {-B} minecraft:barrier", f"fill {-B} {Y + 1} {B} {B} {Y + 15} {B} minecraft:barrier",
               f"fill {-B} {Y + 1} {-B} {-B} {Y + 15} {B} minecraft:barrier", f"fill {B} {Y + 1} {-B} {B} {Y + 15} {B} minecraft:barrier"]
+    for (px, pz, frame, glass, _, _) in PORTALS:   # a portal per kit universe on the east and west edges
+        s_ = 1 if px > 0 else -1
+        lobby += [f"fill {px} {Y + 1} {pz - 2} {px} {Y + 5} {pz + 2} minecraft:{frame}",
+                  f"fill {px} {Y + 1} {pz - 1} {px} {Y + 4} {pz + 1} minecraft:{glass}",
+                  f"fill {px - s_} {Y} {pz - 1} {px - s_} {Y} {pz + 1} minecraft:{frame}",
+                  f"setblock {px} {Y + 6} {pz} minecraft:lantern"]
     fn("admin/build_lobby", lobby + [f"function {NS}:admin/place_npc"])
 
     x1, x2, z1, z2 = ACX - AR, ACX + AR, ACZ - AR, ACZ + AR
     ar = [f"fill {x1} {AY + 1 + k} {z1} {x2} {AY + 5 + k} {z2} minecraft:air" for k in range(0, 30, 5)]   # fill is capped at 32768 blocks
-    ar.append(f"fill {x1} {AY} {z1} {x2} {AY} {z2} minecraft:black_concrete")
+    ar.append(f"fill {x1} {AY} {z1} {x2} {AY} {z2} minecraft:smooth_sandstone")
     for k in range(-AR, AR + 1, 6):
-        ar += [f"fill {ACX + k} {AY} {z1} {ACX + k} {AY} {z2} minecraft:gray_concrete", f"fill {x1} {AY} {ACZ + k} {x2} {AY} {ACZ + k} minecraft:gray_concrete"]
+        ar += [f"fill {ACX + k} {AY} {z1} {ACX + k} {AY} {z2} minecraft:cut_sandstone", f"fill {x1} {AY} {ACZ + k} {x2} {AY} {ACZ + k} minecraft:cut_sandstone"]
     for i in range(-AR, AR + 1, 6):
         for j in range(-AR, AR + 1, 6):
-            ar.append(f"setblock {ACX + i} {AY} {ACZ + j} minecraft:sea_lantern")
-    ar += walls(ACX, ACZ, AR, "black_concrete", "cyan_concrete")
+            ar.append(f"setblock {ACX + i} {AY} {ACZ + j} minecraft:glowstone")
+    ar += walls(ACX, ACZ, AR, "sandstone", "chiseled_sandstone")
     for (bx1, bz1, bx2, bz2, h, stripe, hollow) in BUILDINGS:
         X1, X2, Q1, Q2 = ACX + bx1, ACX + bx2, ACZ + bz1, ACZ + bz2
-        ar.append(f"fill {X1} {AY + 1} {Q1} {X2} {AY + h} {Q2} minecraft:black_concrete" + (" hollow" if hollow else ""))
-        ar.append(f"fill {X1} {AY + h} {Q1} {X2} {AY + h} {Q2} minecraft:{stripe}_concrete outline")
+        ar.append(f"fill {X1} {AY + 1} {Q1} {X2} {AY + h} {Q2} minecraft:smooth_sandstone" + (" hollow" if hollow else ""))
+        ar.append(f"fill {X1} {AY + h} {Q1} {X2} {AY + h} {Q2} minecraft:{ARENA_TRIM[stripe]} outline")
         if hollow:   # 3-wide, 2-high doorway in the middle of every wall, a light inside
             mx, mz = (X1 + X2) // 2, (Q1 + Q2) // 2
             ar += [f"fill {mx - 1} {AY + 1} {Q1} {mx + 1} {AY + 2} {Q1} minecraft:air", f"fill {mx - 1} {AY + 1} {Q2} {mx + 1} {AY + 2} {Q2} minecraft:air",
                    f"fill {X1} {AY + 1} {mz - 1} {X1} {AY + 2} {mz + 1} minecraft:air", f"fill {X2} {AY + 1} {mz - 1} {X2} {AY + 2} {mz + 1} minecraft:air",
-                   f"setblock {mx} {AY} {mz} minecraft:sea_lantern"]
+                   f"setblock {mx} {AY} {mz} minecraft:glowstone"]
     fn("admin/build_arena", ar)
     fn("admin/build", [f"function {NS}:admin/build_lobby", f"function {NS}:admin/build_arena", f"function {NS}:admin/build_pve", f"function {NS}:admin/build_room"])
     build_room()
