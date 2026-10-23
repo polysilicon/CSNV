@@ -179,6 +179,10 @@ ABILITIES = {
         "effect give @s minecraft:regeneration 6 1", "effect give @s minecraft:speed 6 0",
         "particle minecraft:campfire_cosy_smoke ~ ~1.8 ~ 0.2 0.2 0.2 0.01 12",
         snd("entity.player.breath", 1, 0.6), bar("TEGRIDY", "green")]),
+    "wassup_bruh": ("Wassup Bruh", "aqua", "goat_horn", 22, ["Randy is feeling it.", "Strength II 8 s · your punches hit much harder"], [
+        "effect give @s minecraft:strength 8 1",
+        "particle minecraft:note ~ ~2.2 ~ 0.4 0.2 0.4 1 6", "particle minecraft:crit ~ ~1 ~ 0.4 0.6 0.4 0.2 20",
+        snd("entity.villager.celebrate", 1, 0.7), snd("entity.player.levelup", 0.6, 1.4), bar("WASSUP BRUH", "aqua")]),
     "vats": ("V.A.T.S.", "green", "spyglass", 18, ["Slows time for every enemy near you.", "12 blocks · Slowness III + glowing 5 s · you: Strength I"], [
         around(12, "effect give @s minecraft:slowness 5 2"), around(12, "effect give @s minecraft:glowing 5 0"),
         "effect give @s minecraft:strength 5 0",

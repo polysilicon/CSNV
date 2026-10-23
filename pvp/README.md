@@ -112,7 +112,7 @@ Bows stay bows: Link's Hero Bow, Red's Slingshot, Samus's Arm Cannon and the Sni
 
 | Kit | Gear | Abilities |
 |---|---|---|
-| Randy Marsh (South Park) | No weapon: fists +7 damage at sword attack speed; light blue shirt, jeans and brown shoes (leather); **Sandevistan** cyberware (double-tap sneak) | **Tegridy** (Regeneration II + Speed I 6 s, 20 s) |
+| Randy Marsh (South Park) | No weapon: fists +7 damage at sword attack speed; light blue shirt, jeans and brown shoes (leather); **Sandevistan** cyberware (double-tap sneak) | **Tegridy** (Regeneration II + Speed I 6 s, 20 s), **Wassup Bruh** (Strength II 8 s, 22 s) |
 | Courier Six (Fallout: New Vegas) | Lucky (revolver, gun ability), Machete (Bleed II), Ranger armor + Desert Ranger head | **V.A.T.S.** (enemies within 12 blocks: Slowness III + glowing 5 s; you: Strength I, 18 s), **Stimpak** (Instant Health II + Regeneration II, 15 s) |
 | Sonic | Chaos Emerald (iron sword, Sharpness IV), blue leather with red shoes (Springs II, Gears II), Speed II, 0.8× | **Spin Dash** (dash + Speed III 2 s, 5 dmg up close, 6 s), **Homing Attack** (12 blocks: zip to the target, 7 dmg, bounce off, 8 s) |
 | Walter White (Breaking Bad) | Trunk M60 (machine gun ability), 3 splash Poison II, yellow hazmat suit (Explosive Immunity III), Heisenberg head | **Say My Name** (10 blocks: Weakness II + Slowness I + glowing 6 s; you: Resistance I, 22 s), **Fulminated Mercury** (explosive throw, 10 s) |

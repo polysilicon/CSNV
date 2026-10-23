@@ -188,8 +188,8 @@ FRANCHISE_KITS = [
      [f"give @s {item('bow', 'Arm Cannon', 'gold', {'power': 4, 'infinity': 1, CE + 'explosive': 2, CE + 'eagleeye': 3})}", AB("charge_shot"), AB("screw_attack"),
       f"give @s {item('iron_sword', enchants={'sharpness': 2})}", "give @s minecraft:arrow 1"]
      + suit("golden", 4, extra={"chest": {CE + "reinforced": 3}}) + head("samus", "Samus Aran", "gold") + size(1.08), []),
-    (21, "randy", "Randy Marsh", "white", "fern", ["No weapon: fists hit for +7 (sword speed) · Sandevistan cyberware", "Tegridy · Sandevistan (double-tap sneak)"],
-     [AB("tegridy"), "attribute @s minecraft:attack_damage modifier add pvp:fists 7 add_value",
+    (21, "randy", "Randy Marsh", "white", "fern", ["No weapon: fists hit for +7 (sword speed) · Sandevistan cyberware", ab_line("tegridy", "wassup_bruh") + " · Sandevistan (double-tap sneak)"],
+     [AB("tegridy"), AB("wassup_bruh"), "attribute @s minecraft:attack_damage modifier add pvp:fists 7 add_value",
       "attribute @s minecraft:attack_speed modifier add pvp:fists -2.4 add_value"]
      + suit("leather", 3, dye={"head": 4007438, "chest": 9226476, "legs": 3949738, "feet": 6045219}) + head("randy", "Randy Marsh", "white"), ["sandy"]),
     (22, "courier", "Courier Six", "gold", "spyglass", ["Lucky (revolver) + machete (Bleed II) · Ranger armor", ab_line("lucky", "vats", "stimpak")],
