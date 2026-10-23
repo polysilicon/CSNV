@@ -3,8 +3,10 @@
 An ability is an item in the hotbar: right-click to use it.
 - It is a clay ball (not paper, which the cyberware implants use) with an item_model, a near-instant `consumable` and
   a `use_cooldown`, so the client shows the cooldown sweep and the server enforces it.
-- Using it fires a consume_item advancement, whose reward runs pvp:ability/use/<key>. That remembers the ability and
-  the selected hotbar slot.
+- Using any of them fires one consume_item advancement (pvp:ability/used, matched on the base item only). Its reward
+  runs while the item is still in the hand: it works out which ability that is (by custom_data, else by item model)
+  and runs pvp:ability/use/<key>, which remembers the ability and the selected hotbar slot. The last used item is
+  kept in storage pvp:debug for troubleshooting.
 - Next tick pvp:ability/regive puts the item back in that slot, or the offhand if it came from there, otherwise the
   inventory. Never twice, and never in the lobby.
 
@@ -176,11 +178,7 @@ def build(fn, wj, lobby_box):
         wj(f"data/{NS}/loot_table/ability/{key}.json", {"pools": [{"rolls": 1, "entries": [{
             "type": "minecraft:item", "name": BASE,
             "functions": [{"function": "minecraft:set_components", "components": item_components(key)}]}]}]})
-        wj(f"data/{NS}/advancement/ability/{key}.json", {"criteria": {"c": {"trigger": "minecraft:consume_item", "conditions": {
-            "item": {"items": BASE, "components": {"minecraft:custom_data": {"pvp_ab": key}}}}}},
-            "rewards": {"function": f"{NS}:ability/use/{key}"}})
         fn(f"ability/use/{key}", [
-            f"advancement revoke @s only {NS}:ability/{key}",
             f"scoreboard players set @s pvp.abk {idx}",
             "execute store result score @s pvp.abs run data get entity @s SelectedItemSlot",
             "tag @s add pvp.regive", "tag @s add pvp.caster",
@@ -188,6 +186,17 @@ def build(fn, wj, lobby_box):
             "tag @s remove pvp.caster", "tag @e[tag=pvp.hit] remove pvp.hit",
         ])
         fn(f"ability/fx/{key}", body)
+    # one trigger for every ability item; the reward reads the item still in the hand
+    wj(f"data/{NS}/advancement/ability/used.json", {"criteria": {"c": {"trigger": "minecraft:consume_item",
+        "conditions": {"item": {"items": BASE}}}}, "rewards": {"function": f"{NS}:ability/used"}})
+    fn("ability/used", [f"advancement revoke @s only {NS}:ability/used",
+                        "data modify storage pvp:debug last set value {}",
+                        "data modify storage pvp:debug last.main set from entity @s SelectedItem",
+                        "data modify storage pvp:debug last.off set from entity @s equipment.offhand"]
+       + [f"execute if items entity @s {h} *[minecraft:custom_data~{{pvp_ab:\"{k}\"}}] run return run function {NS}:ability/use/{k}"
+          for h in ("weapon.mainhand", "weapon.offhand") for k in ABILITIES]
+       + [f"execute if items entity @s {h} {BASE}[minecraft:item_model=\"minecraft:{v[2]}\"] run return run function {NS}:ability/use/{k}"
+          for h in ("weapon.mainhand", "weapon.offhand") for k, v in ABILITIES.items()])
     # give the used item back (it was consumed): its hotbar slot, else the offhand, else anywhere
     fn("ability/regive", ["tag @s remove pvp.regive"] + [
         f"execute if score @s pvp.abk matches {i} run return run function {NS}:ability/regive/{k}" for i, k in enumerate(ABILITIES, 1)])
