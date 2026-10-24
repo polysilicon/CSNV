@@ -81,58 +81,102 @@ def mannequin(tag, pos, yaw, pitch, skin, name=None, scale=1.0, gear=""):
             f"attributes:[{{id:\"minecraft:scale\",base:{scale}d}}]{gear}}}")
 
 
-# "I have to fight him, Sharon": Randy dives upside down at a giant Adam Smasher, then gets swatted away.
-SMASH = (0.5, AY + 1, 94.5)                 # Smasher's feet, centre of the colosseum floor, facing south
-SMASH_HEAD = (0.5, AY + 1 + 3.3, 94.5)
-R_START, R_HIT = (0.5, AY + 22, 116.5), (0.5, AY + 4.6, 96.0)
-R_END = (-3.5, AY + 1, 128.5)
-DIVE = (0.15, 0.55)                         # share of the scene: hang in the air, dive, then the swat
+# "I have to fight him, Sharon": Randy and a giant Adam Smasher both pop their Sandevistans. Randy dives upside
+# down, Smasher leaps to meet him, they clash mid-air, Randy is swatted away and Smasher slams down. Filmed side-on
+# so the clash reads top to bottom in a 9:16 frame and both stay in shot the whole time.
+SC = (0.5, AY + 1, 100.5)                   # stage centre (floor level)
+SECS = 8
+T_ON, T_HIT, T_OFF, T_LAND = 1.0, 3.4, 5.8, 4.4   # Sandevistans on, the clash, trails off, Smasher lands
+R0, RM, R_END = (-3.2, 11.5), (-0.5, 6.9), (-4.4, 0.0)   # Randy (x, y) relative to SC: start, clash, end
+S0, SM, S_END = (2.6, 0.0), (1.0, 3.6), (1.4, 0.0)       # Smasher: start, clash (mid-leap), landing
+GHOST_EVERY, GHOST_LIFE = 2, 16             # after-image spacing and lifetime (ticks); cyber:ghost/age fades and removes them
 
 
-def randy_pos(t):
-    if t < DIVE[0]:                         # hanging at the top, drifting slightly
-        return (R_START[0], R_START[1] + 0.6 * t / DIVE[0], R_START[2])
-    if t < DIVE[1]:                         # accelerating dive onto Smasher's head
-        u = (t - DIVE[0]) / (DIVE[1] - DIVE[0]); u = u * u
-        return tuple(lerp(R_START[i] + (0.6 if i == 1 else 0), R_HIT[i], u) for i in range(3))
-    u = (t - DIVE[1]) / (1 - DIVE[1])       # swatted: a high arc back across the arena
-    v = min(1, u * 1.6)
-    return (lerp(R_HIT[0], R_END[0], v), lerp(R_HIT[1], R_END[1], v) + 9 * math.sin(math.pi * v), lerp(R_HIT[2], R_END[2], v))
+def _arc(a, b, u, h=0.0): return (lerp(a[0], b[0], u), lerp(a[1], b[1], u) + h * math.sin(math.pi * u))
+
+
+def randy_at(s):
+    if s < T_ON: return R0
+    if s < T_HIT: return _arc(R0, RM, ((s - T_ON) / (T_HIT - T_ON)) ** 1.6)
+    u = min(1, (s - T_HIT) / 2.4)
+    return _arc(RM, R_END, 1 - (1 - u) ** 2, h=3.0)
+
+
+def smasher_at(s):
+    if s < 1.8: return (lerp(S0[0], S0[0] - 0.3, max(0, s - T_ON) / 0.8), 0.0)   # a short wind-up step
+    if s < T_HIT:
+        u = (s - 1.8) / (T_HIT - 1.8)
+        return (lerp(S0[0] - 0.3, SM[0], u), SM[1] * (1 - (1 - u) ** 2))             # leap, slowing at the top
+    u = min(1, (s - T_HIT) / (T_LAND - T_HIT))
+    return (lerp(SM[0], S_END[0], u), SM[1] * (1 - u * u))                          # drop into the slam
+
+
+def w(rel, dy=0.0): return (SC[0] + rel[0], SC[1] + rel[1] + dy, SC[2])
 
 
 def sharon_cam(t):
-    """Low behind Smasher's right shoulder, looking up at the dive; a slow push in, then it follows Randy out."""
-    p = (lerp(4.2, 3.4, ease(min(t / DIVE[1], 1))), AY + 2.4, lerp(88.0, 89.2, ease(min(t / DIVE[1], 1))))
-    r = randy_pos(t)
-    at = tuple(lerp(SMASH_HEAD[i], r[i], 0.62 if t < DIVE[1] else 0.75) for i in range(3))
-    return p, look(p, at)
+    s = t * SECS
+    push = ease(min(1, s / T_HIT))
+    shake = 0.12 * math.sin(s * 90) if T_HIT <= s < T_HIT + 0.3 or T_LAND <= s < T_LAND + 0.25 else 0.0
+    p = (SC[0] + shake, SC[1] + 5.2 + shake, SC[2] + lerp(15.0, 12.5, push))
+    return p, look(p, (SC[0], SC[1] + 5.2, SC[2]))
+
+
+def ghost(tag, pos, yaw, skin, scale, flip):
+    x, y, z = pos
+    nm = ',CustomName:"Dinnerbone"' if flip else ""
+    return [f"summon minecraft:mannequin {x:.2f} {y:.2f} {z:.2f} {{Tags:[\"cy.ghost\",\"cam.gnew\"],Rotation:[{yaw:.1f}f,0f],NoGravity:1b,"
+            f"Invulnerable:1b,Silent:1b,immovable:1b,hide_description:1b,Glowing:1b{nm},"
+            f"active_effects:[{{id:\"minecraft:invisibility\",duration:-1,amplifier:0b,show_particles:0b}}],"
+            f"profile:{{properties:[{{name:\"textures\",value:\"{HEADS[skin]}\"}}]}},attributes:[{{id:\"minecraft:scale\",base:{scale}d}}]}}",
+            "team join cy.g1 @e[type=minecraft:mannequin,tag=cam.gnew]",
+            f"scoreboard players set @e[type=minecraft:mannequin,tag=cam.gnew] cy.gl {GHOST_LIFE}",
+            "tag @e[type=minecraft:mannequin,tag=cam.gnew] remove cam.gnew"]
 
 
 def sharon_frame(k, n):
-    t = k / (n - 1)
-    x, y, z = randy_pos(t)
-    spin = 0 if t < DIVE[1] else 1080 * min(1, (t - DIVE[1]) / (1 - DIVE[1]) * 1.6)   # tumbling once he's hit
-    out = [f"tp @e[type=minecraft:mannequin,tag=cam.randy,limit=1] {x:.3f} {y:.3f} {z:.3f} {(180 + spin) % 360 - 180:.1f} 0",
-           f"execute as @e[type=minecraft:mannequin,tag=cam.smasher,limit=1] at @s facing {x:.2f} {y + 1:.2f} {z:.2f} run tp @s ~ ~ ~ ~ ~"]
-    hit = round(DIVE[1] * (n - 1))
-    if k == hit:
-        hx, hy, hz = SMASH_HEAD
-        out += [f"particle minecraft:explosion_emitter {hx} {hy} {hz} 0 0 0 0 1 force",
-                f"particle minecraft:crit {hx} {hy} {hz} 1 1 1 0.6 80 force",
-                f"playsound minecraft:entity.generic.explode master @a {hx} {hy} {hz} 1.2 0.8",
-                f"playsound minecraft:block.anvil.land master @a {hx} {hy} {hz} 1 0.6"]
-    if k == round(DIVE[0] * (n - 1)):
-        out.append(f"playsound minecraft:entity.phantom.swoop master @a {R_START[0]} {R_START[1]} {R_START[2]} 2 0.8")
-    if k == n - 1:
-        out.append(f"playsound minecraft:entity.player.big_fall master @a {R_END[0]} {R_END[1]} {R_END[2]} 1 1")
+    s = k / TPS
+    r, sm = w(randy_at(s)), w(smasher_at(s))
+    spin = 0 if s < T_HIT else 900 * min(1, (s - T_HIT) / 2.4)
+    ryaw = (-90 + spin) % 360 - 180
+    out = [f"tp @e[type=minecraft:mannequin,tag=cam.randy,limit=1] {r[0]:.3f} {r[1]:.3f} {r[2]:.3f} {ryaw:.1f} 0",
+           f"execute as @e[type=minecraft:mannequin,tag=cam.smasher,limit=1] at @s positioned {sm[0]:.3f} {sm[1]:.3f} {sm[2]:.3f} "
+           f"facing {r[0]:.2f} {r[1] + 0.5:.2f} {r[2]:.2f} run tp @s ~ ~ ~ ~ ~"]
+    f = lambda tt: round(tt * TPS)
+    if T_ON <= s < T_OFF and k % GHOST_EVERY == 0:
+        out += ghost("randy", r, ryaw, "randy", 1.0, True)
+        out += ghost("smasher", sm, 90, "smasher", 1.8, False)
+    if k == f(T_ON):   # both Sandevistans kick in
+        for (x, y, z), h in ((r, 1), (sm, 2)):
+            out += [f"particle minecraft:electric_spark {x:.2f} {y + h:.2f} {z:.2f} 1 1 1 0.5 120 force",
+                    f"particle minecraft:dust{{color:[0.2,1.0,0.85],scale:1.2}} {x:.2f} {y + h:.2f} {z:.2f} 0.6 1 0.6 0 40 force"]
+        out += [f"playsound minecraft:block.beacon.power_select master @a {SC[0]} {SC[1] + 5} {SC[2]} 2 2",
+                f"playsound minecraft:block.beacon.activate master @a {SC[0]} {SC[1] + 5} {SC[2]} 2 1.6"]
+    if k == f(T_HIT):  # the clash
+        x, y, z = w(RM)
+        out += [f"particle minecraft:explosion_emitter {x:.2f} {y:.2f} {z:.2f} 0 0 0 0 1 force",
+                f"particle minecraft:electric_spark {x:.2f} {y:.2f} {z:.2f} 1.5 1.5 1.5 1 200 force",
+                f"particle minecraft:crit {x:.2f} {y:.2f} {z:.2f} 1 1 1 0.8 120 force",
+                f"playsound minecraft:entity.generic.explode master @a {x:.2f} {y:.2f} {z:.2f} 2 0.7",
+                f"playsound minecraft:block.anvil.land master @a {x:.2f} {y:.2f} {z:.2f} 1.5 0.6"]
+    if k == f(T_LAND):  # Borg Slam landing
+        x, y, z = sm
+        out += [f"particle minecraft:explosion {x:.2f} {y + 0.2:.2f} {z:.2f} 1.5 0.1 1.5 0 12 force",
+                f"particle minecraft:block{{block_state:\"minecraft:sand\"}} {x:.2f} {y + 0.2:.2f} {z:.2f} 2.5 0.2 2.5 0.3 160 force",
+                f"playsound minecraft:entity.iron_golem.damage master @a {x:.2f} {y:.2f} {z:.2f} 2 0.5",
+                f"playsound minecraft:entity.generic.explode master @a {x:.2f} {y:.2f} {z:.2f} 1.5 1.2"]
+    if k == f(T_HIT + 2.4):
+        x, y, z = w(R_END)
+        out.append(f"playsound minecraft:entity.player.big_fall master @a {x:.2f} {y:.2f} {z:.2f} 1.5 1")
     return out
 
 
 SHARON_SETUP = [
-    mannequin("cam.smasher", SMASH, 0, -40, "smasher", scale=1.8,
+    mannequin("cam.smasher", w(S0), 90, -30, "smasher", scale=1.8,
               gear=',equipment:{head:{id:"minecraft:netherite_helmet",count:1},chest:{id:"minecraft:netherite_chestplate",count:1},'
                    'legs:{id:"minecraft:netherite_leggings",count:1},feet:{id:"minecraft:netherite_boots",count:1},mainhand:{id:"minecraft:netherite_axe",count:1}}'),
-    mannequin("cam.randy", R_START, 180, 0, "randy", name="Dinnerbone"),
+    mannequin("cam.randy", w(R0), -90, 0, "randy", name="Dinnerbone"),
+    "team join cam.actors @e[type=minecraft:mannequin,tag=cam.actor]",
 ]
 
 # name: (path, seconds, forceload area x1 z1 x2 z2[, setup commands, per-frame commands fn(k, n)])
@@ -142,7 +186,7 @@ SHOTS = {
     "orbital_ring": (orbital_ring, 18, (-40, 660, 40, 740)),
     "orbital_spoke": (orbital_spoke, 9, (-40, 660, 40, 740)),
     "lobby_orbit": (lobby_orbit, 12, (-24, -24, 24, 24)),
-    "randy_vs_smasher": (sharon_cam, 7, (-56, 44, 56, 156), SHARON_SETUP, sharon_frame),
+    "randy_vs_smasher": (sharon_cam, SECS, (-56, 44, 56, 156), SHARON_SETUP, sharon_frame),
 }
 RIG = "@e[type=minecraft:armor_stand,tag=cam.rig,limit=1]"
 
@@ -159,7 +203,8 @@ def build(out):
     os.makedirs(os.path.join(d, "data", "minecraft", "tags", "function"), exist_ok=True)
     json.dump({"values": ["cam:tick"]}, open(os.path.join(d, "data", "minecraft", "tags", "function", "tick.json"), "w"))
     json.dump({"values": ["cam:load"]}, open(os.path.join(d, "data", "minecraft", "tags", "function", "load.json"), "w"))
-    fn("load", ["scoreboard objectives add cam dummy", "scoreboard players set #shot cam 0"])
+    fn("load", ["scoreboard objectives add cam dummy", "scoreboard players set #shot cam 0",
+                "team add cam.actors", "team modify cam.actors nametagVisibility never", "team modify cam.actors collisionRule never"])
     tick = []
     for i, (name, spec) in enumerate(SHOTS.items(), 1):
         path, secs, area = spec[:3]
