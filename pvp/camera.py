@@ -439,6 +439,71 @@ def horde_dolly(t):
     return p, look(p, (H_C[0], AY + 1, H_C[2]))
 
 
+# ---------------------------------------------------------------- the horse in the doorway (Family Guy)
+# A sitcom dining room on empty superflat at 3000, 3000: the family eats while a horse appears in the doorway behind
+# Peter and just stands there. Nobody reacts, until Peter slowly turns to look at it. Mannequins sit by riding
+# invisible armor stands; rotate (not tp) turns a seated head without dismounting it.
+HD = (3000, AY, 3000)                       # floor block level; the room is x -5..5, z -6..2 around it, open to the south
+HD_SECS = 10
+T_HORSE, T_TURN = 1.6, 7.6
+
+
+def seat(tag, x, z, yaw, skin):
+    X, Y, Z = HD[0] + x, HD[1] + 1.05, HD[2] + z
+    return (f"summon minecraft:armor_stand {X} {Y} {Z} {{Tags:[\"cam.actor\"],Invisible:1b,Marker:1b,NoGravity:1b,Invulnerable:1b,"
+            f"Rotation:[{yaw}f,0f],Passengers:[{{id:\"minecraft:mannequin\",Tags:[\"cam.actor\",\"{tag}\"],Rotation:[{yaw}f,0f],"
+            f"Invulnerable:1b,Silent:1b,immovable:1b,hide_description:1b,"
+            f"profile:{{properties:[{{name:\"textures\",value:\"{HEADS[skin]}\"}}]}}}}]}}")
+
+
+def horse_set():
+    X, Y, Z = HD
+    r = lambda x1, y1, z1, x2, y2, z2, b: f"fill {X + x1} {Y + y1} {Z + z1} {X + x2} {Y + y2} {Z + z2} {b}"
+    return [
+        r(-8, 1, -10, 8, 8, 6, "air"),
+        r(-6, 0, -7, 6, 0, 3, "cyan_terracotta"), r(-5, 1, -6, 5, 1, 2, "cyan_carpet"),          # floor
+        r(-6, 1, -7, 6, 5, -7, "lime_terracotta"), r(-6, 1, -7, -6, 5, 3, "lime_terracotta"),    # back and side walls
+        r(6, 1, -7, 6, 5, 3, "lime_terracotta"), r(-6, 6, -7, 6, 6, 3, "white_concrete"),       # wall, ceiling
+        r(-6, 1, -7, 6, 1, -7, "stripped_oak_wood"), r(-6, 1, -7, -6, 1, 3, "stripped_oak_wood"),  # skirting
+        r(6, 1, -7, 6, 1, 3, "stripped_oak_wood"),
+        r(-4, 1, -7, -3, 3, -7, "air"), r(-5, 1, -7, -5, 4, -7, "stripped_oak_wood"),            # the doorway (back left)
+        r(-2, 1, -7, -2, 4, -7, "stripped_oak_wood"), r(-4, 4, -7, -3, 4, -7, "stripped_oak_wood"),
+        r(-5, 0, -10, -2, 0, -8, "dark_oak_planks"), r(-5, 1, -10, -5, 4, -8, "black_concrete"),  # dark hall behind it
+        r(-2, 1, -10, -2, 4, -8, "black_concrete"), r(-5, 5, -10, -2, 5, -8, "black_concrete"), r(-5, 1, -10, -2, 4, -10, "black_concrete"),
+        r(-2, 1, -2, 2, 1, -2, "oak_planks"), r(-2, 2, -2, 2, 2, -2, "white_carpet"),            # table + tablecloth
+        f"setblock {X - 3} {Y + 1} {Z - 2} oak_stairs[facing=west]", f"setblock {X + 3} {Y + 1} {Z - 2} oak_stairs[facing=east]",
+        f"setblock {X - 1} {Y + 1} {Z - 3} oak_stairs[facing=north]", f"setblock {X + 1} {Y + 1} {Z - 3} oak_stairs[facing=north]",
+        f"fill {X - 4} {Y + 5} {Z - 5} {X + 4} {Y + 5} {Z + 1} light[level=15]",
+        f"setblock {X} {Y + 5} {Z - 2} lantern[hanging=true]",
+        f"summon minecraft:painting {X + 1} {Y + 3} {Z - 6} {{Tags:[\"cam.actor\"],facing:0,variant:\"minecraft:sunset\"}}",
+        "kill @e[type=minecraft:item,distance=..20]",
+    ]
+
+
+def horse_cam(t):
+    s = t * HD_SECS
+    p = (HD[0] + 0.5, HD[1] + 3.3, HD[2] + lerp(8.5, 7.3, ease(t)))
+    return p, look(p, (HD[0] + 0.0, HD[1] + 2.4, HD[2] - 3))
+
+
+def horse_frame(k, n):
+    s = k / TPS; X, Y, Z = HD; out = []
+    if k == round(T_HORSE * TPS):   # it's just there
+        out.append(f"summon minecraft:horse {X - 2.9} {Y + 1} {Z - 6.7} {{Tags:[\"cam.actor\"],NoAI:1b,Silent:1b,Invulnerable:1b,"
+                   "Variant:3,Rotation:[0f,0f],PersistenceRequired:1b}")
+    if T_TURN <= s <= T_TURN + 1.2:  # Peter slowly turns to look
+        u = ease((s - T_TURN) / 1.2)
+        out.append(f"rotate @e[type=minecraft:mannequin,tag=cam.peter,limit=1] {lerp(-90, -185, u):.1f} {lerp(0, -6, u):.1f}")
+    return out
+
+
+HORSE_SETUP = horse_set() + [
+    seat("cam.peter", -2.5, -1.5, -90, "peter"),     # left end, facing along the table
+    seat("cam.homer", -0.5, -2.6, 0, "homer"),       # behind the table, facing the camera
+    seat("cam.leela", 1.5, -2.6, 0, "leela"),
+    seat("cam.hank", 3.5, -1.5, 90, "hank"),         # right end
+]
+
 # name: (path, seconds, forceload area x1 z1 x2 z2[, setup commands, per-frame commands fn(k, n)])
 SHOTS = {
     "colosseum_orbit": (colosseum_orbit, 14, (-56, 44, 56, 156)),
@@ -451,6 +516,7 @@ SHOTS = {
     "brawl_orbit": (brawl_orbit, 24, (-56, 44, 56, 156)),
     "horde_orbit": (horde_orbit, 22, (-36, 564, 36, 636)),
     "horde_dolly": (horde_dolly, 12, (-36, 564, 36, 636)),
+    "horse_dinner": (horse_cam, HD_SECS, (2984, 2984, 3016, 3016), HORSE_SETUP, horse_frame),
 }
 RIG = "@e[type=minecraft:armor_stand,tag=cam.rig,limit=1]"
 
@@ -484,10 +550,24 @@ def build(out):
             f"summon minecraft:armor_stand {x:.2f} {y:.2f} {z:.2f} {{Tags:[\"cam.rig\"],Invisible:1b,Marker:1b,NoGravity:1b,Invulnerable:1b,Rotation:[{yaw:.1f}f,{pitch:.1f}f]}}",
             f"scoreboard players set #f cam {-HOLD}", f"scoreboard players set #shot cam {i}",
             f"scoreboard players set #area cam {i}",
-            "scoreboard players set #actors cam 0", "kill @e[type=minecraft:mannequin,tag=cam.actor]",
-            *setup,
+            "scoreboard players set #actors cam 0", "kill @e[type=!minecraft:player,tag=cam.actor]",
+            # a moment later, once forceload has loaded (or generated) the chunks
+            *(["scoreboard players set #wait cam 1", f"schedule function cam:setup/{name} 5t"] if setup else ["scoreboard players set #wait cam 0"]),
         ])
-        lines = ["scoreboard players add #f cam 1",
+        if setup:
+            # build only once every corner of the area is loaded; until then try again, with the shot held still
+            corners = [(area[0], area[1]), (area[2], area[1]), (area[0], area[3]), (area[2], area[3]), ((area[0] + area[2]) // 2, (area[1] + area[3]) // 2)]
+            guard = "".join(f" if loaded {cx} 0 {cz}" for cx, cz in corners)
+            fn(f"setup/{name}", [f"execute unless score #shot cam matches {i} run return 0",
+                                 f"execute{guard} run return run function cam:setup/{name}_build",
+                                 f"schedule function cam:setup/{name} 5t"])
+            fn(f"setup/{name}_build", setup + [
+                f"execute unless entity {RIG} run summon minecraft:armor_stand {x:.2f} {y:.2f} {z:.2f} {{Tags:[\"cam.rig\"],Invisible:1b,Marker:1b,NoGravity:1b,Invulnerable:1b,Rotation:[{yaw:.1f}f,{pitch:.1f}f]}}",
+                f"tp @a[tag=cam.viewer] {x:.2f} {y:.2f} {z:.2f} {yaw:.1f} {pitch:.1f}",
+                "scoreboard players set #wait cam 0"])
+        lines = [f"execute if score #wait cam matches 1 as @a[tag=cam.viewer] run spectate {RIG} @s",
+                 "execute if score #wait cam matches 1 run return 0",   # staged scene still being built: hold
+                 "scoreboard players add #f cam 1",
                  # keep the view locked (a viewer who presses shift would drop out)
                  f"execute as @a[tag=cam.viewer] unless entity @s[gamemode=spectator] run gamemode spectator @s",
                  f"execute if score #f cam matches ..0 as @a[tag=cam.viewer] run spectate {RIG} @s"]
@@ -501,7 +581,7 @@ def build(out):
     tick += build_brawl(fn)
     tick += build_horde(fn)
     tick += ["execute if score #actors cam matches 1.. run scoreboard players remove #actors cam 1",
-             "execute if score #actors cam matches 1 run kill @e[type=minecraft:mannequin,tag=cam.actor]"]
+             "execute if score #actors cam matches 1 run kill @e[type=!minecraft:player,tag=cam.actor]"]
     fn("tick", tick)
     stop = ["execute as @a[tag=cam.viewer] run spectate", f"kill @e[type=minecraft:armor_stand,tag=cam.rig]", "scoreboard players set #shot cam 0"]
     # actors stay up for 5 s after a scene (for a second take of the ending), then go
