@@ -7,7 +7,7 @@ recording frame rate. Each shot holds still for 1 s first, so recording can star
   python3 camera.py <out dir>      -> <out>/crispy_cam
   tag <player> add cam.viewer, then: function cam:start/<shot>   (function cam:stop to end early)
 """
-import json, math, os, sys
+import json, math, os, re, sys
 
 AY = -61                      # arena floor level (build.py)
 TPS = 20
@@ -234,6 +234,211 @@ CLOSEUP_SETUP = [
     "team join cam.actors @e[type=minecraft:mannequin,tag=cam.actor]",
 ]
 
+# ---------------------------------------------------------------- the brawl: a full arena of characters fighting
+# Mannequins can't fight, so fighters are zombies dressed as the PvP characters (their real head, the kit's armour
+# colours and main weapon, kit size, name above the head). Zombies only fight back when hit, so every 2 s a few
+# random fighters are "hit" by their nearest neighbour and the brawl keeps itself going. Fallen fighters are
+# replaced, keeping BRAWL_N on the floor. cam:brawl/start, cam:brawl/stop; film it with cam:start/brawl_orbit.
+BRAWL_N = 16
+BRAWL_C = (0.5, AY + 1, 100.5)
+SKIP_GIVE = ("clay_ball", "potion", "splash_potion", "lingering_potion", "cooked_beef", "golden_apple", "arrow",
+             "spectral_arrow", "tipped_arrow", "firework_rocket", "bread", "cookie", "ender_pearl", "totem_of_undying")
+
+
+def fighters():
+    sys.argv = sys.argv[:1]
+    import build
+    out = []
+    for k in build.KITS:
+        key, name, color, cmds = k[1], k[2], k[3], k[6]
+        joined = "\n".join(c for c in cmds if isinstance(c, str))
+        eq = {}
+        for slot, piece in (("chest", "chestplate"), ("legs", "leggings"), ("feet", "boots")):
+            m = re.findall(rf"armor\.{slot} with minecraft:([a-z_]+_{piece})(\[[^\n]*)?", joined)
+            if m:
+                iid, comps = m[-1]
+                dye = re.search(r"dyed_color=(\d+)", comps or "")
+                eq[slot] = f'{{id:"minecraft:{iid}",count:1' + (f',components:{{"minecraft:dyed_color":{dye.group(1)}}}' if dye else "") + "}"
+        for m in re.finditer(r"(?m)^give @s minecraft:([a-z_]+)(\[[^\n]*)?", joined):
+            if m.group(1) in SKIP_GIVE: continue
+            model = re.search(r'item_model="(minecraft:[a-z_]+)"', m.group(2) or "")
+            eq["mainhand"] = f'{{id:"minecraft:{m.group(1)}",count:1' + (f',components:{{"minecraft:item_model":"{model.group(1)}"}}' if model else "") + "}"
+            break
+        hk = {"samurai": "edgerunner", "assassin": "lucy"}.get(key, key)
+        eq["head"] = f'{{id:"minecraft:player_head",count:1,components:{{"minecraft:profile":{{properties:[{{name:"textures",value:"{HEADS[hk]}"}}]}}}}}}'
+        size = re.search(r"pvp:size (-?[0-9.]+)", joined)
+        out.append((key, name, color, eq, round(1 + float(size.group(1)), 2) if size else 1.0))
+    return out
+
+
+def brawl_spawn(key, name, color, eq, scale):
+    gear = ",".join(f"{k}:{v}" for k, v in eq.items())
+    nm = json.dumps({"text": name, "color": color, "bold": True}, separators=(",", ":"))
+    return (f"summon minecraft:zombie ~ ~ ~ {{Tags:[\"cam.brawl\"],IsBaby:0b,CanBreakDoors:0b,PersistenceRequired:1b,CanPickUpLoot:0b,"
+            f"DeathLootTable:\"minecraft:empty\",CustomName:{nm},CustomNameVisible:1b,equipment:{{{gear}}},"
+            "drop_chances:{head:0f,chest:0f,legs:0f,feet:0f,mainhand:0f},Health:60f,"
+            f"attributes:[{{id:\"minecraft:max_health\",base:60d}},{{id:\"minecraft:scale\",base:{scale}d}},"
+            "{id:\"minecraft:spawn_reinforcements\",base:0d},{id:\"minecraft:follow_range\",base:48d},"
+            "{id:\"minecraft:movement_speed\",base:0.3d}]}")
+
+
+def build_brawl(fn):
+    fs = fighters()
+    for f in fs: fn(f"brawl/spawn/{f[0]}", [brawl_spawn(*f)])
+    pts = [(BRAWL_C[0] + 13 * math.cos(math.radians(a)), BRAWL_C[1], BRAWL_C[2] + 13 * math.sin(math.radians(a))) for a in range(0, 360, 30)]
+    one = ["execute store result score #r cam run random value 1..%d" % len(fs), "execute store result score #p cam run random value 1..%d" % len(pts)]
+    for j, (x, y, z) in enumerate(pts, 1):
+        one.append(f"execute if score #p cam matches {j} run data modify storage cam:b p set value {{x:{x:.2f},y:{y:.2f},z:{z:.2f}}}")
+    one.append("function cam:brawl/at with storage cam:b p")
+    fn("brawl/one", one)
+    fn("brawl/at", ["$execute positioned $(x) $(y) $(z) run function cam:brawl/pick",
+                    "$particle minecraft:large_smoke $(x) $(y) $(z) 0.4 0.8 0.4 0.02 25 force",
+                    "$playsound minecraft:entity.evoker.prepare_summon master @a $(x) $(y) $(z) 0.6 1.4"])
+    fn("brawl/pick", [f"execute if score #r cam matches {i} run function cam:brawl/spawn/{f[0]}" for i, f in enumerate(fs, 1)])
+    fn("brawl/start", ["function cam:brawl/stop", f"forceload add -56 44 56 156", "scoreboard players set #brawl cam 1",
+                       "scoreboard players set #bt cam 0"]
+       + ["function cam:brawl/one"] * BRAWL_N)
+    fn("brawl/tick", [
+        "scoreboard players add #bt cam 1",
+        # keep the floor full (one replacement every half second)
+        "execute store result score #n cam if entity @e[type=minecraft:zombie,tag=cam.brawl]",
+        f"execute if score #n cam matches ..{BRAWL_N - 1} if score #bt cam matches 1 run function cam:brawl/one",
+        f"execute if score #n cam matches ..{BRAWL_N - 1} if score #bt cam matches 21 run function cam:brawl/one",
+        # provoke: a few random fighters get "hit" by their nearest neighbour, who they then go after
+        "execute if score #bt cam matches 1 as @e[type=minecraft:zombie,tag=cam.brawl,sort=random,limit=4] at @s run "
+        "damage @s 1.5 minecraft:mob_attack by @e[type=minecraft:zombie,tag=cam.brawl,distance=0.5..,sort=nearest,limit=1]",
+        # nobody wanders off the floor or goes after a spectator
+        f"execute as @e[type=minecraft:zombie,tag=cam.brawl] at @s unless entity @s[x={BRAWL_C[0] - 30},y={BRAWL_C[1] - 3},z={BRAWL_C[2] - 30},dx=60,dy=20,dz=60] run tp @s {BRAWL_C[0]} {BRAWL_C[1]} {BRAWL_C[2]}",
+        "execute if score #bt cam matches 40.. run scoreboard players set #bt cam 0",
+    ])
+    fn("brawl/stop", ["scoreboard players set #brawl cam 0",
+                      "execute as @e[type=minecraft:zombie,tag=cam.brawl] at @s run tp @s ~ -1000 ~", "kill @e[type=minecraft:zombie,tag=cam.brawl]",
+                      "forceload remove -56 44 56 156"])
+    return ["execute if score #brawl cam matches 1 run function cam:brawl/tick"]
+
+
+def brawl_orbit(t):
+    """Low and close around the brawl: a full slow circle at head height, then rising for the wide view."""
+    c = (BRAWL_C[0], AY + 2, BRAWL_C[2])
+    a = math.radians(lerp(90, 450, t))
+    r = lerp(17, 22, ease(t))
+    p = (c[0] + r * math.cos(a), AY + lerp(3.5, 12, ease(max(0, t - 0.55) / 0.45)), c[2] + r * math.sin(a))
+    return p, look(p, c)
+
+
+# ---------------------------------------------------------------- Outbreak "wave 20" (staged)
+# A real run needs a living player in it (it ends the moment none is left) and records best waves, so this is staged
+# with the same ingredients instead: Hellfort's wave-20 mob mix and stats (+15% health and +8% damage per wave past
+# the first: x3.85 health, x2.52 damage), 30 alive at once like the real cap, the wave-20 boss, and a squad of
+# character survivors making a last stand in the middle. Mobs and survivors are provoked into each other every second.
+# cam:horde/start, cam:horde/stop; film with cam:start/horde_orbit and cam:start/horde_dolly.
+H_C = (0.5, AY + 1, 600.5)                  # Hellfort centre
+H_WAVE = 20
+H_HM, H_DM = round(0.15 * (H_WAVE - 1), 2), round(0.08 * (H_WAVE - 1), 2)
+H_ALIVE = 30
+H_POINTS = [(30, 0), (-30, 0), (0, 30), (0, -30), (30, 16), (30, -16), (-30, 16), (-30, -16), (16, 30), (-16, 30), (16, -30), (-16, -30)]
+BOW = ',equipment:{mainhand:{id:"minecraft:bow",count:1}},drop_chances:{mainhand:0.0f}'
+H_POOL = [  # (roll <=, type, extra) - Hellfort's own mobs get the first roll, then the normal pool, as in build.py
+    ("map", 12, "wither_skeleton", ',equipment:{mainhand:{id:"minecraft:stone_sword",count:1}},drop_chances:{mainhand:0.0f}'),
+    ("map", 20, "blaze", ""),
+    ("pool", 10, "wither_skeleton", ',equipment:{mainhand:{id:"minecraft:stone_sword",count:1}},drop_chances:{mainhand:0.0f}'),
+    ("pool", 22, "vindicator", ',equipment:{mainhand:{id:"minecraft:iron_axe",count:1}},drop_chances:{mainhand:0.0f}'),
+    ("pool", 30, "creeper", ""), ("pool", 45, "spider", ""), ("pool", 60, "skeleton", BOW), ("pool", 75, "husk", ""),
+    ("pool", 100, "zombie", ""),
+]
+SURVIVORS = [("doom", 0, -3), ("spartan", 3, 1), ("mando", -3, 1), ("smasher", 0, 3), ("witcher", 2, -2)]
+
+
+def build_horde(fn):
+    one = ["execute store result score #r2 cam run random value 1..100", "execute store result score #r cam run random value 1..100",
+           "scoreboard players set #pk cam 0", "execute store result score #p cam run random value 1..%d" % len(H_POINTS)]
+    for j, (dx, dz) in enumerate(H_POINTS, 1):
+        one.append(f"execute if score #p cam matches {j} run data modify storage cam:h p set value {{x:{H_C[0] + dx:.1f},y:{H_C[1]},z:{H_C[2] + dz:.1f}}}")
+    for (which, roll, typ, extra) in H_POOL:
+        sc = "#r2" if which == "map" else "#r"
+        one.append(f"execute if score #pk cam matches 0 if score {sc} cam matches ..{roll} run data modify storage cam:h p merge value {{type:\"{typ}\",extra:'{extra}'}}")
+        one.append(f"execute if score #pk cam matches 0 if score {sc} cam matches ..{roll} run scoreboard players set #pk cam 1")
+    one.append("function cam:horde/summon with storage cam:h p")
+    fn("horde/one", one)
+    fn("horde/summon", [
+        "$summon minecraft:$(type) $(x) $(y) $(z) {Tags:[\"cam.horde\",\"cam.hnew\"],PersistenceRequired:1b,CanPickUpLoot:0b,"
+        "DeathLootTable:\"minecraft:empty\",attributes:[{id:\"minecraft:follow_range\",base:64d},{id:\"minecraft:spawn_reinforcements\",base:0d}]$(extra)}",
+        "$particle minecraft:large_smoke $(x) $(y) $(z) 0.3 0.5 0.3 0.02 20 force",
+        "execute as @e[tag=cam.hnew] run function cam:horde/scale"])
+    fn("horde/scale", ["tag @s remove cam.hnew",
+                       f"attribute @s minecraft:max_health modifier add cam:wave {H_HM} add_multiplied_base",
+                       f"attribute @s minecraft:attack_damage modifier add cam:wave {H_DM} add_multiplied_base",
+                       "execute store result entity @s Health float 1 run attribute @s minecraft:max_health get"])
+    boss = (f"summon minecraft:zombie {H_C[0]} {H_C[1]} {H_C[2] + 18} {{Tags:[\"cam.horde\",\"cam.hnew\",\"cam.boss\"],PersistenceRequired:1b,CanPickUpLoot:0b,"
+            "DeathLootTable:\"minecraft:empty\",IsBaby:0b,CustomName:{\"text\":\"Abomination\",\"color\":\"dark_red\",\"bold\":true},CustomNameVisible:1b,"
+            "attributes:[{id:\"minecraft:follow_range\",base:64d},{id:\"minecraft:scale\",base:2.0d},{id:\"minecraft:max_health\",base:150d},"
+            "{id:\"minecraft:attack_damage\",base:9d},{id:\"minecraft:knockback_resistance\",base:0.8d},{id:\"minecraft:movement_speed\",base:0.26d},"
+            "{id:\"minecraft:spawn_reinforcements\",base:0d}]}")
+    surv = []
+    for (key, dx, dz) in SURVIVORS:
+        surv += [f"execute positioned {H_C[0] + dx} {H_C[1]} {H_C[2] + dz} run function cam:brawl/spawn/{key}",
+                 "tag @e[type=minecraft:zombie,tag=cam.brawl,tag=!cam.surv,tag=!cam.horde] add cam.surv"]
+    surv += ["execute as @e[tag=cam.surv] run attribute @s minecraft:max_health base set 400",
+             "execute as @e[tag=cam.surv] store result entity @s Health float 1 run attribute @s minecraft:max_health get"]
+    fn("horde/survivors", surv)
+    fn("horde/start", ["function cam:horde/stop", "function cam:brawl/stop",
+                       f"forceload add {H_C[0] - 36:.0f} {H_C[2] - 36:.0f} {H_C[0] + 36:.0f} {H_C[2] + 36:.0f}",
+                       "scoreboard players set #horde cam 1", "scoreboard players set #ht cam 0",
+                       "function cam:horde/survivors", boss, "execute as @e[tag=cam.hnew] run function cam:horde/scale",
+                       f"playsound minecraft:event.raid.horn master @a {H_C[0]} {H_C[1] + 5} {H_C[2]} 4 1.2"]
+       + ["function cam:horde/one"] * 12)
+    near_s = "@e[type=minecraft:zombie,tag=cam.surv,sort=nearest,limit=1]"
+    fn("horde/tick", [
+        "scoreboard players add #ht cam 1",
+        "execute store result score #n cam if entity @e[tag=cam.horde]",
+        f"execute if score #n cam matches ..{H_ALIVE - 1} if score #ht cam matches 1 run function cam:horde/one",
+        f"execute if score #n cam matches ..{H_ALIVE - 1} if score #ht cam matches 6 run function cam:horde/one",
+        f"execute if score #n cam matches ..{H_ALIVE - 1} if score #ht cam matches 11 run function cam:horde/one",
+        f"execute if score #n cam matches ..{H_ALIVE - 1} if score #ht cam matches 16 run function cam:horde/one",
+        # mobs charge the survivors; survivors fight back
+        f"execute if score #ht cam matches 1 as @e[tag=cam.horde,sort=random,limit=10] at @s run damage @s 1 minecraft:mob_attack by {near_s}",
+        "execute if score #ht cam matches 11 as @e[type=minecraft:zombie,tag=cam.surv] at @s run damage @s 1 minecraft:mob_attack by @e[tag=cam.horde,sort=nearest,limit=1]",
+        # the squad holds the middle; a fallen survivor is "revived"
+        f"execute as @e[tag=cam.surv] at @s unless entity @s[x={H_C[0] - 12},y={H_C[1] - 3},z={H_C[2] - 12},dx=24,dy=12,dz=24] run tp @s {H_C[0]} {H_C[1]} {H_C[2]}",
+        f"execute store result score #sv cam if entity @e[tag=cam.surv]",
+        f"execute if score #ht cam matches 20 if score #sv cam matches ..{len(SURVIVORS) - 1} run function cam:horde/revive",
+        f"execute as @e[tag=cam.horde] at @s unless entity @s[x={H_C[0] - 34},y={H_C[1] - 3},z={H_C[2] - 34},dx=68,dy=25,dz=68] run tp @s {H_C[0]} {H_C[1]} {H_C[2] + 20}",
+        "execute if score #ht cam matches 20.. run scoreboard players set #ht cam 0",
+    ])
+    rv = ["execute store result score #r cam run random value 1..%d" % len(SURVIVORS)]
+    for i, (key, dx, dz) in enumerate(SURVIVORS, 1):
+        rv.append(f"execute if score #r cam matches {i} positioned {H_C[0] + dx} {H_C[1]} {H_C[2] + dz} run function cam:brawl/spawn/{key}")
+    rv += ["tag @e[type=minecraft:zombie,tag=cam.brawl,tag=!cam.surv,tag=!cam.horde] add cam.surv",
+           "execute as @e[tag=cam.surv] if entity @s[nbt={Health:60f}] run attribute @s minecraft:max_health base set 400",
+           "execute as @e[tag=cam.surv] if entity @s[nbt={Health:60f}] store result entity @s Health float 1 run attribute @s minecraft:max_health get",
+           f"particle minecraft:totem_of_undying {H_C[0]} {H_C[1] + 1} {H_C[2]} 1 1 1 0.4 60 force"]
+    fn("horde/revive", rv)
+    fn("horde/stop", ["scoreboard players set #horde cam 0",
+                      "execute as @e[tag=cam.horde] at @s run tp @s ~ -1000 ~", "kill @e[tag=cam.horde]",
+                      "execute as @e[tag=cam.surv] at @s run tp @s ~ -1000 ~", "kill @e[tag=cam.surv]",
+                      f"forceload remove {H_C[0] - 36:.0f} {H_C[2] - 36:.0f} {H_C[0] + 36:.0f} {H_C[2] + 36:.0f}"])
+    return ["execute if score #horde cam matches 1 run function cam:horde/tick"]
+
+
+def horde_orbit(t):
+    """High over Hellfort, circling the last stand as the horde pours in from the windows."""
+    a = math.radians(lerp(30, 300, t))
+    r = lerp(26, 17, ease(t))
+    p = (H_C[0] + r * math.cos(a), AY + lerp(16, 9, ease(t)), H_C[2] + r * math.sin(a))
+    return p, look(p, (H_C[0], AY + 1.5, H_C[2]))
+
+
+def horde_dolly(t):
+    """In through a mob window at mob height, through the horde to the squad, then a crane up over the fight."""
+    if t < 0.6:
+        u = ease(t / 0.6)
+        p = (H_C[0] + lerp(31, 7, u), AY + 2.2, H_C[2] + 1.5)
+        return p, look(p, (H_C[0], AY + 2, H_C[2]))
+    u = ease((t - 0.6) / 0.4)
+    p = (H_C[0] + lerp(7, 5, u), AY + lerp(2.2, 13, u), H_C[2] + lerp(1.5, 6, u))
+    return p, look(p, (H_C[0], AY + 1, H_C[2]))
+
+
 # name: (path, seconds, forceload area x1 z1 x2 z2[, setup commands, per-frame commands fn(k, n)])
 SHOTS = {
     "colosseum_orbit": (colosseum_orbit, 14, (-56, 44, 56, 156)),
@@ -243,6 +448,9 @@ SHOTS = {
     "lobby_orbit": (lobby_orbit, 12, (-24, -24, 24, 24)),
     "randy_vs_smasher": (sharon_cam, SECS, (-56, 44, 56, 156), SHARON_SETUP, sharon_frame),
     "sharon_closeup": (closeup_cam, CU_SECS, (-56, 44, 56, 156), CLOSEUP_SETUP, closeup_frame),
+    "brawl_orbit": (brawl_orbit, 24, (-56, 44, 56, 156)),
+    "horde_orbit": (horde_orbit, 22, (-36, 564, 36, 636)),
+    "horde_dolly": (horde_dolly, 12, (-36, 564, 36, 636)),
 }
 RIG = "@e[type=minecraft:armor_stand,tag=cam.rig,limit=1]"
 
@@ -290,6 +498,8 @@ def build(out):
         lines.append(f"execute if score #f cam matches {n + 10}.. run function cam:stop")
         fn(f"shot/{name}", lines)
         tick.append(f"execute if score #shot cam matches {i} run function cam:shot/{name}")
+    tick += build_brawl(fn)
+    tick += build_horde(fn)
     tick += ["execute if score #actors cam matches 1.. run scoreboard players remove #actors cam 1",
              "execute if score #actors cam matches 1 run kill @e[type=minecraft:mannequin,tag=cam.actor]"]
     fn("tick", tick)
