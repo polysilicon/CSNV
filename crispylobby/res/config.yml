@@ -199,3 +199,51 @@ cosmetics:
     fire:     {name: Fire, code: "&4|&c|&6|&e", cost: 12, icon: BLAZE_POWDER}
     ocean:    {name: Ocean, code: "&1|&9|&3|&b", cost: 12, icon: HEART_OF_THE_SEA}
     rainbow:  {name: Rainbow, code: rainbow, cost: 15, icon: PRISMARINE_CRYSTALS}
+
+# First join to the network (never on the lobby, no earlier trace on Anarchy/Vanilla): a title, a "Start here" menu of
+# the worlds, a welcome line in the lobby (and over the Discord bridge, so people say hi), and one nudge after
+# nudge-seconds if they're still in the hub. /welcome opens the menu for anyone; /welcome test runs the whole flow (staff).
+welcome:
+  enabled: true
+  delay-ticks: 50             # after DeluxeHub's own join title and firework
+  title: "&d&lWelcome to Crispy"
+  subtitle: "&fPick a world to start"
+  chat:
+    - "&d&lWelcome to Crispy, &f%player%&d&l!"
+    - "&7Five worlds and a hub, with chat that follows you everywhere. New here? &bPvP &7is the quickest way in:"
+    - "&7pick one of 36 characters and fight, or take on Outbreak's zombie waves solo."
+  announce: true              # tell the lobby
+  discord-relay: true         # and Discord + every server, through the bot
+  announce-line: "&d✦ &f%player% &djoined Crispy for the first time. Say hi!"
+  nudge-seconds: 60
+  nudge: "&7Not sure where to start?"
+  discord: "https://discord.com/invite/hF2bQgU"
+  menu-title: "&8Start here: pick a world"
+  worlds:                     # order = menu order; server = the Velocity name (defaults to the key)
+    pvp:
+      name: "&b&lPvP + Outbreak"
+      short: "PvP"
+      icon: NETHERITE_SWORD
+      recommended: true
+      lore: ["&736 characters, each with their own", "&7gear and abilities. Arena fights,", "&7duels, and Outbreak zombie waves", "&7you can play solo."]
+    og:
+      name: "&c&lAnarchy"
+      icon: OBSIDIAN
+      lore: ["&7Enhanced survival on a map untouched", "&7since 2020. No claims, no resets,", "&7no mercy."]
+    factions:
+      name: "&e&lFactions"
+      icon: TNT
+      lore: ["&7Old-school 2013 factions with 1.8", "&7combat, cannons and raiding.", "&7No pay-to-win kits."]
+    falling:
+      name: "&6&lFalling"
+      icon: GRAVEL
+      lore: ["&7Your own island while blocks rain", "&7from the sky. Solo or with friends."]
+    Vanilla:
+      name: "&a&lVanilla"
+      icon: GRASS_BLOCK
+      lore: ["&7Classic, unfiltered survival."]
+    hub:
+      name: "&d&lStay in the hub"
+      icon: EMERALD
+      lore: ["&7Play Balatro Craft or UNO right", "&7here at spawn."]
+      stay: ["&7Try &f/balatro &7for the poker roguelike, or &f/uno &7for a table with friends or bots.", "&7Use the &eServer Selector &7(nether star) to pick a world whenever you're ready."]

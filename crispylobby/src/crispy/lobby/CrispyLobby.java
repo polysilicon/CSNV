@@ -26,6 +26,7 @@ public class CrispyLobby extends JavaPlugin implements Listener {
     final Map<UUID, Objective> boards = new HashMap<>();
     NetworkStats stats;
     Votes votes;
+    Welcome welcome;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -40,12 +41,15 @@ public class CrispyLobby extends JavaPlugin implements Listener {
         if (getServer().getPluginManager().getPlugin("Votifier") != null) getServer().getPluginManager().registerEvents(new VoteListener(votes), this);
         else getLogger().warning("NuVotifier (Votifier) not found: server-list votes won't be received");
         votes.start();
+        welcome = new Welcome(this);
+        getServer().getPluginManager().registerEvents(welcome, this);
     }
 
     @Override public void onDisable() { if (stats != null) stats.stop(); if (votes != null) votes.stop(); }
 
     @Override public boolean onCommand(org.bukkit.command.CommandSender s, org.bukkit.command.Command c, String l, String[] a) {
         if (c.getName().equalsIgnoreCase("vote") || c.getName().equalsIgnoreCase("cosmetics")) return votes.command(s, c.getName(), a);
+        if (c.getName().equalsIgnoreCase("welcome")) return welcome.command(s, a);
         if (c.getName().equalsIgnoreCase("stats")) {
             String who = a.length > 0 ? a[0] : s.getName();
             stats.showStats(s, who);

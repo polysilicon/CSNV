@@ -9,6 +9,19 @@ Paper 26.2 plugin for the Lobby (`CrispyLobby01`). It provides:
 
 Build with JDK 25 against `paper-api-26.2` and `nuvotifier-2.7.3.jar`. The source is in `src/`; `plugin.yml` and `config.yml` are in `res/`.
 
+## First-join welcome (1.9.0)
+A player new to the network (never on the lobby, and no earlier trace on Anarchy or Vanilla) gets, after DeluxeHub's
+own join title:
+- a "Welcome to Crispy" title, three chat lines, and clickable **[Start here] [Discord] [Vote rewards]**;
+- the **Start here** menu: every world with a short pitch, PvP marked "★ Best place to start" (`recommended`), and a
+  "Stay in the hub" option pointing at `/balatro` and `/uno`. Clicking a world sends them there;
+- a "joined Crispy for the first time. Say hi!" line in the lobby and, through the Discord bot, on Discord and every
+  server;
+- one nudge after 60 s if they're still in the hub without picking a world: "Not sure where to start? [Try PvP]".
+
+`/welcome` opens the menu for anyone; `/welcome test` (staff) runs the whole flow on yourself. Everything is in
+`welcome:` in `config.yml` (texts, worlds, which one is recommended, the delay and the nudge).
+
 ## Vote rewards
 
 Server-list votes arrive at **NuVotifier on the lobby, port 8193**. That is the port to tunnel and give to TopG and Planet Minecraft, together with the lobby's `plugins/Votifier/rsa/public.key` or the v2 token in `plugins/Votifier/config.yml`.
