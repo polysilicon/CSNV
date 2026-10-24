@@ -50,6 +50,7 @@ votes:
     - {name: MinecraftServers.org, url: "https://minecraftservers.org/vote/587166"}
     - {name: Minecraft-Server-List, url: "https://minecraft-server-list.com/server/503605/vote/"}
     - {name: MMTop200, url: "https://mmtop200.com/vote/5176"}
+    - {name: Minecraft-MP, url: "https://minecraft-mp.com/server/365762/vote/"}
   servers:                  # order = menu order; a server with no commands only gets trails
     factions:
       label: "&e&lCrispy Factions"
