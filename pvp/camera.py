@@ -449,7 +449,7 @@ T_HORSE, T_TURN = 1.6, 7.6
 
 
 def seat(tag, x, z, yaw, skin):
-    X, Y, Z = HD[0] + x, HD[1] + 1.05, HD[2] + z
+    X, Y, Z = HD[0] + x, HD[1] + 1.5, HD[2] + z
     return (f"summon minecraft:armor_stand {X} {Y} {Z} {{Tags:[\"cam.actor\"],Invisible:1b,Marker:1b,NoGravity:1b,Invulnerable:1b,"
             f"Rotation:[{yaw}f,0f],Passengers:[{{id:\"minecraft:mannequin\",Tags:[\"cam.actor\",\"{tag}\"],Rotation:[{yaw}f,0f],"
             f"Invulnerable:1b,Silent:1b,immovable:1b,hide_description:1b,"
@@ -460,7 +460,7 @@ def horse_set():
     X, Y, Z = HD
     r = lambda x1, y1, z1, x2, y2, z2, b: f"fill {X + x1} {Y + y1} {Z + z1} {X + x2} {Y + y2} {Z + z2} {b}"
     return [
-        r(-8, 1, -10, 8, 8, 6, "air"),
+        r(-8, 1, -10, 8, 8, 6, "air"),   # (only when the set isn't standing yet: see horse_built)
         r(-6, 0, -7, 6, 0, 3, "cyan_terracotta"), r(-5, 1, -6, 5, 1, 2, "cyan_carpet"),          # floor
         r(-6, 1, -7, 6, 5, -7, "lime_terracotta"), r(-6, 1, -7, -6, 5, 3, "lime_terracotta"),    # back and side walls
         r(6, 1, -7, 6, 5, 3, "lime_terracotta"), r(-6, 6, -7, 6, 6, 3, "white_concrete"),       # wall, ceiling
@@ -475,9 +475,17 @@ def horse_set():
         f"setblock {X - 1} {Y + 1} {Z - 3} oak_stairs[facing=north]", f"setblock {X + 1} {Y + 1} {Z - 3} oak_stairs[facing=north]",
         f"fill {X - 4} {Y + 5} {Z - 5} {X + 4} {Y + 5} {Z + 1} light[level=15]",
         f"setblock {X} {Y + 5} {Z - 2} lantern[hanging=true]",
-        f"summon minecraft:painting {X + 1} {Y + 3} {Z - 6} {{Tags:[\"cam.actor\"],facing:0,variant:\"minecraft:sunset\"}}",
-        "kill @e[type=minecraft:item,distance=..20]",
     ]
+
+
+def horse_built():
+    """The set once (the lantern, placed last, marks it as built), its painting, and no stray items."""
+    X, Y, Z = HD
+    done = f"execute unless block {X} {Y + 5} {Z - 2} minecraft:lantern run "
+    return ([done + c for c in horse_set()] + [
+        f"execute positioned {X + 1} {Y + 3} {Z - 6} unless entity @e[type=minecraft:painting,distance=..2] run "
+        f"summon minecraft:painting {X + 1} {Y + 3} {Z - 6} {{facing:0,variant:\"minecraft:sunset\"}}",
+        f"kill @e[type=minecraft:item,x={X - 12},y={Y - 2},z={Z - 14},dx=24,dy=14,dz=24]"])
 
 
 def horse_cam(t):
@@ -490,14 +498,14 @@ def horse_frame(k, n):
     s = k / TPS; X, Y, Z = HD; out = []
     if k == round(T_HORSE * TPS):   # it's just there
         out.append(f"summon minecraft:horse {X - 2.9} {Y + 1} {Z - 6.7} {{Tags:[\"cam.actor\"],NoAI:1b,Silent:1b,Invulnerable:1b,"
-                   "Variant:3,Rotation:[0f,0f],PersistenceRequired:1b}")
+                   "Variant:3,Rotation:[0f,0f],PersistenceRequired:1b,DeathLootTable:\"minecraft:empty\"}")
     if T_TURN <= s <= T_TURN + 1.2:  # Peter slowly turns to look
         u = ease((s - T_TURN) / 1.2)
         out.append(f"rotate @e[type=minecraft:mannequin,tag=cam.peter,limit=1] {lerp(-90, -185, u):.1f} {lerp(0, -6, u):.1f}")
     return out
 
 
-HORSE_SETUP = horse_set() + [
+HORSE_SETUP = horse_built() + [
     seat("cam.peter", -2.5, -1.5, -90, "peter"),     # left end, facing along the table
     seat("cam.homer", -0.5, -2.6, 0, "homer"),       # behind the table, facing the camera
     seat("cam.leela", 1.5, -2.6, 0, "leela"),
@@ -550,7 +558,7 @@ def build(out):
             f"summon minecraft:armor_stand {x:.2f} {y:.2f} {z:.2f} {{Tags:[\"cam.rig\"],Invisible:1b,Marker:1b,NoGravity:1b,Invulnerable:1b,Rotation:[{yaw:.1f}f,{pitch:.1f}f]}}",
             f"scoreboard players set #f cam {-HOLD}", f"scoreboard players set #shot cam {i}",
             f"scoreboard players set #area cam {i}",
-            "scoreboard players set #actors cam 0", "kill @e[type=!minecraft:player,tag=cam.actor]",
+            "scoreboard players set #actors cam 0", "execute as @e[type=!minecraft:player,tag=cam.actor] at @s run tp @s ~ -1000 ~", "kill @e[type=!minecraft:player,tag=cam.actor]",
             # a moment later, once forceload has loaded (or generated) the chunks
             *(["scoreboard players set #wait cam 1", f"schedule function cam:setup/{name} 5t"] if setup else ["scoreboard players set #wait cam 0"]),
         ])
@@ -581,6 +589,7 @@ def build(out):
     tick += build_brawl(fn)
     tick += build_horde(fn)
     tick += ["execute if score #actors cam matches 1.. run scoreboard players remove #actors cam 1",
+             "execute if score #actors cam matches 1 as @e[type=!minecraft:player,tag=cam.actor] at @s run tp @s ~ -1000 ~",
              "execute if score #actors cam matches 1 run kill @e[type=!minecraft:player,tag=cam.actor]"]
     fn("tick", tick)
     stop = ["execute as @a[tag=cam.viewer] run spectate", f"kill @e[type=minecraft:armor_stand,tag=cam.rig]", "scoreboard players set #shot cam 0"]
