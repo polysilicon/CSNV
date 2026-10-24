@@ -67,7 +67,7 @@ classic kits with no character (Juggernaut, Berserker, Medic, Pyro, Ranger, Shin
 | Jedi Knight | Lightsaber (Sharpness V), robes, Jump Boost II | **Force Push** (cone knockback, 7 s), **Mind Trick** (blind + slow, 15 s) |
 | Sith Lord | Red lightsaber (Sharpness V, Fire Aspect) | **Force Lightning** (cone, 6 dmg + slow, 9 s), **Force Choke** (lift + Wither, 14 s) |
 | Hero of Hyrule | Master Sword, Hylian Shield, bow | **Spin Attack** (7 dmg around you, 6 s), **Hookshot** (reel a target in, 8 s) |
-| Spartan | MA5 Assault Rifle (gun ability), energy sword, trimmed netherite | **Frag Grenade** (10 dmg where it lands, 10 s); passive **energy shield**: 4 absorption hearts that come back after 4 s without damage |
+| Spartan | MA5 Assault Rifle (gun ability), energy sword, trimmed netherite | **Frag Grenade** (10 dmg where it lands, 10 s); passive **energy shield**: 4 absorption hearts that come back after 5 s without being hit (hits the shield soaks up count too) |
 | Doom Slayer | Super Shotgun (gun ability), Crucible | **Chainsaw** (14 dmg up close, 12 s), **Berserk Rune** (Strength II/Speed II/Resistance, 25 s); passive **glory kills** (every kill heals) |
 | Witcher | Steel sword, silver sword (Smite V), 2 Swallow potions | **Igni** (3 fireballs, 8 s), **Quen** (shield, 16 s) |
 | Mario | Hammer (mace), overalls, Resistance I | **Fireball** (3 s), **Super Jump Punch** (leap + 6 dmg uppercut, 8 s) |

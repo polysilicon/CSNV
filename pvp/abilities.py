@@ -51,6 +51,7 @@ def shoot(entity, speed, extra="", spread=(0,)):
 
 
 PROJ_LIFE = 40
+SHIELD_DELAY = 5                     # Spartan energy shield: seconds without being hit before it recharges
 
 
 GUN_TIER_BOOST = [0, 0.4, 0.8, 1.2]   # Pack-a-Punch gun tiers (Outbreak): extra damage; tier III also slows on hit
@@ -595,17 +596,24 @@ def build(fn, wj, lobby_box):
                          "particle minecraft:heart ~ ~1.5 ~ 0.4 0.3 0.4 0 6", "playsound minecraft:entity.player.levelup player @s ~ ~ ~ 0.6 1.8",
                          "title @s actionbar {\"text\":\"◆ GLORY KILL\",\"color\":\"red\",\"bold\":true}"])
     fn("ability/second", [
-        # Spartan energy shield: 4 absorption hearts that come back after 4 s without taking damage
+        # Spartan energy shield: 4 absorption hearts that come back after SHIELD_DELAY s without being hit
         f"execute as @a {has('frag_grenade')} at @s run function {NS}:ability/shield",
     ])
     fn("ability/shield", [
-        "execute if score @s pvp.dmg matches 1.. run scoreboard players set @s pvp.sh 0",
-        "scoreboard players set @s pvp.dmg 0",
-        "scoreboard players add @s pvp.sh 1",
+        # any hit restarts the wait: damage_taken only counts what reaches health, so hits the shield soaks up
+        # (damage_absorbed) count too, as does the shield going down since last second
         "execute store result score #ab pvp run data get entity @s AbsorptionAmount",
-        f"execute if score @s pvp.sh matches 4.. if score #ab pvp matches ..7 run function {NS}:ability/shield_up",
+        "execute if score @s pvp.dmg matches 1.. run scoreboard players set @s pvp.sh 0",
+        "execute if score @s pvp.dab matches 1.. run scoreboard players set @s pvp.sh 0",
+        "execute if score #ab pvp < @s pvp.abl run scoreboard players set @s pvp.sh 0",
+        "scoreboard players set @s pvp.dmg 0", "scoreboard players set @s pvp.dab 0",
+        "scoreboard players operation @s pvp.abl = #ab pvp",
+        "scoreboard players add @s pvp.sh 1",
+        f"execute if score @s pvp.sh matches {SHIELD_DELAY}.. if score #ab pvp matches ..7 run function {NS}:ability/shield_up",
     ])
     fn("ability/shield_up", ["effect clear @s minecraft:absorption", "effect give @s minecraft:absorption infinite 1 true",
+                             "scoreboard players set @s pvp.abl 8",
                              "playsound minecraft:block.beacon.power_select player @s ~ ~ ~ 0.6 1.8",
                              "title @s actionbar {\"text\":\"◆ Shields recharged\",\"color\":\"dark_green\"}"])
-    return ["pvp.rgt dummy", "pvp.abk dummy", "pvp.abs dummy", "pvp.id dummy", "pvp.ft dummy", "pvp.gk totalKillCount", "pvp.dmg minecraft.custom:minecraft.damage_taken", "pvp.sh dummy"]
+    return ["pvp.rgt dummy", "pvp.abk dummy", "pvp.abs dummy", "pvp.id dummy", "pvp.ft dummy", "pvp.gk totalKillCount", "pvp.dmg minecraft.custom:minecraft.damage_taken", "pvp.sh dummy",
+            "pvp.dab minecraft.custom:minecraft.damage_absorbed", "pvp.abl dummy"]
