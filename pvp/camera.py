@@ -179,6 +179,61 @@ SHARON_SETUP = [
     "team join cam.actors @e[type=minecraft:mannequin,tag=cam.actor]",
 ]
 
+# Close-up of the meme's frame: both faces to camera in slow motion. Randy upside down at the top, Smasher's face in
+# the bottom-right looking up at him; both drift in so their Sandevistan after-images stack up behind them.
+CU_SECS = 7
+CU_FLOOR = (0.5, AY + 1, 100.5)
+CU_C = (CU_FLOOR[0], CU_FLOOR[1] + 5.25, CU_FLOOR[2])           # frame centre
+CU_R0, CU_R1 = (1.7, 2.3, 0.0), (0.0, 1.15, 0.0)                 # Randy's feet-origin (x, y above centre, z) start/end
+CU_S0, CU_S1 = (2.5, -5.25, 1.0), (1.15, -5.25, 0.8)             # Smasher's feet: start/end (face ends bottom-right)
+CU_MOVE = (0.6, 5.6)                                              # slow drift window (s); the clash at its end
+CU_LIFE = 30                                                      # longer trails than the wide shot
+
+
+def cu_at(a, b, s):
+    u = ease(min(1, max(0, (s - CU_MOVE[0]) / (CU_MOVE[1] - CU_MOVE[0]))))
+    return tuple(CU_C[i] + lerp(a[i], b[i], u) for i in range(3))
+
+
+def closeup_cam(t):
+    s = t * CU_SECS
+    d = lerp(5.6, 4.7, ease(min(1, s / CU_MOVE[1])))
+    shake = 0.08 * math.sin(s * 95) if CU_MOVE[1] <= s < CU_MOVE[1] + 0.35 else 0.0
+    p = (CU_C[0] + shake, CU_C[1] + 0.1 * math.sin(s * 0.8) + shake, CU_C[2] + d)
+    return p, (180.0, 0.0)
+
+
+def closeup_frame(k, n):
+    s = k / TPS
+    r, sm = cu_at(CU_R0, CU_R1, s), cu_at(CU_S0, CU_S1, s)
+    out = [f"tp @e[type=minecraft:mannequin,tag=cam.randy,limit=1] {r[0]:.3f} {r[1]:.3f} {r[2]:.3f} 0 0",
+           f"tp @e[type=minecraft:mannequin,tag=cam.smasher,limit=1] {sm[0]:.3f} {sm[1]:.3f} {sm[2]:.3f} 28 -28"]
+    if CU_MOVE[0] - 0.4 <= s < CU_MOVE[1] and k % GHOST_EVERY == 0:
+        for g in ghost("randy", r, 0, "randy", 1.0, True) + ghost("smasher", sm, 28, "smasher", 1.8, False):
+            out.append(g.replace(f"cy.gl {GHOST_LIFE}", f"cy.gl {CU_LIFE}"))
+    if k == round((CU_MOVE[0] - 0.4) * TPS):
+        for (x, y, z) in ((r[0], r[1] + 0.4, r[2]), (sm[0], sm[1] + 3.0, sm[2])):
+            out += [f"particle minecraft:electric_spark {x:.2f} {y:.2f} {z:.2f} 0.6 0.6 0.6 0.4 80 force",
+                    f"particle minecraft:dust{{color:[0.2,1.0,0.85],scale:1.0}} {x:.2f} {y:.2f} {z:.2f} 0.5 0.5 0.5 0 30 force"]
+        out += [f"playsound minecraft:block.beacon.power_select master @a {CU_C[0]} {CU_C[1]} {CU_C[2]} 2 2",
+                f"playsound minecraft:block.beacon.activate master @a {CU_C[0]} {CU_C[1]} {CU_C[2]} 2 1.6"]
+    if k == round(CU_MOVE[1] * TPS):
+        x, y, z = CU_C[0] + 0.6, CU_C[1] - 0.6, CU_C[2] + 0.4
+        out += [f"particle minecraft:explosion_emitter {x:.2f} {y:.2f} {z:.2f} 0 0 0 0 1 force",
+                f"particle minecraft:electric_spark {x:.2f} {y:.2f} {z:.2f} 1 1 1 0.8 160 force",
+                f"playsound minecraft:entity.generic.explode master @a {x:.2f} {y:.2f} {z:.2f} 2 0.7",
+                f"playsound minecraft:block.anvil.land master @a {x:.2f} {y:.2f} {z:.2f} 1.5 0.6"]
+    return out
+
+
+CLOSEUP_SETUP = [
+    mannequin("cam.smasher", tuple(CU_C[i] + CU_S0[i] for i in range(3)), 28, -28, "smasher", scale=1.8,
+              gear=',equipment:{chest:{id:"minecraft:netherite_chestplate",count:1},legs:{id:"minecraft:netherite_leggings",count:1},'
+                   'feet:{id:"minecraft:netherite_boots",count:1},mainhand:{id:"minecraft:netherite_axe",count:1}}'),
+    mannequin("cam.randy", tuple(CU_C[i] + CU_R0[i] for i in range(3)), 0, 0, "randy", name="Dinnerbone"),
+    "team join cam.actors @e[type=minecraft:mannequin,tag=cam.actor]",
+]
+
 # name: (path, seconds, forceload area x1 z1 x2 z2[, setup commands, per-frame commands fn(k, n)])
 SHOTS = {
     "colosseum_orbit": (colosseum_orbit, 14, (-56, 44, 56, 156)),
@@ -187,6 +242,7 @@ SHOTS = {
     "orbital_spoke": (orbital_spoke, 9, (-40, 660, 40, 740)),
     "lobby_orbit": (lobby_orbit, 12, (-24, -24, 24, 24)),
     "randy_vs_smasher": (sharon_cam, SECS, (-56, 44, 56, 156), SHARON_SETUP, sharon_frame),
+    "sharon_closeup": (closeup_cam, CU_SECS, (-56, 44, 56, 156), CLOSEUP_SETUP, closeup_frame),
 }
 RIG = "@e[type=minecraft:armor_stand,tag=cam.rig,limit=1]"
 
