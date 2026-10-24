@@ -512,6 +512,79 @@ HORSE_SETUP = horse_built() + [
     seat("cam.hank", 3.5, -1.5, 90, "hank"),         # right end
 ]
 
+# ---------------------------------------------------------------- King of the Hill intro, cartoon dads edition
+# The alley behind the fence, built once at 3100, 3000: Randy, Hank, Homer and Peter stand in a row with a drink,
+# saying nothing, while the alley goes on behind them. Wide shot, Hank's "yep" nod, a push in on Hank, back to the
+# wide while Sonic, SpongeBob and Bender pass. The world is frozen at midnight (build.py: time 18000), so the scene
+# sets midday and puts midnight back at the end.
+KH = (3100, AY, 3000)
+KH_SECS = 20
+KH_DADS = [("cam.randy", "randy", -3), ("cam.hank", "hank", -1), ("cam.homer", "homer", 1), ("cam.peter", "peter", 3)]
+KH_WIDE = (0.5, 2.3, 12.0)                  # camera, relative
+BEER = ',equipment:{mainhand:{id:"minecraft:honey_bottle",count:1}}'
+
+
+def koth_built():
+    X, Y, Z = KH
+    r = lambda x1, y1, z1, x2, y2, z2, b: f"fill {X + x1} {Y + y1} {Z + z1} {X + x2} {Y + y2} {Z + z2} {b}"
+    done = f"execute unless block {X + 13} {Y + 1} {Z - 3} minecraft:cauldron run "
+    cmds = [
+        r(-18, 1, -14, 18, 12, 14, "air"), r(-18, 0, -14, 18, 0, 14, "grass_block"),
+        r(-18, 0, -3, 18, 0, -1, "dirt_path"),                                                    # the alley
+        r(-18, 1, -4, 18, 3, -4, "spruce_planks"), r(-18, 4, -4, 18, 4, -4, "spruce_slab"),       # the fence
+        *[f"setblock {X + x} {Y + h} {Z - 4} stripped_dark_oak_log" for x in range(-18, 19, 3) for h in (1, 2, 3)],
+        r(4, 0, -11, 11, 0, -6, "stone"), r(4, 1, -11, 11, 4, -6, "white_terracotta"),           # garage behind the fence
+        r(4, 5, -11, 11, 5, -6, "gray_concrete"), r(6, 1, -6, 9, 3, -6, "light_gray_concrete"),
+        f"place feature minecraft:oak {X - 9} {Y + 1} {Z - 7}", f"place feature minecraft:fancy_oak {X - 14} {Y + 1} {Z - 8}",
+        f"place feature minecraft:oak {X + 15} {Y + 1} {Z - 8}",
+        f"setblock {X + 12} {Y + 1} {Z - 3} cauldron", f"setblock {X + 13} {Y + 1} {Z - 3} cauldron",   # trash cans (last: marks it built)
+    ]
+    return [done + c for c in cmds] + [f"kill @e[type=minecraft:item,x={X - 20},y={Y - 2},z={Z - 16},dx=40,dy=16,dz=32]"]
+
+
+def koth_cam(t):
+    s = t * KH_SECS
+    X, Y, Z = KH
+    wide = (X + KH_WIDE[0], Y + KH_WIDE[1], Z + KH_WIDE[2])
+    if 5.0 <= s < 8.5:                                       # push in on Hank
+        u = ease(min(1, (s - 5.0) / 2.6))
+        hx = X - 1 + 0.5
+        p = (lerp(wide[0], hx, u), lerp(wide[1], Y + 2.55, u), lerp(wide[2], Z + 3.0, u))
+        return p, look(p, (hx, Y + 2.45, Z + 1))
+    return wide, look(wide, (X + 0.5, Y + 2.0, Z))
+
+
+def passer(tag, skin, x0, x1, t0, t1, s, z=-2.0):
+    """Walk (or run) a mannequin along the alley from x0 to x1 between t0 and t1."""
+    if not (t0 <= s <= t1): return []
+    u = (s - t0) / (t1 - t0)
+    X, Y, Z = KH
+    yaw = -90 if x1 > x0 else 90
+    return [f"tp @e[type=minecraft:mannequin,tag={tag},limit=1] {X + lerp(x0, x1, u) + 0.5:.3f} {Y + 1} {Z + z + 0.5:.3f} {yaw} 0"]
+
+
+def koth_frame(k, n):
+    s = k / TPS; out = []
+    if k == 0:
+        out += ["time set 6000", "weather clear"]
+    if 3.4 <= s <= 4.4:                                      # Hank: "yep"
+        u = (s - 3.4) / 1.0
+        out.append(f"rotate @e[type=minecraft:mannequin,tag=cam.hank,limit=1] 0 {16 * math.sin(math.pi * u):.1f}")
+    out += passer("cam.sonic", "sonic", -20, 20, 9.2, 10.4, s)              # Sonic, gone in a second
+    out += passer("cam.sponge", "spongebob", 20, -20, 11.0, 16.5, s)        # SpongeBob strolling the other way
+    out += passer("cam.bender", "bender", -20, 20, 14.5, 19.0, s, z=-2.8)   # Bender, last
+    if k == n - 1:
+        out.append("time set 18000")
+    return out
+
+
+KOTH_SETUP = koth_built() + [mannequin(tag, (KH[0] + x + 0.5, KH[1] + 1, KH[2] + 1.5), 0, 0, skin, gear=BEER)
+                             for tag, skin, x in KH_DADS] + [
+    mannequin("cam.sonic", (KH[0] - 30, KH[1] + 1, KH[2] - 1.5), -90, 0, "sonic"),
+    mannequin("cam.sponge", (KH[0] + 30, KH[1] + 1, KH[2] - 1.5), 90, 0, "spongebob"),
+    mannequin("cam.bender", (KH[0] - 30, KH[1] + 1, KH[2] - 2.3), -90, 0, "bender"),
+]
+
 # name: (path, seconds, forceload area x1 z1 x2 z2[, setup commands, per-frame commands fn(k, n)])
 SHOTS = {
     "colosseum_orbit": (colosseum_orbit, 14, (-56, 44, 56, 156)),
@@ -525,6 +598,7 @@ SHOTS = {
     "horde_orbit": (horde_orbit, 22, (-36, 564, 36, 636)),
     "horde_dolly": (horde_dolly, 12, (-36, 564, 36, 636)),
     "horse_dinner": (horse_cam, HD_SECS, (2984, 2984, 3016, 3016), HORSE_SETUP, horse_frame),
+    "koth": (koth_cam, KH_SECS, (3064, 2968, 3136, 3032), KOTH_SETUP, koth_frame),
 }
 RIG = "@e[type=minecraft:armor_stand,tag=cam.rig,limit=1]"
 
@@ -595,6 +669,7 @@ def build(out):
     stop = ["execute as @a[tag=cam.viewer] run spectate", f"kill @e[type=minecraft:armor_stand,tag=cam.rig]", "scoreboard players set #shot cam 0"]
     # actors stay up for 5 s after a scene (for a second take of the ending), then go
     stop += ["scoreboard players set #actors cam 100"]
+    stop += ["execute if score #area cam matches %d run time set 18000" % (list(SHOTS).index("koth") + 1)]
     for i, (name, spec) in enumerate(SHOTS.items(), 1):
         area = spec[2]
         stop.append(f"execute if score #area cam matches {i} run forceload remove {area[0]} {area[1]} {area[2]} {area[3]}")
