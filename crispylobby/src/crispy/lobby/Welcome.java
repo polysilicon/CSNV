@@ -24,7 +24,8 @@ import java.util.*;
 /** First join to the network: a title, a "Start here" menu of the worlds (one marked as the best place to start),
  *  a welcome line in the lobby and over the Discord bridge so people say hi, and one nudge if they're still in the
  *  hub a minute later. "First join" = never on the lobby before and no earlier trace on Anarchy or Vanilla
- *  (Votes.firstSeen). /welcome opens the menu for anyone. Config: welcome.* */
+ *  (Votes.firstSeen). /welcome opens the menu for anyone; staff: /welcome test (now), /welcome next <player>
+ *  (on their next join). Config: welcome.* */
 final class Welcome implements Listener {
     static final class Menu implements InventoryHolder {
         final Map<Integer, String> actions = new HashMap<>(); Inventory inv;
@@ -34,6 +35,7 @@ final class Welcome implements Listener {
 
     final CrispyLobby plugin;
     final Set<UUID> newcomers = new HashSet<>();   // got the welcome this session and haven't picked a world yet
+    final Set<String> forced = new HashSet<>();     // /welcome next <player>: treat as new on their next join (until restart)
 
     Welcome(CrispyLobby plugin) { this.plugin = plugin; }
 
@@ -45,15 +47,17 @@ final class Welcome implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent e) {
         Player p = e.getPlayer();
-        if (!cfg().getBoolean("enabled", true) || p.hasPlayedBefore()) return;
+        boolean force = forced.remove(p.getName().toLowerCase(Locale.ROOT));
+        if (!cfg().getBoolean("enabled", true) || p.hasPlayedBefore() && !force) return;
         // after DeluxeHub's join title and firework, so ours isn't drawn over
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            if (!p.isOnline() || !"9999".equals(plugin.votes.firstSeen(p))) return;   // played Anarchy/Vanilla before the lobby existed
-            greet(p);
+            if (!p.isOnline() || !force && !"9999".equals(plugin.votes.firstSeen(p))) return;   // played Anarchy/Vanilla before the lobby existed
+            greet(p, force);
         }, cfg().getLong("delay-ticks", 50));
     }
 
-    void greet(Player p) {
+    /** test: a staff preview (/welcome test or next), so nothing goes out over the Discord bridge. */
+    void greet(Player p, boolean test) {
         ConfigurationSection c = cfg();
         newcomers.add(p.getUniqueId());
         p.showTitle(Title.title(Votes.c(c.getString("title", "&d&lWelcome to Crispy")), Votes.c(c.getString("subtitle", "&fPick a world to start")),
@@ -67,7 +71,7 @@ final class Welcome implements Listener {
             String line = c.getString("announce-line", "&d✦ &f%player% &djoined Crispy for the first time. Say hi!").replace("%player%", p.getName());
             Bukkit.getOnlinePlayers().stream().filter(o -> o != p).forEach(o -> o.sendMessage(Votes.c(line)));
             // the Discord bot relays "<name> text" log lines to Discord and cross-chats them to every server
-            if (c.getBoolean("discord-relay", true))
+            if (c.getBoolean("discord-relay", true) && !test)
                 Bukkit.getConsoleSender().sendMessage("<Welcome> " + p.getName() + " joined Crispy for the first time. Say hi!");
         }
         open(p);
@@ -142,10 +146,15 @@ final class Welcome implements Listener {
     }
 
     boolean command(org.bukkit.command.CommandSender s, String[] a) {
-        if (!(s instanceof Player p)) { s.sendMessage("Run /welcome in game."); return true; }
+        if (a.length >= 2 && a[0].equalsIgnoreCase("next") && s.hasPermission("crispylobby.admin")) {
+            forced.add(a[1].toLowerCase(Locale.ROOT));
+            s.sendMessage(Votes.c("&a" + a[1] + " gets the full first-join welcome on their next lobby join (until a restart)."));
+            return true;
+        }
+        if (!(s instanceof Player p)) { s.sendMessage("Run /welcome in game, or /welcome next <player>."); return true; }
         if (a.length >= 2 && a[0].equalsIgnoreCase("go")) act(p, "go " + a[1]);
         else if (a.length >= 1 && a[0].equalsIgnoreCase("discord")) act(p, "discord");
-        else if (a.length >= 1 && a[0].equalsIgnoreCase("test") && p.hasPermission("crispylobby.admin")) greet(p);   // the full first-join flow, for staff
+        else if (a.length >= 1 && a[0].equalsIgnoreCase("test") && p.hasPermission("crispylobby.admin")) greet(p, true);   // the full first-join flow, for staff
         else open(p);
         return true;
     }

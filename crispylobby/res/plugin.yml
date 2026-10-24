@@ -1,5 +1,5 @@
 name: CrispyLobby
-version: 1.9.0
+version: 1.9.1
 main: crispy.lobby.CrispyLobby
 api-version: '1.21'
 author: CrispyAnarchy
@@ -17,7 +17,7 @@ commands:
     usage: /vote [links|top]
     aliases: [votes, rewards]
   welcome:
-    description: The "start here" world picker new players see on their first join (/welcome test for staff)
+    description: "The start-here world picker new players see on their first join (staff: /welcome test, /welcome next <player>)"
   cosmetics:
     description: Tags and trails that work on every server
 permissions:

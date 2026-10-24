@@ -19,7 +19,8 @@ own join title:
   server;
 - one nudge after 60 s if they're still in the hub without picking a world: "Not sure where to start? [Try PvP]".
 
-`/welcome` opens the menu for anyone; `/welcome test` (staff) runs the whole flow on yourself. Everything is in
+`/welcome` opens the menu for anyone; `/welcome test` (staff) runs the whole flow on yourself, and `/welcome next <player>` (staff
+or console) gives that player the full flow on their next lobby join (forgotten on a restart). Neither test posts to Discord. Everything is in
 `welcome:` in `config.yml` (texts, worlds, which one is recommended, the delay and the nudge).
 
 ## Vote rewards
