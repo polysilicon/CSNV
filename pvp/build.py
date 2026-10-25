@@ -1431,6 +1431,7 @@ def build_pve():
         "{\"text\":\" by \",\"color\":\"gold\"},{\"selector\":\"@a[tag=pve.in]\",\"color\":\"yellow\"}]",
         "execute if score #wave pve > #record pve run scoreboard players operation #record pve = #wave pve",
         f"execute as @a[tag=pve.in] run function {NS}:to_lobby",
+        "team empty pve",   # players who logged off mid-run are still on the team (green name) until they rejoin
         "scoreboard players set #wave pve 0",
     ])
 
