@@ -589,6 +589,8 @@ def build():
         f"function {NS}:ability/second",
         f"execute as @a[{LOBBY_BOX},tag=!pvp.spec] unless items entity @s container.* minecraft:flint unless items entity @s weapon.offhand minecraft:flint run item replace entity @s hotbar.8 with {DUEL_ITEM}",
         f"function {NS}:duel/check",
+        # no stashing gear on the floor to pick up as another character: items dropped in the arena or a duel pit vanish
+        f"kill @e[type=minecraft:item,{ARENA_BOX}]", *[f"kill @e[type=minecraft:item,{box(px, pz, arena_map.PIT_R + 3, AY - 1, 25)}]" for (px, pz) in DUEL_PITS],
         f"execute as @a[tag=pvp.master] at @s unless entity @s[{LOBBY_BOX}] run particle minecraft:wax_on ~ ~1 ~ 0.35 0.6 0.35 0 5",
         f"particle minecraft:reverse_portal {SPEC_PORTAL[0] + 0.5} {SPEC_PORTAL[1] + 1.5} 0.5 0.1 0.9 0.9 0.05 40",
         # NPC clicks are advancements; clear any left granted so an NPC can never get stuck for a player
@@ -980,6 +982,11 @@ def build_duels():
                                      f"fill {px - E} {AY - 1} {pz - E} {px + E} {AY} {pz + E} minecraft:sandstone"]
            + outbreak_maps.commands(g, px, AY, pz))
     fn("admin/build_duels", [f"function {NS}:admin/build_duel_{n}" for n in range(1, len(DUEL_PITS) + 1)])
+    # lock (and empty) the containers of maps built before containers were locked, without rebuilding them
+    lk = outbreak_maps.locks(arena_map.colosseum(SPAWNS), ACX, AY, ACZ, clear=True)
+    for (px, pz) in DUEL_PITS: lk += outbreak_maps.locks(g, px, AY, pz, clear=True)
+    for m in OUTBREAK_MAPS: lk += outbreak_maps.locks(outbreak_maps.MAPS[m[1]](map_points(m[1]), PVE_SPAWNS), PCX, AY, m[5], clear=True)
+    fn("admin/lock_containers", lk)
 
 
 def build_mastery():

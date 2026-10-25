@@ -734,6 +734,21 @@ def resolve(g, x, y, z, b):
     return f"{b}[" + ",".join(f"{d}={str(v).lower()}" for d, v in c.items()) + "]"
 
 
+CONTAINERS = ("barrel", "chest", "trapped_chest", "brewing_stand", "furnace", "smoker", "blast_furnace", "hopper", "dropper", "dispenser")
+# a lock no real item can match: the decorative containers can't be opened, so nobody can stash gear in them
+LOCK = '{lock:{items:"minecraft:barrier",components:{"minecraft:custom_data":{pvp_never:1b}}}}'
+
+
+def locks(g, ox, oy, oz, clear=False):
+    """Lock every container in the grid (and, for maps built before locks, empty it)."""
+    out = []
+    for (x, y, z), b in sorted(g.b.items()):
+        if nm(b) in CONTAINERS:
+            out.append(f"data merge block {ox + x} {oy + y} {oz + z} {LOCK}")
+            if clear: out.append(f"data modify block {ox + x} {oy + y} {oz + z} Items set value []")
+    return out
+
+
 def commands(g, ox, oy, oz):
     """setblock/fill commands for the grid, shifted to the map's centre (ox, oy, oz). Solid blocks go first (bottom
     up), then blocks that rest on something (bottom up), then hanging ones (top down)."""
@@ -756,7 +771,7 @@ def commands(g, ox, oy, oz):
                 if x1 == x2: out.append(f"setblock {ox + x1} {oy + y} {oz + z} minecraft:{b}")
                 else: out.append(f"fill {ox + x1} {oy + y} {oz + z} {ox + x2} {oy + y} {oz + z} minecraft:{b}")
                 i = j + 1
-    return out
+    return out + locks(g, ox, oy, oz)
 
 
 def wallbuy_spots(g, n):

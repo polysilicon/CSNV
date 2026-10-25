@@ -307,6 +307,12 @@ Every character has its own mastery XP (`pvp.mx<kit id>`): +10 per PvP kill and 
 Both the PvP kit menu (slot 49) and the Outbreak loadout menu (slot 51) have a **🎲 Random character** button
 (`RANDOM_KIT` = 98 on `pvp.kit` / `pve.join`; `kit/roll` picks one and tells the player which).
 
+**No stashing gear:** every decorative container in the arena, duel pits and Outbreak maps (barrels, chests, brewing
+stands, `outbreak_maps.CONTAINERS`) is placed with a lock no real item matches, so it can't be opened; and items
+dropped in the arena or a duel pit are removed every second. Otherwise you could hide items and switch character to
+collect them. Maps built before this: `function pvp:admin/lock_containers` (with those areas force-loaded) locks and
+empties them in place.
+
 Kits, shop, mob pool, spawns and arena layouts are tables at the top of `build.py`.
 
 ## Balance (2026-10-25)
