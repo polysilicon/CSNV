@@ -364,6 +364,7 @@ MASTERY_PVP, MASTERY_PVE = 10, 1
 # Duels: three private pits west of everything; ELO rating (K = 32) in pvp.elo, starting at 1000
 DUEL_PITS = [(-300, 0), (-300, 60), (-300, 120)]
 DUEL_K, DUEL_START = 32, 1000
+RANDOM_KIT = 98   # pvp.kit / pve.join value of the "Random character" menu buttons
 DUEL_ITEM = ('minecraft:flint[minecraft:item_model="minecraft:iron_sword",minecraft:max_stack_size=1,minecraft:enchantment_glint_override=true,'
              'minecraft:custom_name={"text":"⚔ Duel Challenge","color":"gold","bold":true,"italic":false},'
              'minecraft:lore=[{"text":"Look at a player and right-click","color":"gray","italic":false},'
@@ -493,11 +494,15 @@ def build():
     menus = {
         "kits": {"title": {"text": "⚔ Pick a kit", "color": "dark_aqua"}, "rows": 6, "fill": PANE,
                  "items":
-                 [{"slot": KIT_SLOT[k[0]], "item": kit_icon(k, kit_lore(k)), "cmd": f"trigger pvp.kit set {k[0]}"} for k in KITS]},
+                 [{"slot": KIT_SLOT[k[0]], "item": kit_icon(k, kit_lore(k)), "cmd": f"trigger pvp.kit set {k[0]}"} for k in KITS]
+                 + [{"slot": 49, "item": icon("ender_eye", "🎲 Random character", "light_purple", ["Let fate pick one of the " + str(len(KITS)) + " characters",
+                     "", "Click to fight as a random character"]), "cmd": f"trigger pvp.kit set {RANDOM_KIT}"}]},
         "pve": {"title": {"text": "☣ Outbreak: pick your loadout", "color": "dark_green"}, "rows": 6, "fill": PANE,
                 "items":
                 [{"slot": KIT_SLOT[k[0]], "item": kit_icon(k, k[5] + ["", "Click to queue with this kit"]), "cmd": f"trigger pve.join set {k[0]}"} for k in KITS]
-                + [{"slot": 47, "item": icon("barrier", "Leave the queue", "red", ["Stop waiting for the next Outbreak"], False), "cmd": "trigger pve.join set 99"},
+                + [{"slot": 51, "item": icon("ender_eye", "🎲 Random character", "light_purple", ["Let fate pick one of the " + str(len(KITS)) + " characters",
+                     "", "Click to queue as a random character"]), "cmd": f"trigger pve.join set {RANDOM_KIT}"},
+                   {"slot": 47, "item": icon("barrier", "Leave the queue", "red", ["Stop waiting for the next Outbreak"], False), "cmd": "trigger pve.join set 99"},
                    {"slot": 45, "item": icon("filled_map", "Back to maps", "yellow", ["Pick a different map"], False), "cmd": "pvpmenu pve_maps"},
                    {"slot": 49, "item": icon("zombie_head", "How Outbreak works", "green", [
                        f"{len(OUTBREAK_MAPS)} maps, each with its own mobs", "Endless waves; every 5th wave brings a boss", "100 points per kill + a bonus each wave",
@@ -634,6 +639,8 @@ def build():
     # ------------------------------------------------------------------ kits
     pick = ["scoreboard players operation #k pvp = @s pvp.kit", "scoreboard players set @s pvp.kit 0",
             f"execute unless entity @s[{LOBBY_BOX}] run return run tellraw @s {{\"text\":\"Pick a kit in the lobby (/spawn).\",\"color\":\"red\"}}",
+            f"execute if score #k pvp matches {RANDOM_KIT} run function {NS}:kit/roll",
+            f"execute if score #k pvp matches {RANDOM_KIT} run scoreboard players operation #k pvp = #rk pvp",
             "tag @s remove pve.q", "clear @s", "effect clear @s", "function cyber:admin/reset", "scoreboard players set #ok pvp 0"]
     give = []
     for (kid, key, name, color, ic, blurb, items, implants) in KITS:
@@ -651,6 +658,11 @@ def build():
              f"execute if score #ok pvp matches 1 run function {NS}:arena/enter",
              f"execute unless score #ok pvp matches 1 run {say('@s', 'That kit no longer exists.', 'red')}"]
     fn("kit/pick", pick)
+    # a random character (as the player): #rk pvp = its kit id, and they're told which
+    fn("kit/roll", [f"execute store result score #r pvp run random value 1..{len(KITS)}",
+                    *[f"execute if score #r pvp matches {i} run scoreboard players set #rk pvp {k[0]}" for i, k in enumerate(KITS, 1)],
+                    *[f"execute if score #rk pvp matches {k[0]} run tellraw @s " + tj([{"text": "🎲 Random character: ", "color": "light_purple"},
+                                                                                       {"text": k[2], "color": k[3], "bold": True}]) for k in KITS]])
     build_mastery()
     build_duels()
     fn("kit/valid_pve", [f"execute if score #j pve matches {k[0]} run return 1" for k in KITS] + ["return 0"])   # #j pve is a real kit id
@@ -906,15 +918,17 @@ def build_duels():
            "tag @a remove pvp.da", "tag @a remove pvp.db"]
     fn("duel/start", st)
     # prep: as each dueler, a random character (so nobody can bring their best one), 3 s of grace
-    kit_ids = [k[0] for k in KITS]
     fn("duel/prep", [elo_init, "tag @s add pvp.duel", "tag @s remove pve.q", "clear @s", "effect clear @s", "function cyber:admin/reset", *PERK_RESET,
                      "gamemode adventure @s",
-                     f"execute store result score #r pvp run random value 1..{len(kit_ids)}",
-                     *[f"execute if score #r pvp matches {i} run scoreboard players set @s pvp.cur {kid}" for i, kid in enumerate(kit_ids, 1)],
+                     f"function {NS}:kit/roll", "scoreboard players operation @s pvp.cur = #rk pvp",
                      *[f"execute if score @s pvp.cur matches {k[0]} run function {NS}:kit/{k[1]}" for k in KITS],
                      "effect give @s minecraft:resistance 3 4 true", "effect give @s minecraft:weakness 3 255 true",
                      "scoreboard players set @s pvp.ct 0", "scoreboard players set @s pvp.streak 0",
-                     "title @s title {\"text\":\"DUEL\",\"color\":\"gold\",\"bold\":true}", "title @s subtitle {\"text\":\"Fight in 3 seconds\",\"color\":\"gray\"}"])
+                     "title @s title {\"text\":\"DUEL\",\"color\":\"gold\",\"bold\":true}",
+                     *[f"execute if score @s pvp.cur matches {k[0]} run title @s subtitle " + tj([{"text": "You are ", "color": "gray"}, {"text": k[2], "color": k[3], "bold": True},
+                                                                                              {"text": " · fight in 3 s", "color": "gray"}]) for k in KITS],
+                     *[f"execute if score @s pvp.cur matches {k[0]} run tellraw @a " + tj([{"text": "⚔ ", "color": "gold"}, {"selector": "@s", "color": "yellow"},
+                                                                                         {"text": " fights as ", "color": "gray"}, {"text": k[2], "color": k[3], "bold": True}]) for k in KITS]])
     # ELO: expected score from the rating gap (loser - winner), in 25-point steps
     delta = []
     for d in range(-400, 425, 25):
@@ -1161,6 +1175,8 @@ def build_pve():
         f"execute if score #j pve matches 91 run return run function {P}/pick_map",
         "execute if score #j pve matches 99 run tag @s remove pve.q",
         f"execute if score #j pve matches 99 run return run {say('@s', 'You left the Outbreak queue.', 'yellow')}",
+        f"execute if score #j pve matches {RANDOM_KIT} run function {NS}:kit/roll",
+        f"execute if score #j pve matches {RANDOM_KIT} run scoreboard players operation #j pve = #rk pvp",
         f"execute if entity @s[tag=pve.in] run return run {say('@s', 'You are already in the Outbreak.', 'red')}",
         f"execute unless entity @s[{LOBBY_BOX}] run return run {say('@s', 'Join the Outbreak from the lobby (/spawn).', 'red')}",
         f"execute if score #j pve matches {TEST_KIT_ID} unless entity @s[tag=pvp.tester] run return 0",

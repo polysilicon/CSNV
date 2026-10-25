@@ -187,7 +187,8 @@ Every character has its own mastery XP (`pvp.mx<kit id>`): +10 per PvP kill and 
   the challenge expires after 30 s.
 - Accepting takes both players to a free duel pit (three small round pits at x -300, z 0 / 60 / 120;
   `admin/build_duels`). Each fights as a random character (rolled separately for each player, so
-  it's down to skill, not a favourite pick), with 3 s of grace.
+  it's down to skill, not a favourite pick), with 3 s of grace. Everyone is told who fights as what
+  ("⚔ lbxd fights as Darth Maul"), and each dueler's title shows their character.
 - The first to die loses. Ratings are ELO (`pvp.elo`, start 1000, K 32), with wins and losses in `pvp.dwin` /
   `pvp.dloss`, and the result is announced.
 - Leaving mid-duel (`/spawn`, disconnecting) is a forfeit. If your opponent logs out, you win by walkover with no
@@ -302,6 +303,9 @@ Every character has its own mastery XP (`pvp.mx<kit id>`): +10 per PvP kill and 
   removed too.
 - **Down**: if you die you spectate above the arena and come back with your kit when the wave is cleared. The run ends when
   everyone is down. Your best wave is saved in `pve.best`, and a new server record (`#record pve`) is announced to everyone.
+
+Both the PvP kit menu (slot 49) and the Outbreak loadout menu (slot 51) have a **🎲 Random character** button
+(`RANDOM_KIT` = 98 on `pvp.kit` / `pve.join`; `kit/roll` picks one and tells the player which).
 
 Kits, shop, mob pool, spawns and arena layouts are tables at the top of `build.py`.
 
