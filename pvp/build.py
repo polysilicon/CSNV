@@ -351,8 +351,12 @@ UP_BOOST = {   # per tier, added to the existing enchants; kind -> (item tag/id,
     "trident": ("minecraft:trident", {"impaling": 2}, {"channeling": 1}, {"impaling": 2}),
     "mace": ("minecraft:mace", {"density": 1, "breach": 1}, {"wind_burst": 1}, {"density": 2}),
 }
-# Wall-buys: guns hung on the walls of every Outbreak map (6 spots per map, outbreak_maps.wallbuy_spots); right-click to buy
-WALL_BUYS = [("pistol", 500), ("militech_handgun", 750), ("lucky", 1000), ("guts", 1250), ("ma5", 1500), ("m60", 2000)]
+# Wall-buys: Outbreak-only guns on the walls (outbreak_maps.wallbuy_spots finds the spots); right-click to buy.
+# pve.wb on the interaction = the gun's number here. Every map has the M1911 and three of the others.
+WALL_BUYS = [("m1911", 500), ("olympia", 750), ("mp40", 1000), ("kar98k", 1250), ("stakeout", 1500), ("stg44", 1750)]
+WALL_MAPS = {"ruins": ["m1911", "olympia", "mp40", "kar98k"], "mine": ["m1911", "stakeout", "mp40", "stg44"],
+             "neon": ["m1911", "olympia", "stg44", "kar98k"], "hellfort": ["m1911", "stakeout", "kar98k", "mp40"],
+             "orbital": ["m1911", "olympia", "stg44", "stakeout"]}
 VETERAN_PER_WAVE, VETERAN_MAX = 25, 1000
 # Kit mastery: XP per character (score pvp.mx<kit id>), +10 per PvP kill and +1 per Outbreak kill with that kit.
 MASTERY = [50, 150, 400, 800, 1500]      # XP for levels I..V (V = Master)
@@ -1496,11 +1500,13 @@ PVE_THEMES = {"ruins": ("stone_bricks", "polished_andesite"), "mine": ("stone", 
               "orbital": ("black_concrete", "cyan_concrete")}   # the station sits in black "space"
 
 
-def wallbuys(g, cz):
+def wallbuys(g, cz, key):
     """Wall-buy guns for one map: the gun on the wall (item display), its name and price above it, and an interaction
     in front to right-click. Spots are worked out from the layout (outbreak_maps.wallbuy_spots)."""
-    out = []
-    for n, ((x, z, ox, oz), (k, cost)) in enumerate(zip(outbreak_maps.wallbuy_spots(g, len(WALL_BUYS)), WALL_BUYS), 1):
+    out, ids = [], {k: i for i, (k, _) in enumerate(WALL_BUYS, 1)}
+    guns = [(k, dict(WALL_BUYS)[k]) for k in WALL_MAPS[key]]
+    for (x, z, ox, oz), (k, cost) in zip(outbreak_maps.wallbuy_spots(g, len(guns)), guns):
+        n = ids[k]
         gname, gcolor, gmodel = abilities.ABILITIES[k][:3]
         cx, cz_ = PCX + x + 0.5, cz + z + 0.5
         yaw = round(math.degrees(math.atan2(ox, -oz)))   # facing away from the wall
@@ -1531,7 +1537,7 @@ def build_pve_map(m):
     a += outbreak_maps.commands(g, PCX, AY, cz)
     a += [f"fill {PCX - 1} {AY + 1} {cz - 1} {PCX + 1} {AY + 1} {cz + 1} minecraft:{plat}",   # Arsenal platform
           f"setblock {PCX} {AY + 1} {cz} minecraft:lodestone"]
-    a += [f"kill @e[tag=pvp.wallbuy,{PVE_BOXES[i]}]"] + wallbuys(g, cz)
+    a += [f"kill @e[tag=pvp.wallbuy,{PVE_BOXES[i]}]"] + wallbuys(g, cz, key)
     sx, sy, _ = SHOP_NPC
     body = npc("pvp.shopnpc", (sx, sy, cz + 0.5), "☣ Arsenal ☣", "green", "", "", 180, mannequin=True)
     a += [f"kill @e[tag=pvp.shopnpc,x={sx},y={sy},z={cz + 0.5},distance=..4]"] + body[1:]   # only this map's Arsenal

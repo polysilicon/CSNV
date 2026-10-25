@@ -210,11 +210,21 @@ Every character has its own mastery XP (`pvp.mx<kit id>`): +10 per PvP kill and 
     go down. Gun lore shows your tier and the damage it does: the gun loot tables run item modifier
     `pvp:gunlore/<gun>`, which adds the line for the holder's `pve.gun`, and buying a tier rewrites every gun you carry
     (`pve/up/gun_lore`).
-  - **Wall-buys**: 6 guns on the walls of every map, right-click to buy (`WALL_BUYS`): Pistol 500, Militech Handgun 750,
-    Lucky 1,000, Guts 1,250, MA5 1,500, Trunk M60 2,000. Spots come from the layout (`outbreak_maps.wallbuy_spots`:
-    a reachable floor cell next to a solid wall, one per sector, away from mob windows and spawns). Each is a gun item
-    display, a name and price text display and an interaction carrying the gun's number in `pve.wb`. You can only
-    carry one of each; re-run `admin/build_pve` after changing them.
+  - **Wall-buys**: Outbreak-only guns (no character has them), 4 per map, right-click to buy (`WALL_BUYS`, per map in
+    `WALL_MAPS`): M1911 500 (every map), Olympia 750, MP40 1,000, Kar98k 1,250, Stakeout 1,500, STG-44 1,750.
+    | Gun | Type | Damage | Fire rate | Range |
+    |---|---|---|---|---|
+    | M1911 | pistol | 5 | 0.45 s | 28 |
+    | Olympia | shotgun (cone) | 12 | 1.4 s | 6 |
+    | MP40 | SMG | 3 | 0.2 s | 26 |
+    | Kar98k | rifle | 16 | 1.6 s | 50 |
+    | Stakeout | shotgun (cone) | 9 | 0.9 s | 7 |
+    | STG-44 | assault rifle | 5 | 0.3 s | 34 |
+    Ruins: M1911, Olympia, MP40, Kar98k · Toxic Mine: M1911, Stakeout, MP40, STG-44 · Neon City: M1911, Olympia,
+    STG-44, Kar98k · Hellfort: M1911, Stakeout, Kar98k, MP40 · Orbital: M1911, Olympia, STG-44, Stakeout.
+    Spots come from the layout (`outbreak_maps.wallbuy_spots`: a reachable floor cell next to a solid wall, one per
+    quarter, away from mob windows and spawns). Each is a gun item display, a name and price text display and an
+    interaction carrying the gun's number in `pve.wb`. You can only carry one of each; re-run `admin/build_pve` after changing them.
   - **Armor Upgrade**, for 1,500 / 3,000 / 6,000 points: I gives +1 Protection and Unbreaking on everything you wear,
     II gives Resistance I, and III gives +2 hearts.
   - Perks: **Double Tap** (Strength I, 3,000) and **PhD Flopper** (Fire Resistance + Jump Boost, 1,500), alongside

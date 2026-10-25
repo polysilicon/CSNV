@@ -396,6 +396,13 @@ ABILITIES = {
                         ("", "particle minecraft:explosion ~ ~1 ~ 0 0 0 0 1"), ("", "particle minecraft:end_rod ~ ~1 ~ 0.6 0.6 0.6 0.1 25")]),
     "amban": gun("Amban Rifle", "gray", "iron_shovel", 2.5, 12, 60, "Disintegration sniper rifle.", "block.beacon.deactivate", 1.8,
                  [("glowing 3 s", "effect give @s minecraft:glowing 3 0"), ("", "particle minecraft:electric_spark ~ ~1 ~ 0.3 0.5 0.3 0.3 20")]),
+    # ---------------------------------------------------------------- Outbreak wall-buys (only sold on Outbreak walls)
+    "m1911": gun("M1911", "gray", "copper_hoe", 0.45, 5, 28, "Trusty sidearm. Wall-buy.", "entity.firework_rocket.blast", 1.5),
+    "olympia": shotgun("Olympia", "gold", "stone_shovel", 1.4, 12, 3, "Double-barrel. Wall-buy.", "entity.generic.explode", 1.5),
+    "mp40": gun("MP40", "dark_gray", "wooden_shovel", 0.2, 3, 26, "Submachine gun. Wall-buy.", "entity.firework_rocket.blast", 2.0),
+    "kar98k": gun("Kar98k", "dark_green", "diamond_shovel", 1.6, 16, 50, "Bolt-action rifle. Wall-buy.", "entity.firework_rocket.blast", 0.7),
+    "stakeout": shotgun("Stakeout", "red", "copper_shovel", 0.9, 9, 3.5, "Pump-action shotgun. Wall-buy.", "entity.generic.explode", 1.3),
+    "stg44": gun("STG-44", "gold", "golden_shovel", 0.3, 5, 34, "Assault rifle. Wall-buy.", "entity.firework_rocket.blast", 1.7),
     # ---------------------------------------------------------------- King of the Hill / Futurama / Mr. Robot
     "propane": ("Propane Tank", "aqua", "lantern", 10, ["Lobs a propane tank that blows up.", "Explodes where it hits"], [
         *shoot("fireball", 1.0, ",ExplosionPower:1b,acceleration_power:0.0d"),
