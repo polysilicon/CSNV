@@ -26,7 +26,8 @@ import java.util.concurrent.TimeUnit;
 
 /** Shows the vote-cosmetic tags bought in the lobby (/cosmetics) after each player's name in the tab list and on
  *  name tags, on every server, through TAB's API. The lobby's CrispyLobby plugin writes name -> tag to tags.json;
- *  this re-reads it every few seconds and keeps TAB's custom suffix in step (TAB placeholders keep working).
+ *  this re-reads it every few seconds and keeps TAB's custom suffix in step (TAB placeholders keep working). Bought
+ *  name colours (namecolors.json) colour the name in the tab list the same way.
  *  It also owns /vote and /cosmetics on every server: the menus live on the lobby, so the player is sent there
  *  (if not already on it) and the command line is handed to the lobby's CrispyLobby on the crispy:vote channel. */
 public class CrispyTags {
@@ -42,6 +43,10 @@ public class CrispyTags {
     final ProxyServer proxy;
     Map<String, String> tags = Map.of();
     long mtime = -1;
+    // name colours bought in /cosmetics (the lobby writes namecolors.json next to tags.json): shown in the tab list too
+    static final Path COLORS = FILE.resolveSibling("namecolors.json");
+    Map<String, String> colors = Map.of();
+    long cmtime = -1;
 
     @Inject public CrispyTags(ProxyServer proxy) { this.proxy = proxy; }
 
@@ -62,6 +67,14 @@ public class CrispyTags {
                 mtime = m;
             }
         } catch (Exception ignored) {}
+        try {
+            long m = Files.getLastModifiedTime(COLORS).toMillis();
+            if (m != cmtime) {
+                Map<String, String> c = new Gson().fromJson(Files.readString(COLORS), new TypeToken<Map<String, String>>() {}.getType());
+                colors = c == null ? Map.of() : c;
+                cmtime = m;
+            }
+        } catch (Exception ignored) {}
         TabAPI api = TabAPI.getInstance();
         if (api == null) return;
         NameTagManager tagMgr = api.getNameTagManager();
@@ -72,6 +85,9 @@ public class CrispyTags {
             if (listMgr != null) {
                 String want = tag == null ? null : join(listMgr.getOriginalRawSuffix(p), tag);
                 if (!Objects.equals(listMgr.getCustomSuffix(p), want)) listMgr.setSuffix(p, want);
+                String code = colors.get(p.getName().toLowerCase(Locale.ROOT));
+                String name = code == null ? null : colored(p.getName(), code);
+                if (!Objects.equals(listMgr.getCustomName(p), name)) listMgr.setName(p, name);
             }
             if (tagMgr != null) {
                 String want = tag == null ? null : join(tagMgr.getOriginalRawSuffix(p), tag);
@@ -119,6 +135,15 @@ public class CrispyTags {
             Long u = m == null ? null : m.get(player.toLowerCase(Locale.ROOT));
             return u == null ? 0 : Math.max(0, u - System.currentTimeMillis());
         } catch (Exception e) { return 0; }
+    }
+    /** Same rules as the lobby and chat: a colour code ("&b", "&6&l"), a per-letter sequence ("&c|&6|&e") or "rainbow". */
+    static String colored(String name, String code) {
+        if ("rainbow".equalsIgnoreCase(code)) code = "&c|&6|&e|&a|&b|&9|&d";
+        if (!code.contains("|")) return code + name;
+        String[] cyc = code.split("\\|");
+        StringBuilder b = new StringBuilder();
+        for (int i = 0; i < name.length(); i++) b.append(cyc[i % cyc.length]).append(name.charAt(i));
+        return b.toString();
     }
     static String join(String original, String tag) { return (original == null ? "" : original) + " " + tag; }
 }
