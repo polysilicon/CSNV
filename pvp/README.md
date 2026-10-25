@@ -211,6 +211,8 @@ Every character has its own mastery XP (`pvp.mx<kit id>`): +10 per PvP kill and 
   - Perks: **Double Tap** (Strength I, 3,000) and **PhD Flopper** (Fire Resistance + Jump Boost, 1,500), alongside
     Juggernog and Speed Cola.
   - Upgrades and perks last until you go down; you come back with your kit as it was.
+  - **Sidebar** (players in the run only, `pve.side`): each survivor's points and kills this run, e.g.
+    `lbxd  1250 pts · 34 kills`, sorted by points. It's rebuilt every second, so players who leave or log off drop off.
   - **Veteran bonus**: you start each run with 500 points + 25 per wave of your best run (`pve.best`), capped at +1,000.
 - **Queue**: the first player to queue starts a 10 s countdown, and anyone who queues meanwhile joins the same run.
   If you queue during a run, you drop in at the next wave break.

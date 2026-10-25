@@ -529,7 +529,9 @@ def build():
         'scoreboard objectives add pve.pts dummy {"text":"☣ Points","color":"green","bold":true}',
         "scoreboard objectives setdisplay sidebar pvp.kills",
         "team add pve", "team modify pve color green", "team modify pve friendlyFire false", "team modify pve seeFriendlyInvisibles true",
-        "scoreboard objectives setdisplay sidebar.team.green pve.pts",
+        # the Outbreak sidebar: only players in the current run (rebuilt every second by pve/side), points and kills
+        'scoreboard objectives add pve.side dummy {"text":"☣ Outbreak","color":"green","bold":true}', "scoreboard objectives add pve.kc dummy",
+        "scoreboard objectives setdisplay sidebar.team.green pve.side",
         'bossbar add pvp:boss {"text":"Abomination","color":"dark_red"}', "bossbar set pvp:boss color red", "bossbar set pvp:boss visible false",
         *[f"gamerule {k} {v}" for k, v in rules.items()],
         f"function {NS}:ability/migrate",
@@ -1118,6 +1120,8 @@ def build_pve():
     ])
     fn("pve/second", [
         "scoreboard players set @a[tag=!pve.in] pve.k 0",
+        # sidebar: drop everyone (players who left or logged off included), then list who's in the run now
+        "scoreboard players reset * pve.side", f"execute as @a[tag=pve.in] run function {P}/side",
         # downed markers whose player is gone (left, or already back) are removed
         "tag @e[type=minecraft:armor_stand,tag=pve.body] add pve.orphan", f"execute as @a[tag=pve.down] run function {P}/body_keep",
         "kill @e[type=minecraft:armor_stand,tag=pve.orphan]",
@@ -1206,7 +1210,7 @@ def build_pve():
     fn("pve/tp_spawn", pts_spawn)
     fn("pve/enter", [   # as a queued player: into the run with their kit and 500 points
         "tag @s remove pve.q", "tag @s add pve.in", "team join pve @s",
-        "scoreboard players set @s pve.pts 500", "scoreboard players set @s pve.k 0", *PERK_RESET,
+        "scoreboard players set @s pve.pts 500", "scoreboard players set @s pve.k 0", "scoreboard players set @s pve.kc 0", *PERK_RESET,
         # veteran bonus: +VETERAN_PER_WAVE starting points per best wave, up to VETERAN_MAX
         "scoreboard players add @s pve.best 0", "scoreboard players operation #vb pve = @s pve.best", "scoreboard players operation #vb pve *= #vet pve",
         f"execute if score #vb pve matches {VETERAN_MAX + 1}.. run scoreboard players set #vb pve {VETERAN_MAX}",
@@ -1324,11 +1328,17 @@ def build_pve():
         "attributes:[{id:\"minecraft:follow_range\",base:64d},{id:\"minecraft:scale\",base:2.0d},{id:\"minecraft:max_health\",base:150d},"
         "{id:\"minecraft:attack_damage\",base:9d},{id:\"minecraft:knockback_resistance\",base:0.8d},{id:\"minecraft:movement_speed\",base:0.26d}]}",
     ])
+    fn("pve/side", ["scoreboard players operation @s pve.side = @s pve.pts",
+                    "execute store result storage pvp:side p int 1 run scoreboard players get @s pve.pts",
+                    "scoreboard players add @s pve.kc 0", "execute store result storage pvp:side k int 1 run scoreboard players get @s pve.kc",
+                    f"function {P}/side_fmt with storage pvp:side"])
+    fn("pve/side_fmt", ['$scoreboard players display numberformat @s pve.side fixed [{"text":"$(p)","color":"gold"},{"text":" pts · ","color":"gray"},'
+                        '{"text":"$(k)","color":"red"},{"text":" kills","color":"gray"}]'])
     fn("pve/points", ["scoreboard players operation #g pvp = @s pve.k", f"scoreboard players operation #g pvp *= #{MASTERY_PVE} pvp" if MASTERY_PVE != 1 else None,
                       f"function {NS}:mastery/gain",
                       "scoreboard players operation #k pve = @s pve.k", "scoreboard players operation #k pve *= #100 pve",
                       "execute if score #dp pve matches 1.. run scoreboard players operation #k pve *= #2c pve",
-                      "scoreboard players operation @s pve.pts += #k pve", "scoreboard players set @s pve.k 0",
+                      "scoreboard players operation @s pve.pts += #k pve", "scoreboard players operation @s pve.kc += @s pve.k", "scoreboard players set @s pve.k 0",
                       "execute store result score #r pve run random value 1..100",
                       f"execute if score #r pve matches ..{POWERUP_CHANCE} run function {P}/pu/drop"])
     # power-ups: dropped a few blocks in front of the killer, glowing, gone after 30 s; picked up by any survivor
