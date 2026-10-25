@@ -186,10 +186,7 @@ Every character has its own mastery XP (`pvp.mx<kit id>`): +10 per PvP kill and 
   right-click to challenge them. They get clickable **[Accept] / [Decline]** (`/trigger pvp.duela` / `pvp.dueld`), and
   the challenge expires after 30 s.
 - Accepting takes both players to a free duel pit (three small round pits at x -300, z 0 / 60 / 120;
-  `admin/build_duels`). First both players get the character menu and
-  have 20 s (`DUEL_PICK`) to lock one in; the duel starts as soon as both have, or when time runs out (anyone who
-  didn't pick fights as their last character, or a random one). The pit is held during the pick (tag `pvp.dpend`,
-  timer `pvp.dpt`); if one player leaves, the duel is cancelled with no rating change. Then 3 s of grace.
+  `admin/build_duels`). Each fights as the character they last picked, or a random one, with 3 s of grace.
 - The first to die loses. Ratings are ELO (`pvp.elo`, start 1000, K 32), with wins and losses in `pvp.dwin` /
   `pvp.dloss`, and the result is announced.
 - Leaving mid-duel (`/spawn`, disconnecting) is a forfeit. If your opponent logs out, you win by walkover with no
