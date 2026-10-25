@@ -136,13 +136,13 @@ ABILITIES = {
         "execute if entity @s[team=pve] run tag @n[type=minecraft:armor_stand,tag=pvp.nnew] add pvp.npve",
         "tag @e[type=minecraft:armor_stand,tag=pvp.nnew] remove pvp.nnew",
         snd("entity.snowball.throw", 1, 0.6), bar("FRAG OUT", "dark_green")]),
-    "chainsaw": ("Chainsaw", "red", "shears", 12, ["Saws the enemy right in front of you.", "4 blocks · 14 damage · +4 absorption hearts on a hit"], [
+    "chainsaw": ("Chainsaw", "red", "shears", 14, ["Saws the enemy right in front of you.", "4 blocks · 10 damage · +4 absorption hearts on a hit"], [
         *ray(8),
-        hit(damage(14)), hit("particle minecraft:block{block_state:\"minecraft:redstone_block\"} ~ ~1 ~ 0.3 0.5 0.3 0.2 40"),
+        hit(damage(10)), hit("particle minecraft:block{block_state:\"minecraft:redstone_block\"} ~ ~1 ~ 0.3 0.5 0.3 0.2 40"),
         "execute if entity @e[tag=pvp.hit] run effect give @s minecraft:absorption 8 1",
         snd("entity.ravager.attack", 1, 1.4), snd("block.grindstone.use", 1, 0.6), bar("RIP AND TEAR", "red")]),
-    "rip_tear": ("Berserk Rune", "dark_red", "redstone", 25, ["Goes berserk for 6 seconds.", "Strength II · Speed II · Resistance I"], [
-        "effect give @s minecraft:strength 6 1", "effect give @s minecraft:speed 6 1", "effect give @s minecraft:resistance 6 0",
+    "rip_tear": ("Berserk Rune", "dark_red", "redstone", 25, ["Goes berserk for 6 seconds.", "Strength I · Speed II · Resistance I"], [
+        "effect give @s minecraft:strength 6 0", "effect give @s minecraft:speed 6 1", "effect give @s minecraft:resistance 6 0",
         "particle minecraft:angry_villager ~ ~1 ~ 0.5 0.6 0.5 0 12",
         snd("entity.ravager.roar", 1, 0.8), bar("BERSERK", "dark_red")]),
     "igni": ("Igni", "gold", "blaze_powder", 8, ["Casts a fan of 3 fireballs.", "Sets whatever they hit on fire"], [
@@ -256,7 +256,7 @@ ABILITIES = {
         "execute anchored eyes run particle minecraft:flame ^ ^ ^2 0.6 0.4 0.6 0.05 60",
         snd("item.firecharge.use", 1, 0.6), snd("entity.blaze.burn", 1, 0.8), bar("THIS IS THE WAY", "gold")]),
     # ---------------------------------------------------------------- Angry Birds
-    "fling": ("Fling", "red", "string", 8, ["Slingshots you forward like a bird.", "Crash into enemies or land: 7 damage within 3 blocks"], [
+    "fling": ("Fling", "red", "string", 8, ["Slingshots you forward like a bird.", "Crash into enemies or land: 9 damage within 3 blocks"], [
         "tag @s add pvp.sling", "scoreboard players set @s pvp.ft 0", DASH, LAUNCH, "effect give @s minecraft:resistance 2 1 true",
         "particle minecraft:cloud ~ ~0.3 ~ 0.3 0.1 0.3 0.05 12",
         snd("item.crossbow.shoot", 1, 0.6), snd("entity.parrot.ambient", 1, 0.6), bar("FLING", "red")]),
@@ -321,9 +321,9 @@ ABILITIES = {
         around(6, "effect give @s minecraft:weakness 4 0"), "effect give @s minecraft:strength 5 0",
         "particle minecraft:item{item:\"minecraft:gold_nugget\"} ~ ~1.5 ~ 2 0.6 2 0.1 40",
         snd("entity.experience_orb.pickup", 1, 0.6), snd("block.chain.place", 1, 0.8), bar("MONEY! MONEY! MONEY!", "gold")]),
-    "served": ("You've Been Served", "yellow", "paper", 16, ["Serves papers to the enemy you aim at.", "16 blocks · 5 damage · Weakness II + glowing 5 s · you heal 4"], [
+    "served": ("You've Been Served", "yellow", "paper", 16, ["Serves papers to the enemy you aim at.", "16 blocks · 6 damage · Weakness II + glowing 5 s · you heal 4"], [
         *ray(32),
-        hit(damage(5, "magic")), hit("effect give @s minecraft:weakness 5 1"), hit("effect give @s minecraft:glowing 5 0"),
+        hit(damage(6, "magic")), hit("effect give @s minecraft:weakness 5 1"), hit("effect give @s minecraft:glowing 5 0"),
         hit("particle minecraft:item{item:\"minecraft:paper\"} ~ ~1.2 ~ 0.3 0.4 0.3 0.1 20"),
         "execute if entity @e[tag=pvp.hit] run effect give @s minecraft:instant_health 1 0",
         "execute anchored eyes run particle minecraft:item{item:\"minecraft:paper\"} ^ ^ ^2 0.1 0.1 1 0.05 12",
@@ -375,14 +375,14 @@ ABILITIES = {
         "particle minecraft:end_rod ~ ~1.6 ~ 0.3 0.3 0.3 0.02 10",
         snd("block.note_block.hat", 1, 0.6), snd("item.spyglass.use", 1, 0.8), bar("PROFESSIONALS HAVE STANDARDS", "dark_green")]),
     # ---------------------------------------------------------------- guns (hitscan; no arrows)
-    "ma5": gun("MA5 Assault Rifle", "dark_green", "netherite_hoe", 0.4, 4, 32, "UNSC standard issue.", "entity.firework_rocket.blast", 1.6),
-    "super_shotgun": shotgun("Super Shotgun", "red", "crossbow", 1.2, 10, 3.5, "Both barrels.", "entity.generic.explode", 1.6),
-    "lucky": gun("Lucky", "gold", "iron_hoe", 1.0, 8, 40, "A .357 revolver. Lucky.", "entity.firework_rocket.blast", 0.8),
-    "heavy_cannon": gun("Militech Heavy Cannon", "dark_red", "diamond_hoe", 1.0, 8, 32, "Arm-mounted heavy cannon.", "entity.generic.explode", 1.2,
+    "ma5": gun("MA5 Assault Rifle", "dark_green", "netherite_hoe", 0.4, 3, 32, "UNSC standard issue.", "entity.firework_rocket.blast", 1.6),
+    "super_shotgun": shotgun("Super Shotgun", "red", "crossbow", 1.2, 7, 3.5, "Both barrels.", "entity.generic.explode", 1.6),
+    "lucky": gun("Lucky", "gold", "iron_hoe", 1.0, 7, 40, "A .357 revolver. Lucky.", "entity.firework_rocket.blast", 0.8),
+    "heavy_cannon": gun("Militech Heavy Cannon", "dark_red", "diamond_hoe", 1.0, 6, 32, "Arm-mounted heavy cannon.", "entity.generic.explode", 1.2,
                         [("Slowness I 1 s", "effect give @s minecraft:slowness 1 0"), ("", "particle minecraft:explosion ~ ~1 ~ 0 0 0 0 1")]),
-    "guts": shotgun("Guts", "light_purple", "golden_hoe", 1.0, 9, 3, "Rebecca's oversized shotgun.", "entity.generic.explode", 1.8),
-    "pistol": gun("Pistol", "aqua", "stone_hoe", 0.35, 3, 28, "Quick sidearm.", "entity.firework_rocket.blast", 1.9),
-    "m60": gun("Trunk M60", "dark_gray", "netherite_shovel", 0.25, 3, 32, "The machine gun from the trunk.", "entity.firework_rocket.blast", 1.8),
+    "guts": shotgun("Guts", "light_purple", "golden_hoe", 0.8, 12, 3, "Rebecca's oversized shotgun.", "entity.generic.explode", 1.8),
+    "pistol": gun("Pistol", "aqua", "stone_hoe", 0.35, 4, 28, "Quick sidearm.", "entity.firework_rocket.blast", 1.9),
+    "m60": gun("Trunk M60", "dark_gray", "netherite_shovel", 0.25, 4, 32, "The machine gun from the trunk.", "entity.firework_rocket.blast", 1.8),
     "power_beam": gun("Arm Cannon", "gold", "orange_dye", 0.5, 5, 36, "Samus's Power Beam.", "block.beacon.deactivate", 2.0,
                       [("", "particle minecraft:electric_spark ~ ~1 ~ 0.2 0.4 0.2 0.3 12")]),
     "militech_handgun": gun("Militech Handgun", "yellow", "wooden_hoe", 0.6, 6, 30, "David's sidearm.", "entity.firework_rocket.blast", 1.3),
@@ -587,7 +587,7 @@ def build(fn, wj, lobby_box):
         f"execute if score @s pvp.ft matches 5.. if entity @s[nbt={{OnGround:1b}}] run return run function {NS}:ability/sling_hit",
         f"execute if score @s pvp.ft matches 60.. run return run function {NS}:ability/sling_end",
         "tag @s remove pvp.caster"])
-    fn("ability/sling_hit", [around(3, damage(7)), around(3, PUSH),
+    fn("ability/sling_hit", [around(3, damage(9)), around(3, PUSH),
                              "particle minecraft:poof ~ ~0.5 ~ 1 0.4 1 0.05 25", "particle minecraft:item{item:\"minecraft:feather\"} ~ ~1 ~ 0.6 0.5 0.6 0.1 15",
                              snd("entity.player.attack.knockback", 1, 0.6), snd("entity.parrot.hurt", 1, 0.8),
                              f"function {NS}:ability/sling_end"])

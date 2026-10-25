@@ -159,32 +159,32 @@ def ab_line(*keys): return " · ".join(abilities.ABILITIES[k][0] for k in keys)
 
 # Franchise kits: Star Wars, video games, Smash Bros. Two right-click ability items each (abilities.py); no cyberware.
 FRANCHISE_KITS = [
-    (11, "jedi", "Jedi Knight", "aqua", "breeze_rod", ["Lightsaber: Sharpness V, Double Strike II · robes: Dodge II", ab_line("force_push", "mind_trick")],
-     [f"give @s {item('netherite_sword', 'Lightsaber', 'aqua', {'sharpness': 5, CE + 'doublestrike': 2}, model('breeze_rod'))}", AB("force_push"), AB("mind_trick")]
-     + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "diamond"}, 4, dye=9137994,
+    (11, "jedi", "Jedi Knight", "aqua", "breeze_rod", ["Lightsaber: Sharpness III, Double Strike II · robes: Dodge II", ab_line("force_push", "mind_trick")],
+     [f"give @s {item('diamond_sword', 'Lightsaber', 'aqua', {'sharpness': 3, CE + 'doublestrike': 2}, model('breeze_rod'))}", AB("force_push"), AB("mind_trick")]
+     + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "iron"}, 4, dye=9137994,
             extra={"chest": {CE + "dodge": 2}, "feet": {"feather_falling": 4}})
      + head("jedi", "Jedi Knight", "aqua") + passive("jump_boost", 1), []),
-    (12, "sith", "Sith Lord", "dark_red", "blaze_rod", ["Red lightsaber: Sharpness V, Demonic Lifesteal III, Paralyze II", ab_line("force_lightning", "force_choke")],
-     [f"give @s {item('netherite_sword', 'Sith Lightsaber', 'red', {'sharpness': 5, 'fire_aspect': 1, CE + 'demoniclifesteal': 3, CE + 'paralyze': 2}, model('blaze_rod'))}",
+    (12, "sith", "Sith Lord", "dark_red", "blaze_rod", ["Red lightsaber: Sharpness III, Demonic Lifesteal III, Paralyze II", ab_line("force_lightning", "force_choke")],
+     [f"give @s {item('diamond_sword', 'Sith Lightsaber', 'red', {'sharpness': 3, 'fire_aspect': 1, CE + 'demoniclifesteal': 3, CE + 'paralyze': 2}, model('blaze_rod'))}",
       AB("force_lightning"), AB("force_choke")]
      + suit({"head": "netherite", "chest": "leather", "legs": "leather", "feet": "netherite"}, 4, dye=1908001) + head("sith", "Sith Lord", "dark_red"), []),
     (13, "link", "Hero of Hyrule", "green", "shield", ["Master Sword (Blessed III), Hylian Shield, bow (Eagle Eye III)", ab_line("spin_attack", "hookshot")],
-     [f"give @s {item('diamond_sword', 'Master Sword', 'aqua', {'sharpness': 4, 'smite': 3, CE + 'blessed': 3})}", AB("spin_attack"), AB("hookshot"),
+     [f"give @s {item('diamond_sword', 'Master Sword', 'aqua', {'sharpness': 3, 'smite': 3, CE + 'blessed': 3})}", AB("spin_attack"), AB("hookshot"),
       f"give @s {item('bow', 'Hero Bow', 'green', {'power': 4, 'infinity': 1, CE + 'eagleeye': 3})}", "give @s minecraft:arrow 1",
       f"item replace entity @s weapon.offhand with {item('shield', 'Hylian Shield', 'blue')}"]
-     + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "iron"}, 4, dye=4237864, extra={"feet": {CE + "springs": 2}})
+     + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "iron"}, 3, dye=4237864, extra={"feet": {CE + "springs": 2}})
      + head("link", "Hero of Hyrule", "green"), []),
-    (14, "spartan", "Spartan", "dark_green", "turtle_helmet", ["MA5 Assault Rifle + energy sword · MJOLNIR armor (Armored III) · tall", ab_line("ma5", "frag_grenade") + " · energy shield recharges"],
+    (14, "spartan", "Spartan", "dark_green", "turtle_helmet", ["MA5 Assault Rifle + energy sword · MJOLNIR armor · tall", ab_line("ma5", "frag_grenade") + " · energy shield recharges"],
      [AB("ma5"), AB("frag_grenade"), f"give @s {item('diamond_sword', 'Energy Sword', 'aqua', {'sharpness': 3})}"]
-     + suit("netherite", 2, trim=("emerald", "sentry"), extra={"chest": {CE + "armored": 3}}) + head("spartan", "Master Chief", "dark_green") + size(1.1), []),
-    (15, "doom", "Doom Slayer", "red", "netherite_axe", ["Super Shotgun + Crucible (Bleed IV, Rage III) · Praetor Suit (Tank II)", ab_line("super_shotgun", "chainsaw", "rip_tear") + " · kills heal"],
+     + suit({"head": "netherite", "chest": "netherite", "legs": "iron", "feet": "iron"}, 1, trim=("emerald", "sentry")) + head("spartan", "Master Chief", "dark_green") + size(1.1), []),
+    (15, "doom", "Doom Slayer", "red", "netherite_axe", ["Super Shotgun + Crucible (Bleed IV, Rage III) · Praetor Suit", ab_line("super_shotgun", "chainsaw", "rip_tear") + " · kills heal"],
      [AB("super_shotgun"), AB("chainsaw"), AB("rip_tear"),
-      f"give @s {item('netherite_sword', 'Crucible', 'dark_red', {'sharpness': 4, 'fire_aspect': 1, CE + 'bleed': 4, CE + 'rage': 3})}"]
-     + suit("netherite", 3, trim=("emerald", "ward"), extra={"legs": {CE + "tank": 2}}) + head("doom", "Doom Slayer", "red"), []),
+      f"give @s {item('diamond_sword', 'Crucible', 'dark_red', {'sharpness': 2, 'fire_aspect': 1, CE + 'bleed': 4, CE + 'rage': 3})}"]
+     + suit({"head": "netherite", "chest": "netherite", "legs": "iron", "feet": "iron"}, 1, trim=("emerald", "ward")) + head("doom", "Doom Slayer", "red"), []),
     (16, "witcher", "Witcher", "gray", "iron_sword", ["Steel sword (Cleave III, Bleed III) + silver sword (Smite V), 2 Swallow potions", ab_line("igni", "quen")],
-     [f"give @s {item('diamond_sword', 'Steel Sword', 'gray', {'sharpness': 5, CE + 'cleave': 3, CE + 'bleed': 3})}", AB("igni"), AB("quen"),
+     [f"give @s {item('diamond_sword', 'Steel Sword', 'gray', {'sharpness': 3, CE + 'cleave': 3, CE + 'bleed': 3})}", AB("igni"), AB("quen"),
       f"give @s {item('golden_sword', 'Silver Sword', 'white', {'smite': 5, 'sharpness': 2})}", potion("potion", "strong_regeneration", 2)]
-     + suit("chainmail", 4, extra={"chest": {CE + "dodge": 2}}) + head("witcher", "Geralt of Rivia", "gray"), []),
+     + suit("chainmail", 2, extra={"chest": {CE + "dodge": 2}}) + head("witcher", "Geralt of Rivia", "gray"), []),
     (17, "mario", "Mario", "red", "red_mushroom", ["Hammer (Pummel II) · Springs III boots · Resistance I · short", ab_line("fireball", "super_jump")],
      [f"give @s {item('mace', 'Hammer', 'red', {'density': 2, 'breach': 1, CE + 'pummel': 2})}", AB("fireball"), AB("super_jump")]
      + suit("leather", 4, dye={"head": 13184550, "chest": 13184550, "legs": 3949738, "feet": 8606770}, extra={"feet": {CE + "springs": 3}})
@@ -202,12 +202,12 @@ FRANCHISE_KITS = [
     (21, "randy", "Randy Marsh", "white", "fern", ["No weapon: fists hit for +7 (sword speed) · Sandevistan cyberware", ab_line("tegridy", "wassup_bruh") + " · Sandevistan (double-tap sneak)"],
      [AB("tegridy"), AB("wassup_bruh"), "attribute @s minecraft:attack_damage modifier add pvp:fists 7 add_value",
       "attribute @s minecraft:attack_speed modifier add pvp:fists -2.4 add_value"]
-     + suit("leather", 3, dye={"head": 4007438, "chest": 9226476, "legs": 3949738, "feet": 6045219}) + head("randy", "Randy Marsh", "white"), ["sandy"]),
+     + suit("leather", 4, dye={"head": 4007438, "chest": 9226476, "legs": 3949738, "feet": 6045219}) + head("randy", "Randy Marsh", "white"), ["sandy"]),
     (22, "courier", "Courier Six", "gold", "spyglass", ["Lucky (revolver) + machete (Bleed II) · Ranger armor", ab_line("lucky", "vats", "stimpak")],
      [AB("lucky"), AB("vats"), AB("stimpak"), f"give @s {item('iron_sword', 'Machete', 'gray', {'sharpness': 4, CE + 'bleed': 2})}"]
-     + suit({"head": "iron", "chest": "leather", "legs": "iron", "feet": "iron"}, 4, dye=6045219) + head("courier", "Courier Six", "gold"), []),
+     + suit({"head": "iron", "chest": "leather", "legs": "iron", "feet": "iron"}, 2, dye=6045219) + head("courier", "Courier Six", "gold"), []),
     (24, "sonic", "Sonic", "blue", "lapis_lazuli", ["Chaos Emerald blade · Springs II + Gears II shoes · Speed II · small", ab_line("spin_dash", "homing_attack")],
-     [f"give @s {item('iron_sword', 'Chaos Emerald', 'green', {'sharpness': 4}, model('emerald'))}", AB("spin_dash"), AB("homing_attack")]
+     [f"give @s {item('iron_sword', 'Chaos Emerald', 'green', {'sharpness': 5}, model('emerald'))}", AB("spin_dash"), AB("homing_attack")]
      + suit("leather", 4, dye={"head": 2068440, "chest": 2068440, "legs": 2068440, "feet": 13184550},
             extra={"chest": {CE + "dodge": 2}, "feet": {CE + "springs": 2, CE + "gears": 2}})
      + head("sonic", "Sonic", "blue") + passive("speed", 1) + size(0.8), []),
@@ -218,22 +218,22 @@ FRANCHISE_KITS = [
      [f"give @s {item('diamond_sword', 'Herobrine', 'white', {'sharpness': 5, 'fire_aspect': 1})}", AB("smite"), AB("haunt")]
      + suit("leather", 4, dye={"head": 43690, "chest": 43690, "legs": 3355562, "feet": 5592405}) + head("herobrine", "Herobrine", "white")
      + passive("night_vision"), []),
-    (28, "dk", "Donkey Kong", "gold", "cocoa_beans", ["No weapon: fists hit for +8 (axe speed) · Tank II · big", ab_line("giant_punch", "ground_pound")],
-     [AB("giant_punch"), AB("ground_pound"), "attribute @s minecraft:attack_damage modifier add pvp:fists 8 add_value",
+    (28, "dk", "Donkey Kong", "gold", "cocoa_beans", ["No weapon: fists hit for +9 (axe speed) · Tank II · big", ab_line("giant_punch", "ground_pound")],
+     [AB("giant_punch"), AB("ground_pound"), "attribute @s minecraft:attack_damage modifier add pvp:fists 9 add_value",
       "attribute @s minecraft:attack_speed modifier add pvp:fists -2.8 add_value"]
-     + suit("leather", 3, dye={"head": 6045219, "chest": 13184550, "legs": 6045219, "feet": 6045219}, extra={"legs": {CE + "tank": 2}})
+     + suit("leather", 4, dye={"head": 6045219, "chest": 13184550, "legs": 6045219, "feet": 6045219}, extra={"legs": {CE + "tank": 2}})
      + head("dk", "Donkey Kong", "gold") + size(1.25), []),
-    (29, "mando", "Mandalorian", "gray", "firework_rocket", ["Amban Rifle + Darksaber · Beskar armor (Armored III)", ab_line("amban", "jetpack", "flamethrower")],
-     [AB("amban"), AB("jetpack"), AB("flamethrower"), f"give @s {item('netherite_sword', 'Darksaber', 'dark_gray', {'sharpness': 5})}"]
-     + suit("iron", 4, trim=("quartz", "sentry"), extra={"chest": {CE + "armored": 3}, "feet": {"feather_falling": 4}})
+    (29, "mando", "Mandalorian", "gray", "firework_rocket", ["Amban Rifle + Darksaber · Beskar armor", ab_line("amban", "jetpack", "flamethrower")],
+     [AB("amban"), AB("jetpack"), AB("flamethrower"), f"give @s {item('netherite_sword', 'Darksaber', 'dark_gray', {'sharpness': 3})}"]
+     + suit("iron", 3, trim=("quartz", "sentry"), extra={"feet": {"feather_falling": 4}})
      + head("mando", "Din Djarin", "gray"), []),
-    (30, "red", "Red", "red", "red_dye", ["Slingshot bow (Punch II) · beak: fists +5 (sword speed) · Jump Boost I · small", ab_line("fling", "battle_cry")],
-     [f"give @s {item('bow', 'Slingshot', 'red', {'power': 4, 'punch': 2, 'infinity': 1})}", AB("fling"), AB("battle_cry"), "give @s minecraft:arrow 1",
-      "attribute @s minecraft:attack_damage modifier add pvp:fists 5 add_value", "attribute @s minecraft:attack_speed modifier add pvp:fists -2.4 add_value"]
+    (30, "red", "Red", "red", "red_dye", ["Slingshot bow (Power V, Punch II) · beak: fists +8 (sword speed) · Jump Boost I · small", ab_line("fling", "battle_cry")],
+     [f"give @s {item('bow', 'Slingshot', 'red', {'power': 5, 'punch': 2, 'infinity': 1})}", AB("fling"), AB("battle_cry"), "give @s minecraft:arrow 1",
+      "attribute @s minecraft:attack_damage modifier add pvp:fists 8 add_value", "attribute @s minecraft:attack_speed modifier add pvp:fists -2.4 add_value"]
      + suit("leather", 4, dye={"head": 12986408, "chest": 12986408, "legs": 16247203, "feet": 12986408}, extra={"feet": {"feather_falling": 4}})
      + head("red", "Red", "red") + passive("jump_boost") + size(0.7), []),
-    (31, "spiderman", "Spider-Man", "red", "cobweb", ["No weapon: fists +6 (sword speed) · Dodge III · Springs II · Jump Boost II", ab_line("web_shot", "web_swing")],
-     [AB("web_shot"), AB("web_swing"), "attribute @s minecraft:attack_damage modifier add pvp:fists 6 add_value", "attribute @s minecraft:attack_speed modifier add pvp:fists -2.4 add_value"]
+    (31, "spiderman", "Spider-Man", "red", "cobweb", ["No weapon: fists +7 (sword speed) · Dodge III · Springs II · Jump Boost II", ab_line("web_shot", "web_swing")],
+     [AB("web_shot"), AB("web_swing"), "attribute @s minecraft:attack_damage modifier add pvp:fists 7 add_value", "attribute @s minecraft:attack_speed modifier add pvp:fists -2.4 add_value"]
      + suit("leather", 4, dye={"head": 13184550, "chest": 13184550, "legs": 2068440, "feet": 13184550},
             extra={"chest": {CE + "dodge": 3}, "feet": {CE + "springs": 2, "feather_falling": 4}})
      + head("spiderman", "Spider-Man", "red") + passive("jump_boost", 1), []),
@@ -249,8 +249,8 @@ FRANCHISE_KITS = [
      [f"give @s {item('iron_sword', 'Plutonium Rod', 'green', {'sharpness': 4, CE + 'poison': 2}, model('end_rod'))}", AB("donut"), AB("belly_bump")]
      + suit("leather", 3, dye={"head": 16777215, "chest": 16777215, "legs": 2068440, "feet": 5592405})
      + head("homer", "Homer Simpson", "yellow") + passive("health_boost") + ["effect give @s minecraft:instant_health 1 1 true"] + size(1.1), []),
-    (35, "maul", "Darth Maul", "dark_red", "redstone_torch", ["Double-bladed saber: Sharpness V, Double Strike III, Sweeping III · Speed I", ab_line("saber_throw", "saber_spin")],
-     [f"give @s {item('netherite_sword', 'Double-Bladed Lightsaber', 'red', {'sharpness': 5, 'sweeping_edge': 3, CE + 'doublestrike': 3}, model('blaze_rod'))}",
+    (35, "maul", "Darth Maul", "dark_red", "redstone_torch", ["Double-bladed saber: Sharpness III, Double Strike III, Sweeping III · Speed I", ab_line("saber_throw", "saber_spin")],
+     [f"give @s {item('diamond_sword', 'Double-Bladed Lightsaber', 'red', {'sharpness': 3, 'sweeping_edge': 3, CE + 'doublestrike': 3}, model('blaze_rod'))}",
       AB("saber_throw"), AB("saber_spin")]
      + suit("leather", 4, dye=1908001, extra={"chest": {CE + "dodge": 2}, "feet": {CE + "springs": 1}})
      + head("maul", "Darth Maul", "dark_red") + passive("speed"), []),
@@ -259,34 +259,34 @@ FRANCHISE_KITS = [
       "attribute @s minecraft:attack_speed modifier add pvp:fists -2.4 add_value"]
      + suit("leather", 4, dye={"head": 13184550, "chest": 6134752, "legs": 9127187, "feet": 1908001}, extra={"chest": {CE + "armored": 2}})
      + head("krabs", "Mr. Krabs", "red") + size(0.9), []),
-    (37, "saul", "Saul Goodman", "yellow", "paper", ["Gavel (mace: Density II) · loud suit (Dodge II) · Speed I", ab_line("served", "loophole", "fingertips")],
-     [f"give @s {item('mace', 'Gavel', 'gold', {'density': 2, 'breach': 1})}", AB("served"), AB("loophole"), AB("fingertips")]
-     + suit("leather", 3, dye={"head": 14329120, "chest": 14329120, "legs": 14329120, "feet": 1908001}, extra={"chest": {CE + "dodge": 2}})
+    (37, "saul", "Saul Goodman", "yellow", "paper", ["Gavel (mace: Density III) · loud suit (Dodge II), Springs II shoes · Speed I", ab_line("served", "loophole", "fingertips")],
+     [f"give @s {item('mace', 'Gavel', 'gold', {'density': 3, 'breach': 1})}", AB("served"), AB("loophole"), AB("fingertips")]
+     + suit("leather", 4, dye={"head": 14329120, "chest": 14329120, "legs": 14329120, "feet": 1908001}, extra={"chest": {CE + "dodge": 2}, "feet": {CE + "springs": 2}})
      + head("saul", "Saul Goodman", "yellow") + passive("speed"), []),
     (38, "hank", "Hank Hill", "aqua", "lantern", ["Grill spatula (Sharpness IV, Fire Aspect) · white tee, jeans · Fire Resistance", ab_line("propane", "kick_your_ass")],
-     [f"give @s {item('iron_shovel', 'Grill Spatula', 'aqua', {'sharpness': 4, 'fire_aspect': 1})}", AB("propane"), AB("kick_your_ass")]
+     [f"give @s {item('iron_sword', 'Grill Spatula', 'aqua', {'sharpness': 4, 'fire_aspect': 1}, model('iron_shovel'))}", AB("propane"), AB("kick_your_ass")]
      + suit("leather", 4, dye={"head": 16777215, "chest": 16777215, "legs": 3949738, "feet": 6045219}, extra={"chest": {CE + "explosiveimmunity": 3}})
      + head("hank", "Hank Hill", "aqua") + passive("fire_resistance"), []),
-    (39, "leela", "Leela", "light_purple", "rabbit_foot", ["No weapon: martial arts, fists +6 (sword speed) · Dodge II · Speed I", ab_line("leela_kick", "laser_pistol")],
-     [AB("leela_kick"), AB("laser_pistol"), "attribute @s minecraft:attack_damage modifier add pvp:fists 6 add_value",
+    (39, "leela", "Leela", "light_purple", "rabbit_foot", ["No weapon: martial arts, fists +7 (sword speed) · Dodge II · Speed I", ab_line("leela_kick", "laser_pistol")],
+     [AB("leela_kick"), AB("laser_pistol"), "attribute @s minecraft:attack_damage modifier add pvp:fists 7 add_value",
       "attribute @s minecraft:attack_speed modifier add pvp:fists -2.4 add_value"]
      + suit("leather", 4, dye={"head": 16777215, "chest": 16777215, "legs": 1908001, "feet": 1908001}, extra={"chest": {CE + "dodge": 2}, "feet": {CE + "springs": 1}})
      + head("leela", "Leela", "light_purple") + passive("speed"), []),
-    (40, "elliot", "Elliot", "dark_gray", "command_block", ["Pocketknife (Sharpness IV, Poison I) · black hoodie (Dodge II) · Night Vision", ab_line("blackout", "mr_robot")],
-     [f"give @s {item('iron_sword', 'Pocketknife', 'gray', {'sharpness': 4, CE + 'poison': 1})}", AB("blackout"), AB("mr_robot")]
+    (40, "elliot", "Elliot", "dark_gray", "command_block", ["Pocketknife (Sharpness III, Poison I) · black hoodie (Dodge II) · Night Vision", ab_line("blackout", "mr_robot")],
+     [f"give @s {item('iron_sword', 'Pocketknife', 'gray', {'sharpness': 3, CE + 'poison': 1})}", AB("blackout"), AB("mr_robot")]
      + suit("leather", 4, dye={"head": 1908001, "chest": 1908001, "legs": 3355443, "feet": 5592405}, extra={"chest": {CE + "dodge": 2}})
      + head("elliot", "Elliot Alderson", "dark_gray") + passive("night_vision"), []),
-    (41, "tony", "Tony Soprano", "dark_red", "flint", ["Baseball Bat (Sharpness IV, Knockback I) · bathrobe · Health Boost I · a bit big", ab_line("gabagool", "whack")],
+    (41, "tony", "Tony Soprano", "dark_red", "flint", ["Baseball Bat (Sharpness IV, Knockback I) · bathrobe · a bit big", ab_line("gabagool", "whack")],
      [f"give @s {item('iron_sword', 'Baseball Bat', 'dark_red', {'sharpness': 4, 'knockback': 1}, model('stick'))}", AB("gabagool"), AB("whack")]
      + suit("leather", 4, dye={"head": 15790320, "chest": 15790320, "legs": 15790320, "feet": 6045219})
-     + head("tony", "Tony Soprano", "dark_red") + passive("health_boost") + ["effect give @s minecraft:instant_health 1 1 true"] + size(1.1), []),
+     + head("tony", "Tony Soprano", "dark_red") + size(1.1), []),
     (42, "spongebob", "SpongeBob", "yellow", "bread", ["Golden Spatula (Sharpness IV, Knockback II) · Springs II · Jump Boost I · small", ab_line("krabby_patty", "bubble_blower")],
-     [f"give @s {item('golden_shovel', 'Golden Spatula', 'gold', {'sharpness': 4, 'knockback': 2})}", AB("krabby_patty"), AB("bubble_blower")]
+     [f"give @s {item('iron_sword', 'Golden Spatula', 'gold', {'sharpness': 4, 'knockback': 2}, model('golden_shovel'))}", AB("krabby_patty"), AB("bubble_blower")]
      + suit("leather", 4, dye={"head": 16701501, "chest": 16777215, "legs": 9127187, "feet": 1908001}, extra={"chest": {CE + "dodge": 2}, "feet": {CE + "springs": 2}})
      + head("spongebob", "SpongeBob", "yellow") + passive("jump_boost") + size(0.8), []),
-    (43, "bender", "Bender", "gray", "iron_ingot", ["Bent Girder (axe: Sharpness IV, Cleave II) · metal body (iron Prot IV, Armored II) · Fire Resistance", ab_line("shiny_metal", "olde_fortran")],
+    (43, "bender", "Bender", "gray", "iron_ingot", ["Bent Girder (axe: Sharpness IV, Cleave II) · metal body (iron Prot III, Armored II) · Fire Resistance", ab_line("shiny_metal", "olde_fortran")],
      [f"give @s {item('iron_axe', 'Bent Girder', 'gray', {'sharpness': 4, CE + 'cleave': 2})}", AB("shiny_metal"), AB("olde_fortran")]
-     + suit("iron", 4, extra={"chest": {CE + "armored": 2}}) + head("bender", "Bender", "gray") + passive("fire_resistance"), []),
+     + suit("iron", 3, extra={"chest": {CE + "armored": 2}}) + head("bender", "Bender", "gray") + passive("fire_resistance"), []),
 ]
 FOOD = ["give @s minecraft:cooked_beef 16", "give @s minecraft:golden_apple 2"]
 # id, key, name, colour, menu icon, blurb lines, item commands, implants (one per body slot)
@@ -307,11 +307,11 @@ KITS = [
      [f"give @s {item('diamond_sword', 'Monowire', 'light_purple', {'sharpness': 4, CE + 'assassin': 3, CE + 'poison': 2})}", AB("short_circuit"), AB("optical_camo")]
      + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "diamond"}, 3, dye=15790320, extra={"chest": {CE + "dodge": 2}})
      + head("lucy", "Lucy", "light_purple"), ["lynx", "reflex", "kiroshi"]),
-    (23, "smasher", "Adam Smasher", "dark_red", "netherite_chestplate", ["Militech Heavy Cannon + Borg Slam + Arasaka axe (Cleave III) · full-borg frame (Armored III) · huge",
-     "Cyberware: Projectile Launcher, Sandevistan, Subdermal Armor, Titanium Bones"],
-     [AB("heavy_cannon"), AB("borg_slam"), f"give @s {item('netherite_axe', 'Arasaka Breaker', 'red', {'sharpness': 4, CE + 'cleave': 3})}"]
-     + suit("netherite", 3, trim=("redstone", "rib"), extra={"chest": {CE + "armored": 3, CE + "explosiveimmunity": 3}})
-     + head("smasher", "Adam Smasher", "dark_red") + size(1.3), ["launcher", "sandy", "subdermal", "titanium"]),
+    (23, "smasher", "Adam Smasher", "dark_red", "netherite_chestplate", ["Militech Heavy Cannon + Borg Slam + Arasaka axe (Cleave III) · full-borg frame · huge",
+     "Cyberware: Projectile Launcher, Sandevistan"],
+     [AB("heavy_cannon"), AB("borg_slam"), f"give @s {item('netherite_axe', 'Arasaka Breaker', 'red', {'sharpness': 1, CE + 'cleave': 3})}"]
+     + suit({"head": "netherite", "chest": "netherite", "legs": "netherite", "feet": "iron"}, 1, trim=("redstone", "rib"), extra={"chest": {CE + "explosiveimmunity": 3}})
+     + head("smasher", "Adam Smasher", "dark_red") + size(1.3), ["launcher", "sandy"]),
     (27, "rebecca", "Rebecca", "light_purple", "crossbow", ["Guts (shotgun) + Pistol · Dodge II · tiny",
      "Cyberware: Gorilla Arms, Reinforced Tendons, Reflex Tuner, Kiroshi"],
      [AB("guts"), AB("pistol")]
