@@ -905,12 +905,12 @@ def build_duels():
                              {"selector": "@a[tag=pvp.db]", "color": "yellow"}, {"text": " are dueling!", "color": "gold"}]),
            "tag @a remove pvp.da", "tag @a remove pvp.db"]
     fn("duel/start", st)
-    # prep: as each dueler, a kit (their last character, or a random one), 3 s of grace
+    # prep: as each dueler, a random character (so nobody can bring their best one), 3 s of grace
     kit_ids = [k[0] for k in KITS]
     fn("duel/prep", [elo_init, "tag @s add pvp.duel", "tag @s remove pve.q", "clear @s", "effect clear @s", "function cyber:admin/reset", *PERK_RESET,
                      "gamemode adventure @s",
-                     f"execute unless score @s pvp.cur matches 1.. store result score #r pvp run random value 1..{len(kit_ids)}",
-                     *[f"execute unless score @s pvp.cur matches 1.. if score #r pvp matches {i} run scoreboard players set @s pvp.cur {kid}" for i, kid in enumerate(kit_ids, 1)],
+                     f"execute store result score #r pvp run random value 1..{len(kit_ids)}",
+                     *[f"execute if score #r pvp matches {i} run scoreboard players set @s pvp.cur {kid}" for i, kid in enumerate(kit_ids, 1)],
                      *[f"execute if score @s pvp.cur matches {k[0]} run function {NS}:kit/{k[1]}" for k in KITS],
                      "effect give @s minecraft:resistance 3 4 true", "effect give @s minecraft:weakness 3 255 true",
                      "scoreboard players set @s pvp.ct 0", "scoreboard players set @s pvp.streak 0",
