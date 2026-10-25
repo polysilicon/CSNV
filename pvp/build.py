@@ -227,8 +227,8 @@ FRANCHISE_KITS = [
      [AB("amban"), AB("jetpack"), AB("flamethrower"), f"give @s {item('netherite_sword', 'Darksaber', 'dark_gray', {'sharpness': 3})}"]
      + suit("iron", 3, trim=("quartz", "sentry"), extra={"feet": {"feather_falling": 4}})
      + head("mando", "Din Djarin", "gray"), []),
-    (30, "red", "Red", "red", "red_dye", ["Slingshot bow (Power V, Punch II) · beak: fists +8 (sword speed) · Jump Boost I · small", ab_line("fling", "battle_cry")],
-     [f"give @s {item('bow', 'Slingshot', 'red', {'power': 5, 'punch': 2, 'infinity': 1})}", AB("fling"), AB("battle_cry"), "give @s minecraft:arrow 1",
+    (30, "red", "Red", "red", "red_dye", ["Slingshot bow (Power IV, Punch II) · beak: fists +8 (sword speed) · Jump Boost I · small", ab_line("fling", "battle_cry")],
+     [f"give @s {item('bow', 'Slingshot', 'red', {'power': 4, 'punch': 2, 'infinity': 1})}", AB("fling"), AB("battle_cry"), "give @s minecraft:arrow 1",
       "attribute @s minecraft:attack_damage modifier add pvp:fists 8 add_value", "attribute @s minecraft:attack_speed modifier add pvp:fists -2.4 add_value"]
      + suit("leather", 4, dye={"head": 12986408, "chest": 12986408, "legs": 16247203, "feet": 12986408}, extra={"feet": {"feather_falling": 4}})
      + head("red", "Red", "red") + passive("jump_boost") + size(0.7), []),
@@ -249,8 +249,8 @@ FRANCHISE_KITS = [
      [f"give @s {item('iron_sword', 'Plutonium Rod', 'green', {'sharpness': 4, CE + 'poison': 2}, model('end_rod'))}", AB("donut"), AB("belly_bump")]
      + suit("leather", 3, dye={"head": 16777215, "chest": 16777215, "legs": 2068440, "feet": 5592405})
      + head("homer", "Homer Simpson", "yellow") + passive("health_boost") + ["effect give @s minecraft:instant_health 1 1 true"] + size(1.1), []),
-    (35, "maul", "Darth Maul", "dark_red", "redstone_torch", ["Double-bladed saber: Sharpness III, Double Strike III, Sweeping III · Speed I", ab_line("saber_throw", "saber_spin")],
-     [f"give @s {item('diamond_sword', 'Double-Bladed Lightsaber', 'red', {'sharpness': 3, 'sweeping_edge': 3, CE + 'doublestrike': 3}, model('blaze_rod'))}",
+    (35, "maul", "Darth Maul", "dark_red", "redstone_torch", ["Double-bladed saber: Sharpness III, Double Strike II, Sweeping III · Speed I", ab_line("saber_throw", "saber_spin")],
+     [f"give @s {item('diamond_sword', 'Double-Bladed Lightsaber', 'red', {'sharpness': 3, 'sweeping_edge': 3, CE + 'doublestrike': 2}, model('blaze_rod'))}",
       AB("saber_throw"), AB("saber_spin")]
      + suit("leather", 4, dye=1908001, extra={"chest": {CE + "dodge": 2}, "feet": {CE + "springs": 1}})
      + head("maul", "Darth Maul", "dark_red") + passive("speed"), []),
@@ -298,8 +298,8 @@ KITS = [
      + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "diamond"}, 4,
             dye={"head": 1908001, "chest": 15909166, "legs": 1908001}, extra={"chest": {CE + "dodge": 2}})
      + head("edgerunner", "David Martinez", "yellow"), ["sandy", "kiroshi", "reflex", "tendons"]),
-    (3, "sniper", "Sniper", "dark_red", "bow", ["Sniper Rifle (bow: Power V, Lethal Sniper III, Lightning Arrows II) + Kukri · Night Vision", ab_line("jarate", "focus")],
-     [f"give @s {item('bow', 'Sniper Rifle', 'dark_red', {'power': 5, 'infinity': 1, CE + 'lethalsniper': 3, CE + 'lightningarrows': 2})}",
+    (3, "sniper", "Sniper", "dark_red", "bow", ["Sniper Rifle (bow: Power III, Lethal Sniper II) + Kukri · Night Vision", ab_line("jarate", "focus")],
+     [f"give @s {item('bow', 'Sniper Rifle', 'dark_red', {'power': 3, 'infinity': 1, CE + 'lethalsniper': 2})}",
       AB("jarate"), AB("focus"), f"give @s {item('iron_sword', 'Kukri', 'gray', {'sharpness': 3, CE + 'bleed': 1})}", "give @s minecraft:arrow 1"]
      + suit({"head": "leather", "chest": "leather", "legs": "leather", "feet": "diamond"}, 3, dye={"head": 6045219, "chest": 11141120, "legs": 6045219})
      + head("sniper", "Sniper", "dark_red") + passive("night_vision"), []),
@@ -532,7 +532,7 @@ def build():
             "pvp dummy", "pvp.kit trigger", "pvp.spawn trigger", "pvp.kn playerKillCount", "pvp.dead deathCount",
             "pvp.left minecraft.custom:minecraft.leave_game", "pvp.streak dummy", "pvp.best dummy",
             "pvp.hurt minecraft.custom:minecraft.damage_taken", "pvp.ct dummy",
-            "pvp.cur dummy", "pvp.mastery trigger", "pvp.mastered dummy",
+            "pvp.cur dummy", "pvp.mastery trigger", "pvp.mastered dummy", "pvp.kk dummy", "pvp.kd dummy",
             "pvp.elo dummy", "pvp.dwin dummy", "pvp.dloss dummy", "pvp.dfrom dummy", "pvp.dtm dummy", "pvp.dpit dummy",
             "pvp.duela trigger", "pvp.dueld trigger", "pvp.duelstats trigger", *[f"pvp.mx{k[0]} dummy" for k in KITS],
             "pve dummy", "pve.join trigger", "pve.buy trigger", "pve.k totalKillCount", "pve.kit dummy", "pve.best dummy", "pve.arm dummy", "pve.gun dummy", "pve.map dummy", "pve.rv dummy", "pve.wb dummy"]],
@@ -617,6 +617,7 @@ def build():
     fn("respawned", [
         "scoreboard players set @s pvp.dead 0",
         f"execute if entity @s[tag=pve.in] run return run function {NS}:pve/downed",
+        *[f"execute if score @s pvp.cur matches {k[0]} run scoreboard players add #{k[1]} pvp.kd 1" for k in KITS],   # deaths per character
         f"execute if entity @s[tag=pvp.duel] run return run function {NS}:duel/lose",
         "execute if score @s pvp.streak matches 3.. run tellraw @a [{\"selector\":\"@s\",\"color\":\"yellow\"},{\"text\":\"'s \",\"color\":\"gray\"},"
         "{\"score\":{\"name\":\"@s\",\"objective\":\"pvp.streak\"},\"color\":\"gold\"},{\"text\":\" kill streak was ended.\",\"color\":\"gray\"}]",
@@ -624,6 +625,7 @@ def build():
         f"function {NS}:to_lobby",
     ])
     fn("killed", [
+        *[f"execute if score @s pvp.cur matches {k[0]} run scoreboard players add #{k[1]} pvp.kk 1" for k in KITS],   # kills per character
         f"scoreboard players set #g pvp {MASTERY_PVP}", f"function {NS}:mastery/gain",
         "scoreboard players add @s pvp.streak 1", "scoreboard players set @s pvp.kn 0", "scoreboard players add @s pvp.best 0",
         "execute if score @s pvp.streak > @s pvp.best run scoreboard players operation @s pvp.best = @s pvp.streak",

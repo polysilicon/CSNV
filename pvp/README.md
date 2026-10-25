@@ -142,15 +142,15 @@ Bows stay bows: Link's Hero Bow, Red's Slingshot and the Sniper's Sniper Rifle.
 | Herobrine (Minecraft) | Diamond sword (Sharpness V, Fire Aspect), Steve-coloured leather, Night Vision | **Smite** (24 blocks: 7 lightning dmg + Blindness 2 s, 10 s), **Haunt** (teleport behind the nearest enemy within 16 blocks, blinds them, you go invisible 2 s, 12 s) |
 | Donkey Kong | No weapon: fists +9 damage at axe speed; brown leather (Prot IV) with a red tie, Tank II, 1.25× | **Giant Punch** (4 blocks: 12 dmg, launches, 9 s), **Ground Pound** (5 blocks: 6 dmg, Slowness III 2 s, pops them up, 10 s) |
 | Mandalorian | Amban Rifle (gun ability), Darksaber (Sharpness III), Beskar (iron Prot III, quartz trim), Din Djarin head | **Jetpack** (launch + Slow Falling 6 s, 9 s), **Flamethrower** (4 blocks: 5 fire dmg + 3 fireballs, 9 s) |
-| Red (Angry Birds) | Slingshot (bow: Power V, Punch II, Infinity), beak: fists +8 at sword speed, red leather with a cream belly, Jump Boost I, 0.7× | **Fling** (slingshots you forward; crashing into an enemy or landing deals 9 dmg + knockback within 3 blocks, 8 s), **Battle Cry** (6 blocks: 4 dmg + knockback + Slowness I; you: Strength I + Speed I 6 s, 18 s) |
+| Red (Angry Birds) | Slingshot (bow: Power IV, Punch II, Infinity), beak: fists +8 at sword speed, red leather with a cream belly, Jump Boost I, 0.7× | **Fling** (slingshots you forward; crashing into an enemy or landing deals 9 dmg + knockback within 3 blocks, 8 s), **Battle Cry** (6 blocks: 4 dmg + knockback + Slowness I; you: Strength I + Speed I 6 s, 18 s) |
 | Spider-Man | No weapon: fists +7 at sword speed; red and blue suit (Dodge III, Springs II), Jump Boost II | **Web Shot** (20 blocks: 3 dmg, stuck in place 2 s, 9 s), **Web Swing** (swing forward + Slow Falling 3 s + Speed II, 7 s) |
 | Shrek | No weapon: fists +8 at axe speed; vest (Tank II), Health Boost I, 1.3× | **Swamp Roar** (6 blocks: 4 dmg, knockback, Nausea 4 s, Slowness I 3 s, 14 s), **Onion Layers** (8 absorption hearts 12 s + Resistance I 6 s, 20 s) |
 | Peter Griffin (Family Guy) | No weapon: fists +6 at sword speed; 2 Strength potions ("Pawtucket Patriot"), Health Boost I, 1.1× | **Chicken Fight** (Strength II + Resistance I + Speed I 10 s, 30 s), **Surfin' Bird** (8 blocks: Nausea 6 s, Slowness II + Weakness I 4 s, 20 s) |
 | Homer Simpson | Plutonium Rod (iron sword: Sharpness IV, Poison II), Health Boost I, 1.1× | **Donut** (Instant Health I, Regeneration II 4 s, full hunger, 14 s), **Belly Bump** (6 blocks in front: 5 dmg + big knockback, 8 s) |
-| Darth Maul (Star Wars) | Double-Bladed Lightsaber (diamond: Sharpness III, Sweeping Edge III, Double Strike III), black robes (Dodge II, Springs I), Speed I | **Saber Throw** (16 blocks: 8 dmg + Slowness I 2 s, 9 s), **Saber Spin** (3.5 blocks: 7 dmg + knockback, 7 s) |
+| Darth Maul (Star Wars) | Double-Bladed Lightsaber (diamond: Sharpness III, Sweeping Edge III, Double Strike II), black robes (Dodge II, Springs I), Speed I | **Saber Throw** (16 blocks: 6 dmg + Slowness I 2 s, 10 s), **Saber Spin** (3.5 blocks: 5 dmg + knockback, 9 s) |
 | Mr. Krabs (SpongeBob) | No weapon: claws +6 at sword speed; red shell, blue shirt (Armored II), 0.9× | **Claw Pinch** (4 blocks: 8 dmg + Slowness II 2 s, 7 s), **Money Grab** (6 blocks: pulls enemies 2 blocks in, Weakness I 4 s; you: Strength I 5 s, 14 s) |
 | Saul Goodman (Better Call Saul) | Gavel (mace: Density III, Breach I), loud yellow suit (Prot IV, Dodge II, Springs II shoes), Speed I | **You've Been Served** (16 blocks: 6 dmg, Weakness II + glowing 5 s, you heal 4; 16 s), **Loophole** (untouchable 1.5 s, clears Slowness/Weakness/Poison/Wither/Blindness/Nausea, Speed II 3 s, 20 s), **Fingertip Lightning** ("lightning bolts shoot from my fingertips": 16 blocks, 6 lightning dmg, arcs for 3 dmg to enemies within 3 blocks of the target, 10 s) |
-| Sniper (Team Fortress 2, was the classic Sniper) | Sniper Rifle (bow: Power V, Infinity, Lethal Sniper III, Lightning Arrows II), Kukri (Sharpness III, Bleed I), red shirt and brown vest, RED Sniper head, Night Vision | **Jarate** (thrown splash: Weakness II + glowing 8 s, Slowness I 3 s, 16 s), **Focus** (every enemy within 40 blocks glows 6 s, 20 s) |
+| Sniper (Team Fortress 2, was the classic Sniper) | Sniper Rifle (bow: Power III, Infinity, Lethal Sniper II), Kukri (Sharpness III, Bleed I), red shirt and brown vest, RED Sniper head, Night Vision | **Jarate** (thrown splash: Weakness II + glowing 8 s, Slowness I 3 s, 16 s), **Focus** (every enemy within 40 blocks glows 6 s, 20 s) |
 | Hank Hill (King of the Hill) | Grill Spatula (swings like an iron sword: Sharpness IV, Fire Aspect), white tee and jeans (Explosive Immunity III), Fire Resistance | **Propane Tank** (explosive throw, 10 s), **I'm Gonna Kick Your Ass** (Strength II + Speed I 6 s, knocks back enemies within 3 blocks, 22 s) |
 | Leela (Futurama) | No weapon: martial arts, fists +7 at sword speed; white top, black pants (Dodge II, Springs I), Speed I | **Martial Arts Kick** (dash, 7 dmg + knockback up close, 7 s), **Laser Pistol** (20 blocks: 5 dmg + glowing 2 s, 5 s) |
 | Elliot (Mr. Robot) | Pocketknife (Sharpness III, Poison I), black hoodie (Dodge II), Night Vision; Elliot head (MineSkin upload) | **Blackout** (12 blocks: Darkness 6 s, Blindness 2 s, Slowness I 3 s, 22 s), **Mr. Robot** (Strength II + Resistance I + Speed I 6 s, 25 s) |
@@ -325,6 +325,14 @@ guns at a 75 % hit rate, abilities averaged over their cooldowns). Before: 0.2x 
 - Buffed: SpongeBob and Hank Hill (spatulas swing like swords), Saul, Red, Rebecca, Walter White, Donkey Kong, Leela,
   Spider-Man, Sonic, Randy.
 It is a model, not match data: watch kill counts per kit and adjust from there.
+
+Second pass (from 53 kills in the logs after the first): Darth Maul got 17 and the Sniper 16 (three different players
+on streaks with it); everything else had 0-3. Sniper Rifle Power V -> III, Lethal Sniper III -> II, no Lightning Arrows
+(a full-draw Power V shot was ~22 damage before armor); Red's Slingshot back to Power IV; Darth Maul Double Strike III -> II,
+Saber Throw 8 -> 6 damage (10 s), Saber Spin 7 -> 5 damage (9 s).
+
+**Per-character stats** are now kept on the scoreboard: PvP kills in `pvp.kk` and deaths in `pvp.kd`, under fake players
+`#<kit key>` (e.g. `scoreboard players get #maul pvp.kk`), counted from `pvp.cur` in `killed` and `respawned`.
 
 ## Building
 ```

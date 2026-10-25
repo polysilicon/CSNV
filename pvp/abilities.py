@@ -304,14 +304,14 @@ ABILITIES = {
         cone(3, damage(5)), cone(3, PUSH), cone(3, "effect give @s minecraft:levitation 1 0"),
         "execute anchored eyes run particle minecraft:poof ^ ^-0.6 ^1.5 0.6 0.3 0.6 0.05 15",
         snd("entity.slime.jump", 1, 0.5), snd("entity.player.attack.knockback", 1, 0.6), bar("D'OH!", "yellow")]),
-    "saber_throw": ("Saber Throw", "red", "redstone_torch", 9, ["Hurls your saber at the enemy you aim at.", "16 blocks · 8 damage · Slowness I 2 s"], [
+    "saber_throw": ("Saber Throw", "red", "redstone_torch", 10, ["Hurls your saber at the enemy you aim at.", "16 blocks · 6 damage · Slowness I 2 s"], [
         *ray(32),
-        hit(damage(8)), hit("effect give @s minecraft:slowness 2 0"),
+        hit(damage(6)), hit("effect give @s minecraft:slowness 2 0"),
         hit("particle minecraft:dust{color:[1.0,0.0,0.0],scale:1.5} ~ ~1 ~ 0.4 0.6 0.4 0 30"),
         "execute anchored eyes run particle minecraft:dust{color:[1.0,0.1,0.1],scale:1.2} ^ ^ ^3 0.1 0.1 2 0 30",
         snd("item.trident.throw", 1, 0.7), snd("block.beacon.ambient", 1, 2), bar("SABER THROW", "red")]),
-    "saber_spin": ("Saber Spin", "dark_red", "nether_wart", 7, ["Spins your double-bladed saber.", "3.5 blocks · 7 damage · knockback"], [
-        around(3.5, damage(7)), around(3.5, PUSH),
+    "saber_spin": ("Saber Spin", "dark_red", "nether_wart", 9, ["Spins your double-bladed saber.", "3.5 blocks · 5 damage · knockback"], [
+        around(3.5, damage(5)), around(3.5, PUSH),
         "particle minecraft:dust{color:[1.0,0.0,0.0],scale:1.5} ~ ~1 ~ 1.5 0.2 1.5 0 50", "particle minecraft:sweep_attack ~ ~1 ~ 1 0 1 0 4",
         snd("entity.player.attack.sweep", 1, 0.6), snd("block.beacon.ambient", 1, 2), bar("SABER SPIN", "dark_red")]),
     # ---------------------------------------------------------------- SpongeBob / Better Call Saul
