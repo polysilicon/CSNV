@@ -16,6 +16,7 @@ Effects run as the caster, at the caster, tagged pvp.caster. Targets:
 - in Outbreak, mobs are on no team, so they are always targets.
 """
 import json
+import re
 
 NS = "pvp"
 TGT = "type=!#pvp:not_target,tag=!pvp.caster,team=!pve"
@@ -54,12 +55,13 @@ PROJ_LIFE = 40
 SHIELD_DELAY = 5                     # Spartan energy shield: seconds without being hit before it recharges
 
 
-GUN_TIER_BOOST = [0, 0.4, 0.8, 1.2]   # Pack-a-Punch gun tiers (Outbreak): extra damage; tier III also slows on hit
+GUN_TIER_BOOST = [0, 0.4, 0.8, 1.2, 1.8]   # Pack-a-Punch gun tiers (Outbreak): extra damage; III+ also slows, IV sets mobs on fire
 GUNS = []                             # keys of the gun abilities (filled in below)
+BURN = "data merge entity @s[type=!minecraft:player] {Fire:80s}"   # Pack-a-Punch IV: mobs only
 def tiered(dmg, cmd):
     """Damage lines for each Pack-a-Punch gun tier (score pve.gun on the caster; unset = tier 0). cmd(d) -> command."""
     out = [f"execute unless score @s pve.gun matches 1.. run {cmd(dmg)}"]
-    for t in (1, 2, 3):
+    for t in range(1, len(GUN_TIER_BOOST)):
         out.append(f"execute if score @s pve.gun matches {t} run {cmd(round(dmg * (1 + GUN_TIER_BOOST[t]), 1))}")
     return out
 
@@ -70,7 +72,8 @@ def gun(name, color, model, cd, dmg, rng, what, sound, pitch=1.0, on_hit=()):
     return (name, color, model, cd, [what, f"{rng} blocks · {dmg} damage" + (f" · {', '.join(extra)}" if extra else "")], [
         "scoreboard players set #tr pvp 1", *ray(rng * 2), "scoreboard players set #tr pvp 0",
         *tiered(dmg, lambda d: hit(damage(d, "arrow"))), *[hit(h[1]) for h in on_hit],
-        "execute if score @s pve.gun matches 3 run " + hit("effect give @s minecraft:slowness 1 1"),
+        "execute if score @s pve.gun matches 3.. run " + hit("effect give @s minecraft:slowness 1 1"),
+        "execute if score @s pve.gun matches 4.. run " + hit(BURN),
         hit("particle minecraft:damage_indicator ~ ~1 ~ 0.2 0.3 0.2 0.1 3"),
         "execute anchored eyes run particle minecraft:smoke ^ ^-0.1 ^0.9 0.03 0.03 0.03 0.01 4",
         f"playsound minecraft:{sound} player @a[distance=..48] ~ ~ ~ 1 {pitch}"])
@@ -80,7 +83,8 @@ def shotgun(name, color, model, cd, dmg, rng, what, sound, pitch=1.0):
     """A shotgun: a blast hitting every enemy in a cone in front of you, with knockback."""
     return (name, color, model, cd, [what, f"{round(rng * 2)} blocks · {dmg} damage to everything in front · knockback"], [
         *tiered(dmg, lambda d: cone(rng, damage(d, "arrow"))), cone(rng, PUSH),
-        "execute if score @s pve.gun matches 3 run " + cone(rng, "effect give @s minecraft:slowness 1 1"),
+        "execute if score @s pve.gun matches 3.. run " + cone(rng, "effect give @s minecraft:slowness 1 1"),
+        "execute if score @s pve.gun matches 4.. run " + cone(rng, BURN),
         f"execute anchored eyes run particle minecraft:crit ^ ^ ^{rng} 0.8 0.5 0.8 0.3 40",
         "execute anchored eyes run particle minecraft:large_smoke ^ ^-0.1 ^1 0.1 0.1 0.1 0.02 6",
         f"playsound minecraft:{sound} player @a[distance=..48] ~ ~ ~ 1 {pitch}"])
@@ -476,12 +480,30 @@ def item_components(key):
     return comps
 
 
+ROMAN = ["I", "II", "III", "IV", "V"]
+def gun_lore(key):
+    """Item modifier for a gun: its lore, plus a Pack-a-Punch line for the tier of whoever it's given to (pve.gun).
+    Guns are handed back after every shot, so the line follows the player's tier without touching the item."""
+    lore = item_components(key)["minecraft:lore"]
+    dmg = float(re.search(r"(\d+(?:\.\d+)?) damage", ABILITIES[key][4][1]).group(1))
+    out = [{"function": "minecraft:set_lore", "mode": "replace_all", "lore": lore}]
+    for t in range(1, len(GUN_TIER_BOOST)):
+        d = round(dmg * (1 + GUN_TIER_BOOST[t]), 1)
+        extra = (" · hits slow" if t >= 3 else "") + (" · sets mobs on fire" if t >= 4 else "")
+        out.append({"function": "minecraft:set_lore", "mode": "append",
+                    "lore": [{"text": f"{'★' * t} Pack-a-Punched {ROMAN[t - 1]}: {d:g} damage{extra}", "color": "gold", "italic": False}],
+                    "conditions": [{"condition": "minecraft:entity_scores", "entity": "this", "scores": {"pve.gun": {"min": t, "max": t}}}]})
+    return out
+
+
 def build(fn, wj, lobby_box):
     wj(f"data/{NS}/tags/entity_type/not_target.json", {"values": [f"minecraft:{t}" for t in NOT_TARGET]})
     for idx, (key, (name, color, model, cd, lore, body)) in enumerate(ABILITIES.items(), 1):
+        if key in GUNS: wj(f"data/{NS}/item_modifier/gunlore/{key}.json", gun_lore(key))
         wj(f"data/{NS}/loot_table/ability/{key}.json", {"pools": [{"rolls": 1, "entries": [{
             "type": "minecraft:item", "name": BASE,
-            "functions": [{"function": "minecraft:set_components", "components": item_components(key)}]}]}]})
+            "functions": [{"function": "minecraft:set_components", "components": item_components(key)}]
+                         + ([{"function": "minecraft:reference", "name": f"{NS}:gunlore/{key}"}] if key in GUNS else [])}]}]})
         fn(f"ability/use/{key}", [
             f"scoreboard players set @s pvp.abk {idx}",
             "execute store result score @s pvp.abs run data get entity @s SelectedItemSlot",

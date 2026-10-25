@@ -341,16 +341,18 @@ KIT_ORDER = [11, 12, 35, 29, 1, 5, 27, 23, 40,     # Jedi, Sith, Darth Maul, Man
              21, 33, 34, 38, 42, 36, 25, 37, 41]   # Randy Marsh, Peter Griffin, Homer, Hank Hill, SpongeBob, Mr. Krabs | Walter White, Saul Goodman, Tony Soprano
 KIT_SLOT = dict(zip(KIT_ORDER, range(9, 45)))# Upgrades (points per tier I / II / III). Pack-a-Punch works on the held weapon (the tier is stored on the item);
 # armor upgrades are per player (pve.arm). Both are lost when you go down, since your kit is handed out again.
-WEAPON_UP = [2000, 4000, 7500]
+WEAPON_UP = [2000, 4000, 7500, 12000]   # tier IV: wonder-weapon territory for the late waves
 ARMOR_UP = [1500, 3000, 6000]
-UP_BOOST = {   # per tier, added to the existing enchants; kind -> (item tag/id, enchants, extra on tier III)
-    "melee": ("#minecraft:swords", {"sharpness": 2}, {"fire_aspect": 2}),
-    "axe": ("#minecraft:axes", {"sharpness": 2}, {"fire_aspect": 2}),
-    "bow": ("minecraft:bow", {"power": 2}, {"flame": 1, "punch": 1}),
-    "crossbow": ("minecraft:crossbow", {"piercing": 1, "quick_charge": 1}, {"multishot": 1}),
-    "trident": ("minecraft:trident", {"impaling": 2}, {"channeling": 1}),
-    "mace": ("minecraft:mace", {"density": 1, "breach": 1}, {"wind_burst": 1}),
+UP_BOOST = {   # per tier, added to the existing enchants; kind -> (item tag/id, enchants, extra on tier III, extra on tier IV)
+    "melee": ("#minecraft:swords", {"sharpness": 2}, {"fire_aspect": 2}, {CE + "lifesteal": 2}),
+    "axe": ("#minecraft:axes", {"sharpness": 2}, {"fire_aspect": 2}, {"sharpness": 2}),
+    "bow": ("minecraft:bow", {"power": 2}, {"flame": 1, "punch": 1}, {CE + "explosive": 1}),
+    "crossbow": ("minecraft:crossbow", {"piercing": 1, "quick_charge": 1}, {"multishot": 1}, {CE + "explosive": 1}),
+    "trident": ("minecraft:trident", {"impaling": 2}, {"channeling": 1}, {"impaling": 2}),
+    "mace": ("minecraft:mace", {"density": 1, "breach": 1}, {"wind_burst": 1}, {"density": 2}),
 }
+# Wall-buys: guns hung on the walls of every Outbreak map (6 spots per map, outbreak_maps.wallbuy_spots); right-click to buy
+WALL_BUYS = [("pistol", 500), ("militech_handgun", 750), ("lucky", 1000), ("guts", 1250), ("ma5", 1500), ("m60", 2000)]
 VETERAN_PER_WAVE, VETERAN_MAX = 25, 1000
 # Kit mastery: XP per character (score pvp.mx<kit id>), +10 per PvP kill and +1 per Outbreak kill with that kit.
 MASTERY = [50, 150, 400, 800, 1500]      # XP for levels I..V (V = Master)
@@ -497,7 +499,7 @@ def build():
                        f"{len(OUTBREAK_MAPS)} maps, each with its own mobs", "Endless waves; every 5th wave brings a boss", "100 points per kill + a bonus each wave",
                        "Kills can drop power-ups: Max Ammo, Insta-Kill,", "Double Points, Nuke",
                        f"{BREAK_TICKS // 20} s break between waves to re-buy gear",
-                       "Spend points at the Arsenal in the arena", "Pack-a-Punch weapons, upgrade armor, buy perks", "Your best wave adds starting points", "Go down and you're back next wave", "Game over when the whole team is down"]), "cmd": ""}]},
+                       "Spend points at the Arsenal in the arena", "or buy guns off the walls (right-click)", "Pack-a-Punch weapons (4 tiers), upgrade armor, buy perks", "Your best wave adds starting points", "Go down and you're back next wave", "Game over when the whole team is down"]), "cmd": ""}]},
         "pve_maps": {"title": {"text": "☣ Outbreak: pick a map", "color": "dark_green"}, "rows": 3, "fill": PANE, "items":
                      [{"slot": s, "item": icon(m[4], m[2], m[3], MAP_LORE[m[1]] + ["", "Click to pick your kit"]), "cmd": f"trigger pve.join set {80 + m[0]}"}
                       for s, m in zip((11, 12, 13, 14, 15), OUTBREAK_MAPS)]
@@ -524,7 +526,7 @@ def build():
             "pvp.cur dummy", "pvp.mastery trigger", "pvp.mastered dummy",
             "pvp.elo dummy", "pvp.dwin dummy", "pvp.dloss dummy", "pvp.dfrom dummy", "pvp.dtm dummy", "pvp.dpit dummy",
             "pvp.duela trigger", "pvp.dueld trigger", "pvp.duelstats trigger", *[f"pvp.mx{k[0]} dummy" for k in KITS],
-            "pve dummy", "pve.join trigger", "pve.buy trigger", "pve.k totalKillCount", "pve.kit dummy", "pve.best dummy", "pve.arm dummy", "pve.gun dummy", "pve.map dummy", "pve.rv dummy"]],
+            "pve dummy", "pve.join trigger", "pve.buy trigger", "pve.k totalKillCount", "pve.kit dummy", "pve.best dummy", "pve.arm dummy", "pve.gun dummy", "pve.map dummy", "pve.rv dummy", "pve.wb dummy"]],
         'scoreboard objectives add pvp.kills playerKillCount {"text":"⚔ Kills","color":"aqua","bold":true}',
         'scoreboard objectives add pve.pts dummy {"text":"☣ Points","color":"green","bold":true}',
         "scoreboard objectives setdisplay sidebar pvp.kills",
@@ -1016,27 +1018,28 @@ def build_mastery():
 def build_upgrades():
     """Pack-a-Punch (held weapon, tier on the item's custom_data) and Armor Upgrade (per player, pve.arm)."""
     P = f"{NS}:pve/up"
-    roman = ["I", "II", "III"]
+    roman = abilities.ROMAN
+    N = len(WEAPON_UP)   # Pack-a-Punch tiers
     def em(enchants): return {"function": "minecraft:set_enchantments", "add": True,
                               "enchantments": {(k if ":" in k else "minecraft:" + k): v for k, v in enchants.items()}}
     # weapon: find the kind first (so nothing is charged for an item that can't be upgraded), then the tier
     # a gun ability in the hand upgrades the player's guns instead (see pve/up/gun)
     w = [*[f"execute if items entity @s weapon.mainhand {abilities.sel(k)} run return run function {P}/gun" for k in abilities.GUNS],
          "scoreboard players set #k pve 0"]
-    for n, (kind, (match, _, _)) in enumerate(UP_BOOST.items(), 1):
+    for n, (kind, (match, *_)) in enumerate(UP_BOOST.items(), 1):
         w.append(f"execute if score #k pve matches 0 if items entity @s weapon.mainhand {match} run scoreboard players set #k pve {n}")
     w += [f"execute if score #k pve matches 0 run return run {say('@s', 'Hold a sword, axe, bow, crossbow, trident, mace or gun to Pack-a-Punch it.', 'red')}",
           "scoreboard players set #t pve 0",
-          *[f"execute if items entity @s weapon.mainhand *[minecraft:custom_model_data={{strings:[\"pvp_tier{t}\"]}}] run scoreboard players set #t pve {t}" for t in (1, 2, 3)],
-          f"execute if score #t pve matches 3.. run return run {say('@s', 'That weapon is already fully upgraded (tier III).', 'gold')}",
-          *[f"execute if score #t pve matches {t} run return run function {P}/weapon_t{t + 1}" for t in (0, 1, 2)]]
+          *[f"execute if items entity @s weapon.mainhand *[minecraft:custom_model_data={{strings:[\"pvp_tier{t}\"]}}] run scoreboard players set #t pve {t}" for t in range(1, N + 1)],
+          f"execute if score #t pve matches {N}.. run return run {say('@s', f'That weapon is already fully upgraded (tier {roman[N - 1]}).', 'gold')}",
+          *[f"execute if score #t pve matches {t} run return run function {P}/weapon_t{t + 1}" for t in range(N)]]
     fn("pve/up/weapon", w)
-    for t in (1, 2, 3):
+    for t in range(1, N + 1):
         cost = WEAPON_UP[t - 1]
         lines = [f"execute if score @s pve.pts matches ..{cost - 1} run return run {afford(f'Pack-a-Punch {roman[t - 1]}', cost)}",
                  f"scoreboard players remove @s pve.pts {cost}"]
-        for n, (kind, (match, boost, extra)) in enumerate(UP_BOOST.items(), 1):
-            mods = [em(boost)] + ([em(extra)] if t == 3 else [])
+        for n, (kind, (match, boost, extra3, extra4)) in enumerate(UP_BOOST.items(), 1):
+            mods = [em(boost)] + ([em(extra3)] if t == 3 else []) + ([em(extra4)] if t == 4 else [])
             wj(f"data/{NS}/item_modifier/up/{kind}_t{t}.json", mods)
             lines.append(f"execute if score #k pve matches {n} run item modify entity @s weapon.mainhand {NS}:up/{kind}_t{t}")
         wj(f"data/{NS}/item_modifier/up/tier{t}.json", [
@@ -1048,23 +1051,26 @@ def build_upgrades():
                   f"title @s actionbar {tj({'text': '★' * t + ' PACK-A-PUNCH ' + roman[t - 1], 'color': 'gold', 'bold': True})}",
                   "playsound minecraft:block.anvil.use player @s ~ ~ ~ 1 0.8", "playsound minecraft:block.beacon.power_select player @s ~ ~ ~ 1 1.4",
                   "particle minecraft:totem_of_undying ~ ~1 ~ 0.4 0.6 0.4 0.3 30",
-                  say("@s", f"Weapon upgraded to tier {roman[t - 1]}." + (" Next: " + f"{WEAPON_UP[t]:,} points." if t < 3 else " Maxed out!"), "gold")]
+                  say("@s", f"Weapon upgraded to tier {roman[t - 1]}." + (" Next: " + f"{WEAPON_UP[t]:,} points." if t < N else " Maxed out!"), "gold")]
         fn(f"pve/up/weapon_t{t}", lines)
     # guns: a gun item is swapped for a fresh one after every shot, so the tier is on the player (pve.gun) and covers
     # all their guns; it resets when they go down, like the armor upgrade
-    pct = lambda t: f"+{round(abilities.GUN_TIER_BOOST[t] * 100)} % gun damage" + (", hits slow" if t == 3 else "")
+    pct = lambda t: f"+{round(abilities.GUN_TIER_BOOST[t] * 100)} % gun damage" + (", hits slow" if t >= 3 else "") + (", sets mobs on fire" if t >= 4 else "")
     fn("pve/up/gun", ["scoreboard players add @s pve.gun 0",
-                      f"execute if score @s pve.gun matches 3.. run return run {say('@s', 'Your guns are already fully upgraded (tier III).', 'gold')}",
-                      *[f"execute if score @s pve.gun matches {t - 1} run return run function {P}/gun_t{t}" for t in (1, 2, 3)]])
-    for t in (1, 2, 3):
+                      f"execute if score @s pve.gun matches {N}.. run return run {say('@s', f'Your guns are already fully upgraded (tier {roman[N - 1]}).', 'gold')}",
+                      *[f"execute if score @s pve.gun matches {t - 1} run return run function {P}/gun_t{t}" for t in range(1, N + 1)]])
+    # rewrite the lore of every gun the player carries, so it shows the new tier straight away
+    fn("pve/up/gun_lore", [f"execute if items entity @s {sl} {abilities.sel(k)} run item modify entity @s {sl} {NS}:gunlore/{k}"
+                           for sl in [f"container.{i}" for i in range(36)] + ["weapon.offhand"] for k in abilities.GUNS])
+    for t in range(1, N + 1):
         cost = WEAPON_UP[t - 1]
         fn(f"pve/up/gun_t{t}", [
             f"execute if score @s pve.pts matches ..{cost - 1} run return run {afford(f'Pack-a-Punch {roman[t - 1]}', cost)}",
-            f"scoreboard players remove @s pve.pts {cost}", f"scoreboard players set @s pve.gun {t}",
+            f"scoreboard players remove @s pve.pts {cost}", f"scoreboard players set @s pve.gun {t}", f"function {P}/gun_lore",
             f"title @s actionbar {tj({'text': '★' * t + ' PACK-A-PUNCH ' + roman[t - 1] + ': ' + pct(t), 'color': 'gold', 'bold': True})}",
             "playsound minecraft:block.anvil.use player @s ~ ~ ~ 1 0.8", "playsound minecraft:block.beacon.power_select player @s ~ ~ ~ 1 1.4",
             "particle minecraft:totem_of_undying ~ ~1 ~ 0.4 0.6 0.4 0.3 30",
-            say("@s", f"All your guns upgraded to tier {roman[t - 1]} ({pct(t)})." + (f" Next: {WEAPON_UP[t]:,} points." if t < 3 else " Maxed out!"), "gold")])
+            say("@s", f"All your guns upgraded to tier {roman[t - 1]} ({pct(t)})." + (f" Next: {WEAPON_UP[t]:,} points." if t < N else " Maxed out!"), "gold")])
     # armor: I = +1 Protection on every worn piece, II = Resistance I, III = +2 hearts (all until you go down)
     wj(f"data/{NS}/item_modifier/up/armor.json", [em({"protection": 1}), em({"unbreaking": 1})])
     arm = {1: [*[f"item modify entity @s armor.{sl} {NS}:up/armor" for sl in ("head", "chest", "legs", "feet")]],
@@ -1450,6 +1456,26 @@ def build_pve():
                                        "playsound minecraft:entity.villager.yes neutral @s ~ ~ ~ 1 0.8"])])
     build_upgrades()
     fn("pve/buy", buy)
+    # wall-buys: the clicked interaction carries the gun's number (pve.wb)
+    wj(f"data/{NS}/advancement/wallbuy.json", {"criteria": {"c": {"trigger": "minecraft:player_interacted_with_entity", "conditions": {"entity": [{
+        "condition": "minecraft:entity_properties", "entity": "this",
+        "predicate": {"minecraft:entity_type": "minecraft:interaction", "minecraft:nbt": "{Tags:[\"pvp.wallbuy\"]}"}}]}}},
+        "rewards": {"function": f"{P}/wallbuy"}})
+    fn("pve/wallbuy", ["advancement revoke @s only pvp:wallbuy", "scoreboard players set #wb pve 0",
+                       "execute as @e[type=minecraft:interaction,tag=pvp.wallbuy,distance=..6] if data entity @s interaction run scoreboard players operation #wb pve = @s pve.wb",
+                       "execute as @e[type=minecraft:interaction,tag=pvp.wallbuy,distance=..6] run data remove entity @s interaction",
+                       f"execute unless entity @s[tag=pve.in,tag=!pve.down] run return run {say('@s', 'Wall guns are for Outbreak survivors.', 'red')}",
+                       *[f"execute if score #wb pve matches {n} run return run function {P}/wallbuy/{n}" for n in range(1, len(WALL_BUYS) + 1)]])
+    for n, (k, cost) in enumerate(WALL_BUYS, 1):
+        gname, gcolor = abilities.ABILITIES[k][0], abilities.ABILITIES[k][1]
+        have = say("@s", f"You already have the {gname}. Pack-a-Punch it at the Arsenal.", "gold")
+        fn(f"pve/wallbuy/{n}", [
+            f"execute if items entity @s container.* {abilities.sel(k)} run return run {have}",
+            f"execute if items entity @s weapon.offhand {abilities.sel(k)} run return run {have}",
+            f"execute if score @s pve.pts matches ..{cost - 1} run return run {afford(gname, cost)}",
+            f"scoreboard players remove @s pve.pts {cost}", abilities.give(k),
+            f"tellraw @s [{{\"text\":\"Bought \",\"color\":\"green\"}},{{\"text\":\"{gname}\",\"color\":\"{gcolor}\"}},{{\"text\":\" off the wall\",\"color\":\"green\"}}]",
+            "playsound minecraft:item.armor.equip_chain player @s ~ ~ ~ 1 0.8", "playsound minecraft:entity.villager.yes neutral @s ~ ~ ~ 0.6 0.8"])
     box = ["execute store result score #r pve run random value 1..%d" % len(BOX),
            "playsound minecraft:block.chest.open player @s ~ ~ ~ 1 0.8"]
     for n, (bname, bcolor, bcmds) in enumerate(BOX, 1):
@@ -1470,6 +1496,28 @@ PVE_THEMES = {"ruins": ("stone_bricks", "polished_andesite"), "mine": ("stone", 
               "orbital": ("black_concrete", "cyan_concrete")}   # the station sits in black "space"
 
 
+def wallbuys(g, cz):
+    """Wall-buy guns for one map: the gun on the wall (item display), its name and price above it, and an interaction
+    in front to right-click. Spots are worked out from the layout (outbreak_maps.wallbuy_spots)."""
+    out = []
+    for n, ((x, z, ox, oz), (k, cost)) in enumerate(zip(outbreak_maps.wallbuy_spots(g, len(WALL_BUYS)), WALL_BUYS), 1):
+        gname, gcolor, gmodel = abilities.ABILITIES[k][:3]
+        cx, cz_ = PCX + x + 0.5, cz + z + 0.5
+        yaw = round(math.degrees(math.atan2(ox, -oz)))   # facing away from the wall
+        at = lambda d, y: f"{cx + ox * d:.2f} {AY + 1 + y:.2f} {cz_ + oz * d:.2f}"
+        out += [
+            f"summon minecraft:item_display {at(0.45, 1.35)} {{Tags:[\"pvp.wallbuy\"],Rotation:[{yaw}f,0f],item_display:\"fixed\","
+            f"brightness:{{sky:15,block:15}},transformation:{{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[0.9f,0.9f,0.9f]}},"
+            f"item:{{id:\"minecraft:clay_ball\",count:1,components:{{\"minecraft:item_model\":\"minecraft:{gmodel}\",\"minecraft:enchantment_glint_override\":true}}}}}}",
+            f"summon minecraft:text_display {at(0.4, 2.05)} {{Tags:[\"pvp.wallbuy\"],Rotation:[{yaw}f,0f],billboard:\"fixed\",alignment:\"center\","
+            f"background:1426063360,transformation:{{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[0.6f,0.6f,0.6f]}},"
+            f"text:{tj([{'text': gname, 'color': gcolor, 'bold': True}, {'text': chr(10) + f'{cost:,} points · right-click', 'color': 'gray', 'bold': False}])}}}",
+            f"summon minecraft:interaction {at(0.2, 0.7)} {{Tags:[\"pvp.wallbuy\",\"pvp.wbnew\"],width:0.6f,height:1.1f,response:1b}}",
+            f"scoreboard players set @e[type=minecraft:interaction,tag=pvp.wbnew] pve.wb {n}",
+            "tag @e[type=minecraft:interaction,tag=pvp.wbnew] remove pvp.wbnew"]
+    return out
+
+
 def build_pve_map(m):
     """Clear the map, put up the outer wall (with barrier above) and draw the layout from outbreak_maps.py."""
     i, key, name, color, _, cz, _ = m
@@ -1483,6 +1531,7 @@ def build_pve_map(m):
     a += outbreak_maps.commands(g, PCX, AY, cz)
     a += [f"fill {PCX - 1} {AY + 1} {cz - 1} {PCX + 1} {AY + 1} {cz + 1} minecraft:{plat}",   # Arsenal platform
           f"setblock {PCX} {AY + 1} {cz} minecraft:lodestone"]
+    a += [f"kill @e[tag=pvp.wallbuy,{PVE_BOXES[i]}]"] + wallbuys(g, cz)
     sx, sy, _ = SHOP_NPC
     body = npc("pvp.shopnpc", (sx, sy, cz + 0.5), "☣ Arsenal ☣", "green", "", "", 180, mannequin=True)
     a += [f"kill @e[tag=pvp.shopnpc,x={sx},y={sy},z={cz + 0.5},distance=..4]"] + body[1:]   # only this map's Arsenal

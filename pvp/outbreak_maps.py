@@ -759,6 +759,44 @@ def commands(g, ox, oy, oz):
     return out
 
 
+def wallbuy_spots(g, n):
+    """n places for wall-buy guns, spread around the map: a floor cell players can walk to, with a solid block at
+    head and chest height right next to it (an outer wall counts) to hang the chalk outline on. Kept away from mob
+    windows, spawns and the Arsenal. Returns (x, z, dx, dz): the cell and the direction of the wall from it."""
+    def passable(b): return b is None or any(s in nm(b) for s in PASSABLE)
+    def solid(x, z):
+        if max(abs(x), abs(z)) == R + 1: return True
+        return all(is_full(g.get(x, y, z)) for y in (1, 2))
+    seen, todo = {(0, 3)}, deque([(0, 3)])
+    while todo:   # where players can walk (same rules as check())
+        x, z = todo.popleft()
+        for (ox, oz) in DIRS.values():
+            c = (x + ox, z + oz)
+            b1, b2, b3 = g.get(c[0], 1, c[1]), g.get(c[0], 2, c[1]), g.get(c[0], 3, c[1])
+            if abs(c[0]) <= R and abs(c[1]) <= R and c not in seen and passable(b2) and (passable(b1) or passable(b3)) \
+                    and not (b1 and (is_fence(b1) or is_wall(b1) or is_pane(b1))) and g.get(c[0], 0, c[1]) != "lava":
+                seen.add(c); todo.append(c)
+    cands = []
+    for (x, z) in seen:
+        if max(abs(x), abs(z)) <= 6 or not passable(g.get(x, 1, z)) or not passable(g.get(x, 2, z)): continue
+        if any(math.hypot(x - mx, z - mz) <= 5 for (mx, mz) in g.mob_points): continue
+        if any(max(abs(x - sx), abs(z - sz)) <= 3 for (sx, sz, _) in g.spawns): continue
+        for (ox, oz) in DIRS.values():
+            if solid(x + ox, z + oz): cands.append((x, z, ox, oz))
+    out = []
+    for k in range(n):   # one per sector, nearest to a point two thirds of the way out
+        ang = math.radians(360 * k / n + 22.5)
+        tx, tz = 22 * math.cos(ang), 22 * math.sin(ang)
+        pick = None
+        for gap in (10, 7, 4):   # as far from the other wall-buys as the map allows
+            pick = min((c for c in cands if all(math.hypot(c[0] - o[0], c[1] - o[1]) >= gap for o in out)),
+                       key=lambda c: math.hypot(c[0] - tx, c[1] - tz), default=None)
+            if pick: break
+        assert pick, f"no wall-buy spot left for sector {k}"
+        out.append(pick)
+    return out
+
+
 def check(g, name):
     """Every mob window must have a walking route to the Arsenal, and the player spawns must be clear."""
     def passable(b): return b is None or any(s in nm(b) for s in PASSABLE)

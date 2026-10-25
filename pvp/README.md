@@ -197,15 +197,24 @@ Every character has its own mastery XP (`pvp.mx<kit id>`): +10 per PvP kill and 
 
 ## Outbreak (PvE waves)
 - **Progression** (Arsenal):
-  - **Pack-a-Punch** upgrades the weapon in your hand, tier I / II / III for 2,000 / 4,000 / 7,500 points. Each tier adds
+  - **Pack-a-Punch** upgrades the weapon in your hand, tier I / II / III / IV for 2,000 / 4,000 / 7,500 / 12,000 points. Each tier adds
     Sharpness +2 (swords and axes), Power +2 (bows), Piercing and Quick Charge +1 (crossbows), Impaling +2 (tridents) or
-    Density and Breach +1 (maces). Tier III also adds Fire Aspect II, Flame + Punch, Multishot, Channeling or Wind Burst.
-    The tier is stored on the item as `custom_model_data` strings (`pvp_tier1`..`3`) and shown as gold lore stars. It
+    Density and Breach +1 (maces). Tier III also adds Fire Aspect II, Flame + Punch, Multishot, Channeling or Wind Burst; tier IV adds Lifesteal II
+    (swords), another Sharpness +2 (axes), Explosive I (bows, crossbows), Impaling +2 or Density +2.
+    The tier is stored on the item as `custom_model_data` strings (`pvp_tier1`..`4`) and shown as gold lore stars. It
     used to be `custom_data.pvp_tier`, but crispy_enchants' migration wipes small `custom_data` every 2 s, so the tier
     vanished and tier I could be bought again and again.
   - **Guns** (gun abilities) can be Pack-a-Punched too, for the same prices: hold any gun and it upgrades **all** your
     guns (score `pve.gun`, since a gun item is swapped for a fresh one after every shot). Tier I +40 % damage, II +80 %,
-    III +120 % and hits slow the target. Like the armor upgrade, it resets when you go down.
+    III +120 % and hits slow the target, IV +180 % and also sets mobs on fire. Like the armor upgrade, it resets when you
+    go down. Gun lore shows your tier and the damage it does: the gun loot tables run item modifier
+    `pvp:gunlore/<gun>`, which adds the line for the holder's `pve.gun`, and buying a tier rewrites every gun you carry
+    (`pve/up/gun_lore`).
+  - **Wall-buys**: 6 guns on the walls of every map, right-click to buy (`WALL_BUYS`): Pistol 500, Militech Handgun 750,
+    Lucky 1,000, Guts 1,250, MA5 1,500, Trunk M60 2,000. Spots come from the layout (`outbreak_maps.wallbuy_spots`:
+    a reachable floor cell next to a solid wall, one per sector, away from mob windows and spawns). Each is a gun item
+    display, a name and price text display and an interaction carrying the gun's number in `pve.wb`. You can only
+    carry one of each; re-run `admin/build_pve` after changing them.
   - **Armor Upgrade**, for 1,500 / 3,000 / 6,000 points: I gives +1 Protection and Unbreaking on everything you wear,
     II gives Resistance I, and III gives +2 hearts.
   - Perks: **Double Tap** (Strength I, 3,000) and **PhD Flopper** (Fire Resistance + Jump Boost, 1,500), alongside
