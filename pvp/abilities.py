@@ -216,7 +216,10 @@ ABILITIES = {
         snd("entity.breeze.charge", 1, 1.8), snd("entity.breeze.jump", 1, 1.4), bar("SPIN DASH", "blue")]),
     "homing_attack": ("Homing Attack", "gold", "gold_ingot", 8, ["Homes in on the enemy you aim at.", "12 blocks · 7 damage · you bounce off them"], [
         *ray(24),
-        "execute at @e[tag=pvp.hit,limit=1] run tp @s ~ ~1.2 ~",
+        # just above the target if there's room, else at its feet (never into a ceiling: that pushed people out of rooms)
+        "execute at @e[tag=pvp.hit,limit=1] if block ~ ~1.2 ~ #minecraft:air if block ~ ~2.2 ~ #minecraft:air if block ~ ~3.2 ~ #minecraft:air run tag @s add pvp.hroom",
+        "execute if entity @s[tag=pvp.hroom] at @e[tag=pvp.hit,limit=1] run tp @s ~ ~1.2 ~",
+        "execute if entity @e[tag=pvp.hit] unless entity @s[tag=pvp.hroom] at @e[tag=pvp.hit,limit=1] run tp @s ~ ~ ~", "tag @s remove pvp.hroom",
         hit(damage(7)), hit("particle minecraft:crit ~ ~1 ~ 0.3 0.5 0.3 0.3 25"),
         "execute if entity @e[tag=pvp.hit] at @s run " + LAUNCH,
         "execute unless entity @e[tag=pvp.hit] run " + snd("entity.item.pickup", 0.6, 0.6),

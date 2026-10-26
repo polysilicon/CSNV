@@ -55,8 +55,9 @@ PERK_RESET = [f"attribute @s minecraft:{a} modifier remove {i}" for i, a in MOD_
 
 # mob pools by tier (tier = floor / 5, capped); each entry: type, extra NBT
 POOLS = [
-    [("zombie", ""), ("skeleton", ""), ("spider", ""), ("zombie", "")],
-    [("husk", ""), ("stray", ""), ("cave_spider", ""), ("zombie", ',equipment:{head:{id:"minecraft:iron_helmet",count:1}}')],
+    # no spiders: they climb the walls to the ceiling, where melee characters can't reach them
+    [("zombie", ""), ("skeleton", ""), ("creeper", ""), ("zombie", "")],
+    [("husk", ""), ("stray", ""), ("zombie_villager", ""), ("zombie", ',equipment:{head:{id:"minecraft:iron_helmet",count:1}}')],
     [("vindicator", ',equipment:{mainhand:{id:"minecraft:iron_axe",count:1}}'), ("wither_skeleton", ',equipment:{mainhand:{id:"minecraft:stone_sword",count:1}}'),
      ("husk", ""), ("stray", "")],
     [("blaze", ""), ("wither_skeleton", ',equipment:{mainhand:{id:"minecraft:stone_sword",count:1}}'),
@@ -102,6 +103,8 @@ def build(b):
     fn("tower/tick", [
         f"scoreboard players enable {inn} tw.pick",
         f"execute as @a[tag=tw.in,scores={{tw.pick=1..}}] run function {T}/picked",
+        # anyone climbing who ends up outside the room (through the ceiling, a wall...) goes back in
+        f"execute if score #tstate tw matches 2.. as {inn} unless entity @s[x={TCX - R},y={TY},z={TCZ - R},dx={2 * R},dy={WALL_H - 2},dz={2 * R}] run function {T}/escaped",
         f"execute if score #tstate tw matches 2 if score #ttype tw matches 2 as {inn} at @s if block ~ ~-0.2 ~ minecraft:magma_block run function {T}/fell",
         f"execute if score #tstate tw matches 2 if score #ttype tw matches 2 as {inn} at @s if block ~ ~-0.2 ~ minecraft:gold_block run function {T}/clear",
     ])
@@ -332,6 +335,9 @@ def build(b):
     fn("tower/apply", apply)
 
     # ------------------------------------------------------------------ falling, dying, leaving, game over
+    fn("tower/escaped", [f"execute if score #tstate tw matches 3 run tp @s {at(0.5, 1, 0.5)}",
+                         f"execute if score #tstate tw matches 2 run function {T}/tp_start",
+                         "title @s actionbar " + tj({"text": "Back into the room!", "color": "yellow"})])
     fn("tower/fell", [
         "scoreboard players add @s tw.falls 1",
         f"execute if score @s tw.falls matches {MAX_FALLS}.. run tellraw @a[tag=tw.in] " + tj([{"selector": "@s", "color": "yellow"},

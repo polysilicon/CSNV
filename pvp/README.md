@@ -192,7 +192,7 @@ the first click opens a 10 s queue that others join by clicking too. Everyone st
 - One room (x 388..412, z -12..12 at y -61, kept force-loaded: `admin/build_tower` builds it), rebuilt every floor:
   - **mob floors**: cover pillars and low walls (6 layouts), 3 + floor/2 mobs (+2 per extra player, max 16) from a pool
     that changes every 5 floors (zombies/skeletons/spiders, then husks/strays, vindicators/wither skeletons,
-    blazes/piglin brutes), +12% health and +5% damage per floor;
+    blazes/piglin brutes; no spiders, they climb to the ceiling out of melee reach), +12% health and +5% damage per floor;
   - **parkour** every 4th floor (3, 7, 11...): a snake of platforms over magma (2x2 or harder 1x1, 6 layouts);
     touching the magma sends you back to the start, the gold block clears the floor for everyone;
   - **boss** every 5th floor: The Brute, Bone King, The Warlord, The Beast in turn, with a boss bar
@@ -204,6 +204,8 @@ the first click opens a 10 s queue that others join by clicking too. Everyone st
 - Dying ends your climb unless you have an Extra Life; the climb is over when nobody is left. Best floor per player in
   `tw.best`, the server record in `#trecord tw`; +5 mastery XP per floor for the character you're playing.
 - Tower players are on team `tower` (no friendly fire; abilities skip them like Outbreak teammates).
+- Anyone climbing who ends up outside the room (through the ceiling or a wall) is put back at the floor's start
+  (`tower/escaped`).
 - **Parkour risk**: the 3rd fall into the magma on a floor (`MAX_FALLS`, counted in `tw.falls`) kills you, so it ends
   your climb unless an Extra Life saves you.
 - **Your build**: the sidebar (objective `tw.side`, shown to team `tower`) has the floor, and in a solo climb your Extra
