@@ -1,4 +1,4 @@
-# Crispy Factions — "Working Man's 2013 Factions"
+# Crispy Factions
 
 Sub-server on the CrispyAnarchy network (Velocity). 1.8-era combat, classic cannon/obsidian raiding,
 prime-time raid windows, no pay-to-win.

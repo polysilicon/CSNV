@@ -1,4 +1,4 @@
-"""Apply the Working Man's 2013 Factions configuration to Factions01 (run while the server is stopped)."""
+"""Apply the Crispy Factions configuration to Factions01 (run while the server is stopped)."""
 import json, os, re, secrets, shutil, yaml
 
 M = "/AMPStorage/.ampdata/instances/Factions01/Minecraft"
@@ -19,7 +19,7 @@ props = dict(l.rstrip("\n").split("=", 1) for l in open(sp) if "=" in l and not 
 pw_file = "/root/factions_rcon_password.txt"
 if not os.path.exists(pw_file):
     open(pw_file, "w").write(secrets.token_urlsafe(24)); os.chmod(pw_file, 0o600)
-props.update({"online-mode": "false", "motd": "§c§lCrispy Factions §7- Working Man's 2013 Factions", "pvp": "true", "difficulty": "normal",
+props.update({"online-mode": "false", "motd": "§c§lCrispy Factions §7- 1.8 Combat, Cannons & Raids", "pvp": "true", "difficulty": "normal",
               "allow-flight": "false", "spawn-protection": "0", "view-distance": "8", "simulation-distance": "6", "enable-command-block": "false",
               "enable-rcon": "true", "rcon.port": "25581", "rcon.password": open(pw_file).read().strip(), "broadcast-rcon-to-ops": "false"})
 open(sp, "w").write("".join(f"{k}={v}\n" for k, v in props.items()))
