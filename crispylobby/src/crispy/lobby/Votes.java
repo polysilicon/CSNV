@@ -414,7 +414,7 @@ public class Votes implements Listener {
         long ownColors = colors.keySet().stream().filter(k -> pd.owned.contains("color:" + k)).count();
         put(m, 11, item(tg == null ? Material.NAME_TAG : tg.icon(), "&f&lTags", List.of("&7Shown with your name in chat, the tab", "&7list and above your head, everywhere.", "",
                 "&7Wearing: " + (tg == null ? "&8none" : tg.display()), "&7Owned: &f" + ownTags + "&7/" + tags.size(), "",
-                "&7Buy them with points, or &6earn &7them", "&7with advancements, top stats and", "&7mastering PvP characters.", "", "&eClick to browse"), tg != null), "tags");
+                "&7Buy them with points, or &6earn &7them", "&7with advancements, top stats and", "&7mastering Multiverse characters.", "", "&eClick to browse"), tg != null), "tags");
         put(m, 13, pointsItem(pd), null);
         put(m, 15, item(nc == null ? Material.WHITE_DYE : nc.icon(), "&f&lName colours", List.of("&7Your name in colour in chat on", "&7every server (and in cross-chat).", "",
                 "&7Using: " + (nc == null ? "&8none" : colored(nc.name(), nc.code())), "&7Owned: &f" + ownColors + "&7/" + colors.size(), "", "&eClick to browse"), nc != null), "colors");
@@ -431,8 +431,8 @@ public class Votes implements Listener {
         Menu m = menu(page, 6, (mastery ? "&e&lMastery tags" : earned ? "&6&lEarned tags" : "&f&lTag shop") + " &8(&d" + pd.points + " points&8)");
         Set<String> advs = earned && !mastery ? advancements(p) : Set.of();
         int[] grid = mastery ? MGRID : GRID;
-        if (mastery) put(m, 4, item(Material.NETHER_STAR, "&e&lMastery tags", List.of("&7Master a character on the PvP server", "&7(level V, &f" + String.format("%,d", MASTERY_XP) + " &7mastery XP)",
-                "&7to unlock its tag, worn on every server.", "", "&7+10 XP per PvP kill, +1 per Outbreak kill.", "&f/trigger pvp.mastery &7on PvP shows yours."), false), null);
+        if (mastery) put(m, 4, item(Material.NETHER_STAR, "&e&lMastery tags", List.of("&7Master a character in the Multiverse", "&7(level V, &f" + String.format("%,d", MASTERY_XP) + " &7mastery XP)",
+                "&7to unlock its tag, worn on every server.", "", "&7+10 XP per PvP kill, +1 per Outbreak kill.", "&f/trigger pvp.mastery &7in the Multiverse shows yours."), false), null);
         int i = 0;
         for (Tag t : tags.values()) {
             if (!t.page().equals(page) || i >= grid.length) continue;
@@ -457,7 +457,7 @@ public class Votes implements Listener {
         }
         put(m, 46, item(Material.NAME_TAG, "&f&lTag shop", List.of("&7Tags bought with vote points"), page.equals("tags")), "tags");
         put(m, 52, item(Material.EXPERIENCE_BOTTLE, "&6&lEarned tags", List.of("&7Unlocked by advancements, milestones", "&7and being top of a leaderboard"), page.equals("etags")), "etags");
-        put(m, 53, item(Material.NETHER_STAR, "&e&lMastery tags", List.of("&7One for every PvP character:", "&7master it to unlock its tag"), mastery), "mtags");
+        put(m, 53, item(Material.NETHER_STAR, "&e&lMastery tags", List.of("&7One for every Multiverse character:", "&7master it to unlock its tag"), mastery), "mtags");
         if (pd.tag != null) put(m, 48, item(Material.BARRIER, "&cTake off your tag", List.of(), false), "off:tag");
         put(m, 49, item(Material.ARROW, "&7Back", List.of(), false), "cosmetics");
         put(m, 50, pointsItem(pd), null);
@@ -467,7 +467,7 @@ public class Votes implements Listener {
     // ------------------------------------------------------------------ earned tags
     List<String> requirement(Tag t) {
         List<String> l = new ArrayList<>();
-        if (t.score() != null) { l.add("&7Master &f" + (t.note() != null ? t.note() : t.id()) + " &7on the PvP server"); l.add("&8" + String.format("%,d", t.min()) + " mastery XP with that character"); }
+        if (t.score() != null) { l.add("&7Master &f" + (t.note() != null ? t.note() : t.id()) + " &7in the Multiverse"); l.add("&8" + String.format("%,d", t.min()) + " mastery XP with that character"); }
         else if (t.advancement() != null) l.add("&7Advancement: &f" + (t.note() != null ? t.note() : t.advancement()));
         else if ("VOTES".equals(t.stat())) l.add("&7Be the &f#1 voter &7this month");
         else if (t.stat() != null) {

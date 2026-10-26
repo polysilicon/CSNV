@@ -76,7 +76,7 @@ votes:
       reward: ["&f4 Iron Ingots", "&f16 Bone Meal", "&a2 Saplings"]
       commands: ["give %player% minecraft:iron_ingot 4", "give %player% minecraft:bone_meal 16", "give %player% minecraft:oak_sapling 2"]
     pvp:
-      label: "&c&lCrispy PvP"
+      label: "&d&lMultiverse"
       icon: NETHERITE_SWORD
       instance: CrispyPvP01
       commands: []
@@ -211,7 +211,7 @@ welcome:
   subtitle: "&fPick a world to start"
   chat:
     - "&d&lWelcome to Crispy, &f%player%&d&l!"
-    - "&7Five worlds and a hub, with chat that follows you everywhere. New here? &bPvP &7is the quickest way in:"
+    - "&7Five worlds and a hub, with chat that follows you everywhere. New here? &dMultiverse &7is the quickest way in:"
     - "&7pick one of 36 characters and fight, or take on Outbreak's zombie waves solo."
   announce: true              # tell the lobby
   discord-relay: true         # and Discord + every server, through the bot
@@ -222,11 +222,11 @@ welcome:
   menu-title: "&8Start here: pick a world"
   worlds:                     # order = menu order; server = the Velocity name (defaults to the key)
     pvp:
-      name: "&b&lPvP + Outbreak"
-      short: "PvP"
+      name: "&d&lMultiverse"
+      short: "Multiverse"
       icon: NETHERITE_SWORD
       recommended: true
-      lore: ["&736 characters, each with their own", "&7gear and abilities. Arena fights,", "&7duels, and Outbreak zombie waves", "&7you can play solo."]
+      lore: ["&f36 characters from your favourite", "&fshows and games", "&bPvP &8· &6Duels &8· &2Outbreak", "&7Zombie waves you can play solo."]
     og:
       name: "&c&lAnarchy"
       icon: OBSIDIAN

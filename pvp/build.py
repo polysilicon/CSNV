@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Builds the crispy_pvp datapack (Crispy PvP, Fabric 26.2, vanilla clients).
+"""Builds the crispy_pvp datapack (the Multiverse server, was "Crispy PvP"; Fabric 26.2, vanilla clients).
 
     python3 build.py [outdir]      -> <outdir>/crispy_pvp  (default: ./dist)
 
@@ -477,7 +477,7 @@ def npc_adv(key, tag, menu):
 
 def build():
     shutil.rmtree(OUT, ignore_errors=True)
-    wj("pack.mcmeta", {"pack": {"description": "Crispy PvP: kit arena + Outbreak waves, custom enchants + cyberware (26.2)",
+    wj("pack.mcmeta", {"pack": {"description": "Crispy Multiverse: kit arena + Outbreak waves, custom enchants + cyberware (26.2)",
                                 "min_format": PACK_FORMAT[0], "max_format": PACK_FORMAT[1]}})
     wj("data/minecraft/tags/function/load.json", {"values": [f"{NS}:load"]})
     wj("data/minecraft/tags/function/tick.json", {"values": [f"{NS}:tick"]})
@@ -607,7 +607,7 @@ def build():
         "scoreboard players set @s pvp.left 0", "scoreboard players set @s pvp.ct 0",
         "scoreboard players add @s pvp.streak 0", "scoreboard players add @s pvp.kills 0",
         "tag @s add pvp.seen",
-        "title @s actionbar {\"text\":\"Kit Dealer: PvP  ·  Outbreak: fight waves of mobs\",\"color\":\"aqua\"}",
+        "title @s actionbar {\"text\":\"Multiverse  ·  Kit Dealer: PvP  ·  Outbreak: fight waves of mobs\",\"color\":\"aqua\"}",
     ])
     fn("trigger_lobby", [
         "scoreboard players set @s pvp.spawn 0",
@@ -715,10 +715,11 @@ def build():
     ])
     fn("admin/place_holo", [   # the lobby board (on its own, so it can be redone without touching the NPCs)
         "kill @e[tag=pvp.holo]",
-        holo(LOBBY_Y + 6, -LOBBY_R + 1.5, {"text": "CRISPY PVP", "color": "gold", "bold": True}, 3),
+        holo(LOBBY_Y + 6, -LOBBY_R + 1.5, {"text": "MULTIVERSE", "color": "light_purple", "bold": True}, 3),
         holo(LOBBY_Y + 4.6, -LOBBY_R + 1.5, [{"text": "Kit Dealer: ", "color": "aqua"}, {"text": "PvP arena", "color": "gray"},
                                               {"text": "   Outbreak: ", "color": "green"}, {"text": "waves of mobs, solo or team", "color": "gray"},
-                                              {"text": f"\nPlay as {len(KITS)} heroes, villains and legends from games, movies, TV and memes", "color": "yellow"},
+                                              {"text": f"\n{len(KITS)} characters from your favourite shows and games", "color": "yellow"},
+                                              {"text": "\nPvP · Duels · Outbreak", "color": "white"},
                                               {"text": "\nEvery character has their own abilities · /spawn to return", "color": "dark_gray"}]),
     ])
     L, Y = LOBBY_R, LOBBY_Y

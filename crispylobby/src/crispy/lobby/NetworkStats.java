@@ -292,7 +292,7 @@ final class NetworkStats {
         int n = Math.max(1, cfg().getInt("top", 10));
         StringBuilder s = new StringBuilder("&d&lCrispyAnarchy Stats\n&e&l").append(c.title).append("\n&7")
                 .append(c == Cat.MONEY ? "Factions" : c.name().startsWith("BALATRO") ? "Lobby · /balatro" : c == Cat.UNO_WINS ? "Lobby · /uno"
-                        : c == Cat.OUTBREAK_WAVE || c == Cat.PVP_STREAK || c == Cat.DUEL_RATING || c == Cat.KITS_MASTERED ? "PvP server" : "All servers").append("\n");
+                        : c == Cat.OUTBREAK_WAVE || c == Cat.PVP_STREAK || c == Cat.DUEL_RATING || c == Cat.KITS_MASTERED ? "Multiverse" : "All servers").append("\n");
         List<Row> top = top(c, n);
         if (top.isEmpty()) s.append("\n&8No data yet");
         for (int i = 0; i < top.size(); i++) {
