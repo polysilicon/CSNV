@@ -715,7 +715,7 @@ def build():
     ])
     fn("admin/place_holo", [   # the lobby board (on its own, so it can be redone without touching the NPCs)
         "kill @e[tag=pvp.holo]",
-        holo(LOBBY_Y + 6, -LOBBY_R + 1.5, {"text": "MULTIVERSE", "color": "light_purple", "bold": True}, 3),
+        holo(LOBBY_Y + 6.9, -LOBBY_R + 1.5, {"text": "MULTIVERSE", "color": "light_purple", "bold": True}, 3),   # above the 5-line board
         holo(LOBBY_Y + 4.6, -LOBBY_R + 1.5, [{"text": "Kit Dealer: ", "color": "aqua"}, {"text": "PvP arena", "color": "gray"},
                                               {"text": "   Outbreak: ", "color": "green"}, {"text": "waves of mobs, solo or team", "color": "gray"},
                                               {"text": f"\n{len(KITS)} characters from your favourite shows and games", "color": "yellow"},
