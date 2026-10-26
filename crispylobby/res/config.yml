@@ -226,7 +226,7 @@ welcome:
       short: "Multiverse"
       icon: NETHERITE_SWORD
       recommended: true
-      lore: ["&f36 characters from your favourite", "&fshows and games", "&bPvP &8· &6Duels &8· &2Outbreak", "&7Zombie waves you can play solo."]
+      lore: ["&f36 characters from your favourite", "&fshows and games", "&bPvP &8· &6Duels &8· &2Outbreak &8· &dThe Tower", "&7Zombie waves and a roguelite climb", "&7you can play solo."]
     og:
       name: "&c&lAnarchy"
       icon: OBSIDIAN

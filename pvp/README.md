@@ -204,6 +204,13 @@ the first click opens a 10 s queue that others join by clicking too. Everyone st
 - Dying ends your climb unless you have an Extra Life; the climb is over when nobody is left. Best floor per player in
   `tw.best`, the server record in `#trecord tw`; +5 mastery XP per floor for the character you're playing.
 - Tower players are on team `tower` (no friendly fire; abilities skip them like Outbreak teammates).
+- **Parkour risk**: the 3rd fall into the magma on a floor (`MAX_FALLS`, counted in `tw.falls`) kills you, so it ends
+  your climb unless an Extra Life saves you.
+- **Your build**: the sidebar (objective `tw.side`, shown to team `tower`) has the floor, and in a solo climb your Extra
+  Lives, falls left and every upgrade with its level and total bonus ("Sharpened II  +30% damage"). A sidebar is shared
+  by the whole team, so in co-op it shows the floor and climbers only. Everyone also gets a **Climb Log** (book):
+  right-click it for your character, upgrades and stats in chat; the same summary shows after every pick.
+- **Leaderboard**: "🗼 Best Tower Floor" (top 5 `tw.best`) is the fifth lobby board (mod 1.4.3).
 
 ## Duels
 - In the lobby everyone gets a **⚔ Duel Challenge** item (hotbar slot 9). Look at a player within 8 blocks and

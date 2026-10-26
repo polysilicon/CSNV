@@ -19,6 +19,20 @@ COUNTDOWN = 10                     # s the queue stays open after the first clic
 PICK_SECS = 20                     # s to pick an upgrade (then it's picked for you)
 LAYOUTS = 6                        # mob-room and parkour layouts generated per kind
 FLOOR_XP = 5                       # mastery XP per floor cleared, for the character you're playing
+MAX_FALLS = 3                      # parkour: the 3rd fall into the magma on a floor kills you
+SIDE = [1, 2, 3, 4, 5, 6, 7, 8, 11]   # upgrades listed on the sidebar (Second Wind and Extra Life are one-offs)
+ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV"]
+LOG = ('minecraft:book[minecraft:custom_name={"text":"🗼 Climb Log","color":"light_purple","bold":true,"italic":false},'
+       'minecraft:lore=[{"text":"Right-click: your upgrades and stats","color":"gray","italic":false}],minecraft:max_stack_size=1,'
+       'minecraft:enchantment_glint_override=true,minecraft:use_cooldown={seconds:1f,cooldown_group:"pvp:twlog"},'
+       'minecraft:consumable={consume_seconds:0.05f,animation:"none",has_consume_particles:false,sound:"minecraft:intentionally_empty"}]')
+
+
+def stat(uid, lv):
+    """What lv stacks of an upgrade add up to, for the sidebar and the Climb Log."""
+    return {1: f"+{2 * lv} ❤", 2: f"+{15 * lv}% damage", 3: f"+{10 * lv}% speed", 4: f"+{3 * lv} armor", 5: f"+{15 * lv}% attack speed",
+            6: f"+{14 * lv}% jump", 7: f"+{min(100, 25 * lv)}% knockback res.", 8: f"Regen {ROMAN[min(lv, 3) - 1]} on kills",
+            9: f"used {lv}x", 10: f"{lv} picked", 11: f"+{40 * lv}% dmg, -{2 * lv} ❤"}[uid]
 
 # id, name, colour, description, attribute modifiers [(attribute, step per stack, operation)]
 UPGRADES = [
@@ -74,8 +88,10 @@ def build(b):
     # ------------------------------------------------------------------ load / tick / second
     fn("tower/load", [
         *[f"scoreboard objectives add {o}" for o in ["tw dummy", "tw.pick trigger", "tw.o1 dummy", "tw.o2 dummy", "tw.o3 dummy",
-                                                     "tw.lives dummy", "tw.best dummy", "tw.kc totalKillCount",
+                                                     "tw.lives dummy", "tw.best dummy", "tw.kc totalKillCount", "tw.falls dummy",
                                                      *[f"tw.u{u[0]} dummy" for u in UPGRADES]]],
+        'scoreboard objectives add tw.side dummy {"text":"🗼 THE TOWER","color":"light_purple","bold":true}',
+        "scoreboard objectives setdisplay sidebar.team.light_purple tw.side",   # team tower is light purple
         "team add tower", "team modify tower color light_purple", "team modify tower friendlyFire false",
         "team modify tower seeFriendlyInvisibles true",
         'bossbar add pvp:tower {"text":"Boss"}', "bossbar set pvp:tower color purple", "bossbar set pvp:tower visible false",
@@ -104,12 +120,13 @@ def build(b):
         f"bossbar set pvp:tower players {inn}",
         f"kill @e[type=minecraft:item,{BOX}]", f"kill @e[type=minecraft:experience_orb,{BOX}]",
         # Vampire: Regeneration for kills since last second
-        f"execute as @a[tag=tw.in,scores={{tw.kc=1..,tw.u8=1..}}] run effect give @s minecraft:regeneration 3 1",
+        *[f"execute as @a[tag=tw.in,scores={{tw.kc=1..,tw.u8={lv}}}] run effect give @s minecraft:regeneration 3 {amp}" for lv, amp in (("1", 0), ("2", 1), ("3..", 2))],
         f"scoreboard players set {inn} tw.kc 0",
         f"execute if score #tstate tw matches 2 unless score #ttype tw matches 2 run function {T}/sec_fight",
-        "execute if score #tstate tw matches 2 if score #ttype tw matches 2 run title @a[tag=tw.in] actionbar " + tj(
+        "execute if score #tstate tw matches 2 if score #ttype tw matches 2 as @a[tag=tw.in] run title @s actionbar " + tj(
             [{"text": "🗼 Floor ", "color": "light_purple"}, {"score": {"name": "#floor", "objective": "tw"}, "color": "white", "bold": True},
-             {"text": " · reach the gold block · don't touch the magma", "color": "gray"}]),
+             {"text": " · reach the gold block · falls ", "color": "gray"}, {"score": {"name": "@s", "objective": "tw.falls"}, "color": "red", "bold": True},
+             {"text": f"/{MAX_FALLS}", "color": "red"}]),
         f"execute if score #tstate tw matches 3 run function {T}/sec_pick",
     ])
     fn("tower/sec_fight", [
@@ -164,7 +181,7 @@ def build(b):
         "tag @s remove tw.q", "tag @s add tw.in", "tag @s remove tw.picked", "clear @s", "effect clear @s", "function cyber:admin/reset",
         *b.PERK_RESET, "gamemode adventure @s", "team join tower @s",
         *[f"scoreboard players set @s tw.u{u[0]} 0" for u in UPGRADES], "scoreboard players set @s tw.lives 0", "scoreboard players set @s tw.kc 0",
-        f"function {NS}:kit/roll", "scoreboard players operation @s pvp.cur = #rk pvp",
+        f"function {NS}:kit/roll", "scoreboard players operation @s pvp.cur = #rk pvp", "scoreboard players set @s tw.falls 0", f"give @s {LOG}",
         *[f"execute if score @s pvp.cur matches {k[0]} run function {NS}:kit/{k[1]}" for k in b.KITS],
     ])
 
@@ -173,7 +190,7 @@ def build(b):
                                 *[f"execute if score #r tw matches {i} run function {T}/room/{kind}_{i}" for i in range(1, LAYOUTS + 1)]]
     floor_title = lambda sub, color: ("title @a[tag=tw.in] subtitle " + tj({"text": sub, "color": color}))
     fn("tower/next", [
-        "scoreboard players add #floor tw 1", "scoreboard players set #tstate tw 2", "tag @a remove tw.picked",
+        "scoreboard players add #floor tw 1", "scoreboard players set #tstate tw 2", "tag @a remove tw.picked", f"scoreboard players set {inn} tw.falls 0",
         "scoreboard players operation #m5 tw = #floor tw", "scoreboard players set #k tw 5", "scoreboard players operation #m5 tw %= #k tw",
         "scoreboard players operation #m4 tw = #floor tw", "scoreboard players set #k tw 4", "scoreboard players operation #m4 tw %= #k tw",
         "scoreboard players set #ttype tw 1",
@@ -188,6 +205,7 @@ def build(b):
         "title @a[tag=tw.in] times 5 40 10",
         "title @a[tag=tw.in] title " + tj([{"text": "FLOOR ", "color": "light_purple", "bold": True}, {"score": {"name": "#floor", "objective": "tw"}, "color": "white", "bold": True}]),
         f"execute as {inn} at @s run playsound minecraft:block.end_portal_frame.fill player @s ~ ~ ~ 1 0.8",
+        f"function {T}/side",
     ])
     fn("tower/tp_start", [*[f"execute if score #ttype tw matches {k} run {v}" for k, v in start_tp.items()],
                            "effect clear @s minecraft:weakness", "effect clear @s minecraft:resistance"])
@@ -278,6 +296,7 @@ def build(b):
         f"kill @e[tag=tw.mob,{BOX}]", "bossbar set pvp:tower visible false",
         f"function {T}/room/clear", f"execute as {inn} run tp @s {at(0.5, 1, 0.5)}",
         f"effect give {inn} minecraft:regeneration 8 1",
+        f"scoreboard players add {inn} tw.best 0",   # a missing score never compares, so give everyone one first
         f"execute as {inn} if score #floor tw > @s tw.best run scoreboard players operation @s tw.best = #floor tw",
         f"scoreboard players set #g pvp {FLOOR_XP}", f"execute as {inn} run function {NS}:mastery/gain",
         f"execute as {inn} at @s run playsound minecraft:ui.toast.challenge_complete player @s ~ ~ ~ 0.8 1.2",
@@ -298,6 +317,7 @@ def build(b):
     take += ["execute if score #p tw matches 9 run effect give @s minecraft:instant_health 1 4 true", "execute if score #p tw matches 9 run give @s minecraft:golden_apple 2",
              "execute if score #p tw matches 10 run scoreboard players add @s tw.lives 1",
              f"function {T}/apply", "execute if score #p tw matches 1 run effect give @s minecraft:instant_health 1 0 true",
+             f"function {T}/summary", f"function {T}/side",
              "playsound minecraft:block.enchantment_table.use player @s ~ ~ ~ 1 1.2"]
     fn("tower/take", take)
     # re-apply every stacking modifier from the counts (also after an Extra Life)
@@ -312,32 +332,87 @@ def build(b):
     fn("tower/apply", apply)
 
     # ------------------------------------------------------------------ falling, dying, leaving, game over
-    fn("tower/fell", [start_tp[2], "damage @s 2 minecraft:fall", "title @s actionbar " + tj({"text": "Back to the start!", "color": "red"}),
-                      "playsound minecraft:entity.player.hurt_on_fire player @s ~ ~ ~ 1 1"])
+    fn("tower/fell", [
+        "scoreboard players add @s tw.falls 1",
+        f"execute if score @s tw.falls matches {MAX_FALLS}.. run tellraw @a[tag=tw.in] " + tj([{"selector": "@s", "color": "yellow"},
+                                                                                               {"text": f" fell into the magma {MAX_FALLS} times!", "color": "red"}]),
+        f"execute if score @s tw.falls matches {MAX_FALLS}.. run return run kill @s",
+        start_tp[2], "damage @s 2 minecraft:fall",
+        "title @s actionbar " + tj([{"text": "Back to the start! Falls: ", "color": "red"}, {"score": {"name": "@s", "objective": "tw.falls"}, "color": "red", "bold": True},
+                                    {"text": f"/{MAX_FALLS}", "color": "red"}]),
+        "playsound minecraft:entity.player.hurt_on_fire player @s ~ ~ ~ 1 1", f"function {T}/side"])
     fn("tower/died", [   # respawned (in the lobby) while climbing
         f"execute unless score #tstate tw matches 2.. run return run function {NS}:to_lobby",
         f"execute unless score @s tw.lives matches 1.. run return run function {NS}:to_lobby",
-        "scoreboard players remove @s tw.lives 1", f"execute if score #tstate tw matches 3 run tp @s {at(0.5, 1, 0.5)}",
+        "scoreboard players remove @s tw.lives 1", "scoreboard players set @s tw.falls 0", f"execute if score #tstate tw matches 3 run tp @s {at(0.5, 1, 0.5)}",
         f"execute if score #tstate tw matches 2 run function {T}/tp_start", f"function {T}/apply",
         "effect give @s minecraft:instant_health 1 4 true",
         "tellraw @a[tag=tw.in] " + tj([{"selector": "@s", "color": "yellow"}, {"text": " used an Extra Life!", "color": "green"}]),
+        f"function {T}/side",
     ])
     fn("tower/leave", [   # from to_lobby: out of the climb (died, /spawn, logged out)
+        "scoreboard players add @s tw.best 0",
         "execute if score #floor tw > @s tw.best run scoreboard players operation @s tw.best = #floor tw",
         "tag @s remove tw.in", "tag @s remove tw.picked", "team leave @s",
         *PERK_RESET,
         "tellraw @s " + tj([{"text": "🗼 Your climb ended on floor ", "color": "light_purple"}, {"score": {"name": "#floor", "objective": "tw"}, "color": "white", "bold": True},
                             {"text": " (best: ", "color": "gray"}, {"score": {"name": "@s", "objective": "tw.best"}, "color": "white"}, {"text": ")", "color": "gray"}]),
         "tellraw @a[tag=tw.in] " + tj([{"selector": "@s", "color": "yellow"}, {"text": " is out of the climb.", "color": "gray"}]),
+        f"function {T}/side",
     ])
     fn("tower/game_over", [
-        "scoreboard players set #tstate tw 0", f"kill @e[tag=tw.mob,{BOX}]", "bossbar set pvp:tower visible false",
+        "scoreboard players set #tstate tw 0", f"kill @e[tag=tw.mob,{BOX}]", "bossbar set pvp:tower visible false", "scoreboard players reset * tw.side",
         "tellraw @a " + tj([{"text": "🗼 A Tower climb ended on floor ", "color": "light_purple"}, {"score": {"name": "#floor", "objective": "tw"}, "color": "white", "bold": True}]),
         "execute if score #floor tw > #trecord tw run tellraw @a " + tj([{"text": "🗼 New Tower record: floor ", "color": "gold", "bold": True},
                                                                        {"score": {"name": "#floor", "objective": "tw"}, "color": "white", "bold": True}]),
         "execute if score #floor tw > #trecord tw run scoreboard players operation #trecord tw = #floor tw",
         f"function {T}/room/clear",
     ])
+
+    # ------------------------------------------------------------------ your build: chat summary, sidebar, Climb Log
+    summ = ["tellraw @s " + tj([{"text": "🗼 Your build", "color": "light_purple", "bold": True}, {"text": " · floor ", "color": "gray"},
+                                {"score": {"name": "#floor", "objective": "tw"}, "color": "white"}])]
+    summ += [f"execute if score @s pvp.cur matches {k[0]} run tellraw @s " + tj([{"text": "  Character: ", "color": "gray"}, {"text": k[2], "color": k[3], "bold": True}])
+             for k in b.KITS]
+    for (uid, name, color, desc, _) in UPGRADES:
+        for lv in range(1, len(ROMAN) + 1):
+            rng = f"{lv}.." if lv == len(ROMAN) else str(lv)
+            summ.append(f"execute if score @s tw.u{uid} matches {rng} run tellraw @s " + tj([
+                {"text": "  ▪ ", "color": "dark_gray"}, {"text": f"{name} {ROMAN[lv - 1]}", "color": color, "bold": True},
+                {"text": f"  {stat(uid, lv)}", "color": "gray"}]))
+    summ += ["execute if score @s tw.lives matches 1.. run tellraw @s " + tj([{"text": "  ❤ Extra Lives left: ", "color": "green"},
+                                                                            {"score": {"name": "@s", "objective": "tw.lives"}, "color": "white", "bold": True}]),
+             "execute unless score @s tw.u1 matches 1.. unless score @s tw.u2 matches 1.. unless score @s tw.u3 matches 1.. unless score @s tw.u4 matches 1.. "
+             "unless score @s tw.u5 matches 1.. unless score @s tw.u6 matches 1.. unless score @s tw.u7 matches 1.. unless score @s tw.u8 matches 1.. "
+             "unless score @s tw.u11 matches 1.. run tellraw @s " + tj({"text": "  No upgrades yet: clear a floor to pick one.", "color": "gray"})]
+    fn("tower/summary", summ)
+    # sidebar (shown to team tower): floor and climbers for everyone; in a solo climb also your lives, falls and upgrades.
+    # Positive scores are shown as numbers; upgrades get negative scores (so they sort below) and a fixed text instead.
+    side = ["scoreboard players reset * tw.side", f"execute store result score #pl tw if entity {inn}",
+            "execute unless score #tstate tw matches 2.. run return 0",
+            "scoreboard players operation #f tw.side = #floor tw", "scoreboard players display name #f tw.side " + tj({"text": "Floor", "color": "white", "bold": True}),
+            "execute if score #pl tw matches 2.. run scoreboard players operation #c tw.side = #pl tw",
+            "execute if score #pl tw matches 2.. run scoreboard players display name #c tw.side " + tj({"text": "Climbers", "color": "gray"}),
+            f"execute if score #pl tw matches 1 as {inn} run function {T}/side_solo"]
+    fn("tower/side", side)
+    solo = ["execute if score @s tw.lives matches 1.. run scoreboard players operation #lv tw.side = @s tw.lives",
+            "execute if score @s tw.lives matches 1.. run scoreboard players display name #lv tw.side " + tj({"text": "Extra Lives", "color": "green"}),
+            f"execute if score #ttype tw matches 2 run scoreboard players set #fa tw.side {MAX_FALLS}",
+            "execute if score #ttype tw matches 2 run scoreboard players operation #fa tw.side -= @s tw.falls",
+            "execute if score #ttype tw matches 2 run scoreboard players display name #fa tw.side " + tj({"text": "Falls left", "color": "gold"})]
+    for uid in SIDE:
+        _, name, color, _, _ = UPGRADES[uid - 1]
+        solo.append(f"execute if score @s tw.u{uid} matches 1.. run scoreboard players set #u{uid} tw.side -{uid}")
+        for lv in range(1, len(ROMAN) + 1):
+            rng = f"{lv}.." if lv == len(ROMAN) else str(lv)
+            solo += [f"execute if score @s tw.u{uid} matches {rng} run scoreboard players display name #u{uid} tw.side " + tj({"text": f"{name} {ROMAN[lv - 1]}", "color": color}),
+                     f"execute if score @s tw.u{uid} matches {rng} run scoreboard players display numberformat #u{uid} tw.side fixed " + tj({"text": stat(uid, lv), "color": "gray"})]
+    fn("tower/side_solo", solo)
+    # the Climb Log: right-click to see your build in chat (it's consumed, so it's handed straight back)
+    wj(f"data/{NS}/advancement/towerlog.json", {"criteria": {"c": {"trigger": "minecraft:consume_item", "conditions": {"item": {"items": "minecraft:book"}}}},
+                                                 "rewards": {"function": f"{T}/log"}})
+    fn("tower/log", ["advancement revoke @s only pvp:towerlog", "execute unless entity @s[tag=tw.in] run return 0",
+                     f"function {T}/summary", f"give @s {LOG}"])
 
     # ------------------------------------------------------------------ the room
     x1, x2, z1, z2 = TCX - R, TCX + R, TCZ - R, TCZ + R
