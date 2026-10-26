@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.command.CommandExecuteEvent;
 import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.proxy.Player;
@@ -30,7 +31,8 @@ import java.util.concurrent.TimeUnit;
  *  name colours (namecolors.json) colour the name in the tab list the same way.
  *  It also owns /vote and /cosmetics on every server: the menus live on the lobby, so the player is sent there
  *  (if not already on it) and the command line is handed to the lobby's CrispyLobby on the crispy:vote channel.
- *  /lobby sends you to the lobby from any server (like /server lobby, but not in combat). */
+ *  /lobby sends you to the lobby from any server (like /server lobby, but not in combat), and /server <name> is
+ *  refused in combat too. */
 public class CrispyTags {
     static final Path FILE = Path.of(System.getProperty("crispytags.file",
             "/AMPStorage/.ampdata/instances/CrispyLobby01/Minecraft/plugins/CrispyLobby/tags.json"));
@@ -58,6 +60,17 @@ public class CrispyTags {
         cm.register(cm.metaBuilder("cosmetics").plugin(this).build(), new Lobby("cosmetics", List.of()));
         cm.register(cm.metaBuilder("lobby").plugin(this).build(), new ToLobby());
         proxy.getScheduler().buildTask(this, this::tick).delay(10, TimeUnit.SECONDS).repeat(3, TimeUnit.SECONDS).schedule();
+    }
+
+    /** Velocity's own /server would be a way out of a fight: refuse it while combat-tagged, like /lobby and /vote. */
+    @Subscribe public void onCommand(CommandExecuteEvent e) {
+        if (!(e.getCommandSource() instanceof Player p) || !e.getResult().isAllowed()) return;
+        String[] a = e.getCommand().trim().split("\\s+");
+        if (a.length < 2 || !a[0].equalsIgnoreCase("server")) return;   // bare /server only lists the servers
+        long left = p.getCurrentServer().map(c -> combatLeft(c.getServerInfo().getName(), p.getUsername())).orElse(0L);
+        if (left <= 0) return;
+        e.setResult(CommandExecuteEvent.CommandResult.denied());
+        p.sendMessage(Component.text("You can't switch servers in combat (" + (left + 999) / 1000 + "s left).", NamedTextColor.RED));
     }
 
     void tick() {
