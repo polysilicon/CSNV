@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  *  name colours (namecolors.json) colour the name in the tab list the same way.
  *  It also owns /vote and /cosmetics on every server: the menus live on the lobby, so the player is sent there
  *  (if not already on it) and the command line is handed to the lobby's CrispyLobby on the crispy:vote channel.
- *  /lobby sends you to the lobby from any server (like /server lobby, but not in combat), and /server <name> is
+ *  /lobby (or /hub) sends you to the lobby from any server (like /server lobby, but not in combat), and /server <name> is
  *  refused in combat too. */
 public class CrispyTags {
     static final Path FILE = Path.of(System.getProperty("crispytags.file",
@@ -58,7 +58,7 @@ public class CrispyTags {
         var cm = proxy.getCommandManager();
         cm.register(cm.metaBuilder("vote").plugin(this).build(), new Lobby("vote", List.of("links", "top")));
         cm.register(cm.metaBuilder("cosmetics").plugin(this).build(), new Lobby("cosmetics", List.of()));
-        cm.register(cm.metaBuilder("lobby").plugin(this).build(), new ToLobby());
+        cm.register(cm.metaBuilder("lobby").aliases("hub").plugin(this).build(), new ToLobby());
         proxy.getScheduler().buildTask(this, this::tick).delay(10, TimeUnit.SECONDS).repeat(3, TimeUnit.SECONDS).schedule();
     }
 
