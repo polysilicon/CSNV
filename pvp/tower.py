@@ -7,7 +7,8 @@ over when nobody is left. Best floor per player in tw.best, the server record in
 
 One room, rebuilt for every floor: interior x/z -R..R around (TCX, TCZ), floor blocks at TY, players stand on TY + 1.
 State (#tstate tw): 0 idle, 1 countdown (queue open), 2 floor in progress, 3 picking upgrades.
-Floor type (#ttype tw): 1 mobs, 2 parkour, 3 boss.
+Floor type (#ttype tw): 1 mobs, 3 boss; challenge floors (every 3rd, picked at random, never the same twice in a row):
+2 parkour, 4 glass bridge, 5 maze, 6 crafting.
 """
 import random
 
@@ -17,7 +18,22 @@ WALL_H = 12                        # ceiling (barrier) at TY + WALL_H
 MAX_PLAYERS = 4
 COUNTDOWN = 10                     # s the queue stays open after the first click
 PICK_SECS = 20                     # s to pick an upgrade (then it's picked for you)
-LAYOUTS = 6                        # mob-room and parkour layouts generated per kind
+LAYOUTS = 10                       # layouts generated per kind (mob rooms, parkour, mazes)
+CHALLENGES = [2, 4, 5, 6]          # parkour, glass bridge, maze, crafting
+MAGMA, GOAL = (2, 4), (2, 4, 5)    # floor types with magma to fall in / a gold block to reach
+MAZE_SECS, CRAFT_SECS = 60, 90     # time limits (+1 s per floor, max 2 min); when they run out everyone takes a strike
+# crafting challenge: target item, name, ingredient stacks hidden in the barrels (split so you have to search), hint
+RECIPES = [
+    ("iron_pickaxe", "Iron Pickaxe", [("iron_ingot", 1), ("iron_ingot", 1), ("iron_ingot", 1), ("oak_planks", 2)], "3 iron ingots + 2 sticks"),
+    ("compass", "Compass", [("iron_ingot", 2), ("iron_ingot", 2), ("redstone", 1)], "4 iron ingots around 1 redstone"),
+    ("clock", "Clock", [("gold_ingot", 2), ("gold_ingot", 2), ("redstone", 1)], "4 gold ingots around 1 redstone"),
+    ("lantern", "Lantern", [("iron_nugget", 4), ("iron_nugget", 4), ("coal", 1), ("oak_planks", 1)], "8 iron nuggets around a torch"),
+    ("fishing_rod", "Fishing Rod", [("string", 1), ("string", 1), ("oak_planks", 2)], "3 sticks + 2 string"),
+    ("jukebox", "Jukebox", [("oak_planks", 4), ("oak_planks", 4), ("diamond", 1)], "8 planks around a diamond"),
+]
+CRAFT_ITEMS = sorted({r[0] for r in RECIPES} | {i for r in RECIPES for i, _ in r[2]} | {"stick", "torch"})   # taken back after the floor
+JUNK = ["rotten_flesh", "bone", "dirt", "cobblestone", "wheat_seeds", "feather", "flint", "clay_ball"]
+BARRELS = [(-12, -8), (-12, -2), (-12, 4), (12, -8), (12, -2), (12, 4), (-8, -12), (-3, -12), (3, -12), (8, -12), (-6, 6), (6, 6)]
 FLOOR_XP = 5                       # mastery XP per floor cleared, for the character you're playing
 MAX_FALLS = 3                      # parkour: the 3rd fall into the magma on a floor kills you
 SIDE = [1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]   # sidebar (Second Wind, Extra Life are one-offs)
@@ -95,7 +111,7 @@ BOSSES = [
 ]
 # where mobs come in: the north half, along the walls
 SPAWN_PTS = [(x, -10) for x in (-10, -5, 0, 5, 10)] + [(-10, -4), (10, -4), (-10, 2), (10, 2)]
-START = {1: (0.5, 1, 9.5), 2: (0.5, 3, 10.5), 3: (0.5, 1, 9.5)}   # player start per floor type (y relative to TY)
+START = {1: (0.5, 1, 9.5), 2: (0.5, 3, 10.5), 3: (0.5, 1, 9.5), 4: (0.5, 3, 10.5), 5: (-10.5, 1, 11.5), 6: (0.5, 1, 9.5)}   # per floor type (y from TY)
 
 
 def build(b):
@@ -120,6 +136,7 @@ def build(b):
         'bossbar add pvp:tower {"text":"Boss"}', "bossbar set pvp:tower color purple", "bossbar set pvp:tower visible false",
         "execute unless score #tstate tw matches 0.. run scoreboard players set #tstate tw 0",
         "execute unless score #trecord tw matches 0.. run scoreboard players set #trecord tw 0",
+        "execute unless score #lasti tw matches 0.. run scoreboard players set #lasti tw 0",
         f"forceload add {TCX - R - 1} {TCZ - R - 1} {TCX + R + 1} {TCZ + R + 1}",
     ])
     fn("tower/tick", [
@@ -127,8 +144,10 @@ def build(b):
         f"execute as @a[tag=tw.in,scores={{tw.pick=1..}}] run function {T}/picked",
         # anyone climbing who ends up outside the room (through the ceiling, a wall...) goes back in
         f"execute if score #tstate tw matches 2.. as {inn} unless entity @s[x={TCX - R},y={TY},z={TCZ - R},dx={2 * R},dy={WALL_H - 2},dz={2 * R}] run function {T}/escaped",
-        f"execute if score #tstate tw matches 2 if score #ttype tw matches 2 as {inn} at @s if block ~ ~-0.2 ~ minecraft:magma_block run function {T}/fell",
-        f"execute if score #tstate tw matches 2 if score #ttype tw matches 2 as {inn} at @s if block ~ ~-0.2 ~ minecraft:gold_block run function {T}/clear",
+        f"execute if score #tstate tw matches 2 if score #mag tw matches 1 as {inn} at @s if block ~ ~-0.2 ~ minecraft:magma_block run function {T}/fell",
+        f"execute if score #tstate tw matches 2 if score #goal tw matches 1 as {inn} at @s if block ~ ~-0.2 ~ minecraft:gold_block run function {T}/clear",
+        f"execute if score #tstate tw matches 2 if score #ttype tw matches 4 run function {T}/glass_tick",
+        f"execute if score #tstate tw matches 2 if score #ttype tw matches 6 as {inn} run function {T}/craft_check",
     ])
     fn("tower/second", [f"execute if score #tstate tw matches 1.. run function {T}/sec"])
     fn("tower/sec", [
@@ -152,11 +171,8 @@ def build(b):
         "scoreboard players set #k tw 8", "scoreboard players operation #t8 tw %= #k tw",
         f"execute if score #tstate tw matches 2 if score #t2 tw matches 0 as @a[tag=tw.in,scores={{tw.u21=1..}}] at @s run function {T}/drone",
         f"execute if score #tstate tw matches 2 if score #t8 tw matches 0 as @a[tag=tw.in,scores={{tw.u22=1..}}] at @s run function {T}/blackhole",
-        f"execute if score #tstate tw matches 2 unless score #ttype tw matches 2 run function {T}/sec_fight",
-        "execute if score #tstate tw matches 2 if score #ttype tw matches 2 as @a[tag=tw.in] run title @s actionbar " + tj(
-            [{"text": "🗼 Floor ", "color": "light_purple"}, {"score": {"name": "#floor", "objective": "tw"}, "color": "white", "bold": True},
-             {"text": " · reach the gold block · falls ", "color": "gray"}, {"score": {"name": "@s", "objective": "tw.falls"}, "color": "red", "bold": True},
-             {"text": f"/{MAX_FALLS}", "color": "red"}]),
+        f"execute if score #tstate tw matches 2 if score #chal tw matches 0 run function {T}/sec_fight",
+        f"execute if score #tstate tw matches 2 if score #chal tw matches 1 run function {T}/sec_chal",
         f"execute if score #tstate tw matches 3 run function {T}/sec_pick",
     ])
     fn("tower/sec_fight", [
@@ -222,15 +238,22 @@ def build(b):
     fn("tower/next", [
         "scoreboard players add #floor tw 1", "scoreboard players set #tstate tw 2", "tag @a remove tw.picked", f"scoreboard players set {inn} tw.falls 0",
         "scoreboard players operation #m5 tw = #floor tw", "scoreboard players set #k tw 5", "scoreboard players operation #m5 tw %= #k tw",
-        "scoreboard players operation #m4 tw = #floor tw", "scoreboard players set #k tw 4", "scoreboard players operation #m4 tw %= #k tw",
+        "scoreboard players operation #m3 tw = #floor tw", "scoreboard players set #k tw 3", "scoreboard players operation #m3 tw %= #k tw",
         "scoreboard players set #ttype tw 1",
-        "execute if score #m4 tw matches 3 run scoreboard players set #ttype tw 2",
+        f"execute if score #m3 tw matches 0 unless score #m5 tw matches 0 run function {T}/pick_challenge",
         "execute if score #m5 tw matches 0 run scoreboard players set #ttype tw 3",
+        "scoreboard players set #mag tw 0", "scoreboard players set #goal tw 0", "scoreboard players set #chal tw 0",
+        *[f"execute if score #ttype tw matches {t} run scoreboard players set #mag tw 1" for t in MAGMA],
+        *[f"execute if score #ttype tw matches {t} run scoreboard players set #goal tw 1" for t in GOAL],
+        *[f"execute if score #ttype tw matches {t} run scoreboard players set #chal tw 1" for t in CHALLENGES],
         f"execute store result score #pl tw if entity {inn}",
         f"function {T}/room/clear",
         f"execute if score #ttype tw matches 1 run function {T}/floor_mobs",
         f"execute if score #ttype tw matches 2 run function {T}/floor_parkour",
         f"execute if score #ttype tw matches 3 run function {T}/floor_boss",
+        f"execute if score #ttype tw matches 4 run function {T}/floor_glass",
+        f"execute if score #ttype tw matches 5 run function {T}/floor_maze",
+        f"execute if score #ttype tw matches 6 run function {T}/floor_craft",
         f"execute as {inn} run function {T}/tp_start",
         f"effect clear {inn} minecraft:absorption",
         *[f"execute as @a[tag=tw.in,scores={{tw.u19={lv}}}] run effect give @s minecraft:absorption infinite {amp} true" for lv, amp in (("1", 0), ("2", 1), ("3", 2), ("4", 3), ("5..", 4))],
@@ -341,6 +364,7 @@ def build(b):
         "execute unless score #tstate tw matches 2 run return 0",
         "scoreboard players set #tstate tw 3", f"scoreboard players set #tt tw {PICK_SECS}",
         f"kill @e[tag=tw.mob,{BOX}]", "bossbar set pvp:tower visible false",
+        *[f"clear {inn} minecraft:{i}" for i in CRAFT_ITEMS],
         f"function {T}/room/clear", f"execute as {inn} run tp @s {at(0.5, 1, 0.5)}",
         f"effect give {inn} minecraft:regeneration 8 1",
         f"scoreboard players add {inn} tw.best 0",   # a missing score never compares, so give everyone one first
@@ -387,8 +411,8 @@ def build(b):
         f"execute if score @s tw.falls matches {MAX_FALLS}.. run tellraw @a[tag=tw.in] " + tj([{"selector": "@s", "color": "yellow"},
                                                                                                {"text": f" fell into the magma {MAX_FALLS} times!", "color": "red"}]),
         f"execute if score @s tw.falls matches {MAX_FALLS}.. run return run kill @s",
-        start_tp[2], "damage @s 2 minecraft:fall",
-        "title @s actionbar " + tj([{"text": "Back to the start! Falls: ", "color": "red"}, {"score": {"name": "@s", "objective": "tw.falls"}, "color": "red", "bold": True},
+        f"function {T}/tp_start", "damage @s 2 minecraft:fall",
+        "title @s actionbar " + tj([{"text": "Back to the start! Strikes: ", "color": "red"}, {"score": {"name": "@s", "objective": "tw.falls"}, "color": "red", "bold": True},
                                     {"text": f"/{MAX_FALLS}", "color": "red"}]),
         "playsound minecraft:entity.player.hurt_on_fire player @s ~ ~ ~ 1 1", f"function {T}/side"])
     fn("tower/died", [   # respawned (in the lobby) while climbing
@@ -447,9 +471,9 @@ def build(b):
     fn("tower/side", side)
     solo = ["execute if score @s tw.lives matches 1.. run scoreboard players operation #lv tw.side = @s tw.lives",
             "execute if score @s tw.lives matches 1.. run scoreboard players display name #lv tw.side " + tj({"text": "Extra Lives", "color": "green"}),
-            f"execute if score #ttype tw matches 2 run scoreboard players set #fa tw.side {MAX_FALLS}",
-            "execute if score #ttype tw matches 2 run scoreboard players operation #fa tw.side -= @s tw.falls",
-            "execute if score #ttype tw matches 2 run scoreboard players display name #fa tw.side " + tj({"text": "Falls left", "color": "gold"})]
+            f"execute if score #chal tw matches 1 run scoreboard players set #fa tw.side {MAX_FALLS}",
+            "execute if score #chal tw matches 1 run scoreboard players operation #fa tw.side -= @s tw.falls",
+            "execute if score #chal tw matches 1 run scoreboard players display name #fa tw.side " + tj({"text": "Strikes left", "color": "gold"})]
     for uid in SIDE:
         _, name, color, _, _ = UPGRADES[uid - 1]
         solo.append(f"execute if score @s tw.u{uid} matches 1.. run scoreboard players set #u{uid} tw.side -{uid}")
@@ -514,9 +538,132 @@ def build(b):
         "particle minecraft:reverse_portal ~ ~1 ~ 3 1 3 0.5 150", "particle minecraft:portal ~ ~1 ~ 0.5 0.5 0.5 1 60",
         "playsound minecraft:entity.enderman.teleport player @a[distance=..16] ~ ~ ~ 1 0.5", "tag @s remove tw.bh"])
 
+    # ------------------------------------------------------------------ challenge floors
+    x1, x2, z1, z2 = TCX - R, TCX + R, TCZ - R, TCZ + R
+    names = {2: "Parkour", 4: "Glass Bridge", 5: "Maze", 6: "Crafting"}
+    fn("tower/pick_challenge", [   # a different challenge from last time: index (last + 1..n-1) mod n
+        f"execute store result score #r tw run random value 1..{len(CHALLENGES) - 1}", "scoreboard players operation #ci tw = #lasti tw",
+        "scoreboard players operation #ci tw += #r tw", f"scoreboard players set #k tw {len(CHALLENGES)}", "scoreboard players operation #ci tw %= #k tw",
+        "scoreboard players operation #lasti tw = #ci tw",
+        *[f"execute if score #ci tw matches {i} run scoreboard players set #ttype tw {t}" for i, t in enumerate(CHALLENGES)]])
+    strikes = [{"text": " · strikes ", "color": "gray"}, {"score": {"name": "@s", "objective": "tw.falls"}, "color": "red", "bold": True},
+               {"text": f"/{MAX_FALLS}", "color": "red"}]
+    timer = [{"text": " · ", "color": "gray"}, {"score": {"name": "#ctime", "objective": "tw"}, "color": "white", "bold": True}, {"text": " s", "color": "gray"}]
+    head = lambda n: [{"text": f"🗼 {n}", "color": "light_purple", "bold": True}]
+    fn("tower/sec_chal", [
+        # maze and crafting run against the clock; when it runs out everyone takes a strike and gets 30 s more
+        "execute if score #ttype tw matches 5..6 run scoreboard players remove #ctime tw 1",
+        "execute if score #ttype tw matches 5..6 if score #ctime tw matches ..0 run tellraw @a[tag=tw.in] " + tj({"text": "⏰ Time's up! Everyone takes a strike.", "color": "red"}),
+        f"execute if score #ttype tw matches 5..6 if score #ctime tw matches ..0 as {inn} run function {T}/strike",
+        "execute if score #ttype tw matches 5..6 if score #ctime tw matches ..0 run scoreboard players set #ctime tw 30",
+        # crafting: a mob every 15 s keeps you moving
+        "execute if score #ttype tw matches 6 run scoreboard players add #cm tw 1",
+        f"execute if score #ttype tw matches 6 if score #cm tw matches 15.. run function {T}/spawn_one",
+        "execute if score #cm tw matches 15.. run scoreboard players set #cm tw 0",
+        "execute if score #ttype tw matches 2 as @a[tag=tw.in] run title @s actionbar " + tj(head("Parkour") + [{"text": " · reach the gold block", "color": "gray"}] + strikes),
+        "execute if score #ttype tw matches 4 as @a[tag=tw.in] run title @s actionbar " + tj(head("Glass Bridge") + [{"text": " · one pane in every row is fake", "color": "gray"}] + strikes),
+        "execute if score #ttype tw matches 5 as @a[tag=tw.in] run title @s actionbar " + tj(head("Maze") + [{"text": " · find the gold block", "color": "gray"}] + timer + strikes),
+        *[f"execute if score #ttype tw matches 6 if score #rec tw matches {i} as @a[tag=tw.in] run title @s actionbar " + tj(
+            head("Craft") + [{"text": f": {r[1]}", "color": "yellow", "bold": True}] + timer + strikes) for i, r in enumerate(RECIPES, 1)],
+    ])
+    fn("tower/strike", [   # as a player: a strike (wrong move, time up); the last one kills you
+        "scoreboard players add @s tw.falls 1",
+        f"execute if score @s tw.falls matches {MAX_FALLS}.. run tellraw @a[tag=tw.in] " + tj([{"selector": "@s", "color": "yellow"}, {"text": " ran out of strikes!", "color": "red"}]),
+        f"execute if score @s tw.falls matches {MAX_FALLS}.. run return run kill @s",
+        "title @s actionbar " + tj([{"text": "Strike! ", "color": "red", "bold": True}, {"score": {"name": "@s", "objective": "tw.falls"}, "color": "red", "bold": True},
+                                    {"text": f"/{MAX_FALLS}", "color": "red"}]),
+        "playsound minecraft:block.note_block.didgeridoo player @s ~ ~ ~ 1 0.6", f"function {T}/side"])
+
+    # glass bridge: 6 rows of two 2x2 panes over magma; in every row one is fake (rolled each time) and shatters
+    rows = [(6 - 3 * k, k) for k in range(6)]   # (z of the row's first block, row number)
+    panes = lambda k, side: ((-3 if side == 0 else 2), 6 - 3 * k)   # top-left corner of that pane
+    gb = [f"fill {x1} {TY} {z1} {x2} {TY} {z2} minecraft:magma_block", f"fill {at(-2, 2, 9)} {at(2, 2, 11)} minecraft:polished_deepslate",
+          f"fill {at(-1, 2, -12)} {at(1, 2, -10)} minecraft:gold_block", f"setblock {at(0, 3, -12)} minecraft:end_rod"]
+    for _, k in rows:
+        for side in (0, 1):
+            px, pz = panes(k, side)
+            gb.append(f"fill {at(px, 2, pz)} {at(px + 1, 2, pz + 1)} minecraft:glass")
+    fn("tower/room/glass", gb)
+    fn("tower/floor_glass", [f"function {T}/room/glass", *[f"execute store result score #g{k} tw run random value 0..1" for _, k in rows],
+                             floor_title("Glass Bridge: one pane in every row is fake!", "aqua")])
+    gt = []
+    for _, k in rows:
+        for side in (0, 1):
+            px, pz = panes(k, side)
+            gt.append(f"execute if score #g{k} tw matches {side} if block {at(px, 2, pz)} minecraft:glass "
+                      f"if entity @a[tag=tw.in,x={TCX + px},y={TY + 3},z={TCZ + pz},dx=1,dy=0,dz=1] run function {T}/glass/{k}_{side}")
+            fn(f"tower/glass/{k}_{side}", [f"fill {at(px, 2, pz)} {at(px + 1, 2, pz + 1)} minecraft:air",
+                                           f"particle minecraft:block{{block_state:\"minecraft:glass\"}} {at(px + 1, 2.5, pz + 1)} 0.6 0.2 0.6 0.1 40",
+                                           f"playsound minecraft:block.glass.break player @a {at(px + 1, 2, pz + 1)} 1.5 0.8"])
+    fn("tower/glass_tick", gt)
+
+    # maze: 10 hedge mazes (random each build), a roof so nobody jumps over, gold block at the far end
+    fn("tower/floor_maze", [*pick_layout("maze"), floor_title("Maze: find the gold block", "green"),
+                            "scoreboard players operation #ctime tw = #floor tw", f"scoreboard players add #ctime tw {MAZE_SECS}",
+                            "execute if score #ctime tw matches 121.. run scoreboard players set #ctime tw 120"])
+    mrnd = random.Random(4242)
+    N = 12   # cells per side; cell (i, j) is the block at x = -11 + 2i, z = -11 + 2j
+    for m in range(1, LAYOUTS + 1):
+        seen, stack, edges = {(0, N - 1)}, [(0, N - 1)], []
+        while stack:
+            ci, cj = stack[-1]
+            nb = [(ci + a, cj + b) for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1)) if 0 <= ci + a < N and 0 <= cj + b < N and (ci + a, cj + b) not in seen]
+            if not nb: stack.pop(); continue
+            nxt = mrnd.choice(nb); seen.add(nxt); edges.append(((ci, cj), nxt)); stack.append(nxt)
+        adj = {}
+        for a, c in edges: adj.setdefault(a, []).append(c); adj.setdefault(c, []).append(a)
+        dist, todo = {(0, N - 1): 0}, [(0, N - 1)]
+        while todo:
+            c = todo.pop(0)
+            for d in adj.get(c, []):
+                if d not in dist: dist[d] = dist[c] + 1; todo.append(d)
+        gi, gj = max(dist, key=dist.get)   # the cell furthest from the start
+        bx = lambda i: -11 + 2 * i
+        cmds = [f"fill {at(-12, 1, -12)} {at(12, 3, 12)} minecraft:azalea_leaves[persistent=true]", f"fill {at(-12, 4, -12)} {at(12, 4, 12)} minecraft:barrier"]
+        for i in range(N):
+            for j in range(N):
+                cmds.append(f"fill {at(bx(i), 1, bx(j))} {at(bx(i), 3, bx(j))} minecraft:air")
+                if (i + j) % 3 == 0: cmds.append(f"setblock {at(bx(i), 3, bx(j))} minecraft:light[level=12]")
+        for (ai, aj), (ci2, cj2) in edges:
+            cmds.append(f"fill {at((bx(ai) + bx(ci2)) // 2, 1, (bx(aj) + bx(cj2)) // 2)} {at((bx(ai) + bx(ci2)) // 2, 3, (bx(aj) + bx(cj2)) // 2)} minecraft:air")
+        cmds += [f"setblock {at(bx(gi), 0, bx(gj))} minecraft:gold_block", f"setblock {at(bx(gi), 3, bx(gj))} minecraft:end_rod"]
+        fn(f"tower/room/maze_{m}", cmds)
+
+    # crafting: the materials for a random item, split over 12 barrels (random each time) with junk; craft it to clear
+    cr = ["kill @e[tag=tw.deco]", f"setblock {at(0, 1, -1)} minecraft:crafting_table"]
+    for (bx2, bz2) in BARRELS:
+        cr.append(f"setblock {at(bx2, 1, bz2)} minecraft:barrel[facing=up]")
+    for (dx, dz, b) in ((-12, -5, "bookshelf"), (12, -5, "bookshelf"), (-12, 1, "hay_block"), (12, 1, "hay_block"), (-6, -12, "bookshelf"), (6, -12, "bookshelf"),
+                        (-6, 7, "hay_block"), (6, 7, "hay_block")):
+        cr.append(f"setblock {at(dx, 1, dz)} minecraft:{b}")
+    fn("tower/room/craft", cr)
+    fc = [f"function {T}/room/craft", f"execute store result score #rec tw run random value 1..{len(RECIPES)}",
+          "scoreboard players operation #ctime tw = #floor tw", f"scoreboard players add #ctime tw {CRAFT_SECS}",
+          "execute if score #ctime tw matches 121.. run scoreboard players set #ctime tw 120", "scoreboard players set #cm tw 0"]
+    for (bx2, bz2) in BARRELS:   # junk in every barrel, two random pieces
+        for slot in (13, 22):
+            fc.append(f"execute store result score #r tw run random value 1..{len(JUNK)}")
+            fc += [f"execute if score #r tw matches {i} run item replace block {at(bx2, 1, bz2)} container.{slot} with minecraft:{j} {1 + (i % 3)}"
+                   for i, j in enumerate(JUNK, 1)]
+    for ri, (item, name, stacks, hint) in enumerate(RECIPES, 1):
+        for si, (ing, cnt) in enumerate(stacks):   # each stack in a random barrel, in its own slot so none overwrite
+            fc.append(f"execute if score #rec tw matches {ri} store result score #b tw run random value 1..{len(BARRELS)}")
+            fc += [f"execute if score #rec tw matches {ri} if score #b tw matches {bi} run item replace block {at(bx2, 1, bz2)} container.{2 * si + 1} with minecraft:{ing} {cnt}"
+                   for bi, (bx2, bz2) in enumerate(BARRELS, 1)]
+        fc += [f"execute if score #rec tw matches {ri} run title @a[tag=tw.in] subtitle " + tj([{"text": "Craft: ", "color": "gray"}, {"text": name, "color": "yellow", "bold": True}]),
+               f"execute if score #rec tw matches {ri} run tellraw @a[tag=tw.in] " + tj([{"text": "🔨 Crafting challenge: ", "color": "light_purple", "bold": True},
+                                                                                       {"text": f"craft a {name}", "color": "yellow", "bold": True},
+                                                                                       {"text": f" ({hint}). The materials are hidden in the barrels; use the crafting table.", "color": "gray"}]),
+               f"execute if score #rec tw matches {ri} run summon minecraft:text_display {at(0.5, 2.6, -0.5)} {{Tags:[\"tw.deco\"],billboard:\"center\","
+               f"text:{tj([{'text': 'Craft: ', 'color': 'gray'}, {'text': name, 'color': 'yellow', 'bold': True}])}}}"]
+    fn("tower/floor_craft", fc)
+    fn("tower/craft_check", [f"execute if score #rec tw matches {ri} if items entity @s container.* minecraft:{r[0]} run return run function {T}/craft_done"
+                             for ri, r in enumerate(RECIPES, 1)])
+    fn("tower/craft_done", ["tellraw @a[tag=tw.in] " + tj([{"selector": "@s", "color": "yellow"}, {"text": " crafted it!", "color": "green"}]), f"function {T}/clear"])
+
     # ------------------------------------------------------------------ the room
     x1, x2, z1, z2 = TCX - R, TCX + R, TCZ - R, TCZ + R
-    fn("tower/room/clear", [
+    fn("tower/room/clear", ["kill @e[tag=tw.deco]",
         f"fill {x1} {TY + 1} {z1} {x2} {TY + WALL_H - 1} {z2} minecraft:air",
         f"fill {x1} {TY} {z1} {x2} {TY} {z2} minecraft:polished_deepslate",
         f"fill {x1 + 1} {TY} {z1 + 1} {x2 - 1} {TY} {z2 - 1} minecraft:deepslate_tiles",

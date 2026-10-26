@@ -193,8 +193,18 @@ the first click opens a 10 s queue that others join by clicking too. Everyone st
   - **mob floors**: cover pillars and low walls (6 layouts), 3 + floor/2 mobs (+2 per extra player, max 16) from a pool
     that changes every 5 floors (zombies/skeletons/spiders, then husks/strays, vindicators/wither skeletons,
     blazes/piglin brutes; no spiders, they climb to the ceiling out of melee reach), +12% health and +5% damage per floor;
-  - **parkour** every 4th floor (3, 7, 11...): a snake of platforms over magma (2x2 or harder 1x1, 6 layouts);
-    touching the magma sends you back to the start, the gold block clears the floor for everyone;
+  - **challenge floors** every 3rd floor (3, 6, 9...; a boss wins on 15, 30...), one of four picked at random and
+    never the same twice in a row (`tower/pick_challenge`):
+    - **Parkour**: a snake of platforms over magma (2x2, or 1x1 in the harder half of 10 layouts);
+    - **Glass Bridge**: 6 rows of two glass panes over magma; one pane in every row is fake (rolled each time, `#g0..5`)
+      and shatters when you step on it;
+    - **Maze**: one of 10 hedge mazes (azalea leaves, barrier roof so nobody jumps over), gold block in the cell furthest
+      from the start, 60 s + 1 per floor (max 2 min);
+    - **Crafting**: craft a random item (Iron Pickaxe, Compass, Clock, Lantern, Fishing Rod, Jukebox) from materials
+      split over 12 barrels (a random barrel per stack, plus junk), 90 s + 1 per floor, a mob every 15 s; the materials
+      are taken back afterwards.
+    Magma and the gold block work as before; falling, a wrong pane and running out of time are all **strikes**
+    (`tw.falls`), and the 3rd strike on a floor kills you;
   - **boss** every 5th floor: The Brute, Bone King, The Warlord, The Beast in turn, with a boss bar
     (health 80 + 40 per boss beaten + 30 per extra player) and two adds.
 - After each floor everyone picks **1 of 3 random upgrades** (clickable chat lines, `/trigger tw.pick`, 20 s or one is
