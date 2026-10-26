@@ -9,7 +9,7 @@ Menus are chest screens opened with /pvpmenu (crispy-pvp-spawn mod) from storage
 """
 import json
 import math
-import abilities, arena_map, outbreak_maps, os, random, shutil, sys
+import abilities, arena_map, outbreak_maps, os, random, shutil, sys, tower
 
 NS = "pvp"
 PACK_FORMAT = [107, 0], [107, 1]
@@ -21,6 +21,7 @@ ACX, ACZ, AR = 0, 100, 40      # PvP arena centre and floor radius (a round colo
 PCX, PCZ, PR = 0, 300, 32      # Outbreak (PvE) arena centre and half-size (outer walls at ±33)
 KIT_NPC = (-3.5, LOBBY_Y + 1, -6.5)
 PVE_NPC = (4.5, LOBBY_Y + 1, -6.5)
+TOWER_NPC = (0.5, LOBBY_Y + 1, -7.5)   # between the two, under the board
 SHOP_NPC = (PCX + 0.5, AY + 2, PCZ + 0.5)
 
 def box(cx, cz, r, y0, dy): return f"x={cx - r - 1},y={y0},z={cz - r - 1},dx={2 * r + 2},dy={dy},dz={2 * r + 2}"
@@ -376,6 +377,8 @@ PERK_RESET = ["tag @s remove pvp.master", "attribute @s minecraft:scale modifier
               "attribute @s minecraft:movement_speed modifier remove pvp:size_spd", "attribute @s minecraft:attack_damage modifier remove pvp:fists",
               "attribute @s minecraft:attack_speed modifier remove pvp:fists", "attribute @s minecraft:max_health modifier remove pvp:jug", "attribute @s minecraft:max_health modifier remove pvp:arm",
               "tag @s remove pve.jug", "tag @s remove pve.cola", "tag @s remove pve.dt", "tag @s remove pve.phd", "scoreboard players set @s pve.arm 0", "scoreboard players set @s pve.gun 0"]
+PERK_RESET += tower.PERK_RESET   # the Tower's upgrade modifiers go with the other per-run perks
+TOWER_BOX = box(tower.TCX, tower.TCZ, tower.R + 1, AY - 1, tower.WALL_H + 4)
 CELLS_NEEDED = 3   # Power Cells (from boss waves) to assemble the Annihilator
 CELL = ('minecraft:heart_of_the_sea[minecraft:custom_data={pvp_cell:1b},minecraft:custom_name={"text":"Power Cell","color":"light_purple","italic":false},'
         'minecraft:lore=[{"text":"Bring 3 to the Arsenal to assemble the Annihilator","color":"gray","italic":false}],minecraft:enchantment_glint_override=true]')
@@ -551,11 +554,13 @@ def build():
         "execute unless score #state pve matches 0.. run scoreboard players set #state pve 0",
         "execute unless score #record pve matches 0.. run scoreboard players set #record pve 0",
         *[f"data modify storage pvp:menus {k} set value {tj(v)}" for k, v in menus.items()],
+        f"function {NS}:tower/load",
     ])
 
     fn("tick", [
         "scoreboard players enable @a pvp.kit", "scoreboard players enable @a pvp.spawn",
         f"function {NS}:ability/tick",
+        f"function {NS}:tower/tick",
         f"execute as @a[tag=!pvp.seen] run function {NS}:to_lobby",
         f"execute as @a[scores={{pvp.left=1..}}] run function {NS}:to_lobby",
         f"execute as @e[type=minecraft:player,scores={{pvp.dead=1..}}] run function {NS}:respawned",
@@ -584,11 +589,12 @@ def build():
         "effect give @a[tag=pvp.spec] minecraft:saturation 3 0 true",
         f"execute as @a[tag=pvp.spec] unless entity @s[{STANDS_BOX}] run function {NS}:to_lobby",
         # anyone (in adventure) outside the lobby and both arenas goes back to the lobby
-        f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[{ARENA_BOX}] {" ".join(f"unless entity @s[{b}]" for b in PVE_BOXES.values())} unless entity @s[tag=pvp.admin,{ROOM_BOX}] unless entity @s[tag=pvp.spec,{STANDS_BOX}] unless entity @s[tag=pvp.duel] run function {NS}:to_lobby",
+        f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[{ARENA_BOX}] {" ".join(f"unless entity @s[{b}]" for b in PVE_BOXES.values())} unless entity @s[tag=pvp.admin,{ROOM_BOX}] unless entity @s[tag=pvp.spec,{STANDS_BOX}] unless entity @s[tag=pvp.duel] unless entity @s[{TOWER_BOX}] run function {NS}:to_lobby",
         f"function {NS}:pve/second",
         f"function {NS}:ability/second",
         f"execute as @a[{LOBBY_BOX},tag=!pvp.spec] unless items entity @s container.* minecraft:flint unless items entity @s weapon.offhand minecraft:flint run item replace entity @s hotbar.8 with {DUEL_ITEM}",
         f"function {NS}:duel/check",
+        f"function {NS}:tower/second", "advancement revoke @a only pvp:towernpc",
         # no stashing gear on the floor to pick up as another character: items dropped in the arena or a duel pit vanish
         f"kill @e[type=minecraft:item,{ARENA_BOX}]", *[f"kill @e[type=minecraft:item,{box(px, pz, arena_map.PIT_R + 3, AY - 1, 25)}]" for (px, pz) in DUEL_PITS],
         f"execute as @a[tag=pvp.master] at @s unless entity @s[{LOBBY_BOX}] run particle minecraft:wax_on ~ ~1 ~ 0.35 0.6 0.35 0 5",
@@ -598,6 +604,7 @@ def build():
     ])
     fn("to_lobby", [
         f"execute if entity @s[tag=pvp.duel] run function {NS}:duel/forfeit",
+        f"execute if entity @s[tag=tw.in] run function {NS}:tower/leave", "tag @s remove tw.q",
         "scoreboard players add @s pve.best 0",
         "execute if entity @s[tag=pve.in] if score #state pve matches 2..3 if score #wave pve > @s pve.best run scoreboard players operation @s pve.best = #wave pve",
         "clear @s", "effect clear @s", "function cyber:admin/reset", "gamemode adventure @s",
@@ -617,6 +624,7 @@ def build():
     fn("respawned", [
         "scoreboard players set @s pvp.dead 0",
         f"execute if entity @s[tag=pve.in] run return run function {NS}:pve/downed",
+        f"execute if entity @s[tag=tw.in] run return run function {NS}:tower/died",
         *[f"execute if score @s pvp.cur matches {k[0]} run scoreboard players add #{k[1]} pvp.kd 1" for k in KITS],   # deaths per character
         f"execute if entity @s[tag=pvp.duel] run return run function {NS}:duel/lose",
         "execute if score @s pvp.streak matches 3.. run tellraw @a [{\"selector\":\"@s\",\"color\":\"yellow\"},{\"text\":\"'s \",\"color\":\"gray\"},"
@@ -669,6 +677,7 @@ def build():
                                                                                        {"text": k[2], "color": k[3], "bold": True}]) for k in KITS]])
     build_mastery()
     build_duels()
+    tower.build(sys.modules[__name__])
     fn("kit/valid_pve", [f"execute if score #j pve matches {k[0]} run return 1" for k in KITS] + ["return 0"])   # #j pve is a real kit id
     # admin-made kits are given by the mod ("pvpkit give <id>", ids 101+)
     fn("kit/custom", ["execute store result storage pvp:tmp k int 1 run scoreboard players get #k pvp", f"function {NS}:kit/custom_give with storage pvp:tmp"])
@@ -711,15 +720,17 @@ def build():
         f"function {NS}:admin/place_leaderboard",
         *npc("pvp.npc", KIT_NPC, "⚔ PvP Arena ⚔", "aqua", "weaponsmith", "snow"),
         *npc("pvp.pvenpc", PVE_NPC, "☣ Outbreak ☣", "green", "cleric", "swamp"),
+        *npc("pvp.towernpc", TOWER_NPC, "🗼 The Tower 🗼", "light_purple", "librarian", "taiga"),
         f"function {NS}:admin/place_holo",
     ])
     fn("admin/place_holo", [   # the lobby board (on its own, so it can be redone without touching the NPCs)
         "kill @e[tag=pvp.holo]",
-        holo(LOBBY_Y + 6.9, -LOBBY_R + 1.5, {"text": "MULTIVERSE", "color": "light_purple", "bold": True}, 3),   # above the 5-line board
+        holo(LOBBY_Y + 7.2, -LOBBY_R + 1.5, {"text": "MULTIVERSE", "color": "light_purple", "bold": True}, 3),   # above the 6-line board
         holo(LOBBY_Y + 4.6, -LOBBY_R + 1.5, [{"text": "PvP Arena: ", "color": "aqua"}, {"text": "pick a character and fight", "color": "gray"},
                                               {"text": "   Outbreak: ", "color": "green"}, {"text": "waves of mobs, solo or team", "color": "gray"},
                                               {"text": f"\n{len(KITS)} characters from your favourite shows and games", "color": "yellow"},
-                                              {"text": "\nPvP · Duels · Outbreak", "color": "white"},
+                                              {"text": "\nPvP · Duels · Outbreak · The Tower", "color": "white"},
+                                              {"text": "\nThe Tower: ", "color": "light_purple"}, {"text": "climb floor by floor, solo or with friends", "color": "gray"},
                                               {"text": "\nEvery character has their own abilities · /spawn to return", "color": "dark_gray"}]),
     ])
     L, Y = LOBBY_R, LOBBY_Y

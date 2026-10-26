@@ -19,7 +19,7 @@ import json
 import re
 
 NS = "pvp"
-TGT = "type=!#pvp:not_target,tag=!pvp.caster,team=!pve"
+TGT = "type=!#pvp:not_target,tag=!pvp.caster,team=!pve,team=!tower"   # never Outbreak or Tower teammates
 BY = "by @p[tag=pvp.caster]"
 NOT_TARGET = ["item", "marker", "interaction", "text_display", "block_display", "item_display", "armor_stand", "mannequin",
               "villager", "experience_orb", "arrow", "spectral_arrow", "trident", "wind_charge", "breeze_wind_charge", "fireball",

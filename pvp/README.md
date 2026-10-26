@@ -186,6 +186,25 @@ Every character has its own mastery XP (`pvp.mx<kit id>`): +10 per PvP kill and 
   every character you've played.
 - Masters get a sparkle aura while playing that character and a gold star in kill streak announcements.
 
+## The Tower (`tower.py`)
+A roguelite climb, solo or up to 4 players. The **🗼 The Tower** NPC sits between the PvP Arena and Outbreak NPCs:
+the first click opens a 10 s queue that others join by clicking too. Everyone starts as a **random character**.
+- One room (x 388..412, z -12..12 at y -61, kept force-loaded: `admin/build_tower` builds it), rebuilt every floor:
+  - **mob floors**: cover pillars and low walls (6 layouts), 3 + floor/2 mobs (+2 per extra player, max 16) from a pool
+    that changes every 5 floors (zombies/skeletons/spiders, then husks/strays, vindicators/wither skeletons,
+    blazes/piglin brutes), +12% health and +5% damage per floor;
+  - **parkour** every 4th floor (3, 7, 11...): a snake of platforms over magma (2x2 or harder 1x1, 6 layouts);
+    touching the magma sends you back to the start, the gold block clears the floor for everyone;
+  - **boss** every 5th floor: The Brute, Bone King, The Warlord, The Beast in turn, with a boss bar
+    (health 80 + 40 per boss beaten + 30 per extra player) and two adds.
+- After each floor everyone picks **1 of 3 random upgrades** (clickable chat lines, `/trigger tw.pick`, 20 s or one is
+  picked for you): Vitality, Sharpened, Swift, Plated, Frenzy, Spring Step, Juggernaut, Vampire, Second Wind,
+  Extra Life, Glass Cannon. They stack for the whole climb (attribute modifiers `pvp:tw_u<n>_<i>`, re-applied from
+  the counts in `tw.u<n>`).
+- Dying ends your climb unless you have an Extra Life; the climb is over when nobody is left. Best floor per player in
+  `tw.best`, the server record in `#trecord tw`; +5 mastery XP per floor for the character you're playing.
+- Tower players are on team `tower` (no friendly fire; abilities skip them like Outbreak teammates).
+
 ## Duels
 - In the lobby everyone gets a **⚔ Duel Challenge** item (hotbar slot 9). Look at a player within 8 blocks and
   right-click to challenge them. They get clickable **[Accept] / [Decline]** (`/trigger pvp.duela` / `pvp.dueld`), and
