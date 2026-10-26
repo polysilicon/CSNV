@@ -59,8 +59,9 @@ them back to the lobby.
 - Death, logout, `/spawn`, `/lobby` or `/trigger pvp.spawn` sends you back to the lobby, clearing your inventory and
   implants. `/spawn` and `/lobby` are blocked for 10 s after you take damage.
 - The PvP arena is a 61×61 sandstone colosseum (centre 0, -60, 100).
-- **Leaderboards** on the south side of the lobby show the top 5 for Kills (`pvp.kills`), Best Kill Streak (`pvp.best`) and
-  Best Outbreak Wave (`pve.best`). The mod rewrites them every 5 s. `pvp:admin/place_leaderboard` re-places them.
+- **Leaderboards**: one big board on the south side of the lobby (`pvp.lb.all`, mod 1.4.4) shows the top 3 for Kills
+  (`pvp.kills`), Best Kill Streak (`pvp.best`), Duel Rating (`pvp.elo`), Best Outbreak Wave (`pve.best`) and Best Tower
+  Floor (`tw.best`). The mod rewrites it every 5 s. `pvp:admin/place_leaderboard` re-places it.
 
 ### Kits
 Every kit is a character. The menu shows all 36 in four full rows of 9, with the top and bottom rows left empty, roughly grouped by franchise. The
@@ -236,7 +237,7 @@ the first click opens a 10 s queue that others join by clicking too. Everyone st
   Lives, falls left and every upgrade with its level and total bonus ("Sharpened II  +30% damage"). A sidebar is shared
   by the whole team, so in co-op it shows the floor and climbers only. Everyone also gets a **Climb Log** (book):
   right-click it for your character, upgrades and stats in chat; the same summary shows after every pick.
-- **Leaderboard**: "🗼 Best Tower Floor" (top 5 `tw.best`) is the fifth lobby board (mod 1.4.3).
+- **Leaderboard**: "🗼 Best Tower Floor" (`tw.best`) is a row on the lobby leaderboard.
 
 ## Duels
 - In the lobby everyone gets a **⚔ Duel Challenge** item (hotbar slot 9). Look at a player within 8 blocks and
@@ -251,7 +252,7 @@ the first click opens a 10 s queue that others join by clicking too. Everyone st
 - Leaving mid-duel (`/spawn`, disconnecting) is a forfeit. If your opponent logs out, you win by walkover with no
   rating change.
 - `/trigger pvp.duelstats` shows your rating and record.
-- The lobby has a **⚔ Duel Rating** leaderboard (top 5 `pvp.elo`, mod 1.4.2) next to the other three, and the network
+- The lobby has a **⚔ Duel Rating** row (`pvp.elo`) on the lobby leaderboard, and the network
   lobby's earned tags include **[Champion]** (#1 duel rating) and **[Kit Master]** (mastered a character).
 
 ## Outbreak (PvE waves)

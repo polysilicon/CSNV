@@ -709,12 +709,12 @@ def build():
     holo = lambda y, z, text, scale=1: (f"summon minecraft:text_display 0.5 {y} {z} {{Tags:[\"pvp.holo\"],billboard:\"center\",background:0,"
                                         f"transformation:{{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[{scale}f,{scale}f,{scale}f]}},"
                                         f"text:{tj(text)}}}")
-    # leaderboards on the south side of the lobby; the mod (Leaderboards.java) fills in the text every 5 s
-    lb = ["kill @e[tag=pvp.lb]"]
-    for x, tag in ((-8.5, "pvp.lb.kills"), (-4, "pvp.lb.streak"), (0.5, "pvp.lb.wave"), (5, "pvp.lb.duel"), (9.5, "pvp.lb.tower")):
-        lb.append(f"summon minecraft:text_display {x} {LOBBY_Y + 2.2} {LOBBY_R - 2.5} {{Tags:[\"pvp.lb\",\"{tag}\"],billboard:\"center\","
-                  "background:1073741824,line_width:160,transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],"
-                  "translation:[0f,0f,0f],scale:[1.4f,1.4f,1.4f]},text:{\"text\":\"Loading leaderboard...\",\"color\":\"gray\"}}")
+    # one big leaderboard on the south side of the lobby (top 3 of every category); the mod (Leaderboards.java) fills
+    # in the text every 5 s
+    lb = ["kill @e[tag=pvp.lb]",
+          f"summon minecraft:text_display 0.5 {LOBBY_Y + 1.6} {LOBBY_R - 2.5} {{Tags:[\"pvp.lb\",\"pvp.lb.all\"],billboard:\"center\","
+          "background:-2144728518,line_width:400,transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],"
+          "translation:[0f,0f,0f],scale:[1.3f,1.3f,1.3f]},text:{\"text\":\"Loading leaderboards...\",\"color\":\"gray\"}}"]
     fn("admin/place_leaderboard", lb)
     fn("admin/place_npc", [
         f"function {NS}:admin/place_leaderboard",
@@ -767,7 +767,7 @@ def build():
         k = next(k for k in KITS if k[1] == key)
         lobby += [f"setblock {-L + 2} {Y + 1} {z} minecraft:deepslate_bricks", f"setblock {-L + 2} {Y + 2} {z} minecraft:amethyst_block",
                   f"summon minecraft:item_display {-L + 2.5} {Y + 3.45} {z + 0.5} {{Tags:[\"pvp.lobbydeco\"],billboard:\"vertical\","
-                  f"transformation:{{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[1.3f,1.3f,1.3f]}},"
+                  f"transformation:{{left_rotation:[0f,1f,0f,0f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[1.3f,1.3f,1.3f]}},"
                   f"item:{{id:\"minecraft:player_head\",count:1,components:{{\"minecraft:profile\":{{properties:[{{name:\"textures\",value:\"{HEADS[key]}\"}}]}}}}}}}}",
                   f"summon minecraft:text_display {-L + 2.5} {Y + 4.25} {z + 0.5} {{Tags:[\"pvp.lobbydeco\"],billboard:\"center\",background:0,"
                   f"transformation:{{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[0.7f,0.7f,0.7f]}},"
