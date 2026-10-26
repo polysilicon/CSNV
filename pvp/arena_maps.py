@@ -90,28 +90,98 @@ def floor(g, f):
         for z in range(-R, R + 1): g.put(x, 0, z, f(x, z))
 
 
-def building(g, x1, z1, x2, z2, h, wall, roof=None, inside=None, doors=(), pane=None, win_y=(2,), corner=None, trim=None):
+def building(g, x1, z1, x2, z2, h, wall, roof=None, inside=None, doors=(), pane=None, win_y=(2,), corner=None, trim=None,
+             ceiling="oak_planks", light="lantern[hanging=true]"):
     """A box building: walls on the edge y 1..h, door openings (side, along, width, height), windows every third block
-    along each wall, an optional flat roof at y h + 1 and an optional floor inside."""
+    along each wall (never right beside a doorway, where a pane would be cut off), a flat roof at y h + 1 (or, under a
+    pitched roof, a ceiling there) with lanterns hanging from it, and an optional floor inside."""
     gaps = set()
     for (side, at, w, dh) in doors:
         for k in range(-(w // 2), w - w // 2):
             for y in range(1, dh + 1):
                 p = {"north": (at + k, z1), "south": (at + k, z2), "west": (x1, at + k), "east": (x2, at + k)}[side]
                 gaps.add((p[0], y, p[1]))
+    door_cols = {(x, z) for (x, _, z) in gaps}
+    near_door = lambda x, z: any((x + ox, z + oz) in door_cols for ox in (-1, 0, 1) for oz in (-1, 0, 1))
+    top = roof or ceiling
     for x in range(x1, x2 + 1):
         for z in range(z1, z2 + 1):
             edge, cor = x in (x1, x2) or z in (z1, z2), x in (x1, x2) and z in (z1, z2)
             if inside and not edge: g.put(x, 0, z, inside)
             if roof: g.put(x, h + 1, z, roof)
+            elif ceiling: g.put(x, h + 1, z, ceiling)
             if not edge: continue
             along = x if z in (z1, z2) else z
             for y in range(1, h + 1):
                 if (x, y, z) in gaps:
                     g.put(x, y, z, "air"); continue
                 b = corner if (cor and corner) else trim if (trim and y == h) else wall
-                if pane and not cor and y in win_y and along % 3 == 0: b = pane
+                if pane and not cor and y in win_y and along % 3 == 0 and not near_door(x, z): b = pane
                 g.put(x, y, z, b)
+    if top and light:
+        spots = [(x, z) for x in range(x1 + 1, x2) for z in range(z1 + 1, z2) if (x - x1) % 4 == 2 and (z - z1) % 4 == 2]
+        for (x, z) in spots or [((x1 + x2) // 2, (z1 + z2) // 2)]:
+            if g.empty(x, h, z): g.put(x, h, z, light)
+
+
+FURNITURE = {
+    "home": ["bookshelf", "potted_fern", "crafting_table", "barrel[facing=up]", "smoker[facing={f}]", "chiseled_bookshelf[facing={f}]",
+             "cauldron", "loom[facing={f}]", "potted_red_tulip", "bookshelf"],
+    "office": ["bookshelf", "lectern[facing={f}]", "barrel[facing=up]", "potted_fern", "cartography_table", "bookshelf", "chiseled_bookshelf[facing={f}]"],
+    "lab": ["brewing_stand", "cauldron", "barrel[facing=up]", "smithing_table", "iron_block", "observer[facing=up]"],
+    "garage": ["barrel[facing=up]", "anvil[facing=north]", "smithing_table", "grindstone[face=floor,facing=north]", "chest[facing={f}]"],
+    "hall": ["bookshelf", "potted_red_tulip", "chiseled_bookshelf[facing={f}]", "potted_fern"],
+}
+CARPETS = ["red", "brown", "blue", "green", "light_gray", "cyan", "orange", "purple"]
+
+
+def furnish(g, x1, z1, x2, z2, kind, rnd, y=1, bed=True, table=True, lamp_y=None):
+    """Fill a room (walls at x1/x2, z1/z2, floor at y - 1) with furniture against the walls (never in front of a door),
+    a bed, a rug with a table and two chairs in the middle, and optionally lanterns hanging at lamp_y."""
+    door = lambda x, z: any(g.get(x + ox, yy, z + oz) == "air" for ox in (-1, 0, 1) for oz in (-1, 0, 1) for yy in (y, y + 1))
+    free = lambda x, z: g.empty(x, y, z) and g.empty(x, y + 1, z) and not door(x, z) and not g.protected(x, z) and g.get(x, y - 1, z) not in (None, "air")
+    ring = []
+    for x in range(x1 + 1, x2):
+        ring += [(x, z1 + 1, "south"), (x, z2 - 1, "north")]
+    for z in range(z1 + 2, z2 - 1):
+        ring += [(x1 + 1, z, "east"), (x2 - 1, z, "west")]
+    if bed:   # a bed against a wall: head at the wall
+        for (x, z, f) in ring:
+            ox, oz = DIRS[f]
+            if free(x, z) and free(x + ox, z + oz) and x1 + 1 < x + ox < x2 - 1 and z1 + 1 < z + oz < z2 - 1:
+                c = rnd.choice(CARPETS)
+                back = {"north": "south", "south": "north", "east": "west", "west": "east"}[f]
+                g.put(x, y, z, f"{c}_bed[facing={back},part=head]"); g.put(x + ox, y, z + oz, f"{c}_bed[facing={back},part=foot]")
+                break
+    items = FURNITURE[kind]
+    for k, (x, z, f) in enumerate(ring):
+        if k % 2 or not free(x, z): continue
+        g.put(x, y, z, items[(k // 2) % len(items)].format(f=f))
+    cx, cz = (x1 + x2) // 2, (z1 + z2) // 2
+    if table and x2 - x1 >= 6 and z2 - z1 >= 6:
+        c = rnd.choice(CARPETS)
+        for x in range(cx - 1, cx + 2):
+            for z in range(cz - 1, cz + 2):
+                if free(x, z): g.put(x, y, z, f"{c}_carpet")
+        if all(g.get(x, y, cz) in (None, f"{c}_carpet") for x in (cx - 1, cx, cx + 1)):
+            g.put(cx, y, cz, "oak_fence"); g.put(cx, y + 1, cz, "oak_pressure_plate")
+            g.put(cx - 1, y, cz, "oak_stairs[facing=west]"); g.put(cx + 1, y, cz, "oak_stairs[facing=east]")
+    if lamp_y:
+        for x in range(x1 + 2, x2 - 1, 4):
+            for z in range(z1 + 2, z2 - 1, 4):
+                if g.empty(x, lamp_y, z): g.put(x, lamp_y, z, "lantern[hanging=true]")
+
+
+def lamps(g, post, top, rnd, spacing=11, h=3):
+    """Lamp posts on a loose grid wherever there's room: the floor isn't water or lava and nothing is near."""
+    for gx in range(-R + 5, R - 3, spacing):
+        for gz in range(-R + 5, R - 3, spacing):
+            for (x, z) in sorted(((gx + ox, gz + oz) for ox in range(-3, 4) for oz in range(-3, 4)), key=lambda c: abs(c[0] - gx) + abs(c[1] - gz)):
+                if g.get(x, 0, z) in (None, "water", "lava") or g.protected(x, z) or max(abs(x), abs(z)) > R - 2: continue
+                if any(not g.empty(x + ox, yy, z + oz) for ox in (-1, 0, 1) for oz in (-1, 0, 1) for yy in range(1, h + 2)): continue
+                for yy in range(1, h + 1): g.put(x, yy, z, post)
+                g.put(x, h + 1, z, top)
+                break
 
 
 def gable(g, x1, z1, x2, z2, y0, stair, ridge, end=None, axis="x", over=1):
@@ -293,6 +363,8 @@ def mustafar():
         for (x, z) in om.line(a[0], a[1], b[0], b[1]):
             if g.empty(x, 1, z) and g.get(x, 0, z) != "lava" and not g.protected(x, z): g.put(x, 1, z, "polished_blackstone_brick_slab[type=bottom]")
 
+    furnish(g, -6, -5, 6, 5, "lab", rnd, bed=False, table=False)
+    lamps(g, "polished_blackstone_wall", "ochre_froglight", rnd, spacing=12)
     def wall(x, y, z, t):
         if (t * 3 + y * 7) % 13 == 0: return "magma_block"
         if y == WALL_H: return "polished_blackstone_bricks"
@@ -355,7 +427,7 @@ def swamp():
                       (hx, hz - 3, "red_bed[facing=north,part=head]")):
         g.put(x, 1, z, b)
     g.put(hx, 1, hz - 2, "red_bed[facing=north,part=foot]")
-    g.put(hx, 6, hz, "lantern[hanging=true]")
+    g.put(hx, 7, hz, "lantern[hanging=true]")
     # the outhouse
     ox_, oz_ = 8, -24
     building(g, ox_ - 1, oz_ - 1, ox_ + 1, oz_ + 1, 3, "spruce_planks", roof="spruce_slab[type=bottom]", doors=[("west", oz_, 1, 2)], corner="spruce_log")
@@ -418,6 +490,8 @@ def swamp():
     sign_post(g, -2, -6, [{"text": "WANTED\n", "color": "dark_red", "bold": True}, {"text": "OGRE\n", "color": "green", "bold": True},
                           {"text": "by order of Lord Farquaad", "color": "gray", "italic": True}], 0, h=2, scale=0.6)
 
+    for (x, z) in ((hx - 3, hz - 1), (hx + 3, hz + 2)): g.put(x, 1, z, "lantern")
+    lamps(g, "spruce_fence", "lantern", rnd, spacing=12)
     def wall(x, y, z, t):   # a log palisade, leaves on top
         if y == WALL_H: return "oak_leaves[persistent=true]" if max(abs(x), abs(z)) == R + 1 else "spruce_planks"
         return "spruce_log" if t % 3 else "stripped_spruce_log"
@@ -530,6 +604,10 @@ def tegridy():
     for x in (-13, -7): g.put(x, 1, -33, "spruce_stairs[facing=north]")
     g.put(3, 1, -14, "spruce_fence"); g.put(3, 2, -14, "barrel[facing=west]")
 
+    furnish(g, -16, -30, -4, -20, "home", rnd, bed=False, lamp_y=3)                 # farmhouse, downstairs
+    furnish(g, -16, -30, -4, -20, "home", rnd, y=5, table=False)                     # and upstairs
+    for (x, z) in ((8, -24), (14, -24), (11, -20)): g.put(x, 1, z, "lantern")         # in the barn
+    lamps(g, "oak_fence", "lantern", rnd, spacing=12)
     def wall(x, y, z, t):
         if y == WALL_H: return "hay_block"
         return "stripped_spruce_log" if t % 4 == 0 else "spruce_planks"
@@ -604,7 +682,7 @@ def quahog():
     for x in (-25, -24, -23):
         for z in (-14, -13): g.put(x, 1, z, "red_carpet")
     g.put(-28, 1, -14, "oak_fence"); g.put(-28, 2, -14, "oak_pressure_plate")
-    for (x, z, f) in ((-29, -14, "east"), (-27, -14, "west")): g.put(x, 1, z, f"oak_stairs[facing={f}]")
+    for (x, z, f) in ((-29, -14, "west"), (-27, -14, "east")): g.put(x, 1, z, f"oak_stairs[facing={f}]")
     # inside the Clam: a pool table, bar stools, a dart board
     for x in (23, 24, 25):
         for z in (14, 15): g.put(x, 1, z, "green_wool")
@@ -626,6 +704,11 @@ def quahog():
             if g.get(x, 0, z) == "smooth_stone" and (5 <= abs(z) <= 6 or 5 <= abs(x) <= 6) and g.empty(x, 1, z) and not g.protected(x, z):
                 g.put(x, 1, z, "smooth_stone_slab[type=bottom]")
 
+    furnish(g, -30, -18, -12, -10, "home", rnd, bed=False, table=False, lamp_y=3)   # the Griffins, downstairs
+    furnish(g, -30, -18, -12, -10, "home", rnd, y=5, table=False)                     # Peter and Lois, Meg, Chris, Stewie upstairs
+    furnish(g, 10, -18, 26, -10, "home", rnd)                                         # Quagmire
+    furnish(g, -30, 10, -12, 18, "home", rnd)                                         # Joe
+    lamps(g, "dark_oak_fence", "lantern", rnd, spacing=12)
     def wall(x, y, z, t):   # tall hedges on a stone base
         if y <= 1 or max(abs(x), abs(z)) > R + 1: return "stone_bricks"
         return "oak_leaves[persistent=true]"
@@ -739,18 +822,12 @@ def bikini():
     # inside the Krusty Krab: seats round the barrel tables
     for (x, z) in ((-8, 16), (-3, 16), (4, 16), (8, 16)):
         g.put(x - 1, 1, z, "spruce_stairs[facing=west]"); g.put(x + 1, 1, z, "spruce_stairs[facing=east]")
-    # sand dunes in the open, and bubbles drifting up
-    dune = Noise(612, 5)
-    for x in range(-34, 35):
-        for z in range(-34, 35):
-            if dune(x, z) < 0.7 or g.protected(x, z): continue
-            if math.hypot(x + 16, z + 16) < 6.5 or (-4 <= x <= 4 and -20 <= z <= -11) or math.hypot(x - 27, z - 9) < 5.5: continue
-            if any(not g.empty(x + ox, y, z + oz) for ox in (-1, 0, 1) for oz in (-1, 0, 1) for y in (1, 2, 3)): continue
-            if g.get(x, 0, z) not in ("sand", "sandstone", "smooth_sandstone", "gravel"): continue
-            g.put(x, 1, z, "sand" if dune(x, z) < 0.85 else "sandstone")
-    for k in range(12):
-        g.put(rnd.randint(-32, 32), rnd.randint(6, 20), rnd.randint(-32, 32), "glass", force=True)
 
+    g.put(px, 9, pz, "lantern[hanging=true]")                                        # inside the pineapple
+    g.put(sx, 11, sz - 1, "lantern[hanging=true]")                                    # inside Squidward's head
+    for (x, z) in ((25, 7), (29, 11)): g.put(x, 1, z, "sea_lantern")                  # the Chum Bucket
+    furnish(g, 20, -32, 30, -25, "office", rnd, bed=False, table=False)               # the boating school
+    lamps(g, "prismarine_wall", "sea_lantern", rnd, spacing=12)
     def wall(x, y, z, t):
         if y == 3 and t % 8 == 0: return "sea_lantern"
         if y == WALL_H: return "prismarine_bricks"
@@ -852,6 +929,10 @@ def mushroom():
     # a row of coins over the path
     for x in range(-8, 9, 2): g.put(x, 3, -17, "gold_block")
 
+    furnish(g, -10, -34, 10, -24, "hall", rnd, bed=False, table=False)               # Peach's hall
+    for (x, z) in ((-7, -26), (7, -26), (-7, -32), (7, -32)):
+        g.put(x, 1, z, "smooth_quartz"); g.put(x, 2, z, "lantern")
+    lamps(g, "mushroom_stem", "shroomlight", rnd, spacing=12, h=2)
     def wall(x, y, z, t):   # "ground" blocks
         if y == WALL_H: return "yellow_glazed_terracotta[facing=south]" if t % 6 == 0 else "bricks"
         return "bricks" if y >= 3 else "orange_terracotta" if (t // 2 + y) % 2 else "brown_terracotta"
@@ -962,6 +1043,11 @@ def springfield():
     g.label(0.5, 20.6, 2.1, {"text": "DUFF", "color": "white", "bold": True}, 0, 4.0)
     g.label(0.5, 20.6, -5.1, {"text": "DUFF", "color": "white", "bold": True}, 180, 4.0)
 
+    furnish(g, 6, -34, 30, -24, "office", rnd, bed=False)                            # the plant
+    furnish(g, -30, 7, -12, 17, "home", rnd, table=False)                             # 742 Evergreen Terrace
+    furnish(g, -11, 10, -5, 16, "garage", rnd, bed=False, table=False)
+    g.put(bx - 1, 8, bz - 1, "lantern[hanging=true]")                                 # the treehouse
+    lamps(g, "iron_bars", "lantern", rnd, spacing=12)
     def wall(x, y, z, t):   # a concrete fence with bars along the top
         if y <= 2 or max(abs(x), abs(z)) > R + 1: return "light_gray_concrete" if y != 2 else "yellow_concrete" if t % 8 < 4 else "black_concrete"
         return "iron_bars" if y < WALL_H else "light_gray_concrete"
@@ -1063,6 +1149,11 @@ def albuquerque():
                     if ox * ox + oz * oz + (y - 0.5) ** 2 <= r * r + 0.5: g.put(x + ox, y, z + oz, "red_sandstone" if y < 3 else "smooth_red_sandstone")
         rock += 1
 
+    furnish(g, -20, -15, -11, -6, "home", rnd, table=False)                          # Walt's
+    furnish(g, 22, 8, 34, 16, "office", rnd, bed=False)                               # Saul's
+    for x in (-31, -25, -19): g.put(x, 5, -27, "lantern[hanging=true]")              # the car wash
+    g.put(vx + 4, 4, vz + 1, "lantern[hanging=true]")                                 # the RV
+    lamps(g, "spruce_fence", "lantern", rnd, spacing=12)
     def wall(x, y, z, t):   # a layered canyon wall
         return ("brown_terracotta", "orange_terracotta", "terracotta", "yellow_terracotta", "white_terracotta", "orange_terracotta",
                 "red_terracotta", "terracotta")[y]
@@ -1151,6 +1242,9 @@ def greenhill():
     g.label(26.5, 4.6, 29.4, {"text": "GOAL", "color": "blue", "bold": True}, 180, 1.4)
     g.label(26.5, 4.6, 31.6, {"text": "GOAL", "color": "blue", "bold": True}, 0, 1.4)
 
+    for x in (3, 7, 11):
+        g.put(x, 3, 20, "lantern[hanging=true]")                                      # in the tunnel
+    lamps(g, "jungle_fence", "lantern", rnd, spacing=12)
     def wall(x, y, z, t):
         if y == WALL_H: return "grass_block"
         return checker(t, y, 0)
@@ -1260,6 +1354,12 @@ def rainey():
     for (x, z) in ((-30, -14), (30, -10), (-28, 14), (28, 16), (-8, 30), (12, -30)):
         tree(g, x, z, h=5, r=2)
 
+    for (x1, x2, sd, *_) in houses:
+        z1, z2 = (20, 28) if sd > 0 else (-28, -20)
+        furnish(g, x1, z1, x2, z2, "home", rnd)
+    for x in (-30, -14, 6, 22):                                                       # lights on the power poles
+        for z in (-4, -2): g.put(x, 7, z, "lantern[hanging=true]")
+    lamps(g, "spruce_fence", "lantern", rnd, spacing=12)
     def wall(x, y, z, t):   # cinder blocks with a tall plank fence on top
         if y <= 2: return "polished_andesite" if (t + y) % 3 else "andesite"
         return "spruce_planks" if y < WALL_H else "spruce_slab[type=bottom]" if max(abs(x), abs(z)) == R + 1 else "spruce_planks"

@@ -607,6 +607,8 @@ def build():
         f"execute as @a[{LOBBY_BOX},tag=!pvp.spec] unless items entity @s container.* minecraft:flint unless items entity @s weapon.offhand minecraft:flint run item replace entity @s hotbar.8 with {DUEL_ITEM}",
         f"function {NS}:duel/check",
         f"function {NS}:tower/second", "advancement revoke @a only pvp:towernpc",
+        # fire from fire abilities goes out within a second, before it can burn the maps' wooden blocks
+        "execute at @a[gamemode=adventure,tag=!pvp.spec] run fill ~-12 ~-4 ~-12 ~12 ~8 ~12 minecraft:air replace #minecraft:fire",
         # no stashing gear on the floor to pick up as another character: items dropped in the arena or a duel pit vanish
         *[f"kill @e[type=minecraft:item,{b}]" for b in ARENA_BOXES.values()], *[f"kill @e[type=minecraft:item,{box(px, pz, arena_map.PIT_R + 3, AY - 1, 25)}]" for (px, pz) in DUEL_PITS],
         f"execute as @a[tag=pvp.master] at @s unless entity @s[{LOBBY_BOX}] run particle minecraft:wax_on ~ ~1 ~ 0.35 0.6 0.35 0 5",

@@ -72,6 +72,9 @@ and a rampart behind the wall whose top is the spectators' walkway. Signs (`text
 - When the time is up, everyone fighting is moved to a spawn on the new map ("NEW MAP" title), spectators go to the
   new map's walkway, and the server is told the new map. Joining the arena or the stands always uses the current map.
 - `function pvp:admin/next_map` skips to the next map.
+- Buildings get windows away from their doorways, a ceiling with hanging lanterns, and furniture (`arena_maps.furnish`:
+  things against the walls, a bed, a rug with a table and chairs); every map has themed lamp posts (`arena_maps.lamps`).
+- Fire from fire abilities is cleared within 12 blocks of every player each second, so it can't burn the wooden maps.
 
 ## How it plays
 - Players spawn in a safe stone hub at 0 101 0, where they're immune to damage and can't deal any.
