@@ -34,7 +34,12 @@ The PvP arena is a round Roman colosseum (`arena_map.py`, drawn with the Outbrea
 - **stands**: nine rows of stepped seating all the way round, aisles every 30 degrees, a parapet with braziers and
   flag poles on the rim, and the emperor's box (dais, quartz columns, canopy, throne) above the north gate.
 
-**Spectating**: the sandstone portal on the east side of the lobby (`admin/build_portal`) takes you to the stands
+**Lobby** (`admin/build_lobby`): a deepslate-tile plaza with an amethyst ring, a purpur cross and a crying-obsidian
+centre over a beacon (beam through purple glass at spawn), froglight corners, chiseled podiums under the NPCs, a purple
+glass rim with deepslate-brick pillars and end rods, and a **Hall of Heroes** on the west side: seven character heads
+on pedestals with names (`item_display`/`text_display` tagged `pvp.lobbydeco`, replaced on every rebuild).
+
+**Spectating**: the deepslate and amethyst gate on the east side of the lobby (`admin/build_portal`) takes you to the stands
 (`function spectate`, tag `pvp.spec`) at one of three spots. Spectators can walk the stands but can't be hurt or hurt
 anyone (Resistance V + Weakness), and barrier keeps them out of the fight. `/spawn`, or leaving the stands, takes
 them back to the lobby.

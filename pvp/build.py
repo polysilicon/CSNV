@@ -734,32 +734,67 @@ def build():
                                               {"text": "\nEvery character has their own abilities · /spawn to return", "color": "dark_gray"}]),
     ])
     L, Y = LOBBY_R, LOBBY_Y
-    lobby = [f"fill {-L} {Y} {-L} {L} {Y} {L} minecraft:polished_andesite",
-             f"fill {-L} {Y} 0 {L} {Y} 0 minecraft:smooth_quartz", f"fill 0 {Y} {-L} 0 {Y} {L} minecraft:smooth_quartz",
-             f"fill -2 {Y} -2 2 {Y} 2 minecraft:chiseled_quartz_block", f"setblock 0 {Y} 0 minecraft:gold_block",
-             f"fill {-L} {Y + 1} {-L} {L} {Y + 1} {L} minecraft:polished_deepslate_wall outline",
-             f"fill {-L + 1} {Y + 1} {-L + 1} {L - 1} {Y + 30} {L - 1} minecraft:air"]
-    for a in (-L, L):
+    # the Multiverse hub: a deepslate rift with purple accents (amethyst, purpur, crying obsidian), a purple beacon beam
+    # rising from spawn, a pillar-and-glass rim, character heads on the west side and the spectate gate on the east
+    lobby = [f"fill {-L} {Y} {-L} {L} {Y} {L} minecraft:deepslate_tiles",
+             f"fill {-L + 1} {Y + 1} {-L + 1} {L - 1} {Y + 30} {L - 1} minecraft:air", "kill @e[tag=pvp.lobbydeco]"]
+    for a in (-L, L):   # outer ring
         lobby += [f"fill {a} {Y} {-L} {a} {Y} {L} minecraft:polished_deepslate", f"fill {-L} {Y} {a} {L} {Y} {a} minecraft:polished_deepslate"]
-    for a in (-L + 1, 0, L - 1):
-        for b in (-L + 1, 0, L - 1):
-            lobby.append(f"setblock {a} {Y} {b} minecraft:ochre_froglight")
+    ring = sorted({(x, z) for x in range(-L, L + 1) for z in range(-L, L + 1) if abs(math.hypot(x, z) - 6.5) < 0.5})
+    lobby += [f"setblock {x} {Y} {z} minecraft:amethyst_block" for x, z in ring]               # a ring at radius 6-7
+    lobby += [f"fill {-L + 1} {Y} 0 {L - 1} {Y} 0 minecraft:purpur_block", f"fill 0 {Y} {-L + 1} 0 {Y} {L - 1} minecraft:purpur_block",
+              f"fill -2 {Y} -2 2 {Y} 2 minecraft:polished_blackstone_bricks", f"fill -1 {Y} -1 1 {Y} 1 minecraft:crying_obsidian",
+              f"setblock 0 {Y} 0 minecraft:purple_stained_glass",                                  # the beam comes up through spawn
+              f"fill -1 {Y - 3} -1 1 {Y - 3} 1 minecraft:iron_block", f"setblock 0 {Y - 2} 0 minecraft:beacon", f"setblock 0 {Y - 1} 0 minecraft:air"]
+    for a in (-L + 2, L - 2):
+        for b in (-L + 2, L - 2):
+            lobby.append(f"setblock {a} {Y} {b} minecraft:pearlescent_froglight")
+    for (nx, nz) in ((KIT_NPC[0], KIT_NPC[2]), (PVE_NPC[0], PVE_NPC[2]), (TOWER_NPC[0], TOWER_NPC[2])):   # a podium under each NPC
+        cx, cz = math.floor(nx), math.floor(nz)
+        lobby += [f"fill {cx - 1} {Y} {cz - 1} {cx + 1} {Y} {cz + 1} minecraft:chiseled_deepslate", f"setblock {cx} {Y} {cz} minecraft:pearlescent_froglight"]
+    # the rim: deepslate pillars (end rods on top) with purple glass between; the east middle is the spectate gate
+    posts = (-L, -7, -3, 3, 7, L)
+    for a in (-L, L):
+        lobby += [f"fill {a} {Y + 1} {-L} {a} {Y + 2} {L} minecraft:purple_stained_glass_pane[north=true,south=true]",
+                  f"fill {-L} {Y + 1} {a} {L} {Y + 2} {a} minecraft:purple_stained_glass_pane[east=true,west=true]"]
+        for p_ in posts:
+            for (x, z) in ((a, p_), (p_, a)):
+                lobby += [f"fill {x} {Y + 1} {z} {x} {Y + 3} {z} minecraft:deepslate_bricks", f"setblock {x} {Y + 4} {z} minecraft:end_rod[facing=up]"]
+    # Hall of Heroes: character heads on pedestals along the west side, facing whoever looks at them
+    heroes = ("maul", "shrek", "pikachu", "spartan", "mario", "spiderman", "randy")
+    for i, key in enumerate(heroes):
+        z = -6 + 2 * i
+        k = next(k for k in KITS if k[1] == key)
+        lobby += [f"setblock {-L + 2} {Y + 1} {z} minecraft:deepslate_bricks", f"setblock {-L + 2} {Y + 2} {z} minecraft:amethyst_block",
+                  f"summon minecraft:item_display {-L + 2.5} {Y + 3.45} {z + 0.5} {{Tags:[\"pvp.lobbydeco\"],billboard:\"vertical\","
+                  f"transformation:{{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[1.3f,1.3f,1.3f]}},"
+                  f"item:{{id:\"minecraft:player_head\",count:1,components:{{\"minecraft:profile\":{{properties:[{{name:\"textures\",value:\"{HEADS[key]}\"}}]}}}}}}}}",
+                  f"summon minecraft:text_display {-L + 2.5} {Y + 4.25} {z + 0.5} {{Tags:[\"pvp.lobbydeco\"],billboard:\"center\",background:0,"
+                  f"transformation:{{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[0.7f,0.7f,0.7f]}},"
+                  f"text:{tj({'text': k[2], 'color': k[3], 'bold': True})}}}"]
+    lobby.append(f"summon minecraft:text_display {-L + 2.5} {Y + 5.3} 0.5 {{Tags:[\"pvp.lobbydeco\"],billboard:\"center\",background:0,"
+                 f"transformation:{{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[1.2f,1.2f,1.2f]}},"
+                 f"text:{tj([{'text': 'HALL OF HEROES', 'color': 'light_purple', 'bold': True}, {'text': chr(10) + f'{len(KITS)} characters to play', 'color': 'gray', 'bold': False}])}}}")
     B = L + 1   # invisible walls so nobody falls off
     lobby += [f"fill {-B} {Y + 1} {-B} {B} {Y + 15} {-B} minecraft:barrier", f"fill {-B} {Y + 1} {B} {B} {Y + 15} {B} minecraft:barrier",
               f"fill {-B} {Y + 1} {-B} {-B} {Y + 15} {B} minecraft:barrier", f"fill {B} {Y + 1} {-B} {B} {Y + 15} {B} minecraft:barrier"]
     fn("admin/build_lobby", lobby + [f"function {NS}:admin/build_portal", f"function {NS}:admin/place_npc"])
-    # the spectator portal on the east side of the lobby: a sandstone gate with portal particles; walking through it
-    # (tick: function spectate) takes you to the colosseum stands
+    # the spectate gate on the east side, in the lobby's style: deepslate pillars and lintel, an amethyst keystone, a crying
+    # obsidian back that glows like a portal, end rods; walking through it (tick: function spectate) takes you to the stands
     X, PY = SPEC_PORTAL[0], SPEC_PORTAL[1]
     fn("admin/build_portal", [
-        f"fill {X} {PY} -2 {X} {PY + 3} 2 minecraft:chiseled_sandstone", f"fill {X} {PY} -1 {X} {PY + 2} 1 minecraft:air",
-        f"fill {X + 1} {PY - 1} -2 {X + 1} {PY + 3} 2 minecraft:smooth_sandstone",
-        f"fill {X} {PY + 4} -2 {X} {PY + 4} 2 minecraft:sandstone_slab[type=bottom]", f"setblock {X} {PY + 4} 0 minecraft:gold_block",
+        f"fill {X - 1} {PY} -2 {X + 1} {PY + 5} 2 minecraft:air",
+        f"fill {X + 1} {PY} -1 {X + 1} {PY + 2} 1 minecraft:crying_obsidian",
+        *[f"fill {X} {PY} {z} {X + 1} {PY + 3} {z} minecraft:deepslate_bricks" for z in (-2, 2)],
+        f"fill {X} {PY + 3} -2 {X + 1} {PY + 3} 2 minecraft:chiseled_deepslate", f"setblock {X} {PY + 3} 0 minecraft:amethyst_block",
+        f"fill {X} {PY + 4} -2 {X + 1} {PY + 4} 2 minecraft:deepslate_brick_slab[type=bottom]",
+        f"setblock {X} {PY + 4} 0 minecraft:amethyst_cluster[facing=up]",
+        *[f"setblock {X} {PY + 4} {z} minecraft:end_rod[facing=up]" for z in (-2, 2)],
+        *[f"setblock {X - 1} {PY + 2} {z} minecraft:amethyst_cluster[facing=west]" for z in (-2, 2)],
         f"fill {X - 1} {PY - 1} -1 {X} {PY - 1} 1 minecraft:crying_obsidian",
-        f"setblock {X - 1} {PY + 3} -2 minecraft:wall_torch[facing=west]", f"setblock {X - 1} {PY + 3} 2 minecraft:wall_torch[facing=west]",
         "kill @e[tag=pvp.specholo]",
-        f"summon minecraft:text_display {X - 0.5} {PY + 4.6} 0.5 {{Tags:[\"pvp.specholo\"],billboard:\"center\",background:0,"
-        "text:[{\"text\":\"👁 Spectate the Arena\",\"color\":\"gold\",\"bold\":true},{\"text\":\"\\nWalk through to watch from the stands\",\"color\":\"gray\"}]}"])
+        f"summon minecraft:text_display {X - 0.5} {PY + 5.4} 0.5 {{Tags:[\"pvp.specholo\"],billboard:\"center\",background:0,"
+        "text:[{\"text\":\"👁 Spectate the Arena\",\"color\":\"light_purple\",\"bold\":true},{\"text\":\"\\nWalk through to watch from the stands\",\"color\":\"gray\"}]}"])
     spots = arena_map.SPECTATE
     sp = ["execute store result score #r pvp run random value 1..%d" % len(spots)]
     for n, (dx, dz, yaw) in enumerate(spots, 1):
