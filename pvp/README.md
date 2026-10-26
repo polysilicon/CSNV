@@ -198,9 +198,18 @@ the first click opens a 10 s queue that others join by clicking too. Everyone st
   - **boss** every 5th floor: The Brute, Bone King, The Warlord, The Beast in turn, with a boss bar
     (health 80 + 40 per boss beaten + 30 per extra player) and two adds.
 - After each floor everyone picks **1 of 3 random upgrades** (clickable chat lines, `/trigger tw.pick`, 20 s or one is
-  picked for you): Vitality, Sharpened, Swift, Plated, Frenzy, Spring Step, Juggernaut, Vampire, Second Wind,
-  Extra Life, Glass Cannon. They stack for the whole climb (attribute modifiers `pvp:tw_u<n>_<i>`, re-applied from
-  the counts in `tw.u<n>`).
+  picked for you). They stack for the whole climb (attribute modifiers `pvp:tw_u<n>_<i>`, re-applied from the counts in
+  `tw.u<n>`). Like Crab Champions, each has a **rarity**: an offer rolls Common 60% / Rare 28% / Epic 10% /
+  Legendary 2% first (Lucky shifts it), then an upgrade of that rarity (`tower/roll_one`).
+  | Rarity | Upgrades |
+  |---|---|
+  | Common | Vitality, Sharpened, Swift, Plated, Frenzy, Spring Step, Juggernaut, Second Wind, Firestarter, Toxic, Thorns |
+  | Rare | Vampire, Crit Chance, Frostbite, Shield, Bloodlust, Lucky |
+  | Epic | Extra Life, Glass Cannon, Lightning, Explosive |
+  | Legendary | Attack Drone, Black Hole |
+  On-hit upgrades (Crit Chance, Firestarter, Frostbite, Toxic, Lightning, Explosive) work with any damage you deal:
+  melee, guns, abilities and the drone (advancement `towerhit` on `player_hurt_entity`; the mobs hurt that tick have
+  `HurtTime` 10). Thorns uses `entity_hurt_player`. Toxic is Wither, since most Tower mobs are undead.
 - Dying ends your climb unless you have an Extra Life; the climb is over when nobody is left. Best floor per player in
   `tw.best`, the server record in `#trecord tw`; +5 mastery XP per floor for the character you're playing.
 - Tower players are on team `tower` (no friendly fire; abilities skip them like Outbreak teammates).

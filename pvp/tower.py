@@ -20,7 +20,7 @@ PICK_SECS = 20                     # s to pick an upgrade (then it's picked for 
 LAYOUTS = 6                        # mob-room and parkour layouts generated per kind
 FLOOR_XP = 5                       # mastery XP per floor cleared, for the character you're playing
 MAX_FALLS = 3                      # parkour: the 3rd fall into the magma on a floor kills you
-SIDE = [1, 2, 3, 4, 5, 6, 7, 8, 11]   # upgrades listed on the sidebar (Second Wind and Extra Life are one-offs)
+SIDE = [1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]   # sidebar (Second Wind, Extra Life are one-offs)
 ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV"]
 LOG = ('minecraft:book[minecraft:custom_name={"text":"🗼 Climb Log","color":"light_purple","bold":true,"italic":false},'
        'minecraft:lore=[{"text":"Right-click: your upgrades and stats","color":"gray","italic":false}],minecraft:max_stack_size=1,'
@@ -32,7 +32,11 @@ def stat(uid, lv):
     """What lv stacks of an upgrade add up to, for the sidebar and the Climb Log."""
     return {1: f"+{2 * lv} ❤", 2: f"+{15 * lv}% damage", 3: f"+{10 * lv}% speed", 4: f"+{3 * lv} armor", 5: f"+{15 * lv}% attack speed",
             6: f"+{14 * lv}% jump", 7: f"+{min(100, 25 * lv)}% knockback res.", 8: f"Regen {ROMAN[min(lv, 3) - 1]} on kills",
-            9: f"used {lv}x", 10: f"{lv} picked", 11: f"+{40 * lv}% dmg, -{2 * lv} ❤"}[uid]
+            9: f"used {lv}x", 10: f"{lv} picked", 11: f"+{40 * lv}% dmg, -{2 * lv} ❤",
+            12: f"{min(75, 15 * lv)}% crits", 13: f"burn {1 + 2 * min(lv, 3)} s", 14: f"Slowness {ROMAN[min(lv, 3) - 1]}" + (" + Weakness" if lv >= 3 else ""),
+            15: f"Wither {ROMAN[min(lv, 3) - 1]}", 16: f"{min(75, 15 * lv)}%, {6 + 2 * min(lv, 6)} dmg", 17: f"{min(75, 15 * lv)}% blasts",
+            18: f"{2 * min(lv, 6)} dmg back", 19: f"+{2 * min(lv, 5)} ❤ per floor", 20: f"Strength {ROMAN[min(lv, 2) - 1]} on kills",
+            21: f"{3 * min(lv, 4)} dmg / 2 s", 22: f"{4 * min(lv, 5)} dmg / 8 s", 23: f"Lucky {ROMAN[lv - 1]}"}[uid]
 
 # id, name, colour, description, attribute modifiers [(attribute, step per stack, operation)]
 UPGRADES = [
@@ -47,7 +51,25 @@ UPGRADES = [
     (9, "Second Wind", "light_purple", "Full heal now + 2 golden apples", []),
     (10, "Extra Life", "green", "Come back once when you die", []),
     (11, "Glass Cannon", "red", "+40% melee damage, but -2 max hearts", [("attack_damage", 0.40, "add_multiplied_total"), ("max_health", -4, "add_value")]),
+    # inspired by Crab Champions. The on-hit ones (12-17) work with melee, guns and ability damage alike.
+    (12, "Crit Chance", "yellow", "15% chance per hit for +5 bonus damage", []),
+    (13, "Firestarter", "gold", "Your hits set mobs on fire", []),
+    (14, "Frostbite", "aqua", "Your hits slow mobs down", []),
+    (15, "Toxic", "dark_green", "Your hits wither mobs (works on undead too)", []),
+    (16, "Lightning", "yellow", "15% chance per hit to call lightning (8 dmg)", []),
+    (17, "Explosive", "red", "15% chance per hit to blast nearby mobs (5 dmg)", []),
+    (18, "Thorns", "dark_green", "Getting hit deals 2 damage to mobs around you", []),
+    (19, "Shield", "aqua", "+2 absorption hearts at the start of every floor", []),
+    (20, "Bloodlust", "dark_red", "Kills give you Strength for 4 s", []),
+    (21, "Attack Drone", "gold", "A drone zaps the nearest mob every 2 s (3 dmg)", []),
+    (22, "Black Hole", "dark_purple", "Every 8 s: pull nearby mobs in, 4 damage", []),
+    (23, "Lucky", "green", "Better odds of Epic and Legendary upgrades", []),
 ]
+# rarity (Crab Champions style): offers roll a rarity first, then an upgrade of that rarity
+RARITY = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 9: 0, 13: 0, 15: 0, 18: 0,
+          8: 1, 12: 1, 14: 1, 19: 1, 20: 1, 23: 1, 10: 2, 11: 2, 16: 2, 17: 2, 21: 3, 22: 3}
+TIERS = [("Common", "gray"), ("Rare", "aqua"), ("Epic", "light_purple"), ("Legendary", "gold")]
+ODDS = (60, 28, 10)            # % common / rare / epic (the rest legendary); each Lucky: -10 common (min 20), +4 rare, +4 epic
 # every modifier id the Tower ever adds (removed when you leave, with the other per-run perks)
 MOD_IDS = [(f"{NS}:tw_u{u[0]}_{i}", a) for u in UPGRADES for i, (a, _, _) in enumerate(u[4])] + \
           [(f"{NS}:tw_mobhp", "max_health"), (f"{NS}:tw_mobdmg", "attack_damage")]
@@ -124,7 +146,12 @@ def build(b):
         f"kill @e[type=minecraft:item,{BOX}]", f"kill @e[type=minecraft:experience_orb,{BOX}]",
         # Vampire: Regeneration for kills since last second
         *[f"execute as @a[tag=tw.in,scores={{tw.kc=1..,tw.u8={lv}}}] run effect give @s minecraft:regeneration 3 {amp}" for lv, amp in (("1", 0), ("2", 1), ("3..", 2))],
+        *[f"execute as @a[tag=tw.in,scores={{tw.kc=1..,tw.u20={lv}}}] run effect give @s minecraft:strength 4 {amp}" for lv, amp in (("1", 0), ("2..", 1))],
         f"scoreboard players set {inn} tw.kc 0",
+        "scoreboard players add #t8 tw 1", "scoreboard players operation #t2 tw = #t8 tw", "scoreboard players set #k tw 2", "scoreboard players operation #t2 tw %= #k tw",
+        "scoreboard players set #k tw 8", "scoreboard players operation #t8 tw %= #k tw",
+        f"execute if score #tstate tw matches 2 if score #t2 tw matches 0 as @a[tag=tw.in,scores={{tw.u21=1..}}] at @s run function {T}/drone",
+        f"execute if score #tstate tw matches 2 if score #t8 tw matches 0 as @a[tag=tw.in,scores={{tw.u22=1..}}] at @s run function {T}/blackhole",
         f"execute if score #tstate tw matches 2 unless score #ttype tw matches 2 run function {T}/sec_fight",
         "execute if score #tstate tw matches 2 if score #ttype tw matches 2 as @a[tag=tw.in] run title @s actionbar " + tj(
             [{"text": "🗼 Floor ", "color": "light_purple"}, {"score": {"name": "#floor", "objective": "tw"}, "color": "white", "bold": True},
@@ -205,6 +232,8 @@ def build(b):
         f"execute if score #ttype tw matches 2 run function {T}/floor_parkour",
         f"execute if score #ttype tw matches 3 run function {T}/floor_boss",
         f"execute as {inn} run function {T}/tp_start",
+        f"effect clear {inn} minecraft:absorption",
+        *[f"execute as @a[tag=tw.in,scores={{tw.u19={lv}}}] run effect give @s minecraft:absorption infinite {amp} true" for lv, amp in (("1", 0), ("2", 1), ("3", 2), ("4", 3), ("5..", 4))],
         "title @a[tag=tw.in] times 5 40 10",
         "title @a[tag=tw.in] title " + tj([{"text": "FLOOR ", "color": "light_purple", "bold": True}, {"score": {"name": "#floor", "objective": "tw"}, "color": "white", "bold": True}]),
         f"execute as {inn} at @s run playsound minecraft:block.end_portal_frame.fill player @s ~ ~ ~ 1 0.8",
@@ -272,21 +301,36 @@ def build(b):
     fn("tower/boss_hp", ["$attribute @s minecraft:max_health base set $(v)", "data modify entity @s Health set value 4096f"])
 
     # ------------------------------------------------------------------ clearing a floor, upgrades
-    roll = ["execute store result score @s tw.o1 run random value 1..%d" % len(UPGRADES),
-            "execute store result score @s tw.o2 run random value 1..%d" % (len(UPGRADES) - 1),
-            "execute if score @s tw.o2 >= @s tw.o1 run scoreboard players add @s tw.o2 1",
-            "execute store result score @s tw.o3 run random value 1..%d" % (len(UPGRADES) - 2),
-            # skip both earlier picks, lowest first
-            "scoreboard players operation #lo tw = @s tw.o1", "scoreboard players operation #lo tw < @s tw.o2",
-            "scoreboard players operation #hi tw = @s tw.o1", "scoreboard players operation #hi tw > @s tw.o2",
-            "execute if score @s tw.o3 >= #lo tw run scoreboard players add @s tw.o3 1",
-            "execute if score @s tw.o3 >= #hi tw run scoreboard players add @s tw.o3 1"]
+    # one upgrade (#u tw) for @s: a rarity from ODDS shifted by Lucky, then one of that rarity
+    by_tier = [[u for u, t in sorted(RARITY.items()) if t == k] for k in range(len(TIERS))]
+    one = ["execute store result score #r tw run random value 1..100", "scoreboard players operation #L tw = @s tw.u23",
+           f"scoreboard players set #c tw {ODDS[0]}", "scoreboard players operation #k tw = #L tw", "scoreboard players set #k2 tw 10",
+           "scoreboard players operation #k tw *= #k2 tw", "scoreboard players operation #c tw -= #k tw",
+           "execute if score #c tw matches ..19 run scoreboard players set #c tw 20",
+           "scoreboard players operation #k tw = #L tw", "scoreboard players set #k2 tw 4", "scoreboard players operation #k tw *= #k2 tw",
+           "scoreboard players operation #rr tw = #c tw", f"scoreboard players add #rr tw {ODDS[1]}", "scoreboard players operation #rr tw += #k tw",
+           "scoreboard players operation #ee tw = #rr tw", f"scoreboard players add #ee tw {ODDS[2]}", "scoreboard players operation #ee tw += #k tw",
+           "scoreboard players set #tier tw 3", "execute if score #r tw <= #ee tw run scoreboard players set #tier tw 2",
+           "execute if score #r tw <= #rr tw run scoreboard players set #tier tw 1", "execute if score #r tw <= #c tw run scoreboard players set #tier tw 0"]
+    for k, ids in enumerate(by_tier):
+        one.append(f"execute if score #tier tw matches {k} store result score #r2 tw run random value 1..{len(ids)}")
+        one += [f"execute if score #tier tw matches {k} if score #r2 tw matches {i} run scoreboard players set #u tw {u}" for i, u in enumerate(ids, 1)]
+    fn("tower/roll_one", one)
+    # re-roll (up to 20 times) until it differs from the slots already filled
+    fn("tower/roll2", [f"function {T}/roll_one", "execute unless score #u tw = @s tw.o1 run return 0",
+                       "scoreboard players add #try tw 1", f"execute if score #try tw matches ..20 run function {T}/roll2"])
+    fn("tower/roll3", [f"function {T}/roll_one", "execute unless score #u tw = @s tw.o1 unless score #u tw = @s tw.o2 run return 0",
+                       "scoreboard players add #try tw 1", f"execute if score #try tw matches ..20 run function {T}/roll3"])
+    roll = [f"function {T}/roll_one", "scoreboard players operation @s tw.o1 = #u tw",
+            "scoreboard players set #try tw 0", f"function {T}/roll2", "scoreboard players operation @s tw.o2 = #u tw",
+            "scoreboard players set #try tw 0", f"function {T}/roll3", "scoreboard players operation @s tw.o3 = #u tw"]
     offer = ["tag @s remove tw.picked", "scoreboard players set @s tw.pick 0", "scoreboard players enable @s tw.pick", *roll,
              "tellraw @s " + tj([{"text": "\n🗼 Floor cleared! ", "color": "light_purple", "bold": True}, {"text": "Pick an upgrade (click one):", "color": "gray"}])]
     for slot in (1, 2, 3):
         for (uid, name, color, desc, _) in UPGRADES:
+            rname, rcolor = TIERS[RARITY[uid]]
             offer.append(f"execute if score @s tw.o{slot} matches {uid} run tellraw @s " + tj([
-                {"text": "  ▶ ", "color": "dark_gray"},
+                {"text": "  ▶ ", "color": "dark_gray"}, {"text": f"{rname.upper()} ", "color": rcolor, "bold": True},
                 {"text": f"[{name}]", "color": color, "bold": True, "click_event": {"action": "run_command", "command": f"/trigger tw.pick set {uid}"},
                  "hover_event": {"action": "show_text", "value": desc}},
                 {"text": f" {desc}", "color": "gray"}]))
@@ -419,6 +463,56 @@ def build(b):
                                                  "rewards": {"function": f"{T}/log"}})
     fn("tower/log", ["advancement revoke @s only pvp:towerlog", "execute unless entity @s[tag=tw.in] run return 0",
                      f"function {T}/summary", f"give @s {LOG}"])
+
+    # ------------------------------------------------------------------ on-hit upgrades (Crab Champions style)
+    # Any damage you deal (melee, gun, ability, drone) fires player_hurt_entity; the mobs hurt this tick have HurtTime 10.
+    # tw.inhit stops the bonus damage below from triggering it again.
+    wj(f"data/{NS}/advancement/towerhit.json", {"criteria": {"c": {"trigger": "minecraft:player_hurt_entity"}}, "rewards": {"function": f"{T}/onhit"}})
+    wj(f"data/{NS}/advancement/towerhurt.json", {"criteria": {"c": {"trigger": "minecraft:entity_hurt_player"}}, "rewards": {"function": f"{T}/thorns"}})
+    me = "@p[tag=tw.inhit]"
+    chance = lambda uid: [f"execute store result score #r tw run random value 1..100", f"scoreboard players operation #ch tw = @s tw.u{uid}",
+                          "scoreboard players set #k tw 15", "scoreboard players operation #ch tw *= #k tw", "execute if score #ch tw matches 76.. run scoreboard players set #ch tw 75"]
+    oh = [f"advancement revoke @s only {NS}:towerhit", "execute unless entity @s[tag=tw.in] run return 0", "execute if entity @s[tag=tw.inhit] run return 0",
+          "tag @s add tw.inhit", "execute as @e[tag=tw.mob,distance=..64,nbt={HurtTime:10s}] run tag @s add tw.hit"]
+    oh += [f"execute if score @s tw.u13 matches {lv} as @e[tag=tw.hit] run data merge entity @s {{Fire:{20 * (1 + 2 * min(int(lv[0]), 3))}s}}" for lv in ("1", "2", "3..")]
+    oh += [f"execute if score @s tw.u14 matches {lv} as @e[tag=tw.hit] run effect give @s minecraft:slowness 2 {amp}" for lv, amp in (("1", 0), ("2", 1), ("3..", 2))]
+    oh += ["execute if score @s tw.u14 matches 3.. as @e[tag=tw.hit] run effect give @s minecraft:weakness 2 0"]
+    oh += [f"execute if score @s tw.u15 matches {lv} as @e[tag=tw.hit] run effect give @s minecraft:wither 3 {amp}" for lv, amp in (("1", 0), ("2", 1), ("3..", 2))]
+    oh += ["execute if score @s tw.u12 matches 1.. run function " + f"{T}/oh_crit", "execute if score @s tw.u16 matches 1.. run function " + f"{T}/oh_lightning",
+           "execute if score @s tw.u17 matches 1.. run function " + f"{T}/oh_explosive",
+           "tag @e[tag=tw.hit] remove tw.hit", "tag @s remove tw.inhit"]
+    fn("tower/onhit", oh)
+    fn("tower/oh_crit", [*chance(12), "execute if score #r tw > #ch tw run return 0",
+                         f"execute as @e[tag=tw.hit] run damage @s 5 minecraft:player_attack by {me}",
+                         "execute at @e[tag=tw.hit] run particle minecraft:crit ~ ~1 ~ 0.3 0.5 0.3 0.4 25",
+                         "playsound minecraft:entity.player.attack.crit player @s ~ ~ ~ 1 1"])
+    fn("tower/oh_lightning", [*chance(16), "execute if score #r tw > #ch tw run return 0",
+                              *[f"execute if score @s tw.u16 matches {lv} as @e[tag=tw.hit] run damage @s {6 + 2 * min(int(lv[0]), 6)} minecraft:lightning_bolt by {me}"
+                                for lv in ("1", "2", "3", "4", "5", "6..")],
+                              "execute at @e[tag=tw.hit] run particle minecraft:electric_spark ~ ~1 ~ 0.3 1.2 0.3 0.4 60",
+                              "execute at @e[tag=tw.hit] run particle minecraft:flash{color:[1.0,1.0,1.0,1.0]} ~ ~1 ~ 0 0 0 0 1",
+                              "playsound minecraft:entity.lightning_bolt.thunder player @s ~ ~ ~ 0.4 1.6"])
+    fn("tower/oh_explosive", [*chance(17), "execute if score #r tw > #ch tw run return 0",
+                              f"execute at @e[tag=tw.hit] as @e[tag=tw.mob,distance=..3] run damage @s 5 minecraft:explosion by {me}",
+                              "execute at @e[tag=tw.hit] run particle minecraft:explosion ~ ~1 ~ 0.5 0.5 0.5 0 3",
+                              "execute at @e[tag=tw.hit] run playsound minecraft:entity.generic.explode player @a ~ ~ ~ 0.7 1.3"])
+    fn("tower/thorns", [f"advancement revoke @s only {NS}:towerhurt", "execute unless entity @s[tag=tw.in] run return 0",
+                        "execute unless score @s tw.u18 matches 1.. run return 0",
+                        *[f"execute if score @s tw.u18 matches {lv} as @e[tag=tw.mob,distance=..3] run damage @s {2 * min(int(lv[0]), 6)} minecraft:thorns by @p[tag=tw.in,distance=..0.1]"
+                          for lv in ("1", "2", "3", "4", "5", "6..")],
+                        "particle minecraft:enchanted_hit ~ ~1 ~ 0.6 0.6 0.6 0.2 15"])
+    fn("tower/drone", [   # as and at a player with the drone: zap the nearest mob in 16 blocks
+        "particle minecraft:end_rod ~ ~2.6 ~ 0.15 0.1 0.15 0 4",
+        "execute unless entity @e[tag=tw.mob,distance=..16] run return 0",
+        *[f"execute if score @s tw.u21 matches {lv} run damage @n[tag=tw.mob,distance=..16] {3 * min(int(lv[0]), 4)} minecraft:magic by @s" for lv in ("1", "2", "3", "4..")],
+        "execute at @n[tag=tw.mob,distance=..16] run particle minecraft:electric_spark ~ ~1 ~ 0.2 0.4 0.2 0.3 20",
+        "playsound minecraft:block.beacon.power_select player @s ~ ~ ~ 0.3 2"])
+    fn("tower/blackhole", [   # as and at a player with it: pull mobs within 9 blocks in, then hurt everything close
+        "tag @s add tw.bh",
+        "execute as @e[tag=tw.mob,distance=2..9] at @s facing entity @p[tag=tw.bh] feet run tp @s ^ ^ ^2.5",
+        *[f"execute if score @s tw.u22 matches {lv} as @e[tag=tw.mob,distance=..4] run damage @s {4 * min(int(lv[0]), 5)} minecraft:magic by @p[tag=tw.bh]" for lv in ("1", "2", "3", "4", "5..")],
+        "particle minecraft:reverse_portal ~ ~1 ~ 3 1 3 0.5 150", "particle minecraft:portal ~ ~1 ~ 0.5 0.5 0.5 1 60",
+        "playsound minecraft:entity.enderman.teleport player @a[distance=..16] ~ ~ ~ 1 0.5", "tag @s remove tw.bh"])
 
     # ------------------------------------------------------------------ the room
     x1, x2, z1, z2 = TCX - R, TCX + R, TCZ - R, TCZ + R
