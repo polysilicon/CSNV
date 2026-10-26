@@ -832,6 +832,8 @@ def build():
                        f"billboard:\"fixed\",Rotation:[{yaw}f,0f],background:0,shadow:1b,line_width:400,"
                        f"transformation:{{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[{sc}f,{sc}f,{sc}f]}},"
                        f"text:{tj(text)}}}")
+        for (ent, lx, ly, lz, nbt) in g.summons:
+            out.append(f"summon minecraft:{ent} {cx + lx:.2f} {AY + ly:.2f} {cz + lz:.2f} {{Tags:[\"pvp.mapdeco\",\"pvp.mapdeco_{key}\"],{nbt}}}")
         fn(f"admin/build_map_{key}", out)
     fn("admin/build", [f"function {NS}:admin/build_lobby", f"function {NS}:admin/build_arena", f"function {NS}:admin/build_pve", f"function {NS}:admin/build_room"])
     build_room()

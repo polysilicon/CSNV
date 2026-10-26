@@ -9,6 +9,8 @@ R + 5. The eight player spawns are the same on every map unless a map says other
 import math
 import random
 from collections import defaultdict, deque
+import json
+import os
 import outbreak_maps as om
 from outbreak_maps import DIRS, Noise
 
@@ -19,6 +21,7 @@ E = R + 5        # half-size of everything (for clearing): the outer barrier rin
 SPAWNS = [(28, 0, 90), (-28, 0, -90), (0, -28, 0), (0, 28, 180), (20, -20, 45), (-20, -20, -45), (20, 20, 135), (-20, 20, -135)]
 # where spectators arrive (relative x, z, yaw), standing on the rampart at y WALL_H + 1
 SPECTATE = [(R + 3, 0, 90), (-(R + 3), 0, -90), (0, R + 3, 180), (0, -(R + 3), 0)]
+HEADS = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "heads.json")))   # kit key -> skin texture
 PASSABLE = om.PASSABLE + ("lily_pad", "dead_bush", "flower", "tulip", "mushroom", "sapling", "sugar_cane", "vine",
                           "snow", "seagrass", "moss_carpet", "large_fern", "tall_grass", "bush", "allium", "orchid")
 ATTACHED = om.ATTACHED + ("lily_pad", "dead_bush", "sunflower", "tulip", "red_mushroom[", "brown_mushroom[", "sugar_cane",
@@ -38,6 +41,7 @@ class MapGrid(om.Grid):
         super().__init__([], spawns)
         self.labels = []   # (x, y, z, text component, yaw, scale): text_display signs
         self.raw = []      # extra relative fill commands: (x1, y1, z1, x2, y2, z2, block)
+        self.summons = []  # (entity, x, y, z, NBT without Tags): figures and the like
 
     def protected(self, x, z):
         return any(max(abs(x - sx), abs(z - sz)) <= 1 for (sx, sz, _) in self.spawns)
@@ -48,6 +52,15 @@ class MapGrid(om.Grid):
         self.b[(x, y, z)] = block
 
     def label(self, x, y, z, text, yaw=0, scale=2.0): self.labels.append((x, y, z, text, yaw, scale))
+
+    def figure(self, x, z, yaw, name, colour, head, shirt, pants, hand="minecraft:honey_bottle"):
+        """A standing character (armor stand, no hitbox): head is an item NBT string, the rest leather colours."""
+        dye = lambda item, c: f'{{id:"minecraft:{item}",count:1,components:{{"minecraft:dyed_color":{c}}}}}'
+        self.summons.append(("armor_stand", x + 0.5, 1, z + 0.5,
+                             f'Marker:1b,Invulnerable:1b,NoGravity:1b,ShowArms:1b,NoBasePlate:1b,Rotation:[{yaw}f,0f],'
+                             f'CustomName:{{"text":"{name}","color":"{colour}"}},CustomNameVisible:1b,'
+                             f'Pose:{{RightArm:[-60f,0f,0f]}},equipment:{{head:{head},chest:{dye("leather_chestplate", shirt)},'
+                             f'legs:{dye("leather_leggings", pants)},feet:{dye("leather_boots", 4864796)},mainhand:{{id:"{hand}",count:1}}}}'))
 
 
 # ---------------------------------------------------------------------------------------------- shared pieces
@@ -247,6 +260,39 @@ def mustafar():
         g.put(round(-20 + 6 * math.cos(a)), 1, round(16 + 6 * math.sin(a)), "ochre_froglight")
     g.label(-19.5, 1.6, 16.5, {"text": "LANDING PAD", "color": "yellow", "bold": True}, 0, 1.2)
 
+    # the high ground: a black slope south of the lava ("It's over, Anakin!")
+    for x in range(-14, -1):
+        for z in range(-33, -21):
+            d = math.hypot(x + 8, (z + 27) * 1.2)
+            if d > 5.5: continue
+            top = max(1, min(5, round((5.5 - d) * 1.1 + (z + 27) * 0.25)))
+            for y in range(1, top + 1): g.put(x, y, z, "black_concrete_powder" if y == top else "smooth_basalt")
+    g.label(-7.5, 6.4, -26.5, {"text": "I HAVE THE HIGH GROUND", "color": "gray", "italic": True}, 0, 0.6)
+    # a ladder onto the facility roof, and a catwalk from the roof east over the lava to a lookout
+    for y in range(1, 8): g.put(-7, y, -4, "ladder[facing=west]")
+    for x in range(7, 17):
+        for z in (-1, 0, 1): g.put(x, 7, z, "polished_blackstone_brick_slab[type=top]")
+        for z in (-2, 2): g.put(x, 8, z, "polished_blackstone_wall")
+        if x % 4 == 0:
+            for y in range(1, 7):
+                if g.get(x, 0, 2) != "lava": g.put(x, y, 2, "iron_chain[axis=y]")
+    for x in range(17, 20):
+        for z in range(-2, 3):
+            for y in range(1, 8): g.put(x, y, z, "polished_blackstone_bricks" if y < 7 else "polished_blackstone")
+    for y in range(1, 8): g.put(20, y, 0, "ladder[facing=east]")
+    for (x, z) in ((17, -2), (19, 2)): g.put(x, 8, z, "polished_blackstone_wall"); g.put(x, 9, z, "shroomlight")
+    # obsidian shards on the river banks
+    n = 0
+    while n < 14:
+        x, z = rnd.randint(-34, 34), rnd.randint(-34, 34)
+        if not 1.8 < min(ra(x, z), rb(x, z)) < 2.8 or g.protected(x, z) or not g.empty(x, 1, z) or on_bridge(x, z): continue
+        for y in range(1, rnd.randint(2, 4)): g.put(x, y, z, "crying_obsidian" if rnd.random() < 0.3 else "obsidian")
+        n += 1
+    # pipes running from the facility to the towers
+    for (a, b) in (((-7, 3), (-21, 3)), ((0, 6), (0, 14))):
+        for (x, z) in om.line(a[0], a[1], b[0], b[1]):
+            if g.empty(x, 1, z) and g.get(x, 0, z) != "lava" and not g.protected(x, z): g.put(x, 1, z, "polished_blackstone_brick_slab[type=bottom]")
+
     def wall(x, y, z, t):
         if (t * 3 + y * 7) % 13 == 0: return "magma_block"
         if y == WALL_H: return "polished_blackstone_bricks"
@@ -283,7 +329,10 @@ def swamp():
     for (a, b) in (((-10, -9), (0, 0)), ((0, 0), (30, 4)), ((0, 0), (-6, 30))):
         for (x, z) in om.line(a[0], a[1], b[0], b[1]):
             for ox in (-1, 0, 1):
-                if g.get(x + ox, 0, z) != "water": g.put(x + ox, 0, z, "dirt_path" if ox == 0 or rnd.random() < 0.6 else "packed_mud")
+                if g.get(x + ox, 0, z) == "water":   # boardwalk over the pools
+                    g.put(x + ox, 0, z, "spruce_planks")
+                    for y in (1, 2, 3): g.b.pop((x + ox, y, z), None)
+                else: g.put(x + ox, 0, z, "dirt_path" if ox == 0 or rnd.random() < 0.6 else "packed_mud")
     # Shrek's house: a giant hollow tree stump with a mossy roof, round windows and a smoking chimney
     hx, hz = house
     for x in range(hx - 6, hx + 7):
@@ -316,6 +365,30 @@ def swamp():
         sign_post(g, x, z, [{"text": "BEWARE\n", "color": "dark_red", "bold": True}, {"text": "OGRE!", "color": "red", "bold": True}], yaw, scale=0.9)
     # swamp trees with vines, fallen logs, a camp fire with log seats
     spots = [(-28, -28), (26, -30), (30, 22), (-30, 10), (-16, 28), (12, 30), (24, -6), (-26, -12), (16, 18), (-6, 12), (28, -18), (2, -16)]
+    # a pond with a fishing dock, mangrove roots and firefly bushes round it
+    for x in range(18, 31):
+        for z in range(-18, -6):
+            d = math.hypot(x - 24, z + 12)
+            if d <= 5:
+                g.put(x, 0, z, "water")
+                for y in (1, 2, 3): g.b.pop((x, y, z), None)
+                if rnd.random() < 0.2: g.put(x, 1, z, "lily_pad")
+            elif d <= 6.2 and g.empty(x, 1, z) and rnd.random() < 0.35:
+                g.put(x, 1, z, "mangrove_roots" if rnd.random() < 0.5 else "firefly_bush")
+    for x in range(18, 25):
+        g.put(x, 0, -12, "spruce_planks")
+        for y in (1, 2): g.b.pop((x, y, -12), None)
+    for (x, z) in ((24, -13), (24, -11), (21, -13), (21, -11)): g.put(x, 0, z, "spruce_log")
+    g.put(24, 1, -12, "barrel[facing=up]")
+    # mossy mounds
+    for (mx, mz, r, h) in ((-26, 6, 4, 3), (6, 24, 4, 2)):
+        for x in range(mx - r, mx + r + 1):
+            for z in range(mz - r, mz + r + 1):
+                top = round(h * (1 - (math.hypot(x - mx, z - mz) / (r + 0.5)) ** 2))
+                for y in range(1, top + 1): g.put(x, y, z, "moss_block" if y == top else "dirt")
+                if top > 0:
+                    for y in (top + 1, top + 2): g.b.pop((x, y, z), None)
+                    if rnd.random() < 0.3: g.put(x, top + 1, z, "short_grass")
     for (x, z) in spots:
         g.put(x, 0, z, "grass_block")
         tree(g, x, z, h=rnd.randint(5, 7), log="oak_log", r=3, vines=True, rnd=rnd)
@@ -331,6 +404,19 @@ def swamp():
             for oz in range(-2, 3):
                 if abs(ox) + abs(oz) < 4: g.put(x + ox, 5, z + oz, "red_mushroom_block")
         g.put(x, 6, z, "red_mushroom_block")
+
+    # inside Shrek's house: a table with a lantern, stump stools
+    g.put(hx + 1, 1, hz, "oak_fence"); g.put(hx + 1, 2, hz, "lantern")
+    g.put(hx + 2, 1, hz, "spruce_log"); g.put(hx, 1, hz + 1, "spruce_log")
+    # firefly bushes along the water's edges
+    for x in range(-R, R + 1):
+        for z in range(-R, R + 1):
+            if g.get(x, 0, z) in ("grass_block", "podzol", "mud") and g.empty(x, 1, z) and not g.protected(x, z) and rnd.random() < 0.05 \
+                    and any(g.get(x + ox, 0, z + oz) == "water" for (ox, oz) in DIRS.values()):
+                g.put(x, 1, z, "firefly_bush")
+    # a wanted poster for the ogre on a post by the path
+    sign_post(g, -2, -6, [{"text": "WANTED\n", "color": "dark_red", "bold": True}, {"text": "OGRE\n", "color": "green", "bold": True},
+                          {"text": "by order of Lord Farquaad", "color": "gray", "italic": True}], 0, h=2, scale=0.6)
 
     def wall(x, y, z, t):   # a log palisade, leaves on top
         if y == WALL_H: return "oak_leaves[persistent=true]" if max(abs(x), abs(z)) == R + 1 else "spruce_planks"
@@ -410,6 +496,40 @@ def tegridy():
     for (x, z) in ((-2, -10), (3, -11), (-3, -14), (20, 2)): g.put(x, 1, z, "hay_block")
     g.put(0, 1, 18, "oak_fence"); g.put(0, 2, 18, "hay_block"); g.put(0, 3, 18, "carved_pumpkin[facing=north]")
 
+    # the Tegridy roadside stand
+    for (x, z) in ((5, -9), (9, -9), (5, -5), (9, -5)):
+        for y in range(1, 4): g.put(x, y, z, "spruce_log")
+    for x in range(5, 10):
+        for z in range(-9, -4): g.put(x, 4, z, "lime_wool" if (x + z) % 2 else "white_wool")
+    for z in range(-8, -5):
+        g.put(5, 1, z, "stripped_spruce_log[axis=z]"); g.put(5, 2, z, "potted_fern")
+    g.put(8, 1, -8, "barrel[facing=up]"); g.put(8, 1, -6, "barrel[facing=up]")
+    g.label(4.9, 4.5, -6.5, [{"text": "TEGRIDY ", "color": "green", "bold": True}, {"text": "WEED", "color": "dark_green", "bold": True}], 90, 1.0)
+    # a windmill pump with a water trough
+    for y in range(1, 11): g.put(30, y, -28, "iron_bars")
+    g.put(30, 11, -27, "iron_block")
+    for k in (1, 2, 3):
+        for (dx, dy) in ((k, 0), (-k, 0), (0, k), (0, -k)): g.put(30 + dx, 11 + dy, -26, "light_gray_concrete")
+    g.put(30, 11, -26, "iron_block")
+    for z in (-28, -27): g.put(28, 1, z, "water_cauldron[level=3]")
+    # the chicken coop
+    building(g, 26, -21, 31, -17, 3, "spruce_planks", roof="spruce_slab[type=bottom]", doors=[("west", -19, 1, 2)], corner="stripped_spruce_log")
+    for (x, z) in ((30, -20), (30, -18), (29, -20)): g.put(x, 1, z, "hay_block")
+    # a hill out in the back pasture
+    for x in range(-34, -21):
+        for z in range(-36, -23):
+            top = round(3 * (1 - (math.hypot(x + 28, z + 30) / 5.5) ** 2))
+            for y in range(1, top + 1): g.put(x, y, z, "grass_block" if y == top else "dirt")
+    # a hay loft in the barn, with a ladder
+    for x in range(7, 16):
+        for z in range(-31, -26): g.put(x, 4, z, "spruce_slab[type=top]")
+    for y in range(1, 5): g.put(7, y, -26, "ladder[facing=east]")
+    for (x, z) in ((9, -30), (10, -30), (13, -29), (14, -30)): g.put(x, 5, z, "hay_block")
+    # Randy's grill and lawn chairs out back, a mailbox by the road
+    g.put(-10, 1, -33, "smoker[facing=south]")
+    for x in (-13, -7): g.put(x, 1, -33, "spruce_stairs[facing=north]")
+    g.put(3, 1, -14, "spruce_fence"); g.put(3, 2, -14, "barrel[facing=west]")
+
     def wall(x, y, z, t):
         if y == WALL_H: return "hay_block"
         return "stripped_spruce_log" if t % 4 == 0 else "spruce_planks"
@@ -477,6 +597,34 @@ def quahog():
     for x in range(6, 37):
         if abs(x - 20) > 2: g.put(x, 1, 26, "oak_fence")
     sign_post(g, 5, -5, [{"text": "SPOONER ST", "color": "white", "bold": True}], 45, h=3, post="iron_bars", scale=0.7)
+
+    # inside the Griffins': the couch facing the TV, a rug, the kitchen table
+    for x in (-25, -24, -23): g.put(x, 1, -12, "dark_oak_stairs[facing=south]")
+    g.put(-24, 1, -16, "dark_oak_planks"); g.put(-24, 2, -16, "black_concrete")
+    for x in (-25, -24, -23):
+        for z in (-14, -13): g.put(x, 1, z, "red_carpet")
+    g.put(-28, 1, -14, "oak_fence"); g.put(-28, 2, -14, "oak_pressure_plate")
+    for (x, z, f) in ((-29, -14, "east"), (-27, -14, "west")): g.put(x, 1, z, f"oak_stairs[facing={f}]")
+    # inside the Clam: a pool table, bar stools, a dart board
+    for x in (23, 24, 25):
+        for z in (14, 15): g.put(x, 1, z, "green_wool")
+    for x in range(13, 27, 2): g.put(x, 1, 17, "oak_fence")
+    g.put(29, 2, 12, "target")
+    # Quagmire's car and the bus stop
+    car(g, 28, -9, "black")
+    for x in range(-12, -7):
+        for y in (1, 2, 3): g.put(x, y, 7, "glass_pane")
+        g.put(x, 4, 6, "smooth_stone_slab[type=bottom]"); g.put(x, 4, 7, "smooth_stone_slab[type=bottom]")
+    for x in (-11, -10, -9): g.put(x, 1, 6, "spruce_stairs[facing=south]")
+    g.label(-9.5, 4.6, 5.9, {"text": "BUS STOP", "color": "white", "bold": True}, 180, 0.6)
+    # mailboxes and bins by the houses
+    for (x, z) in ((-24, -7), (14, -7), (-24, 7)): g.put(x, 1, z, "dark_oak_fence"); g.put(x, 2, z, "blue_terracotta")
+    for (x, z) in ((-11, -12), (-11, -13), (27, -12), (-11, 12)): g.put(x, 1, z, "cauldron")
+    # raised sidewalks: a kerb step up from the road
+    for x in range(-R, R + 1):
+        for z in range(-R, R + 1):
+            if g.get(x, 0, z) == "smooth_stone" and (5 <= abs(z) <= 6 or 5 <= abs(x) <= 6) and g.empty(x, 1, z) and not g.protected(x, z):
+                g.put(x, 1, z, "smooth_stone_slab[type=bottom]")
 
     def wall(x, y, z, t):   # tall hedges on a stone base
         if y <= 1 or max(abs(x), abs(z)) > R + 1: return "stone_bricks"
@@ -555,7 +703,7 @@ def bikini():
     g.label(22.4, 7.2, 9.5, {"text": "CHUM BUCKET", "color": "dark_green", "bold": True}, 90, 1.0)
     # coral "trees", tube sponges and floating jellyfish
     colours = ["magenta", "pink", "orange", "yellow", "lime", "purple", "red"]
-    cor = [(-30, -30), (-30, 4), (-28, 30), (-6, 30), (30, -30), (32, -6), (30, 30), (-6, -32), (8, -30), (-20, 4), (20, 2), (6, 6)]
+    cor = [(-30, -30), (-30, 4), (-12, 34), (-6, 30), (32, -18), (32, -6), (30, 30), (-6, -32), (8, -30), (-20, 4), (20, 2), (6, 6)]
     for (x, z) in cor:
         c = rnd.choice(colours)
         h = rnd.randint(3, 6)
@@ -567,6 +715,41 @@ def bikini():
         x, z, y = rnd.randint(-32, 32), rnd.randint(-32, 32), rnd.randint(14, 24)
         for (ox, oz) in ((0, 0), (1, 0), (0, 1), (1, 1)): g.put(x + ox, y, z + oz, "pink_stained_glass", force=True)
         g.put(x, y - 1, z, "pink_stained_glass_pane", force=True); g.put(x + 1, y - 1, z + 1, "pink_stained_glass_pane", force=True)
+
+    # Sandy's treedome: a glass dome round a grassy patch and an oak tree, with a door on the east side
+    tx, tz = -28, 26
+    for x in range(tx - 6, tx + 7):
+        for z in range(tz - 6, tz + 7):
+            if math.hypot(x - tx, z - tz) <= 5.6: g.put(x, 0, z, "grass_block")
+            for y in range(1, 7):
+                dd = math.sqrt((x - tx) ** 2 + (z - tz) ** 2 + (y * 0.9) ** 2)
+                if 4.9 < dd <= 5.8:
+                    door = x > tx and abs(z - tz) <= 0 and y <= 2
+                    g.put(x, y, z, "air" if door else "glass")
+    tree(g, tx, tz, h=4, r=2)
+    g.put(tx + 2, 1, tz + 2, "oak_fence"); g.put(tx + 2, 2, tz + 2, "oak_pressure_plate")
+    # Mrs. Puff's Boating School: a boat-shaped school house
+    building(g, 20, -32, 30, -25, 4, "white_concrete", roof="orange_concrete", inside="smooth_stone", doors=[("south", 25, 2, 2)],
+             pane="light_blue_stained_glass", win_y=(2, 3), trim="orange_concrete")
+    for k in (1, 2, 3):
+        for z in range(-32 + k, -25 - k + 1):
+            for y in range(1, 5): g.put(30 + k, y, z, "orange_concrete" if y == 4 else "white_concrete")
+    for x in (22, 24, 26, 28): g.put(x, 1, -30, "oak_stairs[facing=south]")
+    g.label(25.5, 5.4, -23.9, [{"text": "MRS. PUFF'S ", "color": "gold", "bold": True}, {"text": "BOATING SCHOOL", "color": "white", "bold": True}], 0, 1.0)
+    # inside the Krusty Krab: seats round the barrel tables
+    for (x, z) in ((-8, 16), (-3, 16), (4, 16), (8, 16)):
+        g.put(x - 1, 1, z, "spruce_stairs[facing=west]"); g.put(x + 1, 1, z, "spruce_stairs[facing=east]")
+    # sand dunes in the open, and bubbles drifting up
+    dune = Noise(612, 5)
+    for x in range(-34, 35):
+        for z in range(-34, 35):
+            if dune(x, z) < 0.7 or g.protected(x, z): continue
+            if math.hypot(x + 16, z + 16) < 6.5 or (-4 <= x <= 4 and -20 <= z <= -11) or math.hypot(x - 27, z - 9) < 5.5: continue
+            if any(not g.empty(x + ox, y, z + oz) for ox in (-1, 0, 1) for oz in (-1, 0, 1) for y in (1, 2, 3)): continue
+            if g.get(x, 0, z) not in ("sand", "sandstone", "smooth_sandstone", "gravel"): continue
+            g.put(x, 1, z, "sand" if dune(x, z) < 0.85 else "sandstone")
+    for k in range(12):
+        g.put(rnd.randint(-32, 32), rnd.randint(6, 20), rnd.randint(-32, 32), "glass", force=True)
 
     def wall(x, y, z, t):
         if y == 3 and t % 8 == 0: return "sea_lantern"
@@ -632,13 +815,42 @@ def mushroom():
     building(g, -34, -9, -28, -3, 5, "bricks", doors=[("east", -6, 1, 2)], roof="bricks")
     for x in range(-34, -27, 2): g.put(x, 7, -9, "bricks"); g.put(x, 7, -3, "bricks")
     # round bushes and clouds overhead
-    for (x, z) in ((-32, -2), (32, 4), (-8, 32), (12, 30), (-16, 14), (16, -18)):
+    for (x, z) in ((-32, -2), (32, 4), (-8, 32), (12, 31), (-16, 14), (16, -18)):
         for (ox, oz, oy) in ((0, 0, 1), (1, 0, 1), (-1, 0, 1), (0, 1, 1), (0, -1, 1), (0, 0, 2)): g.put(x + ox, oy, z + oz, "azalea_leaves[persistent=true]")
     for k in range(9):
         x, z, y = rnd.randint(-30, 30), rnd.randint(-30, 30), rnd.randint(20, 27)
         for ox in range(-2, 3):
             for oz in range(-1, 2): g.put(x + ox, y, z + oz, "white_wool", force=True)
         g.put(x - 1, y + 1, z, "white_wool", force=True); g.put(x, y + 1, z, "white_wool", force=True)
+
+    # the end-of-level staircase up to the flagpole
+    for x in range(22, 30):
+        for z in (-29, -28, -27):
+            for y in range(1, x - 20): g.put(x, y, z, "brown_terracotta")
+    # giant mushrooms with a ladder up the stem and a hole in the cap
+    for (mx, mz, h, r) in ((-14, 8, 6, 3), (16, -12, 5, 2), (12, 24, 7, 3)):
+        for y in range(1, h + 1):
+            g.put(mx, y, mz, "mushroom_stem"); g.put(mx + 1, y, mz, "ladder[facing=east]")
+        for x in range(mx - r - 1, mx + r + 2):
+            for z in range(mz - r - 1, mz + r + 2):
+                d = math.hypot(x - mx, z - mz)
+                if d > r + 0.4 or (x, z) == (mx + 1, mz): continue
+                dot = "white_concrete" if (x * 3 + z * 5) % 7 == 0 else "red_mushroom_block"
+                g.put(x, h + 1, z, dot)
+                if d > r - 0.6: g.put(x, h, z, "red_mushroom_block")
+    # Bowser's bridge over a lava pit
+    for x in range(26, 33):
+        for z in range(-10, -2):
+            g.put(x, 0, z, "nether_bricks" if x in (28, 29) else "lava")
+            for y in (1, 2): g.b.pop((x, y, z), None)
+    g.put(28, 1, -11, "gold_block"); g.put(29, 1, -11, "gold_block")
+    g.label(29.0, 2.3, -10.9, {"text": "BOWSER'S BRIDGE", "color": "red", "bold": True}, 0, 0.8)
+    # the moat in front of Peach's castle, with a bridge
+    for x in range(-12, 13):
+        for z in (-22, -21):
+            if abs(x) > 2: g.put(x, 0, z, "water"); g.b.pop((x, 1, z), None)
+    # a row of coins over the path
+    for x in range(-8, 9, 2): g.put(x, 3, -17, "gold_block")
 
     def wall(x, y, z, t):   # "ground" blocks
         if y == WALL_H: return "yellow_glazed_terracotta[facing=south]" if t % 6 == 0 else "bricks"
@@ -707,11 +919,48 @@ def springfield():
     g.label(0.5, 4.5, 23.05, {"text": "LARD LAD DONUTS", "color": "light_purple", "bold": True}, 0, 1.0)
     g.label(0.5, 4.5, 21.95, {"text": "LARD LAD DONUTS", "color": "light_purple", "bold": True}, 180, 1.0)
     # trees, lamp posts and a couple of cars on the road
-    for (x, z) in ((-32, -6), (-6, 30), (30, 30), (32, 4), (-30, 30), (6, 30)): tree(g, x, z, h=5, r=2)
+    for (x, z) in ((-32, -6), (-6, 30), (30, 30), (32, 4), (-34, -22), (6, 30)): tree(g, x, z, h=5, r=2)
     for x in (-24, -8, 8, 24):
         for y in range(1, 5): g.put(x, y, 2, "iron_bars")
         g.put(x, 5, 2, "lantern")
     car(g, -14, -3, "pink"); car(g, 12, -2, "red")
+
+    # Bart's treehouse in the back yard, with a ladder up the trunk
+    bx, bz = -30, 28
+    for y in range(1, 9): g.put(bx, y, bz, "oak_log")
+    for x in range(bx - 2, bx + 3):
+        for z in range(bz - 2, bz + 3):
+            if (x, z) != (bx, bz): g.put(x, 6, z, "oak_planks")
+            edge = x in (bx - 2, bx + 2) or z in (bz - 2, bz + 2)
+            for y in (7, 8):
+                if edge and (x, z) != (bx, bz): g.put(x, y, z, "glass_pane" if y == 8 and (x + z) % 2 == 0 and not (x == bx + 2 and z == bz) else "oak_planks")
+                if edge and x == bx + 2 and z == bz: g.put(x, y, z, "air")
+            g.put(x, 9, z, "oak_slab[type=bottom]")
+    g.put(bx + 1, 6, bz, "air")
+    for y in range(1, 7): g.put(bx + 1, y, bz, "ladder[facing=east]")
+    for x in range(bx - 3, bx + 4):
+        for z in range(bz - 3, bz + 4):
+            if math.hypot(x - bx, z - bz) <= 3.3: g.put(x, 10, z, "oak_leaves[persistent=true]")
+    g.put(bx, 11, bz, "oak_leaves[persistent=true]")
+    # Moe's Tavern
+    building(g, 10, 23, 22, 32, 5, "bricks", roof="dark_oak_planks", inside="spruce_planks", doors=[("north", 16, 1, 2)], trim="dark_oak_planks")
+    for x in range(12, 21): g.put(x, 1, 29, "stripped_dark_oak_log[axis=x]")
+    for x in range(12, 21, 2): g.put(x, 1, 27, "dark_oak_fence")
+    for x in (13, 17): g.put(x, 1, 31, "barrel[facing=up]")
+    g.put(21, 2, 25, "target")
+    g.label(16.5, 4.5, 22.9, {"text": "MOE'S", "color": "red", "bold": True}, 180, 1.8)
+    # the couch and TV in the Simpsons' living room
+    for x in (-24, -23, -22): g.put(x, 1, 14, "spruce_stairs[facing=south]")
+    g.put(-23, 1, 9, "dark_oak_planks"); g.put(-23, 2, 9, "black_concrete")
+    # the Duff blimp overhead
+    for x in range(-13, 14):
+        for y in range(17, 28):
+            for z in range(-7, 4):
+                if (x / 12.5) ** 2 + ((y - 22) / 4) ** 2 + ((z + 2) / 4) ** 2 <= 1:
+                    g.put(x, y, z, "red_concrete" if abs(x) <= 4 else "white_concrete", force=True)
+    for (dy, dz) in ((5, 0), (-5, 0), (0, 5), (0, -5)): g.put(-13, 22 + dy, -2 + dz, "red_concrete", force=True)
+    g.label(0.5, 20.6, 2.1, {"text": "DUFF", "color": "white", "bold": True}, 0, 4.0)
+    g.label(0.5, 20.6, -5.1, {"text": "DUFF", "color": "white", "bold": True}, 180, 4.0)
 
     def wall(x, y, z, t):   # a concrete fence with bars along the top
         if y <= 2 or max(abs(x), abs(z)) > R + 1: return "light_gray_concrete" if y != 2 else "yellow_concrete" if t % 8 < 4 else "black_concrete"
@@ -785,6 +1034,35 @@ def albuquerque():
         for y in range(1, rnd.randint(2, 4)): g.put(x, y, z, "cactus")
     car(g, 4, 5, "yellow", length=5)
 
+    # Walt's house by the pool, with the pizza on the roof
+    building(g, -20, -15, -11, -6, 4, "smooth_sandstone", roof="dark_oak_planks", inside="oak_planks",
+             doors=[("west", -11, 1, 2), ("south", -16, 1, 2)], pane="glass_pane", win_y=(2, 3), trim="brown_terracotta")
+    for (dx, dz, b) in ((0, 0, "red_carpet"), (1, 0, "orange_carpet"), (-1, 0, "yellow_carpet"), (0, 1, "yellow_carpet"), (0, -1, "orange_carpet"),
+                        (1, 1, "orange_carpet"), (-1, -1, "yellow_carpet"), (1, -1, "red_carpet"), (-1, 1, "orange_carpet")):
+        g.put(-15 + dx, 6, -10 + dz, b)
+    g.put(-18, 1, -13, "stripped_oak_log[axis=x]"); g.put(-17, 1, -13, "stripped_oak_log[axis=x]")
+    for x in (-19, -16): g.put(x, 1, -8, "oak_stairs[facing=north]")
+    # power poles along the highway
+    for x in (-30, -18, -6, 6, 18, 30):
+        if g.protected(x, -5): continue
+        for y in range(1, 8): g.put(x, y, -5, "stripped_spruce_log")
+        for dx in (-1, 1): g.put(x + dx, 7, -5, "spruce_fence")
+    # a camp by the RV: chairs, crates of "product"
+    for (x, z, f) in ((-13, 16, "north"), (-10, 16, "north")): g.put(x, 1, z, f"spruce_stairs[facing={f}]")
+    for (x, z) in ((-7, 9), (-7, 10), (-6, 9)): g.put(x, 1, z, "barrel[facing=up]")
+    g.put(-6, 2, 9, "light_blue_stained_glass")
+    # red rock boulders
+    rock = 0
+    while rock < 8:
+        x, z = rnd.randint(-33, 33), rnd.randint(-33, 33)
+        if g.protected(x, z) or abs(z) <= 5 or any(not g.empty(x + ox, 1, z + oz) for ox in range(-2, 3) for oz in range(-2, 3)): continue
+        r = rnd.choice((1.2, 1.6, 2.2))
+        for ox in range(-2, 3):
+            for oz in range(-2, 3):
+                for y in (1, 2, 3):
+                    if ox * ox + oz * oz + (y - 0.5) ** 2 <= r * r + 0.5: g.put(x + ox, y, z + oz, "red_sandstone" if y < 3 else "smooth_red_sandstone")
+        rock += 1
+
     def wall(x, y, z, t):   # a layered canyon wall
         return ("brown_terracotta", "orange_terracotta", "terracotta", "yellow_terracotta", "white_terracotta", "orange_terracotta",
                 "red_terracotta", "terracotta")[y]
@@ -845,12 +1123,148 @@ def greenhill():
             p = (x + a, y + b, z) if ax == "x" else (x, y + b, z + a)
             g.put(*p, "gold_block")
 
+    # a lake with a log bridge
+    for x in range(11, 22):
+        for z in range(-19, -8):
+            if math.hypot(x - 16, z + 14) <= 4.2 and not g.protected(x, z):
+                g.put(x, 0, z, "stripped_jungle_log[axis=x]" if z == -14 else "water")
+                for y in (1, 2): g.b.pop((x, y, z), None)
+    # a checkered hill with a tunnel through it and steps up the south side
+    for x in range(2, 13):
+        for z in range(16, 25):
+            for y in range(1, 6):
+                tunnel = 19 <= z <= 21 and y <= 3
+                g.put(x, y, z, "air" if tunnel else "grass_block" if y == 5 else checker(x, y, z))
+    for k in range(5):
+        for x in (6, 7, 8):
+            for y in range(1, 5 - k): g.put(x, y, 25 + k, checker(x, y, 25 + k))
+            g.put(x, 5 - k, 25 + k, "grass_block")
+    # Eggman's capsule on top of the big plateau, a GOAL sign
+    for (ox, oz) in ((a, b) for a in (-1, 0, 1) for b in (-1, 0, 1)):
+        g.put(-28 + ox, 5, -30 + oz, "light_gray_concrete")
+        g.put(-28 + ox, 6, -30 + oz, "iron_block" if (ox, oz) != (0, 1) else "glass")
+        g.put(-28 + ox, 7, -30 + oz, "light_gray_concrete")
+    g.put(-28, 8, -30, "red_concrete")
+    for y in range(1, 4): g.put(26, y, 30, "iron_bars")
+    for x in (25, 26, 27):
+        for y in (4, 5, 6): g.put(x, y, 30, "light_blue_concrete")
+    g.label(26.5, 4.6, 29.4, {"text": "GOAL", "color": "blue", "bold": True}, 180, 1.4)
+    g.label(26.5, 4.6, 31.6, {"text": "GOAL", "color": "blue", "bold": True}, 0, 1.4)
+
     def wall(x, y, z, t):
         if y == WALL_H: return "grass_block"
         return checker(t, y, 0)
     frame(g, wall, "grass_block", "oak_fence")
     return g
 
+
+
+# ---------------------------------------------------------------------------------------------- Rainey Street (King of the Hill)
+RAINEY_SPAWNS = [(28, 0, 90), (-28, 0, -90), (0, -30, 0), (0, 30, 180), (18, -12, 56), (-18, -12, -56), (18, 12, 124), (-18, 12, -124)]
+
+
+def rainey():
+    """The alley behind Hank's house in Arlen, Texas: a concrete alley between privacy fences, back yards, four houses
+    a side, and the guys standing at the fence with a beer. Yep."""
+    g = MapGrid(RAINEY_SPAWNS)
+    rnd, crack = random.Random(1101), Noise(1111, 3)
+
+    def fl(x, z):
+        az = abs(z)
+        if az <= 3: return "andesite" if crack(x, z) > 0.78 else "gray_concrete_powder" if crack(x, z) < 0.12 else "light_gray_concrete"   # the alley
+        if az >= 34: return "gray_concrete" if not (az == 35 and x % 4 < 2) else "white_concrete"   # the streets out front
+        if az >= 32: return "smooth_stone"
+        return "grass_block"
+    floor(g, fl)
+    # oil stains in the alley
+    for k in range(10):
+        x, z = rnd.randint(-34, 34), rnd.randint(-2, 2)
+        g.put(x, 0, z, "black_concrete_powder")
+    # privacy fences along both sides of the alley, with gates into each yard and the side yards
+    gates = (-26, -10, 0, 10, 26)
+    for side in (-4, 4):
+        for x in range(-R, R + 1):
+            if any(abs(x - gx) <= 1 for gx in gates): continue
+            post = x % 4 == 0
+            for y in (1, 2): g.put(x, y, side, "spruce_log" if post else "spruce_planks")
+            if post: g.put(x, 3, side, "spruce_slab[type=bottom]")
+    # low fences between the yards
+    for side in (-1, 1):
+        for x in (-18, -2, 2, 18):
+            for z in range(5, 20):
+                if 10 <= z <= 12: continue
+                g.put(x, 1, side * z, "oak_fence")
+    # the houses: one-storey ranch houses, back doors onto the yards, front doors onto the street
+    houses = [  # x1, x2, side (-1 north / 1 south), walls, trim, roof stair, roof block, name
+        (-34, -20, -1, "white_terracotta", "brown_terracotta", "stone_brick_stairs", "stone_bricks", None),
+        (-16, -4, -1, "smooth_sandstone", "brown_terracotta", "deepslate_tile_stairs", "deepslate_tiles", "Hank"),
+        (4, 16, -1, "light_gray_terracotta", "white_concrete", "dark_oak_stairs", "dark_oak_planks", "Dale"),
+        (20, 34, -1, "birch_planks", "white_concrete", "stone_brick_stairs", "stone_bricks", None),
+        (-34, -20, 1, "light_blue_terracotta", "white_concrete", "dark_oak_stairs", "dark_oak_planks", None),
+        (-16, -4, 1, "cyan_terracotta", "light_gray_concrete", "stone_brick_stairs", "stone_bricks", "Bill"),
+        (4, 16, 1, "smooth_quartz", "stone_bricks", "deepslate_tile_stairs", "deepslate_tiles", "Kahn"),
+        (20, 34, 1, "white_terracotta", "brown_terracotta", "spruce_stairs", "spruce_planks", None),
+    ]
+    for (x1, x2, sd, wall_b, trim, stair, ridge, who) in houses:
+        z1, z2 = (20, 28) if sd > 0 else (-28, -20)
+        back, front = ("north", "south") if sd > 0 else ("south", "north")
+        building(g, x1, z1, x2, z2, 4, wall_b, inside="oak_planks", doors=[(back, (x1 + x2) // 2, 1, 2), (front, (x1 + x2) // 2 + 2, 1, 2)],
+                 pane="glass_pane", win_y=(2, 3), corner=trim)
+        gable(g, x1, z1, x2, z2, 5, stair, ridge, end=wall_b, axis="x")
+        for x in range((x1 + x2) // 2 - 2, (x1 + x2) // 2 + 3):   # a patio at the back door
+            for k in (1, 2): g.put(x, 0, z1 - k if sd > 0 else z2 + k, "smooth_stone")
+        if who:
+            g.label((x1 + x2) / 2 + 0.5, 4.3, (z1 - 0.1) if sd > 0 else (z2 + 1.1), {"text": f"{who}'s", "color": "white", "bold": True},
+                    180 if sd > 0 else 0, 0.8)
+    # Hank's yard: the perfect lawn (mown stripes), the propane grill, the lawn chairs, a Strickland Propane tank
+    for x in range(-16, -3):
+        for z in range(-19, -4):
+            if g.get(x, 0, z) == "grass_block": g.put(x, 0, z, "moss_block" if (x // 2) % 2 else "grass_block")
+    g.put(-6, 1, -16, "blast_furnace[facing=south]"); g.put(-6, 2, -16, "iron_trapdoor[half=bottom,facing=south]")
+    for x in (-12, -10): g.put(x, 1, -14, "oak_stairs[facing=north]")
+    for x in range(-15, -11):
+        for (y, z) in ((1, -8), (1, -7), (2, -8), (2, -7)): g.put(x, y, z, "white_concrete" if x not in (-15, -12) else "iron_block")
+    g.label(-12.9, 3.3, -6.9, [{"text": "STRICKLAND ", "color": "red", "bold": True}, {"text": "PROPANE", "color": "dark_blue", "bold": True}], 0, 0.6)
+    # Dale's yard: a bunker hatch and a "Dale's Dead Bug" van
+    g.put(10, 0, -12, "iron_block")
+    g.put(10, 1, -12, "iron_trapdoor[half=bottom,facing=north]")
+    car(g, 6, -17, "white", length=6)
+    g.label(9.0, 4.2, -16.9, {"text": "DALE'S DEAD BUG", "color": "dark_green", "bold": True}, 0, 0.5)
+    # Bill's yard: a car up on blocks, junk
+    car(g, -14, 12, "brown")
+    for x in (-13, -10): g.put(x, 1, 12, "cobblestone")   # up on blocks: no wheels
+    for (x, z) in ((-6, 8), (-5, 9), (-8, 15)): g.put(x, 1, z, rnd.choice(["barrel[facing=up]", "cauldron", "composter"]))
+    # Kahn's yard: tidy hedges and a fountain
+    for x in range(5, 16):
+        if x % 3: g.put(x, 1, 18, "azalea_leaves[persistent=true]")
+    g.put(10, 1, 9, "stone_bricks"); g.put(10, 2, 9, "water_cauldron[level=3]")
+    # Hank's red pickup out front on the street side, trash cans and power poles along the alley
+    car(g, -12, -33, "red", length=6)
+    for x in range(-32, 33, 8):
+        if not any(abs(x - gx) <= 1 for gx in gates):
+            g.put(x, 1, 3, "cauldron")
+    for x in (-30, -14, 6, 22):
+        for y in range(1, 9): g.put(x, y, -3, "stripped_spruce_log")
+        for dz in (-1, 1): g.put(x, 8, -3 + dz, "spruce_fence")
+    for x in range(-30, 23):
+        if g.empty(x, 8, -3): g.put(x, 8, -3, "iron_chain[axis=x]")
+    # the guys at Hank's fence, beers in hand
+    head = f'{{id:"minecraft:player_head",count:1,components:{{"minecraft:profile":{{properties:[{{name:"textures",value:"{HEADS["hank"]}"}}]}}}}}}'
+    cap = lambda c: f'{{id:"minecraft:leather_helmet",count:1,components:{{"minecraft:dyed_color":{c}}}}}'
+    for (x, name, colour, hd, shirt, pants) in ((-12, "Hank", "gold", head, 16777215, 3949738), (-10, "Dale", "gray", cap(11546150), 8421504, 6316128),
+                                                (-8, "Bill", "white", cap(10066329), 15790320, 3949738), (-6, "Boomhauer", "aqua", cap(4673362), 4876433, 3949738)):
+        g.figure(x, -3, 0, name, colour, hd, shirt, pants)
+    g.label(-8.0, 3.4, -2.5, {"text": "Yep.", "color": "gray", "italic": True}, 0, 0.8)
+    sign_post(g, 2, -32, [{"text": "RAINEY ST", "color": "white", "bold": True}], 0, h=3, post="iron_bars", scale=0.7)
+    # trees in the yards
+    for (x, z) in ((-30, -14), (30, -10), (-28, 14), (28, 16), (-8, 30), (12, -30)):
+        tree(g, x, z, h=5, r=2)
+
+    def wall(x, y, z, t):   # cinder blocks with a tall plank fence on top
+        if y <= 2: return "polished_andesite" if (t + y) % 3 else "andesite"
+        return "spruce_planks" if y < WALL_H else "spruce_slab[type=bottom]" if max(abs(x), abs(z)) == R + 1 else "spruce_planks"
+    frame(g, wall, "spruce_planks", "spruce_fence")
+    return g
 
 # id (the Colosseum is 1), key, name, colour, universe, builder
 MAPS = [
@@ -863,6 +1277,7 @@ MAPS = [
     (8, "springfield", "Springfield", "yellow", "The Simpsons", springfield),
     (9, "albuquerque", "Albuquerque", "gold", "Breaking Bad", albuquerque),
     (10, "greenhill", "Green Hill Zone", "green", "Sonic the Hedgehog", greenhill),
+    (11, "rainey", "Rainey Street", "gold", "King of the Hill", rainey),
 ]
 
 

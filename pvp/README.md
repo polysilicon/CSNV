@@ -47,23 +47,24 @@ them back to the lobby.
 `arena_map.check()` makes sure every spawn is clear and can walk to the centre, and the spectator spots are on the stands.
 
 ### Map rotation
-The arena rotates through ten maps, ten minutes each (`ROT_SECS`), in this order: the Colosseum, then the
+The arena rotates through eleven maps, ten minutes each (`ROT_SECS`), in this order: the Colosseum, then the
 themed maps in `arena_maps.py`, each built once at its own spot (x -700, z -400..400 in steps of 100):
 
 | # | Map | From | What's there |
 |---|-----|------|--------------|
-| 2 | Mustafar | Star Wars | two lava rivers with railed bridges, a mining facility, collector towers holding lava out over the rivers, basalt spires, a landing pad |
-| 3 | Shrek's Swamp | Shrek | mud and lily-pad pools, Shrek's tree-stump house (mossy roof, chimney), the outhouse, "Beware Ogre" signs, vine trees, a camp fire |
-| 4 | Tegridy Farms | South Park | the farmhouse and porch, a red barn, a silo, fenced fields of "crops", a grow tent, the TEGRIDY FARMS gate, Randy's tractor |
-| 5 | Quahog | Family Guy | Spooner Street: the Griffin house (31 Spooner St), Quagmire's, Joe's (with ramp), the Drunken Clam, parked cars, lamp posts |
-| 6 | Bikini Bottom | SpongeBob | SpongeBob's pineapple, Squidward's head, Patrick's rock, the Krusty Krab, the Chum Bucket, coral, jellyfish |
-| 7 | Mushroom Kingdom | Super Mario | Peach's castle, warp pipes, floating brick and ? blocks, climbable hills, the flagpole, a brick castle, clouds |
-| 8 | Springfield | The Simpsons | the nuclear plant (two walk-in cooling towers, waste barrels), Kwik-E-Mart, 742 Evergreen Terrace, the Lard Lad donut |
-| 9 | Albuquerque | Breaking Bad | the RV cook lab, Los Pollos Hermanos, the A1A Car Wash, Saul's office, the pool with the pink bear, mesas |
-| 10 | Green Hill Zone | Sonic | a loop-de-loop, checkered plateaus, palm trees, totem poles, sunflowers, springs (slime), gold rings |
+| 2 | Mustafar | Star Wars | two lava rivers with railed bridges, a mining facility (ladder to the roof, a catwalk over the lava to a lookout), collector towers holding lava out over the rivers, the high ground, obsidian shards, basalt spires, pipes, a landing pad |
+| 3 | Shrek's Swamp | Shrek | mud and lily-pad pools with boardwalks, a pond with a fishing dock, Shrek's tree-stump house (mossy roof, chimney, table and stools), the outhouse, "Beware Ogre" signs and Farquaad's wanted poster, vine trees, mossy mounds, firefly bushes, a camp fire |
+| 4 | Tegridy Farms | South Park | the farmhouse (upstairs, porch, Randy's grill), a red barn with a hay loft, a silo, fenced fields of "crops", the Tegridy Weed stand, a windmill pump and trough, a chicken coop, a pasture hill, the grow tent, the TEGRIDY FARMS gate, Randy's tractor |
+| 5 | Quahog | Family Guy | Spooner Street with raised sidewalks: the Griffin house (couch and TV, kitchen, upstairs), Quagmire's (and his car), Joe's (with ramp), the Drunken Clam (bar, stools, pool table, darts), a bus stop, mailboxes, parked cars, lamp posts |
+| 6 | Bikini Bottom | SpongeBob | SpongeBob's pineapple, Squidward's head, Patrick's rock, the Krusty Krab (with seating), the Chum Bucket, Sandy's treedome, Mrs. Puff's Boating School, sand dunes, coral, jellyfish and bubbles |
+| 7 | Mushroom Kingdom | Super Mario | Peach's castle behind a moat, warp pipes, floating brick and ? blocks, coins, giant mushrooms you climb by ladder, climbable hills, Bowser's bridge over lava, the end-of-level staircase and flagpole, a brick castle, clouds |
+| 8 | Springfield | The Simpsons | the nuclear plant (two walk-in cooling towers, waste barrels), Kwik-E-Mart, Moe's Tavern, 742 Evergreen Terrace (couch and TV) with Bart's treehouse, the Lard Lad donut, the Duff blimp overhead |
+| 9 | Albuquerque | Breaking Bad | the RV cook lab and camp, Walt's house (pizza on the roof) and pool with the pink bear, Los Pollos Hermanos, the A1A Car Wash, Saul's office, power poles, red rocks, mesas |
+| 10 | Green Hill Zone | Sonic | a loop-de-loop, checkered plateaus, a checkered hill with a tunnel, a lake with a log bridge, palm trees, totem poles, sunflowers, springs (slime), gold rings, Eggman's capsule, the GOAL sign |
+| 11 | Rainey Street | King of the Hill | the alley behind Hank's house: privacy fences, power lines, bins; Hank, Dale, Bill and Boomhauer at the fence with a beer (armor stands, no hitbox); eight houses with yards (Hank's striped lawn, grill and propane tank, Dale's bunker and van, Bill's car on blocks, Kahn's hedges), Hank's pickup out front |
 
 Every themed map has the same frame: a 73x73 floor, a themed outer wall with barrier above it and a barrier lid,
-and a rampart behind the wall whose top is the spectators' walkway. Signs are `text_display`s tagged
+and a rampart behind the wall whose top is the spectators' walkway. Signs (`text_display`) and figures (armor stands) are tagged
 `pvp.mapdeco_<key>`. `arena_maps.check()` makes sure every spawn is clear and they can all reach each other.
 
 - `#amap pvp` is the current map, `#anext pvp` the next and `#arot pvp` the seconds left. A purple boss bar shows
@@ -433,7 +434,7 @@ forceload remove -24 276 24 324
 ```
 Each rotation map is built on its own (force-load it first, e.g. Mustafar at -700 -400:
 `forceload add -741 -441 -659 -359`, `function pvp:admin/build_map_mustafar`, then remove the forceload);
-keys: mustafar, swamp, tegridy, quahog, bikini, mushroom, springfield, albuquerque, greenhill.
+keys: mustafar, swamp, tegridy, quahog, bikini, mushroom, springfield, albuquerque, greenhill, rainey.
 `pvp:admin/build_pve_<ruins|mine|neon|hellfort>` rebuilds one Outbreak map. `pvp:admin/place_npc` re-places just the lobby NPCs and signs. The lobby chunks stay force-loaded.
 
 ## Admin room
