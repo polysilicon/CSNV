@@ -29,7 +29,8 @@ import java.util.concurrent.TimeUnit;
  *  this re-reads it every few seconds and keeps TAB's custom suffix in step (TAB placeholders keep working). Bought
  *  name colours (namecolors.json) colour the name in the tab list the same way.
  *  It also owns /vote and /cosmetics on every server: the menus live on the lobby, so the player is sent there
- *  (if not already on it) and the command line is handed to the lobby's CrispyLobby on the crispy:vote channel. */
+ *  (if not already on it) and the command line is handed to the lobby's CrispyLobby on the crispy:vote channel.
+ *  /lobby sends you to the lobby from any server (like /server lobby, but not in combat). */
 public class CrispyTags {
     static final Path FILE = Path.of(System.getProperty("crispytags.file",
             "/AMPStorage/.ampdata/instances/CrispyLobby01/Minecraft/plugins/CrispyLobby/tags.json"));
@@ -55,6 +56,7 @@ public class CrispyTags {
         var cm = proxy.getCommandManager();
         cm.register(cm.metaBuilder("vote").plugin(this).build(), new Lobby("vote", List.of("links", "top")));
         cm.register(cm.metaBuilder("cosmetics").plugin(this).build(), new Lobby("cosmetics", List.of()));
+        cm.register(cm.metaBuilder("lobby").plugin(this).build(), new ToLobby());
         proxy.getScheduler().buildTask(this, this::tick).delay(10, TimeUnit.SECONDS).repeat(3, TimeUnit.SECONDS).schedule();
     }
 
@@ -123,6 +125,24 @@ public class CrispyTags {
         @Override public List<String> suggest(Invocation inv) {
             String a = inv.arguments().length == 0 ? "" : inv.arguments()[0].toLowerCase(Locale.ROOT);
             return inv.arguments().length <= 1 ? subs.stream().filter(x -> x.startsWith(a)).toList() : List.of();
+        }
+    }
+    /** /lobby on every server: the same as /server lobby, but not while combat-tagged (it would be a way out of a fight). */
+    final class ToLobby implements SimpleCommand {
+        @Override public void execute(Invocation inv) {
+            if (!(inv.source() instanceof Player p)) { inv.source().sendMessage(Component.text("Run /lobby in game.")); return; }
+            Optional<ServerConnection> cur = p.getCurrentServer();
+            if (cur.isPresent() && cur.get().getServerInfo().getName().equalsIgnoreCase(LOBBY)) {
+                p.sendMessage(Component.text("You are already in the lobby.", NamedTextColor.GRAY)); return;
+            }
+            long left = cur.map(c -> combatLeft(c.getServerInfo().getName(), p.getUsername())).orElse(0L);
+            if (left > 0) {
+                p.sendMessage(Component.text("You can't go to the lobby in combat (" + (left + 999) / 1000 + "s left).", NamedTextColor.RED));
+                return;
+            }
+            Optional<RegisteredServer> lobby = proxy.getServer(LOBBY);
+            if (lobby.isEmpty()) { p.sendMessage(Component.text("The lobby isn't available right now.", NamedTextColor.RED)); return; }
+            p.createConnectionRequest(lobby.get()).fireAndForget();
         }
     }
     /** Milliseconds until this player is out of combat on that server, 0 if not in combat (or the server has no file). */

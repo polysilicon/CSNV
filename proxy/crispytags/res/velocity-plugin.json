@@ -1,1 +1,1 @@
-{"id":"crispytags","name":"CrispyTags","version":"1.3.0","description":"Vote-cosmetic tags from the lobby, shown network-wide through TAB; /vote and /cosmetics from any server","authors":["CrispyAnarchy"],"dependencies":[{"id":"tab","optional":false}],"main":"crispy.tags.CrispyTags"}
+{"id":"crispytags","name":"CrispyTags","version":"1.4.0","description":"Vote-cosmetic tags from the lobby, shown network-wide through TAB; /vote, /cosmetics and /lobby from any server","authors":["CrispyAnarchy"],"dependencies":[{"id":"tab","optional":false}],"main":"crispy.tags.CrispyTags"}
