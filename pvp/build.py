@@ -9,7 +9,7 @@ Menus are chest screens opened with /pvpmenu (crispy-pvp-spawn mod) from storage
 """
 import json
 import math
-import abilities, arena_map, outbreak_maps, os, random, shutil, sys, tower
+import abilities, arena_map, arena_maps, outbreak_maps, os, random, shutil, sys, tower
 
 NS = "pvp"
 PACK_FORMAT = [107, 0], [107, 1]
@@ -35,6 +35,13 @@ VELOCITY_MAX, VELOCITY_CAP = 5, 20   # Velocity enchant: +20% arrow speed per le
 LOBBY_BOX = box(0, 0, LOBBY_R, LOBBY_Y - 1, 20)
 ARENA_BOX = box(ACX, ACZ, AR, AY - 1, 35)
 STANDS_BOX = box(ACX, ACZ, arena_map.EXTENT - 1, AY - 1, 40)   # the colosseum stands, for spectators (tag pvp.spec)
+# the arena rotation: the Colosseum (1) and the themed maps (arena_maps.py), each built at its own spot; every ROT_SECS
+# the arena moves on to the next one and everyone fighting (or watching) goes with it
+ROT_SECS = 600
+ARENA_MAPS = [(1, "colosseum", "The Colosseum", "gold", "Ancient Rome")] + [m[:5] for m in arena_maps.MAPS]
+MAP_AT = {1: (ACX, ACZ), **{m[0]: (-700, -400 + 100 * (m[0] - 2)) for m in arena_maps.MAPS}}
+ARENA_BOXES = {1: ARENA_BOX, **{i: box(x, z, arena_maps.R + 1, AY - 1, 35) for i, (x, z) in MAP_AT.items() if i > 1}}
+STANDS_BOXES = {1: STANDS_BOX, **{i: box(x, z, arena_maps.R + 4, AY - 1, 40) for i, (x, z) in MAP_AT.items() if i > 1}}
 SPEC_PORTAL = (10, LOBBY_Y + 1, -1)   # lobby portal to the stands: east side, 3 wide (z -1..1), 3 high
 # Outbreak maps: same size and layout (spawns, mob windows, Arsenal in the middle), 100 blocks apart along z.
 # id, key, name, colour, menu icon, centre z, extra mobs (min wave, roll <=, type, extra NBT) tried before the normal pool
@@ -542,6 +549,10 @@ def build():
         'scoreboard objectives add pvp.kills playerKillCount {"text":"⚔ Kills","color":"aqua","bold":true}',
         'scoreboard objectives add pve.pts dummy {"text":"☣ Points","color":"green","bold":true}',
         "scoreboard objectives setdisplay sidebar pvp.kills",
+        "bossbar add pvp:map \"\"", "bossbar set pvp:map color purple", f"bossbar set pvp:map max {ROT_SECS}",
+        "execute unless score #amap pvp matches 1.. run scoreboard players set #amap pvp 1",
+        "execute unless score #anext pvp matches 1.. run scoreboard players set #anext pvp 2",
+        f"execute unless score #arot pvp matches 1.. run scoreboard players set #arot pvp {ROT_SECS}",
         "team add pve", "team modify pve color green", "team modify pve friendlyFire false", "team modify pve seeFriendlyInvisibles true",
         # the Outbreak sidebar: only players in the current run (rebuilt every second by pve/side), points and kills
         'scoreboard objectives add pve.side dummy {"text":"☣ Outbreak","color":"green","bold":true}', "scoreboard objectives add pve.kc dummy",
@@ -587,16 +598,17 @@ def build():
         # spectators in the colosseum stands can't be hurt and can't hurt anyone
         "effect give @a[tag=pvp.spec] minecraft:resistance 3 4 true", "effect give @a[tag=pvp.spec] minecraft:weakness 3 255 true",
         "effect give @a[tag=pvp.spec] minecraft:saturation 3 0 true",
-        f"execute as @a[tag=pvp.spec] unless entity @s[{STANDS_BOX}] run function {NS}:to_lobby",
+        f"function {NS}:arena/second",
+        f"execute as @a[tag=pvp.spec,tag=!pvp.instands] run function {NS}:to_lobby",
         # anyone (in adventure) outside the lobby and both arenas goes back to the lobby
-        f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[{ARENA_BOX}] {" ".join(f"unless entity @s[{b}]" for b in PVE_BOXES.values())} unless entity @s[tag=pvp.admin,{ROOM_BOX}] unless entity @s[tag=pvp.spec,{STANDS_BOX}] unless entity @s[tag=pvp.duel] unless entity @s[{TOWER_BOX}] run function {NS}:to_lobby",
+        f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[tag=pvp.inarena] {" ".join(f"unless entity @s[{b}]" for b in PVE_BOXES.values())} unless entity @s[tag=pvp.admin,{ROOM_BOX}] unless entity @s[tag=pvp.instands] unless entity @s[tag=pvp.duel] unless entity @s[{TOWER_BOX}] run function {NS}:to_lobby",
         f"function {NS}:pve/second",
         f"function {NS}:ability/second",
         f"execute as @a[{LOBBY_BOX},tag=!pvp.spec] unless items entity @s container.* minecraft:flint unless items entity @s weapon.offhand minecraft:flint run item replace entity @s hotbar.8 with {DUEL_ITEM}",
         f"function {NS}:duel/check",
         f"function {NS}:tower/second", "advancement revoke @a only pvp:towernpc",
         # no stashing gear on the floor to pick up as another character: items dropped in the arena or a duel pit vanish
-        f"kill @e[type=minecraft:item,{ARENA_BOX}]", *[f"kill @e[type=minecraft:item,{box(px, pz, arena_map.PIT_R + 3, AY - 1, 25)}]" for (px, pz) in DUEL_PITS],
+        *[f"kill @e[type=minecraft:item,{b}]" for b in ARENA_BOXES.values()], *[f"kill @e[type=minecraft:item,{box(px, pz, arena_map.PIT_R + 3, AY - 1, 25)}]" for (px, pz) in DUEL_PITS],
         f"execute as @a[tag=pvp.master] at @s unless entity @s[{LOBBY_BOX}] run particle minecraft:wax_on ~ ~1 ~ 0.35 0.6 0.35 0 5",
         f"particle minecraft:reverse_portal {SPEC_PORTAL[0] + 0.5} {SPEC_PORTAL[1] + 1.5} 0.5 0.1 0.9 0.9 0.05 40",
         # NPC clicks are advancements; clear any left granted so an NPC can never get stuck for a player
@@ -691,13 +703,10 @@ def build():
     fn("kit/give_pve", give)
     fn("kit/custom_pve", ["execute store result storage pvp:tmp k int 1 run scoreboard players get @s pve.kit", f"function {NS}:kit/custom_give with storage pvp:tmp"])
 
-    enter = ["execute store result score #r pvp run random value 1..%d" % len(SPAWNS)]
-    for n, (dx, dz, yaw) in enumerate(SPAWNS, 1):
-        enter.append(f"execute if score #r pvp matches {n} run tp @s {ACX + dx + 0.5} {AY + 1} {ACZ + dz + 0.5} {yaw} 0")
-    enter += ["effect give @s minecraft:resistance 3 4 true", "scoreboard players set @s pvp.ct 0",
-              "title @s title {\"text\":\"FIGHT\",\"color\":\"red\",\"bold\":true}",
-              "playsound minecraft:block.beacon.power_select player @s ~ ~ ~ 1 1.4"]
-    fn("arena/enter", enter)
+    build_rotation()
+    fn("arena/enter", [f"function {NS}:arena/spawn", "effect give @s minecraft:resistance 3 4 true", "scoreboard players set @s pvp.ct 0",
+                       f"function {NS}:arena/subtitle", "title @s title {\"text\":\"FIGHT\",\"color\":\"red\",\"bold\":true}",
+                       "playsound minecraft:block.beacon.power_select player @s ~ ~ ~ 1 1.4"])
 
     npc_adv("npc", "pvp.npc", "kits")
     npc_adv("pvenpc", "pvp.pvenpc", "pve_maps")
@@ -726,7 +735,7 @@ def build():
     fn("admin/place_holo", [   # the lobby board (on its own, so it can be redone without touching the NPCs)
         "kill @e[tag=pvp.holo]",
         holo(LOBBY_Y + 7.2, -LOBBY_R + 1.5, {"text": "MULTIVERSE", "color": "light_purple", "bold": True}, 3),   # above the 6-line board
-        holo(LOBBY_Y + 4.6, -LOBBY_R + 1.5, [{"text": "PvP Arena: ", "color": "aqua"}, {"text": "pick a character and fight", "color": "gray"},
+        holo(LOBBY_Y + 4.6, -LOBBY_R + 1.5, [{"text": "PvP Arena: ", "color": "aqua"}, {"text": f"{len(ARENA_MAPS)} rotating maps from their worlds", "color": "gray"},
                                               {"text": "   Outbreak: ", "color": "green"}, {"text": "waves of mobs, solo or team", "color": "gray"},
                                               {"text": f"\n{len(KITS)} characters from your favourite shows and games", "color": "yellow"},
                                               {"text": "\nPvP · Duels · Outbreak · The Tower", "color": "white"},
@@ -766,10 +775,10 @@ def build():
         z = -6 + 2 * i
         k = next(k for k in KITS if k[1] == key)
         lobby += [f"setblock {-L + 2} {Y + 1} {z} minecraft:deepslate_bricks", f"setblock {-L + 2} {Y + 2} {z} minecraft:amethyst_block",
-                  f"summon minecraft:item_display {-L + 2.5} {Y + 3.45} {z + 0.5} {{Tags:[\"pvp.lobbydeco\"],billboard:\"vertical\","
+                  f"summon minecraft:item_display {-L + 2.5} {Y + 3.85} {z + 0.5} {{Tags:[\"pvp.lobbydeco\"],billboard:\"vertical\","
                   f"transformation:{{left_rotation:[0f,1f,0f,0f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[1.3f,1.3f,1.3f]}},"
                   f"item:{{id:\"minecraft:player_head\",count:1,components:{{\"minecraft:profile\":{{properties:[{{name:\"textures\",value:\"{HEADS[key]}\"}}]}}}}}}}}",
-                  f"summon minecraft:text_display {-L + 2.5} {Y + 4.25} {z + 0.5} {{Tags:[\"pvp.lobbydeco\"],billboard:\"center\",background:0,"
+                  f"summon minecraft:text_display {-L + 2.5} {Y + 4.65} {z + 0.5} {{Tags:[\"pvp.lobbydeco\"],billboard:\"center\",background:0,"
                   f"transformation:{{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[0.7f,0.7f,0.7f]}},"
                   f"text:{tj({'text': k[2], 'color': k[3], 'bold': True})}}}"]
     lobby.append(f"summon minecraft:text_display {-L + 2.5} {Y + 5.3} 0.5 {{Tags:[\"pvp.lobbydeco\"],billboard:\"center\",background:0,"
@@ -795,13 +804,8 @@ def build():
         "kill @e[tag=pvp.specholo]",
         f"summon minecraft:text_display {X - 0.5} {PY + 5.4} 0.5 {{Tags:[\"pvp.specholo\"],billboard:\"center\",background:0,"
         "text:[{\"text\":\"👁 Spectate the Arena\",\"color\":\"light_purple\",\"bold\":true},{\"text\":\"\\nWalk through to watch from the stands\",\"color\":\"gray\"}]}"])
-    spots = arena_map.SPECTATE
-    sp = ["execute store result score #r pvp run random value 1..%d" % len(spots)]
-    for n, (dx, dz, yaw) in enumerate(spots, 1):
-        h = arena_map.WALL_H + (arena_map.row(dx, dz) - 1) + 1
-        sp.append(f"execute if score #r pvp matches {n} run tp @s {ACX + dx + 0.5} {AY + h} {ACZ + dz + 0.5} {yaw} 10")
     fn("spectate", [
-        "clear @s", "effect clear @s", "gamemode adventure @s", "tag @s add pvp.spec", *sp,
+        "clear @s", "effect clear @s", "gamemode adventure @s", "tag @s add pvp.spec", "tag @s add pvp.instands", f"function {NS}:arena/spec_tp",
         "effect give @s minecraft:resistance 3 4 true", "effect give @s minecraft:weakness 3 255 true",
         "playsound minecraft:block.portal.travel player @s ~ ~ ~ 0.4 1.4",
         "tellraw @s [{\"text\":\"👁 You're in the stands. \",\"color\":\"gold\"},{\"text\":\"Watch the fights, walk the rim, and type \",\"color\":\"gray\"},"
@@ -815,6 +819,20 @@ def build():
     arena_map.check(g, SPAWNS)
     ar += outbreak_maps.commands(g, ACX, AY, ACZ)
     fn("admin/build_arena", ar)
+    for (i, key, *_), builder in zip(ARENA_MAPS[1:], (m[5] for m in arena_maps.MAPS)):
+        g = builder()
+        arena_maps.check(g, key)
+        cx, cz = MAP_AT[i]
+        E = arena_maps.E
+        out = [f"fill {cx - E} {AY + 1 + k} {cz - E} {cx + E} {AY + 2 + k} {cz + E} minecraft:air" for k in range(0, arena_maps.TOP + 1, 2)]
+        out += arena_maps.commands(g, cx, AY, cz)
+        out.append(f"kill @e[tag=pvp.mapdeco_{key}]")
+        for (lx, ly, lz, text, yaw, sc) in g.labels:
+            out.append(f"summon minecraft:text_display {cx + lx:.2f} {AY + ly:.2f} {cz + lz:.2f} {{Tags:[\"pvp.mapdeco\",\"pvp.mapdeco_{key}\"],"
+                       f"billboard:\"fixed\",Rotation:[{yaw}f,0f],background:0,shadow:1b,line_width:400,"
+                       f"transformation:{{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[{sc}f,{sc}f,{sc}f]}},"
+                       f"text:{tj(text)}}}")
+        fn(f"admin/build_map_{key}", out)
     fn("admin/build", [f"function {NS}:admin/build_lobby", f"function {NS}:admin/build_arena", f"function {NS}:admin/build_pve", f"function {NS}:admin/build_room"])
     build_room()
     build_velocity()
@@ -1035,7 +1053,70 @@ def build_duels():
     lk = outbreak_maps.locks(arena_map.colosseum(SPAWNS), ACX, AY, ACZ, clear=True)
     for (px, pz) in DUEL_PITS: lk += outbreak_maps.locks(g, px, AY, pz, clear=True)
     for m in OUTBREAK_MAPS: lk += outbreak_maps.locks(outbreak_maps.MAPS[m[1]](map_points(m[1]), PVE_SPAWNS), PCX, AY, m[5], clear=True)
+    for (i, key, *_), m in zip(ARENA_MAPS[1:], arena_maps.MAPS):
+        lk += outbreak_maps.locks(m[5](), MAP_AT[i][0], AY, MAP_AT[i][1], clear=True)
     fn("admin/lock_containers", lk)
+
+
+def build_rotation():
+    """The arena map rotation: #amap pvp is the current map, #anext pvp the next, #arot pvp the seconds left on it."""
+    N = len(ARENA_MAPS)
+    name = lambda m: [{"text": m[2], "color": m[3], "bold": True}, {"text": f" ({m[4]})", "color": "gray"}]
+    spawn, spec, sub = [], [], []
+    for m in ARENA_MAPS:
+        i, key = m[0], m[1]
+        cx, cz = MAP_AT[i]
+        pts = SPAWNS if i == 1 else next(b for b in arena_maps.MAPS if b[0] == i)[5]().spawns
+        fn(f"arena/spawn_{key}", ["execute store result score #r pvp run random value 1..%d" % len(pts)] +
+           [f"execute if score #r pvp matches {n} run tp @s {cx + dx + 0.5} {AY + 1} {cz + dz + 0.5} {yaw} 0" for n, (dx, dz, yaw) in enumerate(pts, 1)])
+        if i == 1:
+            spots = [(dx, dz, yaw, arena_map.WALL_H + (arena_map.row(dx, dz) - 1) + 1) for (dx, dz, yaw) in arena_map.SPECTATE]
+        else:
+            spots = [(dx, dz, yaw, arena_maps.WALL_H + 1) for (dx, dz, yaw) in arena_maps.SPECTATE]
+        fn(f"arena/spec_{key}", ["execute store result score #r pvp run random value 1..%d" % len(spots)] +
+           [f"execute if score #r pvp matches {n} run tp @s {cx + dx + 0.5} {AY + h} {cz + dz + 0.5} {yaw} 10" for n, (dx, dz, yaw, h) in enumerate(spots, 1)])
+        spawn.append(f"execute if score #amap pvp matches {i} run return run function {NS}:arena/spawn_{key}")
+        spec.append(f"execute if score #amap pvp matches {i} run return run function {NS}:arena/spec_{key}")
+        sub.append(f"execute if score #amap pvp matches {i} run title @s subtitle " + tj([{"text": "🗺 "}] + name(m)))
+    fn("arena/spawn", spawn)
+    fn("arena/spec_tp", spec)
+    fn("arena/subtitle", sub)
+    fn("arena/moved", [f"function {NS}:arena/spawn", "effect give @s minecraft:resistance 3 4 true", f"function {NS}:arena/subtitle",
+                       "title @s title {\"text\":\"NEW MAP\",\"color\":\"light_purple\",\"bold\":true}",
+                       "playsound minecraft:entity.enderman.teleport player @s ~ ~ ~ 1 0.8"])
+    fn("arena/rotate", [
+        "scoreboard players operation #amap pvp = #anext pvp",
+        "scoreboard players operation #anext pvp = #amap pvp", "scoreboard players add #anext pvp 1",
+        f"execute if score #anext pvp matches {N + 1}.. run scoreboard players set #anext pvp 1",
+        f"scoreboard players set #arot pvp {ROT_SECS}",
+        f"execute as @a[tag=pvp.inarena,tag=!pvp.spec,gamemode=adventure] run function {NS}:arena/moved",
+        f"execute as @a[tag=pvp.spec] run function {NS}:arena/spec_tp",
+        *[f"execute if score #amap pvp matches {m[0]} run tellraw @a " + tj([{"text": "🗺 The arena is now ", "color": "light_purple"}] + name(m) +
+                                                                           [{"text": "!", "color": "light_purple"}]) for m in ARENA_MAPS],
+    ])
+    warn = lambda secs: [f"execute if score #arot pvp matches {secs} if score #anext pvp matches {m[0]} run tellraw @a[tag=pvp.seemap] " +
+                         tj([{"text": f"🗺 Next map in {secs}s: ", "color": "light_purple"}] + name(m)) for m in ARENA_MAPS]
+    bar = []
+    for m in ARENA_MAPS:
+        for (cond, tail) in (("60..", [{"score": {"name": "#amin", "objective": "pvp"}, "color": "white"}, {"text": "m", "color": "white"}]),
+                             ("..59", [{"score": {"name": "#arot", "objective": "pvp"}, "color": "white"}, {"text": "s", "color": "white"}])):
+            bar.append(f"execute if score #amap pvp matches {m[0]} if score #arot pvp matches {cond} run bossbar set pvp:map name " +
+                       tj([{"text": "🗺 ", "color": "white"}, {"text": m[2], "color": m[3], "bold": True}, {"text": "  ·  next map in ", "color": "gray"}] + tail))
+    fn("arena/second", [
+        "scoreboard players remove #arot pvp 1",
+        *warn(60), *warn(10),
+        f"execute if score #arot pvp matches ..0 run function {NS}:arena/rotate",
+        "tag @a remove pvp.inarena", "tag @a remove pvp.instands", "tag @a remove pvp.seemap",
+        *[f"tag @a[{b}] add pvp.inarena" for b in ARENA_BOXES.values()],
+        *[f"tag @a[tag=pvp.spec,{b}] add pvp.instands" for b in STANDS_BOXES.values()],
+        "tag @a[tag=pvp.inarena] add pvp.seemap", "tag @a[tag=pvp.instands] add pvp.seemap",
+        "scoreboard players operation #amin pvp = #arot pvp", "scoreboard players add #amin pvp 59", "scoreboard players set #60 pvp 60",
+        "scoreboard players operation #amin pvp /= #60 pvp",
+        *bar,
+        "execute store result bossbar pvp:map value run scoreboard players get #arot pvp",
+        "bossbar set pvp:map players @a[tag=pvp.seemap]",
+    ])
+    fn("admin/next_map", ["scoreboard players set #arot pvp 1", say("@s", "The arena moves to the next map in a second.", "light_purple")])
 
 
 def build_mastery():

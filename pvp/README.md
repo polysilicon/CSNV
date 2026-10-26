@@ -46,6 +46,32 @@ them back to the lobby.
 
 `arena_map.check()` makes sure every spawn is clear and can walk to the centre, and the spectator spots are on the stands.
 
+### Map rotation
+The arena rotates through ten maps, ten minutes each (`ROT_SECS`), in this order: the Colosseum, then the
+themed maps in `arena_maps.py`, each built once at its own spot (x -700, z -400..400 in steps of 100):
+
+| # | Map | From | What's there |
+|---|-----|------|--------------|
+| 2 | Mustafar | Star Wars | two lava rivers with railed bridges, a mining facility, collector towers holding lava out over the rivers, basalt spires, a landing pad |
+| 3 | Shrek's Swamp | Shrek | mud and lily-pad pools, Shrek's tree-stump house (mossy roof, chimney), the outhouse, "Beware Ogre" signs, vine trees, a camp fire |
+| 4 | Tegridy Farms | South Park | the farmhouse and porch, a red barn, a silo, fenced fields of "crops", a grow tent, the TEGRIDY FARMS gate, Randy's tractor |
+| 5 | Quahog | Family Guy | Spooner Street: the Griffin house (31 Spooner St), Quagmire's, Joe's (with ramp), the Drunken Clam, parked cars, lamp posts |
+| 6 | Bikini Bottom | SpongeBob | SpongeBob's pineapple, Squidward's head, Patrick's rock, the Krusty Krab, the Chum Bucket, coral, jellyfish |
+| 7 | Mushroom Kingdom | Super Mario | Peach's castle, warp pipes, floating brick and ? blocks, climbable hills, the flagpole, a brick castle, clouds |
+| 8 | Springfield | The Simpsons | the nuclear plant (two walk-in cooling towers, waste barrels), Kwik-E-Mart, 742 Evergreen Terrace, the Lard Lad donut |
+| 9 | Albuquerque | Breaking Bad | the RV cook lab, Los Pollos Hermanos, the A1A Car Wash, Saul's office, the pool with the pink bear, mesas |
+| 10 | Green Hill Zone | Sonic | a loop-de-loop, checkered plateaus, palm trees, totem poles, sunflowers, springs (slime), gold rings |
+
+Every themed map has the same frame: a 73x73 floor, a themed outer wall with barrier above it and a barrier lid,
+and a rampart behind the wall whose top is the spectators' walkway. Signs are `text_display`s tagged
+`pvp.mapdeco_<key>`. `arena_maps.check()` makes sure every spawn is clear and they can all reach each other.
+
+- `#amap pvp` is the current map, `#anext pvp` the next and `#arot pvp` the seconds left. A purple boss bar shows
+  the map and the time to the next one to everyone in an arena or the stands; there's a chat warning at 60 s and 10 s.
+- When the time is up, everyone fighting is moved to a spawn on the new map ("NEW MAP" title), spectators go to the
+  new map's walkway, and the server is told the new map. Joining the arena or the stands always uses the current map.
+- `function pvp:admin/next_map` skips to the next map.
+
 ## How it plays
 - Players spawn in a safe stone hub at 0 101 0, where they're immune to damage and can't deal any.
 - **PvP Arena** (left NPC, was the Kit Dealer) opens a chest menu of 36 character kits. Click one and you're dropped at one of 8 random arena
@@ -405,6 +431,9 @@ function pvp:admin/build                  # build_lobby (+ place_npc), build_are
 forceload remove -32 64 32 136
 forceload remove -24 276 24 324
 ```
+Each rotation map is built on its own (force-load it first, e.g. Mustafar at -700 -400:
+`forceload add -741 -441 -659 -359`, `function pvp:admin/build_map_mustafar`, then remove the forceload);
+keys: mustafar, swamp, tegridy, quahog, bikini, mushroom, springfield, albuquerque, greenhill.
 `pvp:admin/build_pve_<ruins|mine|neon|hellfort>` rebuilds one Outbreak map. `pvp:admin/place_npc` re-places just the lobby NPCs and signs. The lobby chunks stay force-loaded.
 
 ## Admin room
