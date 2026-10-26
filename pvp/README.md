@@ -43,7 +43,7 @@ them back to the lobby.
 
 ## How it plays
 - Players spawn in a safe stone hub at 0 101 0, where they're immune to damage and can't deal any.
-- **Kit Dealer** (left NPC) opens a chest menu of 36 character kits. Click one and you're dropped at one of 8 random arena
+- **PvP Arena** (left NPC, was the Kit Dealer) opens a chest menu of 36 character kits. Click one and you're dropped at one of 8 random arena
   spawns with 3 s of spawn protection.
 - **Outbreak** (right NPC) opens the map menu: pick one of the four maps (or Random),
   then pick a kit to queue.
