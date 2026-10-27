@@ -107,6 +107,10 @@ public class CrispyTags {
             if (tagMgr != null) {
                 String want = tag == null ? null : join(tagMgr.getOriginalRawSuffix(p), tag);
                 if (!Objects.equals(tagMgr.getCustomSuffix(p), want)) tagMgr.setSuffix(p, want);
+                // a name tag's name takes the prefix's last colour, and only the 16 basic ones: use the nearest
+                String code = colors.get(p.getName().toLowerCase(Locale.ROOT));
+                String pre = code == null ? null : Objects.requireNonNullElse(tagMgr.getOriginalRawPrefix(p), "") + nearestBasic(code, p.getName());
+                if (!Objects.equals(tagMgr.getCustomPrefix(p), pre)) tagMgr.setPrefix(p, pre);
             }
         }
     }
@@ -171,5 +175,19 @@ public class CrispyTags {
     }
     /** Same rules as the lobby and chat (ColorCodes): "&b", "&c|&6|&e", "rainbow", fades "a>b" and flags "a/b/c". TAB reads &#rrggbb. */
     static String colored(String name, String code) { return ColorCodes.legacy(code, name); }
+    static final String BASIC = "0123456789abcdef";
+    /** "&x": the basic colour nearest the first letter's colour of a name in this code. */
+    static String nearestBasic(String code, String name) {
+        String first = ColorCodes.perLetter(code) ? Arrays.stream(ColorCodes.letters(code, name)).filter(Objects::nonNull).findFirst().orElse("&f") : code;
+        int rgb = ColorCodes.rgb(first), best = 15;
+        long bestD = Long.MAX_VALUE;
+        for (int i = 0; i < 16; i++) {
+            int c = ColorCodes.rgb("&" + BASIC.charAt(i));
+            long dr = (rgb >> 16 & 255) - (c >> 16 & 255), dg = (rgb >> 8 & 255) - (c >> 8 & 255), db = (rgb & 255) - (c & 255);
+            long d = dr * dr * 3 + dg * dg * 4 + db * db * 2;   // weighted: the eye is most sensitive to green
+            if (d < bestD) { bestD = d; best = i; }
+        }
+        return "&" + BASIC.charAt(best);
+    }
     static String join(String original, String tag) { return (original == null ? "" : original) + " " + tag; }
 }

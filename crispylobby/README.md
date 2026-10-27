@@ -76,7 +76,9 @@ time, and both show on every server.
 - **Tags** (`cosmetics.tags`) appear before the name in chat, after it in the tab list, and on name tags.
   - The lobby writes `plugins/CrispyLobby/tags.json`.
   - In chat they're added by `chattags/` (the Fabric mod and the Paper plugin), so they also reach cross-chat and Discord.
-  - The tab list and name tags come from the **CrispyTags** Velocity plugin (`proxy/crispytags`, needs TAB).
+  - The tab list and name tags come from the **CrispyTags** Velocity plugin (`proxy/crispytags`, needs TAB). Name tags
+    also need **VelocityScoreboardAPI** on the proxy: without it TAB can't send scoreboard teams. Name tags can only
+    colour the name in one of the 16 basic colours, so CrispyTags 1.6.0 uses the one nearest the name colour's first letter.
 - **Name colours** (`cosmetics.name-colors`, a colour code like `&b`, `&6&l`, or `rainbow`) colour the name in chat.
   - The lobby writes `plugins/CrispyLobby/namecolors.json`, which the same `chattags/` readers use.
 - **My cosmetics** (1.12.0): an ender chest in the `/cosmetics` hub lists everything the player can wear (bought and
