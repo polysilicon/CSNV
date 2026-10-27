@@ -169,14 +169,7 @@ public class CrispyTags {
             return u == null ? 0 : Math.max(0, u - System.currentTimeMillis());
         } catch (Exception e) { return 0; }
     }
-    /** Same rules as the lobby and chat: a colour code ("&b", "&6&l"), a per-letter sequence ("&c|&6|&e") or "rainbow". */
-    static String colored(String name, String code) {
-        if ("rainbow".equalsIgnoreCase(code)) code = "&c|&6|&e|&a|&b|&9|&d";
-        if (!code.contains("|")) return code + name;
-        String[] cyc = code.split("\\|");
-        StringBuilder b = new StringBuilder();
-        for (int i = 0; i < name.length(); i++) b.append(cyc[i % cyc.length]).append(name.charAt(i));
-        return b.toString();
-    }
+    /** Same rules as the lobby and chat (ColorCodes): "&b", "&c|&6|&e", "rainbow", fades "a>b" and flags "a/b/c". TAB reads &#rrggbb. */
+    static String colored(String name, String code) { return ColorCodes.legacy(code, name); }
     static String join(String original, String tag) { return (original == null ? "" : original) + " " + tag; }
 }

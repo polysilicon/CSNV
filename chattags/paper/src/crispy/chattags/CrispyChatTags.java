@@ -8,6 +8,7 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextReplacementConfig;
 import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.serializer.legacy.LegacyFormat;
@@ -74,14 +75,16 @@ public class CrispyChatTags extends JavaPlugin implements Listener {
         String code = chat.get(name);
         return code == null || text.contains("http://") || text.contains("https://") ? null : code;
     }
-    static String[] sequence(String code) {
-        return (code.equalsIgnoreCase("rainbow") ? "&c|&6|&e|&a|&b|&9|&d" : code).split("\\|");
-    }
-    /** "&6&l" -> that style. */
+    /** "&6&l" or "&#ff8800&l" -> that style. */
     static Style style(String code) {
         Style st = Style.empty();
         for (int i = 0; i + 1 < code.length(); i++) {
             if (code.charAt(i) != '&' && code.charAt(i) != '\u00a7') continue;
+            if (code.charAt(i + 1) == '#' && i + 8 <= code.length()) {   // &#rrggbb (fades and flags)
+                try { st = Style.style(TextColor.color(Integer.parseInt(code.substring(i + 2, i + 8), 16))); } catch (NumberFormatException ignored) {}
+                i += 7;
+                continue;
+            }
             LegacyFormat f = LegacyComponentSerializer.parseChar(code.charAt(++i));
             if (f == null) continue;
             if (f.reset()) st = Style.empty();
@@ -90,42 +93,46 @@ public class CrispyChatTags extends JavaPlugin implements Listener {
         }
         return st;
     }
-    /** The message text, always literal (& codes typed in chat are not formatting), in a colour or per-letter sequence. */
+    /** The text, always literal (& codes typed in chat are not formatting), in a colour code (see ColorCodes: one style,
+     *  a per-letter cycle, "rainbow", a fade or flag bands). */
     static Component colored(String code, String text) {
-        String[] seq = sequence(code);
-        if (seq.length == 1) return Component.text(text, style(seq[0]));
+        if (!ColorCodes.perLetter(code)) return Component.text(text, style(code));
+        String[] l = ColorCodes.letters(code, text);
         Component out = Component.empty();
-        int k = 0;
         for (int i = 0; i < text.length(); i++) {
             String ch = String.valueOf(text.charAt(i));
-            out = out.append(Character.isWhitespace(text.charAt(i)) ? Component.text(ch) : Component.text(ch, style(seq[k++ % seq.length])));
+            out = out.append(l[i] == null ? Component.text(ch) : Component.text(ch, style(l[i])));
         }
         return out;
     }
-    /** The same with section codes, for the old chat event (SaberFactions builds its lines from that message). */
+    /** The same with section codes, for the old chat event (SaberFactions builds its lines from that message). A hex
+     *  colour becomes Spigot's \u00a7x\u00a7r\u00a7r\u00a7g\u00a7g\u00a7b\u00a7b. */
     static String legacyColored(String code, String text) {
-        String[] seq = sequence(code);
+        text = text.replace("\u00a7", "");   // only the cosmetic's codes are converted: & codes the player typed stay literal
+        if (!ColorCodes.perLetter(code)) return section(code) + text;
+        String[] l = ColorCodes.letters(code, text);
         StringBuilder b = new StringBuilder();
-        if (seq.length == 1) return seq[0].replace('&', '\u00a7') + text.replace("\u00a7", "");
-        int k = 0;
-        for (int i = 0; i < text.length(); i++) {
-            char ch = text.charAt(i);
-            if (ch == '\u00a7') continue;
-            if (!Character.isWhitespace(ch)) b.append(seq[k++ % seq.length].replace('&', '\u00a7'));
-            b.append(ch);
+        for (int i = 0; i < text.length(); i++) b.append(l[i] == null ? "" : section(l[i])).append(text.charAt(i));
+        return b.toString();
+    }
+    /** "&#ff8800&l" -> section codes. */
+    static String section(String amp) {
+        StringBuilder b = new StringBuilder();
+        for (int i = 0; i < amp.length(); i++) {
+            char c = amp.charAt(i);
+            if (c == '&' && i + 7 < amp.length() && amp.charAt(i + 1) == '#') {
+                b.append("\u00a7x");
+                for (int k = i + 2; k < i + 8; k++) b.append('\u00a7').append(amp.charAt(k));
+                i += 7;
+            } else if (c == '&' && i + 1 < amp.length() && "0123456789abcdefklmnorABCDEFKLMNOR".indexOf(amp.charAt(i + 1)) >= 0) b.append('\u00a7');
+            else b.append(c);
         }
         return b.toString();
     }
 
     Component coloredName(String name) {
         String code = colors.get(name);
-        if (code == null) return null;
-        if (code.equalsIgnoreCase("rainbow")) code = "&c|&6|&e|&a|&b|&9|&d";
-        if (!code.contains("|")) return AMP.deserialize(code + name);
-        String[] seq = code.split("\\|");   // per-letter colour sequence, e.g. "&c|&6|&e"
-        Component out = Component.empty();
-        for (int i = 0; i < name.length(); i++) out = out.append(AMP.deserialize(seq[i % seq.length] + name.charAt(i)));
-        return out;
+        return code == null ? null : colored(code, name);
     }
     /** "[Tag] " + coloured name (or the given name component), or null when the player has neither cosmetic. */
     Component chatName(String name, Component plain) {

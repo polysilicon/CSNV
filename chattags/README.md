@@ -27,3 +27,8 @@ with no bot change. Both versions read the lobby's `plugins/CrispyLobby/tags.jso
     swapped into the finished line for formats that render their own copy of the message (EssentialsChat), with the
     same rules as the Fabric mod (links stay plain, typed `&` codes stay literal, `rainbow` and `a|b|c` sequences
     go letter by letter).
+
+Colour codes (Fabric 1.6.0, Paper 1.5.0): both use `ColorCodes.java`, the same file as the lobby and the proxy plugin,
+so fades (`&#ff5f6d>&#ffc371`) and flag bands (`&#5bcefa/&#f5a9b8/&#ffffff`) look the same everywhere. The Paper
+plugin turns hex colours into Spigot's `§x` form for SaberFactions' legacy chat event.
+

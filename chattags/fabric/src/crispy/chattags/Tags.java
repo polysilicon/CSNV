@@ -6,6 +6,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,7 +14,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /** Vote cosmetics from the lobby: tags.json (name -> "&a[Voter]"), namecolors.json and chatcolors.json (name -> "&b",
- *  a sequence "&c|&6|&e", or "rainbow"; the second colours the message text), each re-read when the file changes. */
+ *  a sequence "&c|&6|&e", "rainbow", a fade or flag bands, see ColorCodes; the third colours the message text), each re-read when the file changes. */
 public final class Tags {
     static final Path DIR = Path.of(System.getProperty("crispytags.dir", "/AMPStorage/.ampdata/instances/CrispyLobby01/Minecraft/plugins/CrispyLobby"));
     static final Source TAGS = new Source(DIR.resolve("tags.json")), COLORS = new Source(DIR.resolve("namecolors.json")),
@@ -53,17 +54,15 @@ public final class Tags {
         return code == null || message.contains("http://") || message.contains("https://") ? null : code;
     }
 
-    /** text in a colour code ("&b", "&6&l"), a per-letter sequence ("&c|&6|&e"; spaces don't use up a colour) or
-     *  "rainbow". The text is always literal: & codes typed in a chat message are not formatting. */
+    /** text in a colour code (see ColorCodes: "&b", "&6&l", "&#ff8800", a per-letter sequence "&c|&6|&e", "rainbow",
+     *  a fade "a>b>c" or flag bands "a/b/c"). The text is always literal: & codes typed in chat are not formatting. */
     public static MutableComponent colored(String code, String text) {
-        if (code.equalsIgnoreCase("rainbow")) code = "&c|&6|&e|&a|&b|&9|&d";
-        if (!code.contains("|")) return Component.literal(text).setStyle(style(code));
-        String[] seq = code.split("\\|");
+        if (!ColorCodes.perLetter(code)) return Component.literal(text).setStyle(style(code));
+        String[] l = ColorCodes.letters(code, text);
         MutableComponent out = Component.empty();
-        int k = 0;
         for (int i = 0; i < text.length(); i++) {
             String ch = String.valueOf(text.charAt(i));
-            out.append(Character.isWhitespace(text.charAt(i)) ? Component.literal(ch) : Component.literal(ch).setStyle(style(seq[k++ % seq.length])));
+            out.append(l[i] == null ? Component.literal(ch) : Component.literal(ch).setStyle(style(l[i])));
         }
         return out;
     }
@@ -73,6 +72,11 @@ public final class Tags {
         Style st = Style.EMPTY;
         for (int i = 0; i + 1 < code.length(); i++) {
             if (code.charAt(i) != '&' && code.charAt(i) != '\u00a7') continue;
+            if (code.charAt(i + 1) == '#' && i + 8 <= code.length()) {   // &#rrggbb (fades and flags)
+                try { st = Style.EMPTY.withColor(TextColor.fromRgb(Integer.parseInt(code.substring(i + 2, i + 8), 16))); } catch (NumberFormatException ignored) {}
+                i += 7;
+                continue;
+            }
             ChatFormatting f = ChatFormatting.getByCode(code.charAt(i + 1));
             char c = Character.toLowerCase(code.charAt(i + 1));
             boolean color = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');

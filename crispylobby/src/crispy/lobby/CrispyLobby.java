@@ -22,7 +22,7 @@ import java.util.*;
  *  (every join lands on the spawn point, anyone above the barrier ceiling is brought back) and the
  *  network stats board + /stats (NetworkStats) and the network vote vault + cosmetics (Votes). */
 public class CrispyLobby extends JavaPlugin implements Listener {
-    static final LegacyComponentSerializer AMP = LegacyComponentSerializer.legacyAmpersand();
+    static final LegacyComponentSerializer AMP = LegacyComponentSerializer.builder().character('&').hexColors().build();   // &#rrggbb for fades
     final Map<UUID, Objective> boards = new HashMap<>();
     NetworkStats stats;
     Votes votes;

@@ -84,7 +84,7 @@ votes:
 # Cosmetics, bought with vote points in /cosmetics (or /vote -> Cosmetics); one tag and one name colour at a time.
 # Both show on every server and in cross-chat/Discord: the chat-tags plugin/mod on each server reads the lobby's
 # plugins/CrispyLobby/tags.json and namecolors.json. Tags also show after the name in the tab list and on name tags
-# (CrispyTags proxy plugin, through TAB). Name colours: code = legacy colour codes (&b, &6&l...) or rainbow.
+# (CrispyTags proxy plugin, through TAB). Name colours: code = legacy colour codes (&b, &6&l...) rainbow, fades or flags (see below).
 cosmetics:
   tags:
     og:          {display: "&7[OG]", cost: 1, icon: OAK_LOG, joined-before: "2024-01-01"}   # see joined-sources
@@ -177,7 +177,8 @@ cosmetics:
     advancements: [CrispyAnarchy01/Minecraft/world/players/advancements, Vanilla01/Minecraft/world/players/advancements,
                    Falling01/Minecraft/world/players/advancements, Factions01/Minecraft/world/advancements,
                    CrispyLobby01/Minecraft/world/players/advancements]
-  # code: colour codes (&b, &c&l), a per-letter sequence ("&c|&6|&e"), or rainbow
+  # code: colour codes (&b, &c&l, &#ff8800), a per-letter sequence ("&c|&6|&e"), rainbow, a fade ("&#ff0000>&#0000ff",
+  # any number of stops, formats from the first) or flag bands ("&#ff0000/&#ffffff/&#0000ff"). See ColorCodes.java.
   name-colors:
     aqua:     {name: Aqua, code: "&b", cost: 3, icon: LIGHT_BLUE_DYE}
     lime:     {name: Lime, code: "&a", cost: 3, icon: LIME_DYE}
@@ -200,6 +201,39 @@ cosmetics:
     fire:     {name: Fire, code: "&4|&c|&6|&e", cost: 12, icon: BLAZE_POWDER}
     ocean:    {name: Ocean, code: "&1|&9|&3|&b", cost: 12, icon: HEART_OF_THE_SEA}
     rainbow:  {name: Rainbow, code: rainbow, cost: 15, icon: PRISMARINE_CRYSTALS}
+    # fades ("a>b": a smooth fade across the text) and flags ("a/b/c": equal bands); see ColorCodes.java
+    sunset:      {name: Sunset, code: "&#ff5f6d>&#ffc371", cost: 12, icon: SUNFLOWER}
+    lava:        {name: Lava, code: "&#ff2400>&#ffb000", cost: 12, icon: MAGMA_CREAM}
+    tide:        {name: Tide, code: "&#00d2ff>&#3a7bd5", cost: 12, icon: PRISMARINE_SHARD}
+    cottoncandy: {name: Cotton Candy, code: "&#ff9ff3>&#a29bfe", cost: 12, icon: PINK_WOOL}
+    mint:        {name: Mint, code: "&#d4fc79>&#2bd99f", cost: 12, icon: SLIME_BALL}
+    frost:       {name: Frost, code: "&#ffffff>&#6fd6ff", cost: 12, icon: PACKED_ICE}
+    peach:       {name: Peach, code: "&#ffcc99>&#ff6b6b", cost: 12, icon: CHERRY_SAPLING}
+    goldrush:    {name: Gold Rush, code: "&#fff27a>&#ff9a00", cost: 12, icon: GOLD_INGOT}
+    bloodmoon:   {name: Blood Moon, code: "&#ff4d4d>&#a00000", cost: 12, icon: NETHER_WART}
+    monochrome:  {name: Monochrome, code: "&#ffffff>&#777777", cost: 12, icon: IRON_INGOT}
+    aurora:      {name: Aurora, code: "&#00ff87>&#60efff>&#b06bff", cost: 15, icon: GLOW_INK_SAC}
+    galaxy:      {name: Galaxy, code: "&#ff4ecd>&#7b5cff>&#00c8ff", cost: 15, icon: ENDER_EYE}
+    vaporwave:   {name: Vaporwave, code: "&#ff71ce>&#01cdfe>&#05ffa1", cost: 15, icon: AMETHYST_CLUSTER}
+    inferno:     {name: Inferno, code: "&#ffd000&l>&#ff3d00", cost: 18, icon: BLAZE_ROD}
+    pride:       {name: Pride, code: "&#ff4040/&#ff9c1a/&#ffe81a/&#33cc4d/&#4d8cff/&#b45cdb", cost: 12, icon: RED_BANNER}
+    trans:       {name: Trans, code: "&#5bcefa/&#f5a9b8/&#ffffff/&#f5a9b8/&#5bcefa", cost: 10, icon: LIGHT_BLUE_BANNER}
+    bi:          {name: Bi, code: "&#ff3d9a/&#b06fd0/&#4d79ff", cost: 10, icon: MAGENTA_BANNER}
+    pan:         {name: Pan, code: "&#ff3d9e/&#ffd800/&#29b6ff", cost: 10, icon: PINK_BANNER}
+    lesbian:     {name: Lesbian, code: "&#ff5a1f/&#ff9a56/&#ffffff/&#e070b8/&#c0307a", cost: 10, icon: ORANGE_BANNER}
+    nonbinary:   {name: Nonbinary, code: "&#fff430/&#ffffff/&#b073e0/&#8a8a8a", cost: 10, icon: YELLOW_BANNER}
+    ace:         {name: Ace, code: "&#8a8a8a/&#bdbdbd/&#ffffff/&#b04ad0", cost: 10, icon: PURPLE_BANNER}
+    usa:         {name: USA, code: "&#ff4d4d/&#ffffff/&#4d7dff", cost: 10, icon: BLUE_BANNER}
+    canada:      {name: Canada, code: "&#ff3b3b/&#ffffff/&#ff3b3b", cost: 10, icon: WHITE_BANNER}
+    mexico:      {name: Mexico, code: "&#1ec760/&#ffffff/&#ff4040", cost: 10, icon: GREEN_BANNER}
+    france:      {name: France, code: "&#4d7dff/&#ffffff/&#ff4d4d", cost: 10, icon: CYAN_BANNER}
+    germany:     {name: Germany, code: "&#777777/&#ff3b3b/&#ffcc00", cost: 10, icon: BLACK_BANNER}
+    italy:       {name: Italy, code: "&#2ecc71/&#ffffff/&#ff4d4d", cost: 10, icon: LIME_BANNER}
+    ireland:     {name: Ireland, code: "&#22c46e/&#ffffff/&#ff9a3d", cost: 10, icon: GREEN_BANNER}
+    ukraine:     {name: Ukraine, code: "&#3d8bff/&#ffd700", cost: 10, icon: YELLOW_BANNER}
+    brazil:      {name: Brazil, code: "&#2ecc71/&#ffdf00/&#4d7dff", cost: 10, icon: LIME_BANNER}
+    jamaica:     {name: Jamaica, code: "&#22c46e/&#ffd100/&#777777", cost: 10, icon: BLACK_BANNER}
+    japan:       {name: Japan, code: "&#ffffff/&#ff3b3b/&#ffffff", cost: 10, icon: WHITE_BANNER}
   # chat colours: the sender's message text, on every server (chatcolors.json; same codes as name colours).
   # Messages with a link keep their own formatting.
   chat-colors:
@@ -220,6 +254,39 @@ cosmetics:
     fire:     {name: Fire, code: "&c|&6|&e", cost: 12, icon: BLAZE_POWDER}
     ocean:    {name: Ocean, code: "&9|&3|&b", cost: 12, icon: HEART_OF_THE_SEA}
     rainbow:  {name: Rainbow, code: rainbow, cost: 15, icon: PRISMARINE_CRYSTALS}
+    # fades ("a>b": a smooth fade across the text) and flags ("a/b/c": equal bands); see ColorCodes.java
+    sunset:      {name: Sunset, code: "&#ff5f6d>&#ffc371", cost: 12, icon: SUNFLOWER}
+    lava:        {name: Lava, code: "&#ff2400>&#ffb000", cost: 12, icon: MAGMA_CREAM}
+    tide:        {name: Tide, code: "&#00d2ff>&#3a7bd5", cost: 12, icon: PRISMARINE_SHARD}
+    cottoncandy: {name: Cotton Candy, code: "&#ff9ff3>&#a29bfe", cost: 12, icon: PINK_WOOL}
+    mint:        {name: Mint, code: "&#d4fc79>&#2bd99f", cost: 12, icon: SLIME_BALL}
+    frost:       {name: Frost, code: "&#ffffff>&#6fd6ff", cost: 12, icon: PACKED_ICE}
+    peach:       {name: Peach, code: "&#ffcc99>&#ff6b6b", cost: 12, icon: CHERRY_SAPLING}
+    goldrush:    {name: Gold Rush, code: "&#fff27a>&#ff9a00", cost: 12, icon: GOLD_INGOT}
+    bloodmoon:   {name: Blood Moon, code: "&#ff4d4d>&#a00000", cost: 12, icon: NETHER_WART}
+    monochrome:  {name: Monochrome, code: "&#ffffff>&#777777", cost: 12, icon: IRON_INGOT}
+    aurora:      {name: Aurora, code: "&#00ff87>&#60efff>&#b06bff", cost: 15, icon: GLOW_INK_SAC}
+    galaxy:      {name: Galaxy, code: "&#ff4ecd>&#7b5cff>&#00c8ff", cost: 15, icon: ENDER_EYE}
+    vaporwave:   {name: Vaporwave, code: "&#ff71ce>&#01cdfe>&#05ffa1", cost: 15, icon: AMETHYST_CLUSTER}
+    inferno:     {name: Inferno, code: "&#ffd000&l>&#ff3d00", cost: 18, icon: BLAZE_ROD}
+    pride:       {name: Pride, code: "&#ff4040/&#ff9c1a/&#ffe81a/&#33cc4d/&#4d8cff/&#b45cdb", cost: 12, icon: RED_BANNER}
+    trans:       {name: Trans, code: "&#5bcefa/&#f5a9b8/&#ffffff/&#f5a9b8/&#5bcefa", cost: 10, icon: LIGHT_BLUE_BANNER}
+    bi:          {name: Bi, code: "&#ff3d9a/&#b06fd0/&#4d79ff", cost: 10, icon: MAGENTA_BANNER}
+    pan:         {name: Pan, code: "&#ff3d9e/&#ffd800/&#29b6ff", cost: 10, icon: PINK_BANNER}
+    lesbian:     {name: Lesbian, code: "&#ff5a1f/&#ff9a56/&#ffffff/&#e070b8/&#c0307a", cost: 10, icon: ORANGE_BANNER}
+    nonbinary:   {name: Nonbinary, code: "&#fff430/&#ffffff/&#b073e0/&#8a8a8a", cost: 10, icon: YELLOW_BANNER}
+    ace:         {name: Ace, code: "&#8a8a8a/&#bdbdbd/&#ffffff/&#b04ad0", cost: 10, icon: PURPLE_BANNER}
+    usa:         {name: USA, code: "&#ff4d4d/&#ffffff/&#4d7dff", cost: 10, icon: BLUE_BANNER}
+    canada:      {name: Canada, code: "&#ff3b3b/&#ffffff/&#ff3b3b", cost: 10, icon: WHITE_BANNER}
+    mexico:      {name: Mexico, code: "&#1ec760/&#ffffff/&#ff4040", cost: 10, icon: GREEN_BANNER}
+    france:      {name: France, code: "&#4d7dff/&#ffffff/&#ff4d4d", cost: 10, icon: CYAN_BANNER}
+    germany:     {name: Germany, code: "&#777777/&#ff3b3b/&#ffcc00", cost: 10, icon: BLACK_BANNER}
+    italy:       {name: Italy, code: "&#2ecc71/&#ffffff/&#ff4d4d", cost: 10, icon: LIME_BANNER}
+    ireland:     {name: Ireland, code: "&#22c46e/&#ffffff/&#ff9a3d", cost: 10, icon: GREEN_BANNER}
+    ukraine:     {name: Ukraine, code: "&#3d8bff/&#ffd700", cost: 10, icon: YELLOW_BANNER}
+    brazil:      {name: Brazil, code: "&#2ecc71/&#ffdf00/&#4d7dff", cost: 10, icon: LIME_BANNER}
+    jamaica:     {name: Jamaica, code: "&#22c46e/&#ffd100/&#777777", cost: 10, icon: BLACK_BANNER}
+    japan:       {name: Japan, code: "&#ffffff/&#ff3b3b/&#ffffff", cost: 10, icon: WHITE_BANNER}
 
 # First join to the network (never on the lobby, no earlier trace on Anarchy/Vanilla): a title, a "Start here" menu of
 # the worlds, a welcome line in the lobby (and over the Discord bridge, so people say hi), and one nudge after

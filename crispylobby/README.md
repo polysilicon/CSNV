@@ -79,6 +79,10 @@ time, and both show on every server.
   - The tab list and name tags come from the **CrispyTags** Velocity plugin (`proxy/crispytags`, needs TAB).
 - **Name colours** (`cosmetics.name-colors`, a colour code like `&b`, `&6&l`, or `rainbow`) colour the name in chat.
   - The lobby writes `plugins/CrispyLobby/namecolors.json`, which the same `chattags/` readers use.
+- **Colour codes** (1.11.0, `ColorCodes.java`, shared with `chattags/`, `proxy/crispytags` and the Discord bot):
+  `&b` / `&6&l` / `&#ff8800` for one style, `a|b|c` cycles the codes letter by letter (`rainbow`), `a>b>c` fades
+  smoothly across the text (formats from the first stop) and `a/b/c` splits it into equal bands like a flag. Spaces
+  don't use up a colour. Both colour menus have Classic, Fades and Flags pages, picked by the code's pattern.
 - **Chat colours** (`cosmetics.chat-colors`, same code format; `a|b|c` cycles the codes letter by letter) colour the
   message text. The lobby writes `plugins/CrispyLobby/chatcolors.json`. Messages containing a link stay uncoloured.
 
