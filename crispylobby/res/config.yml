@@ -228,7 +228,7 @@ cosmetics:
     sweden:      {name: Sweden, code: "&#3d8bff/&#ffd700/&#3d8bff", cost: 10, icon: YELLOW_BANNER}
     norway:      {name: Norway, code: "&#ff4040/&#ffffff/&#4d7dff/&#ffffff/&#ff4040", cost: 10, icon: RED_BANNER}
     poland:      {name: Poland, code: "&#ffffff/&#ff3b3b", cost: 10, icon: WHITE_BANNER}
-    india:       {name: India, code: "&#ff9933/&#ffffff/&#22c46e", cost: 10, icon: ORANGE_BANNER}
+    austria:     {name: Austria, code: "&#ff3b3b/&#ffffff/&#ff3b3b", cost: 10, icon: RED_BANNER}
     argentina:   {name: Argentina, code: "&#74c0ff/&#ffffff/&#74c0ff", cost: 10, icon: LIGHT_BLUE_BANNER}
     colombia:    {name: Colombia, code: "&#ffd100/&#4d7dff/&#ff4040", cost: 10, icon: YELLOW_BANNER}
     canada:      {name: Canada, code: "&#ff3b3b/&#ffffff/&#ff3b3b", cost: 10, icon: WHITE_BANNER}
@@ -287,7 +287,7 @@ cosmetics:
     sweden:      {name: Sweden, code: "&#3d8bff/&#ffd700/&#3d8bff", cost: 10, icon: YELLOW_BANNER}
     norway:      {name: Norway, code: "&#ff4040/&#ffffff/&#4d7dff/&#ffffff/&#ff4040", cost: 10, icon: RED_BANNER}
     poland:      {name: Poland, code: "&#ffffff/&#ff3b3b", cost: 10, icon: WHITE_BANNER}
-    india:       {name: India, code: "&#ff9933/&#ffffff/&#22c46e", cost: 10, icon: ORANGE_BANNER}
+    austria:     {name: Austria, code: "&#ff3b3b/&#ffffff/&#ff3b3b", cost: 10, icon: RED_BANNER}
     argentina:   {name: Argentina, code: "&#74c0ff/&#ffffff/&#74c0ff", cost: 10, icon: LIGHT_BLUE_BANNER}
     colombia:    {name: Colombia, code: "&#ffd100/&#4d7dff/&#ff4040", cost: 10, icon: YELLOW_BANNER}
     canada:      {name: Canada, code: "&#ff3b3b/&#ffffff/&#ff3b3b", cost: 10, icon: WHITE_BANNER}
