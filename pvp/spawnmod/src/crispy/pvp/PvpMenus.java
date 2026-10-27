@@ -1,11 +1,14 @@
 package crispy.pvp;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.network.chat.ComponentUtils;
+import net.minecraft.network.chat.ResolutionContext;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.MinecraftServer;
@@ -18,11 +21,17 @@ import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemLore;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Chest-style menus defined by the crispy_pvp datapack in storage pvp:menus, e.g.
  * {kits:{title:{text:"Kits"},rows:4,fill:{id:"minecraft:black_stained_glass_pane"},items:[{slot:11,item:{...},cmd:"trigger pvp.kit set 1"}]}}
  * Clicking an item closes the menu and runs its cmd as the player; every other click is ignored.
+ * Names, lore and the title are resolved for the viewer when the menu opens, so they can hold {selector:"@a[tag=x]"},
+ * {score:{...}} and {nbt:...,storage:...} parts that show live values (who is in a party, the current map...).
  */
 public final class PvpMenus {
     private PvpMenus() {}
@@ -36,6 +45,9 @@ public final class PvpMenus {
         if (menu.isEmpty()) return false;
         int rows = Math.max(1, Math.min(6, menu.getIntOr("rows", 3)));
         RegistryOps<Tag> ops = server.registryAccess().createSerializationContext(NbtOps.INSTANCE);
+        ResolutionContext ctx = ResolutionContext.builder()
+                .withSource(server.createCommandSourceStack().withEntity(player).withPosition(player.position()).withSuppressedOutput())
+                .withEntityOverride(player).build();
         SimpleContainer box = new SimpleContainer(rows * 9);
         String[] cmds = new String[rows * 9];
         Tag fill = menu.get("fill");
@@ -49,7 +61,7 @@ public final class PvpMenus {
             int slot = entry.getIntOr("slot", -1);
             Tag item = entry.get("item");
             if (slot < 0 || slot >= rows * 9 || item == null) continue;
-            box.setItem(slot, ItemStack.CODEC.parse(ops, item).result().orElse(ItemStack.EMPTY));
+            box.setItem(slot, live(ItemStack.CODEC.parse(ops, item).result().orElse(ItemStack.EMPTY), ctx));
             cmds[slot] = entry.getStringOr("cmd", "");
         }
         // "custom_kits":{slots:[...],cmd:"trigger pvp.kit set %d"} lists the admin-made kits (see PvpKits)
@@ -67,10 +79,31 @@ public final class PvpMenus {
             }
         }
         Tag t = menu.get("title");
-        Component title = t == null ? Component.literal(key) : ComponentSerialization.CODEC.parse(ops, t).result().orElse(Component.literal(key));
+        Component title = t == null ? Component.literal(key) : resolve(ComponentSerialization.CODEC.parse(ops, t).result().orElse(Component.literal(key)), ctx);
         MenuType<ChestMenu> type = TYPES[rows - 1];
         player.openMenu(new SimpleMenuProvider((id, inv, p) -> new Menu(type, id, inv, box, rows, cmds, server), title));
         return true;
+    }
+
+    private static Component resolve(Component c, ResolutionContext ctx) {
+        try {
+            return ComponentUtils.resolve(ctx, c);
+        } catch (Exception e) {
+            return c;   // a part that can't be resolved (e.g. bad selector) leaves the text as it was
+        }
+    }
+
+    /** Resolve the item's name and lore for the viewer. */
+    private static ItemStack live(ItemStack stack, ResolutionContext ctx) {
+        Component name = stack.get(DataComponents.CUSTOM_NAME);
+        if (name != null) stack.set(DataComponents.CUSTOM_NAME, resolve(name, ctx));
+        ItemLore lore = stack.get(DataComponents.LORE);
+        if (lore != null && !lore.lines().isEmpty()) {
+            List<Component> lines = new ArrayList<>();
+            for (Component line : lore.lines()) lines.add(resolve(line, ctx));
+            stack.set(DataComponents.LORE, new ItemLore(lines));
+        }
+        return stack;
     }
 
     static final class Menu extends ChestMenu {

@@ -224,9 +224,17 @@ Every character has its own mastery XP (`pvp.mx<kit id>`): +10 per PvP kill and 
 
 ## The Tower (`tower.py`)
 A roguelite climb, solo or up to 4 players. The **🗼 The Tower** NPC sits between the PvP Arena and Outbreak NPCs:
-clicking it opens the **Tower menu** (`pvpmenu tower`, like the other two NPCs): **Climb The Tower** joins the queue
-(`/trigger tw.join set 1`; the first player opens a 10 s queue that others join the same way), **Leave the queue**
-(`set 2`), plus how-it-works and best-floor info. Everyone starts as a **random character**.
+clicking it opens the Tower menu. Climbs are organised like the UNO tables in the lobby:
+- **Create a lobby**: the first player opens a lobby and leads it (tag `tw.lead`); the lobby gets a clickable
+  *[Click to join]* invite.
+- Others **join** from the Tower NPC (or the invite), up to 4 (tag `tw.q`). The menu shows the leader and who's in.
+- The **leader starts** the climb (**▶ Start** in the menu or the chat button), solo or with whoever joined.
+- **Leave the lobby** at any time. If the leader leaves, walks out of the lobby or logs off, the next player leads;
+  the lobby closes when it's empty, or after 5 minutes without starting (`LOBBY_IDLE`, a 1-minute warning first).
+- `tower/open_menu` picks the menu: `tower` (create), `tower_join`, `tower_member`, `tower_lead`, or `tower_busy`
+  during a climb (floor and who's climbing). Buttons use `/trigger tw.join set 1` (create/join), `2` (leave), `3` (start).
+
+Everyone starts as a **random character**.
 - One room (x 388..412, z -12..12 at y -61, kept force-loaded: `admin/build_tower` builds it), rebuilt every floor:
   - **mob floors**: cover pillars and low walls (6 layouts), 3 + floor/2 mobs (+2 per extra player, max 16) from a pool
     that changes every 5 floors (zombies/skeletons/spiders, then husks/strays, vindicators/wither skeletons,
@@ -325,15 +333,24 @@ clicking it opens the **Tower menu** (`pvpmenu tower`, like the other two NPCs):
   - **Sidebar** (players in the run only, `pve.side`): each survivor's points and kills this run, e.g.
     `lbxd  1250 pts · 34 kills`, sorted by points. It's rebuilt every second, so players who leave or log off drop off.
   - **Veteran bonus**: you start each run with 500 points + 25 per wave of your best run (`pve.best`), capped at +1,000.
-- **Queue**: the first player to queue starts a 10 s countdown, and anyone who queues meanwhile joins the same run.
-  If you queue during a run, you drop in at the next wave break.
+- **Lobbies** (like the UNO tables in the lobby): the first player picks a map and a kit, which opens an Outbreak
+  lobby they lead (`pve.lead`), with a clickable *[Click to join]* invite in the lobby. Others join from the Outbreak
+  NPC (or the invite) and pick their kit (`pve.q`). The **leader starts** the run (**▶ Start** in the menu or the chat
+  button); there's no countdown any more.
+  - The NPC shows the menu that fits (`pve/open_menu`): the map menu (open a lobby), `pve_join`, `pve_member`
+    (change kit, leave), `pve_lead` (start, change map, change kit, leave) or `pve_running` (drop in) during a run.
+  - If the leader leaves, walks out of the lobby or logs off, the next player leads; the lobby closes when it's
+    empty, or after 5 minutes without starting (`PVE_LOBBY_IDLE`, a 1-minute warning first).
+  - `pve.join` values: a kit id joins with that kit, 81..85 / 91 pick a map, 92 opens the kit menu, 93 starts (leader),
+    99 leaves.
+  - During a run you can still **drop in**: pick a kit and you join at the next wave break.
 - **Maps**: five arenas in the same 65 × 65 footprint (walls at ±33 from the centre), each with 12 barred mob
   windows in its outer wall, the player spawns and the **Arsenal** in the middle, but with their own layout. They were
   45 × 45 until the character kits' jumps and dashes needed more room: each map's original design fills the middle
   and an outer ring of themed cover (ruined pillars, rock outcrops, kiosks and parked cars, lava pools and basalt)
   surrounds it. Each player's pick is kept in `pve.map`.
-  - The first player to queue decides the run's map, and the lobby is told which map is starting.
-  - Anyone who queues after that joins the run already under way, whatever they picked, and is told so.
+  - The lobby leader decides the run's map (and can change it until the run starts; the current map's name is kept
+    in `pvp:pve mapname` for the menus and messages). Players joining a lobby or a run play its map.
   - **Back to maps** (slot 45) in the kit menu goes back to the map menu.
 
   | Map | Centre | Layout | Extra mobs |
@@ -546,6 +563,8 @@ from `/function cyber:admin/give`. Then run:
 - `/pvpmenu <name>`, which opens a chest menu defined in storage `pvp:menus` (written by `pvp:load`). Clicking an item
   closes the menu and runs its `cmd` as the player, always a `/trigger`. Every other click is cancelled. A menu's
   `custom_kits` field adds the admin-made kits.
+  Since 1.4.5, item names, lore and the title are resolved for the viewer when the menu opens, so they can hold
+  live parts (`selector`, `score`, `nbt` from storage): the lobby menus show the leader, the players and the map.
 - `/pvpkit`, which manages admin-made kits (see above). The datapack uses `pvpkit give <id>` to hand one out. Minecraft 26.x is unobfuscated, so it compiles straight against the server jar with
 Java 25:
 ```

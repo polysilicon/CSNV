@@ -6,7 +6,7 @@ chat lines), which stack for the whole run. Dying is the end of your climb unles
 over when nobody is left. Best floor per player in tw.best, the server record in #trecord tw.
 
 One room, rebuilt for every floor: interior x/z -R..R around (TCX, TCZ), floor blocks at TY, players stand on TY + 1.
-State (#tstate tw): 0 idle, 1 countdown (queue open), 2 floor in progress, 3 picking upgrades.
+State (#tstate tw): 0 idle, 1 lobby open (players gather, the leader starts), 2 floor in progress, 3 picking upgrades.
 Floor type (#ttype tw): 1 mobs, 3 boss; challenge floors (every 3rd, picked at random, never the same twice in a row):
 2 parkour, 4 glass bridge, 5 maze, 6 crafting.
 """
@@ -16,7 +16,7 @@ NS = "pvp"
 TCX, TCZ, R = 400, 0, 12           # room centre and interior half-size (walls at +-13)
 WALL_H = 12                        # ceiling (barrier) at TY + WALL_H
 MAX_PLAYERS = 4
-COUNTDOWN = 10                     # s the queue stays open after the first click
+LOBBY_IDLE = 300                   # s a lobby may stay open without being started before it closes
 PICK_SECS = 20                     # s to pick an upgrade (then it's picked for you)
 LAYOUTS = 10                       # layouts generated per kind (mob rooms, parkour, mazes)
 CHALLENGES = [2, 4, 5, 6]          # parkour, glass bridge, maze, crafting
@@ -141,10 +141,11 @@ def build(b):
     ])
     fn("tower/tick", [
         f"scoreboard players enable {inn} tw.pick",
-        # the Tower menu (the NPC opens it): 1 = join the queue, 2 = leave it
+        # the Tower menus and chat invites: 1 = create or join the lobby, 2 = leave it, 3 = start (leader)
         f"scoreboard players enable @a[{b.LOBBY_BOX}] tw.join",
         f"execute as @a[scores={{tw.join=1}}] run function {T}/join",
-        f"execute as @a[scores={{tw.join=2}}] run function {T}/leave_queue",
+        f"execute as @a[scores={{tw.join=2}}] run function {T}/leave_lobby",
+        f"execute as @a[scores={{tw.join=3}}] run function {T}/start_lobby",
         "scoreboard players set @a[scores={tw.join=1..}] tw.join 0",
         f"execute as @a[tag=tw.in,scores={{tw.pick=1..}}] run function {T}/picked",
         # anyone climbing who ends up outside the room (through the ceiling, a wall...) goes back in
@@ -156,14 +157,7 @@ def build(b):
     ])
     fn("tower/second", [f"execute if score #tstate tw matches 1.. run function {T}/sec"])
     fn("tower/sec", [
-        # the queue: keep only players still in the lobby
-        f"execute if score #tstate tw matches 1 as @a[tag=tw.q] unless entity @s[{b.LOBBY_BOX}] run tag @s remove tw.q",
-        "execute if score #tstate tw matches 1 unless entity @a[tag=tw.q] run return run scoreboard players set #tstate tw 0",
-        "execute if score #tstate tw matches 1 run scoreboard players remove #tt tw 1",
-        "execute if score #tstate tw matches 1 run title @a[tag=tw.q] actionbar " + tj([{"text": "🗼 The Tower starts in ", "color": "light_purple"},
-                                                                                     {"score": {"name": "#tt", "objective": "tw"}, "color": "white", "bold": True},
-                                                                                     {"text": " s", "color": "light_purple"}]),
-        f"execute if score #tstate tw matches 1 if score #tt tw matches ..0 run return run function {T}/start",
+        f"execute if score #tstate tw matches 1 run return run function {T}/lobby_sec",
         # a run with nobody left in it is over
         f"execute if score #tstate tw matches 2.. unless entity {inn} run return run function {T}/game_over",
         f"bossbar set pvp:tower players {inn}",
@@ -204,31 +198,90 @@ def build(b):
         "condition": "minecraft:entity_properties", "entity": "this",
         "predicate": {"minecraft:entity_type": "minecraft:interaction", "minecraft:nbt": "{Tags:[\"pvp.towernpc\"]}"}}]}}},
         "rewards": {"function": f"{T}/npc"}})
-    fn("tower/npc", [   # the NPC opens the Tower menu (build.py "tower"), like the PvP Arena and Outbreak NPCs
+    # ------------------------------------------------------------------ the lobby (like the UNO tables): create, join, lead, start
+    start_btn = {"text": "[▶ Start]", "color": "green", "bold": True, "click_event": {"action": "run_command", "command": "/trigger tw.join set 3"},
+                 "hover_event": {"action": "show_text", "value": "Start the climb now"}}
+    join_btn = {"text": "[Click to join]", "color": "green", "bold": True, "click_event": {"action": "run_command", "command": "/trigger tw.join set 1"},
+                "hover_event": {"action": "show_text", "value": "Join the Tower lobby"}}
+    fn("tower/npc", [   # the NPC opens the Tower menu that fits: create, join, waiting, leader, or a climb in progress
         "advancement revoke @s only pvp:towernpc",
         "execute as @e[type=minecraft:interaction,tag=pvp.towernpc,distance=..8] run data remove entity @s interaction",
-        f"execute if entity @s[{b.LOBBY_BOX}] run pvpmenu tower",
+        f"execute unless entity @s[{b.LOBBY_BOX}] run return 0",
+        f"function {T}/open_menu",
     ])
-    fn("tower/leave_queue", [
-        f"execute unless entity @s[tag=tw.q] run return run {say('@s', 'You are not in the queue for The Tower.', 'gray')}",
-        "tag @s remove tw.q", say("@s", "You left the queue for The Tower.", "gray"),   # an empty queue cancels itself (tower/sec)
+    fn("tower/open_menu", [
+        "execute store result score #tqn tw if entity @a[tag=tw.q]",
+        "execute if score #tstate tw matches 2.. run return run pvpmenu tower_busy",
+        "execute if entity @s[tag=tw.lead] run return run pvpmenu tower_lead",
+        "execute if entity @s[tag=tw.q] run return run pvpmenu tower_member",
+        "execute if score #tstate tw matches 1 run return run pvpmenu tower_join",
+        "pvpmenu tower",
     ])
-    fn("tower/join", [   # menu: join (or open) the queue
+    fn("tower/join", [   # create the lobby (you lead it) or join the open one
         f"execute unless entity @s[{b.LOBBY_BOX}] run return 0",
         "execute if score #tstate tw matches 2.. run return run tellraw @s " + tj([
             {"text": "🗼 A climb is in progress (floor ", "color": "light_purple"}, {"score": {"name": "#floor", "objective": "tw"}, "color": "white"},
             {"text": "). Try again when it's over.", "color": "light_purple"}]),
-        f"execute if entity @s[tag=tw.q] run return run {say('@s', 'You are already in the queue for The Tower.', 'gray')}",
-        f"execute if score #tstate tw matches 1 store result score #c tw if entity @a[tag=tw.q]",
-        f"execute if score #tstate tw matches 1 if score #c tw matches {MAX_PLAYERS}.. run return run {say('@s', f'The Tower is full ({MAX_PLAYERS} players).', 'red')}",
-        "tag @s remove pve.q", "tag @s add tw.q",
-        f"execute if score #tstate tw matches 0 run scoreboard players set #tt tw {COUNTDOWN}",
-        f"execute if score #tstate tw matches 0 run tellraw @a[{b.LOBBY_BOX}] " + tj([
-            {"text": "🗼 ", "color": "light_purple"}, {"selector": "@s", "color": "yellow"}, {"text": " is climbing The Tower! ", "color": "light_purple"},
-            {"text": f"Click the Tower NPC and pick Climb within {COUNTDOWN} s to join (up to {MAX_PLAYERS}).", "color": "gray"}]),
-        "execute if score #tstate tw matches 1 run tellraw @a[tag=tw.q] " + tj([{"selector": "@s", "color": "yellow"}, {"text": " joined the climb!", "color": "light_purple"}]),
-        "execute if score #tstate tw matches 0 run scoreboard players set #tstate tw 1",
+        f"execute if entity @s[tag=tw.q] run return run {say('@s', 'You are already in the Tower lobby.', 'gray')}",
+        "execute store result score #c tw if entity @a[tag=tw.q]",
+        f"execute if score #tstate tw matches 1 if score #c tw matches {MAX_PLAYERS}.. run return run {say('@s', f'The Tower lobby is full ({MAX_PLAYERS} players).', 'red')}",
+        "tag @s remove pve.q", "tag @s remove pve.lead", "tag @s add tw.q",
+        f"execute if score #tstate tw matches 0 run return run function {T}/create",
+        "execute store result score #tqn tw if entity @a[tag=tw.q]",
+        "tellraw @a[tag=tw.q] " + tj([{"text": "🗼 ", "color": "light_purple"}, {"selector": "@s", "color": "yellow"},
+                                     {"text": " joined the Tower lobby (", "color": "light_purple"}, {"score": {"name": "#tqn", "objective": "tw"}, "color": "white"},
+                                     {"text": f"/{MAX_PLAYERS}).", "color": "light_purple"}]),
+        "tellraw @a[tag=tw.lead] " + tj([{"text": "Start when everyone's in: ", "color": "gray"}, start_btn]),
+        "playsound minecraft:block.note_block.pling player @a[tag=tw.q] ~ ~ ~ 1 1.4",
+    ])
+    fn("tower/create", [
+        "tag @s add tw.lead", "scoreboard players set #tstate tw 1", "scoreboard players set #tlob tw 0",
+        f"tellraw @a[{b.LOBBY_BOX},tag=!tw.q] " + tj([
+            {"text": "🗼 ", "color": "light_purple"}, {"selector": "@s", "color": "yellow"}, {"text": " opened a Tower lobby! ", "color": "light_purple"},
+            join_btn, {"text": f" (up to {MAX_PLAYERS}, or use the Tower NPC)", "color": "gray"}]),
+        "tellraw @s " + tj([{"text": "🗼 You lead the Tower lobby. Others can join now. ", "color": "light_purple"}, start_btn,
+                            {"text": " (or start from the Tower NPC)", "color": "gray"}]),
         "playsound minecraft:block.beacon.activate player @s ~ ~ ~ 1 1.4",
+    ])
+    fn("tower/leave_lobby", [
+        f"execute unless entity @s[tag=tw.q] run return run {say('@s', 'You are not in the Tower lobby.', 'gray')}",
+        "execute if score #tstate tw matches 2.. run return 0",
+        "tag @s remove tw.q", say("@s", "You left the Tower lobby.", "gray"),
+        "tellraw @a[tag=tw.q] " + tj([{"selector": "@s", "color": "yellow"}, {"text": " left the Tower lobby.", "color": "gray"}]),
+        f"execute if entity @s[tag=tw.lead] run function {T}/lose_leader",
+    ])
+    fn("tower/lose_leader", [   # the leader is gone (left, walked off, logged out): the next player leads, or the lobby closes
+        "tag @a remove tw.lead",
+        f"execute unless entity @a[tag=tw.q] run return run function {T}/close",
+        "tag @a[tag=tw.q,limit=1,sort=arbitrary] add tw.lead",
+        "tellraw @a[tag=tw.q] " + tj([{"selector": "@a[tag=tw.lead]", "color": "yellow"}, {"text": " now leads the Tower lobby.", "color": "light_purple"}]),
+        "tellraw @a[tag=tw.lead] " + tj([{"text": "You lead the lobby now. ", "color": "light_purple"}, start_btn]),
+    ])
+    fn("tower/close", [
+        "scoreboard players set #tstate tw 0", "tag @a remove tw.q", "tag @a remove tw.lead",
+        f"tellraw @a[{b.LOBBY_BOX}] " + tj({"text": "🗼 The Tower lobby closed.", "color": "gray"}),
+    ])
+    fn("tower/start_lobby", [   # the leader starts the climb
+        f"execute unless entity @s[tag=tw.lead] run return run {say('@s', 'Only the lobby leader can start the climb.', 'red')}",
+        "execute unless score #tstate tw matches 1 run return 0",
+        "tag @a remove tw.lead",
+        f"function {T}/start",
+    ])
+    fn("tower/lobby_sec", [   # the open lobby: keep only players still in the lobby area, keep a leader, close it if left idle
+        f"execute as @a[tag=tw.q] unless entity @s[{b.LOBBY_BOX}] run tag @s remove tw.lead",
+        f"execute as @a[tag=tw.q] unless entity @s[{b.LOBBY_BOX}] run tag @s remove tw.q",
+        f"execute unless entity @a[tag=tw.q] run return run function {T}/close",
+        f"execute unless entity @a[tag=tw.lead,tag=tw.q] run function {T}/lose_leader",
+        "scoreboard players add #tlob tw 1",
+        f"execute if score #tlob tw matches {LOBBY_IDLE - 60} run tellraw @a[tag=tw.lead] " + tj([
+            {"text": "🗼 The Tower lobby closes in 1 minute unless you start. ", "color": "yellow"}, start_btn]),
+        f"execute if score #tlob tw matches {LOBBY_IDLE}.. run return run function {T}/close",
+        "execute store result score #tqn tw if entity @a[tag=tw.q]",
+        "title @a[tag=tw.q,tag=!tw.lead] actionbar " + tj([{"text": "🗼 Tower lobby ", "color": "light_purple"},
+            {"score": {"name": "#tqn", "objective": "tw"}, "color": "white"}, {"text": f"/{MAX_PLAYERS} · waiting for ", "color": "light_purple"},
+            {"selector": "@a[tag=tw.lead]", "color": "yellow"}, {"text": " to start", "color": "light_purple"}]),
+        "title @a[tag=tw.lead] actionbar " + tj([{"text": "🗼 Tower lobby ", "color": "light_purple"},
+            {"score": {"name": "#tqn", "objective": "tw"}, "color": "white"}, {"text": f"/{MAX_PLAYERS} · start from the Tower NPC or the chat button", "color": "light_purple"}]),
     ])
     fn("tower/start", [
         "scoreboard players set #floor tw 0",

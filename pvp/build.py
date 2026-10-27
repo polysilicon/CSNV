@@ -60,7 +60,8 @@ OUTBREAK_MAPS = [
 ]
 PVE_BOXES = {m[0]: box(PCX, m[5], PR, AY - 1, 35) for m in OUTBREAK_MAPS}
 PVE_BOX = PVE_BOXES[1]
-BREAK_TICKS = 400        # break between waves (downed players are back at its start, so they can re-buy)
+BREAK_TICKS = 400        # break between waves
+PVE_LOBBY_IDLE = 300     # s an Outbreak lobby may stay open without being started before it closes (downed players are back at its start, so they can re-buy)
 MAP_LORE = {
     "ruins": ["Overgrown temple courtyard", "Broken colonnade, fallen columns", "Mobs: the classic horde"],
     "mine": ["Abandoned toxic mine", "Rock outcrops, mine-cart loop", "Sludge puddles slow you down", "Extra: cave spiders, silverfish"],
@@ -457,7 +458,9 @@ def say(sel, text, color="gray"): return f"tellraw {sel} {tj({'text': text, 'col
 def icon(id_, name, color, lore, glint=True):
     return {"id": f"minecraft:{id_}", "count": 1, "components": {
         "minecraft:custom_name": {"text": name, "color": color, "italic": False, "bold": True},
-        "minecraft:lore": [{"text": l, "color": "gray", "italic": False} for l in lore],
+        # a lore line is plain text, or a list of text parts (selectors, scores... resolved when the menu opens, see PvpMenus)
+        "minecraft:lore": [{"text": l, "color": "gray", "italic": False} if isinstance(l, str) else
+                           {"text": "", "color": "gray", "italic": False, "extra": l if isinstance(l, list) else [l]} for l in lore],
         "minecraft:enchantment_glint_override": glint,
         "minecraft:tooltip_display": {"hidden_components": ["minecraft:attribute_modifiers", "minecraft:potion_contents", "minecraft:enchantments"]}}}
 PANE = {"id": "minecraft:black_stained_glass_pane", "count": 1, "components": {"minecraft:tooltip_display": {"hide_tooltip": True}}}
@@ -481,7 +484,7 @@ def npc_adv(key, tag, menu):
         "condition": "minecraft:entity_properties", "entity": "this",
         "predicate": {"minecraft:entity_type": "minecraft:interaction", "minecraft:nbt": f"{{Tags:[\"{tag}\"]}}"}}]}}},
         "rewards": {"function": f"{NS}:open/{key}"}})
-    fn(f"open/{key}", [f"advancement revoke @s only {NS}:{key}", f"pvpmenu {menu}",
+    fn(f"open/{key}", [f"advancement revoke @s only {NS}:{key}", menu if menu.startswith("function ") else f"pvpmenu {menu}",
                        f"execute as @e[type=minecraft:interaction,tag={tag},distance=..8] run data remove entity @s interaction"])
 
 
@@ -501,6 +504,68 @@ def build():
             it["id"] = "minecraft:player_head"
             it["components"]["minecraft:profile"] = {"properties": [{"name": "textures", "value": HEADS[hk]}]}
         return it
+    def tower_menus():
+        """The Tower NPC's menus, like the UNO tables in the lobby: one player opens a lobby and leads it, others join
+        it from the menu (or the chat invite), and the leader starts the climb. tower/npc opens the one that fits."""
+        T, MX = "tw", tower.MAX_PLAYERS
+        lead = ["Leader: ", {"selector": "@a[tag=tw.lead]", "color": "white"}]
+        party = ["Players (", {"score": {"name": "#tqn", "objective": T}, "color": "white"}, f"/{MX}): ", {"selector": "@a[tag=tw.q]", "color": "white"}]
+        title = {"text": "🗼 The Tower", "color": "dark_purple"}
+        about = {"slot": 4, "item": icon("end_rod", "The Tower", "light_purple", [
+            f"A roguelite climb, solo or up to {MX} players", "Everyone starts as a random character",
+            "Clear a floor, pick 1 of 3 upgrades, climb on"]), "cmd": ""}
+        how = {"slot": 13, "item": icon("written_book", "How it works", "yellow", [
+            "Mob floors: mobs get stronger every floor", "Every 3rd floor a challenge: Parkour, Glass Bridge,",
+            "Maze or Crafting", "Every 5th floor a boss", f"Challenges: {tower.MAX_FALLS} strikes on a floor and you're out",
+            "Upgrades: Common, Rare, Epic and Legendary,", "they stack for the whole climb",
+            "Dying ends your climb (unless you have an Extra Life)"]), "cmd": ""}
+        best = {"slot": 15, "item": icon("gold_block", "Best Tower Floor", "gold", [
+            "The highest floors reached are on", "the leaderboard in the lobby",
+            "Each floor also gives mastery XP", "for the character you're playing"]), "cmd": ""}
+        status = {"slot": 4, "item": icon("end_rod", "Tower lobby", "light_purple", [lead, party, "", "The leader starts the climb"]), "cmd": ""}
+        leave = {"slot": 15, "item": icon("barrier", "Leave the lobby", "red", ["Stop waiting for this climb"], False), "cmd": "trigger tw.join set 2"}
+        m = lambda items: {"title": title, "rows": 3, "fill": PANE, "items": items}
+        return {
+            "tower": m([about, how, best, {"slot": 11, "item": icon("ladder", "Create a lobby", "light_purple", [
+                "Open a lobby for the next climb: you lead it", f"Others join it from this menu (up to {MX})",
+                "Start whenever you're ready, solo or as a team", "", "Click to create a lobby"]), "cmd": "trigger tw.join set 1"}]),
+            "tower_join": m([status, how, best, {"slot": 11, "item": icon("ladder", "Join the lobby", "light_purple", [
+                lead, party, "", "Click to join"]), "cmd": "trigger tw.join set 1"}]),
+            "tower_member": m([status, how, leave, {"slot": 11, "item": icon("clock", "Waiting for the leader", "yellow", [
+                lead, party, "", "The climb starts when the leader starts it"]), "cmd": ""}]),
+            "tower_lead": m([status, how, {**leave, "item": icon("barrier", "Leave the lobby", "red", [
+                "Stop waiting for this climb", "The next player becomes leader,", "or the lobby closes if you're alone"], False)},
+                {"slot": 11, "item": icon("emerald_block", "▶ Start the climb", "green", [party, "", "Click to start"]), "cmd": "trigger tw.join set 3"}]),
+            "tower_busy": m([how, best, {"slot": 11, "item": icon("clock", "A climb is in progress", "yellow", [
+                ["Floor ", {"score": {"name": "#floor", "objective": T}, "color": "white"}, ", climbing: ", {"selector": "@a[tag=tw.in]", "color": "white"}],
+                "", "Come back when it's over"]), "cmd": ""}]),
+        }
+
+    def pve_menus():
+        """The Outbreak NPC's lobby menus (pve/open_menu picks which; pve_maps opens a new lobby)."""
+        lead = ["Leader: ", {"selector": "@a[tag=pve.lead]", "color": "white"}]
+        mapl = ["Map: ", {"nbt": "mapname", "storage": "pvp:pve", "interpret": True}]
+        party = ["Players (", {"score": {"name": "#pqn", "objective": "pve"}, "color": "white"}, "): ", {"selector": "@a[tag=pve.q]", "color": "white"}]
+        title = {"text": "☣ Outbreak", "color": "dark_green"}
+        status = {"slot": 4, "item": icon("zombie_head", "Outbreak lobby", "green", [mapl, lead, party, "", "The leader starts the run"]), "cmd": ""}
+        kit = {"slot": 13, "item": icon("iron_sword", "Change your kit", "aqua", ["Pick a different character for this run"]), "cmd": "trigger pve.join set 92"}
+        leave = {"slot": 15, "item": icon("barrier", "Leave the lobby", "red", ["Stop waiting for this run"], False), "cmd": "trigger pve.join set 99"}
+        m = lambda items: {"title": title, "rows": 3, "fill": PANE, "items": items}
+        return {
+            "pve_join": m([status, {"slot": 13, "item": icon("iron_sword", "Join the lobby", "green", [mapl, lead, party, "", "Click to pick your kit and join"]),
+                                    "cmd": "trigger pve.join set 92"}]),
+            "pve_member": m([status, kit, leave, {"slot": 11, "item": icon("clock", "Waiting for the leader", "yellow", [
+                mapl, lead, party, "", "The run starts when the leader starts it"]), "cmd": ""}]),
+            "pve_lead": m([status, kit, {**leave, "item": icon("barrier", "Leave the lobby", "red", [
+                "Stop waiting for this run", "The next player becomes leader,", "or the lobby closes if you're alone"], False)},
+                {"slot": 11, "item": icon("emerald_block", "▶ Start the Outbreak", "green", [mapl, party, "", "Click to start"]), "cmd": "trigger pve.join set 93"},
+                {"slot": 22, "item": icon("filled_map", "Change the map", "yellow", [mapl, "", "Click to pick another map"], False), "cmd": "pvpmenu pve_maps"}]),
+            "pve_running": m([{"slot": 13, "item": icon("iron_sword", "Drop in", "green", [
+                ["Wave ", {"score": {"name": "#wave", "objective": "pve"}, "color": "white"}, " on ", {"nbt": "mapname", "storage": "pvp:pve", "interpret": True}],
+                ["Fighting: ", {"selector": "@a[tag=pve.in]", "color": "white"}], "", "Pick a kit to join at the next wave break"]), "cmd": "trigger pve.join set 92"},
+                {"slot": 15, "item": icon("barrier", "Leave the queue", "red", ["Stop waiting to drop in"], False), "cmd": "trigger pve.join set 99"}]),
+        }
+
     menus = {
         "kits": {"title": {"text": "⚔ Pick a kit", "color": "dark_aqua"}, "rows": 6, "fill": PANE,
                  "items":
@@ -512,7 +577,7 @@ def build():
                 [{"slot": KIT_SLOT[k[0]], "item": kit_icon(k, k[5] + ["", "Click to queue with this kit"]), "cmd": f"trigger pve.join set {k[0]}"} for k in KITS]
                 + [{"slot": 51, "item": icon("ender_eye", "🎲 Random character", "light_purple", ["Let fate pick one of the " + str(len(KITS)) + " characters",
                      "", "Click to queue as a random character"]), "cmd": f"trigger pve.join set {RANDOM_KIT}"},
-                   {"slot": 47, "item": icon("barrier", "Leave the queue", "red", ["Stop waiting for the next Outbreak"], False), "cmd": "trigger pve.join set 99"},
+                   {"slot": 47, "item": icon("barrier", "Leave the lobby", "red", ["Stop waiting for the next Outbreak"], False), "cmd": "trigger pve.join set 99"},
                    {"slot": 45, "item": icon("filled_map", "Back to maps", "yellow", ["Pick a different map"], False), "cmd": "pvpmenu pve_maps"},
                    {"slot": 49, "item": icon("zombie_head", "How Outbreak works", "green", [
                        f"{len(OUTBREAK_MAPS)} maps, each with its own mobs", "Endless waves; every 5th wave brings a boss", "100 points per kill + a bonus each wave",
@@ -523,26 +588,11 @@ def build():
                      [{"slot": s, "item": icon(m[4], m[2], m[3], MAP_LORE[m[1]] + ["", "Click to pick your kit"]), "cmd": f"trigger pve.join set {80 + m[0]}"}
                       for s, m in zip((11, 12, 13, 14, 15), OUTBREAK_MAPS)]
                      + [{"slot": 4, "item": icon("zombie_head", "Outbreak (PvE)", "green", [
-                         "Fight endless waves of mobs, solo or as a team", "1. Pick a map  2. Pick your kit",
-                         "If a run is already starting, you join that map"]), "cmd": ""},
-                        {"slot": 22, "item": icon("ender_eye", "Random map", "light_purple", ["Let fate decide", "", "Click to pick your kit"]), "cmd": "trigger pve.join set 91"},
-                        {"slot": 26, "item": icon("barrier", "Leave the queue", "red", ["Stop waiting for the next Outbreak"], False), "cmd": "trigger pve.join set 99"}]},
-        "tower": {"title": {"text": "🗼 The Tower", "color": "dark_purple"}, "rows": 3, "fill": PANE, "items": [
-            {"slot": 4, "item": icon("end_rod", "The Tower", "light_purple", [
-                f"A roguelite climb, solo or up to {tower.MAX_PLAYERS} players", "Everyone starts as a random character",
-                "Clear a floor, pick 1 of 3 upgrades, climb on"]), "cmd": ""},
-            {"slot": 11, "item": icon("ladder", "Climb The Tower", "light_purple", [
-                "Join the queue for the next climb", f"The climb starts {tower.COUNTDOWN} s after the first player joins:",
-                f"anyone who joins in time climbs with you (max {tower.MAX_PLAYERS})", "", "Click to join"]), "cmd": "trigger tw.join set 1"},
-            {"slot": 13, "item": icon("written_book", "How it works", "yellow", [
-                "Mob floors: mobs get stronger every floor", "Every 3rd floor a challenge: Parkour, Glass Bridge,",
-                "Maze or Crafting", "Every 5th floor a boss", f"Challenges: {tower.MAX_FALLS} strikes on a floor and you're out",
-                "Upgrades: Common, Rare, Epic and Legendary,", "they stack for the whole climb",
-                "Dying ends your climb (unless you have an Extra Life)"]), "cmd": ""},
-            {"slot": 15, "item": icon("gold_block", "Best Tower Floor", "gold", [
-                "The highest floors reached are on", "the leaderboard in the lobby",
-                "Each floor also gives mastery XP", "for the character you're playing"]), "cmd": ""},
-            {"slot": 22, "item": icon("barrier", "Leave the queue", "red", ["Stop waiting for the next climb"], False), "cmd": "trigger tw.join set 2"}]},
+                         "Fight endless waves of mobs, solo or as a team", "Pick a map, then your kit, to open a lobby:",
+                         "you lead it, others join it from the Outbreak NPC,", "and you start the run when everyone's in"]), "cmd": ""},
+                        {"slot": 22, "item": icon("ender_eye", "Random map", "light_purple", ["Let fate decide", "", "Click to pick your kit"]), "cmd": "trigger pve.join set 91"}]},
+        **pve_menus(),
+        **tower_menus(),
         "pve_shop": {"title": {"text": "☣ Arsenal (points)", "color": "dark_green"}, "rows": 3, "fill": PANE, "items":
                      [{"slot": s, "item": icon(i[3], f"{i[1]}" + (f" · {i[4]}" if i[4] else ""), i[2], [i[5]]), "cmd": f"trigger pve.buy set {i[0]}"} for s, i in zip(SHOP_SLOTS, SHOP)]},
     }
@@ -634,7 +684,7 @@ def build():
     ])
     fn("to_lobby", [
         f"execute if entity @s[tag=pvp.duel] run function {NS}:duel/forfeit",
-        f"execute if entity @s[tag=tw.in] run function {NS}:tower/leave", "tag @s remove tw.q",
+        f"execute if entity @s[tag=tw.in] run function {NS}:tower/leave", "tag @s remove tw.q", "tag @s remove tw.lead", "tag @s remove pve.lead",
         "scoreboard players add @s pve.best 0",
         "execute if entity @s[tag=pve.in] if score #state pve matches 2..3 if score #wave pve > @s pve.best run scoreboard players operation @s pve.best = #wave pve",
         "clear @s", "effect clear @s", "function cyber:admin/reset", "gamemode adventure @s",
@@ -727,7 +777,7 @@ def build():
                        "playsound minecraft:block.beacon.power_select player @s ~ ~ ~ 1 1.4"])
 
     npc_adv("npc", "pvp.npc", "kits")
-    npc_adv("pvenpc", "pvp.pvenpc", "pve_maps")
+    npc_adv("pvenpc", "pvp.pvenpc", f"function {NS}:pve/open_menu")
     npc_adv("shopnpc", "pvp.shopnpc", "pve_shop")
 
     build_pve()
@@ -1284,7 +1334,7 @@ def smoke_puffs():
 
 def build_pve():
     P = f"{NS}:pve"
-    state_names = "0 idle, 1 countdown, 2 wave running, 3 break between waves"
+    state_names = "0 idle, 1 lobby open (the leader starts), 2 wave running, 3 break between waves"
     fn("pve/tick", [
         f"# #state pve: {state_names}",
         "scoreboard players enable @a pve.join", "scoreboard players enable @a pve.buy",
@@ -1293,13 +1343,12 @@ def build_pve():
         f"execute as @a[tag=pve.in,scores={{pve.k=1..}}] at @s run function {P}/points",
         *[f"execute as @a[tag=pve.in,tag=!pve.down] if items entity @s container.* *[minecraft:custom_data~{{pvp_pu:\"{k}\"}}] run function {P}/pu/{k}"
           for (k, _, _, _) in POWERUPS],
-        f"execute if score #state pve matches 0 if entity @a[tag=pve.q] run function {P}/countdown_start",
-        f"execute if score #state pve matches 1 run function {P}/countdown_tick",
         f"execute if score #state pve matches 2 run function {P}/wave_tick",
         f"execute as @e[type=minecraft:armor_stand,tag=pve.body] at @s run function {P}/revive_tick",
         f"execute if score #state pve matches 3 run function {P}/break_tick",
     ])
     fn("pve/second", [
+        f"execute if score #state pve matches 1 run function {P}/lobby_sec",
         "scoreboard players set @a[tag=!pve.in] pve.k 0",
         # sidebar: drop everyone (players who left or logged off included), then list who's in the run now
         "scoreboard players reset * pve.side", f"execute as @a[tag=pve.in] run function {P}/side",
@@ -1325,55 +1374,131 @@ def build_pve():
         "execute unless entity @e[tag=pve.boss] run bossbar set pvp:boss visible false",
     ])
 
-    # joining: pve.join = kit id (99 = leave the queue)
+    # the lobby, like the UNO tables: the first player picks a map and a kit and leads the lobby, others join it from
+    # the Outbreak NPC (or the chat invite) and pick a kit, and the leader starts the run. During a run, players can
+    # still drop in (they join at the next wave break).
+    # pve.join: kit id (or RANDOM_KIT / custom / test kit) = join with that kit, 81..85 / 91 = pick a map (91 random),
+    # 92 = open the kit menu to join the lobby, 93 = start (leader), 99 = leave
+    start_btn = {"text": "[▶ Start]", "color": "green", "bold": True, "click_event": {"action": "run_command", "command": "/trigger pve.join set 93"},
+                 "hover_event": {"action": "show_text", "value": "Start the Outbreak now"}}
+    join_btn = {"text": "[Click to join]", "color": "green", "bold": True, "click_event": {"action": "run_command", "command": "/trigger pve.join set 92"},
+                "hover_event": {"action": "show_text", "value": "Join the Outbreak lobby and pick your kit"}}
+    names = {m[0]: (m[2], m[3]) for m in OUTBREAK_MAPS}
+    set_mapname = [f"execute if score #map pve matches {i} run data modify storage pvp:pve mapname set value {tj({'text': n, 'color': c, 'bold': True})}"
+                   for i, (n, c) in names.items()]
+    fn("pve/open_menu", [   # the Outbreak NPC: the menu that fits
+        f"execute unless entity @s[{LOBBY_BOX}] run return 0",
+        "execute store result score #pqn pve if entity @a[tag=pve.q]",
+        "execute if score #state pve matches 2.. run return run pvpmenu pve_running",
+        "execute if entity @s[tag=pve.lead] run return run pvpmenu pve_lead",
+        "execute if entity @s[tag=pve.q] run return run pvpmenu pve_member",
+        "execute if score #state pve matches 1 run return run pvpmenu pve_join",
+        "pvpmenu pve_maps",
+    ])
     fn("pve/join", [
         "scoreboard players operation #j pve = @s pve.join", "scoreboard players set @s pve.join 0",
         f"execute if score #j pve matches 81..{80 + len(OUTBREAK_MAPS)} run return run function {P}/pick_map",
         f"execute if score #j pve matches 91 run return run function {P}/pick_map",
-        "execute if score #j pve matches 99 run tag @s remove pve.q",
-        f"execute if score #j pve matches 99 run return run {say('@s', 'You left the Outbreak queue.', 'yellow')}",
+        f"execute if score #j pve matches 92 unless entity @s[{LOBBY_BOX}] run return run {say('@s', 'Join the Outbreak from the lobby (/spawn).', 'red')}",
+        "execute if score #j pve matches 92 run return run pvpmenu pve",
+        f"execute if score #j pve matches 93 run return run function {P}/start_lobby",
+        f"execute if score #j pve matches 99 run return run function {P}/leave_lobby",
         f"execute if score #j pve matches {RANDOM_KIT} run function {NS}:kit/roll",
         f"execute if score #j pve matches {RANDOM_KIT} run scoreboard players operation #j pve = #rk pvp",
         f"execute if entity @s[tag=pve.in] run return run {say('@s', 'You are already in the Outbreak.', 'red')}",
         f"execute unless entity @s[{LOBBY_BOX}] run return run {say('@s', 'Join the Outbreak from the lobby (/spawn).', 'red')}",
         f"execute if score #j pve matches {TEST_KIT_ID} unless entity @s[tag=pvp.tester] run return 0",
         f"execute unless score #j pve matches 101..199 unless score #j pve matches {TEST_KIT_ID} unless function {NS}:kit/valid_pve run return 0",
-        "scoreboard players operation @s pve.kit = #j pve", "tag @s add pve.q",
+        # already in the lobby: just a new kit
+        f"execute if entity @s[tag=pve.q] if score #state pve matches 1 run scoreboard players operation @s pve.kit = #j pve",
+        f"execute if entity @s[tag=pve.q] if score #state pve matches 1 run return run {say('@s', 'Kit changed.', 'green')}",
+        "scoreboard players operation @s pve.kit = #j pve", "tag @s remove tw.q", "tag @s remove tw.lead", "tag @s add pve.q",
         f"execute unless score @s pve.map matches 1..{len(OUTBREAK_MAPS)} run scoreboard players operation @s pve.map = #map pve",
         f"execute unless score @s pve.map matches 1..{len(OUTBREAK_MAPS)} run scoreboard players set @s pve.map 1",
-        "execute if score #state pve matches 0 run scoreboard players operation #map pve = @s pve.map",
-        *[f"execute if score #state pve matches 1.. if score #map pve matches {i} unless score @s pve.map = #map pve run "
-          f"tellraw @s [{{\"text\":\"An Outbreak on \",\"color\":\"yellow\"}},{{\"text\":\"{n}\",\"color\":\"{c}\",\"bold\":true}},"
-          f"{{\"text\":\" is already under way, so you'll join that one.\",\"color\":\"yellow\"}}]" for (i, _, n, c, _, _, _) in OUTBREAK_MAPS],
+        f"execute if score #state pve matches 0 run return run function {P}/create",
         f"execute if score #state pve matches 2..3 run return run {say('@s', 'Outbreak in progress: you will drop in at the next wave break.', 'green')}",
-        say("@s", "Queued for the Outbreak. More players can join during the countdown.", "green"),
+        # joining the open lobby
+        "execute store result score #pqn pve if entity @a[tag=pve.q]",
+        "tellraw @a[tag=pve.q] " + tj([{"text": "☣ ", "color": "green"}, {"selector": "@s", "color": "yellow"},
+                                      {"text": " joined the Outbreak lobby (", "color": "green"}, {"score": {"name": "#pqn", "objective": "pve"}, "color": "white"},
+                                      {"text": " players).", "color": "green"}]),
+        "tellraw @s " + tj([{"text": "Map: ", "color": "gray"}, {"nbt": "mapname", "storage": "pvp:pve", "interpret": True},
+                            {"text": ". The leader starts the run; you can change your kit from the Outbreak NPC.", "color": "gray"}]),
+        "tellraw @a[tag=pve.lead] " + tj([{"text": "Start when everyone's in: ", "color": "gray"}, start_btn]),
+        "playsound minecraft:block.note_block.pling player @a[tag=pve.q] ~ ~ ~ 1 0.8",
     ])
-    names = {m[0]: (m[2], m[3]) for m in OUTBREAK_MAPS}
-    fn("pve/pick_map", [   # as the clicking player: remember their map, then show the kit menu
+    fn("pve/create", [   # the first player opens the lobby with their map
+        "tag @s add pve.lead", "scoreboard players set #state pve 1", "scoreboard players set #plob pve 0",
+        "scoreboard players operation #map pve = @s pve.map", *set_mapname,
+        f"tellraw @a[{LOBBY_BOX},tag=!pve.q] " + tj([
+            {"text": "☣ ", "color": "green"}, {"selector": "@s", "color": "yellow"}, {"text": " opened an Outbreak lobby on ", "color": "green"},
+            {"nbt": "mapname", "storage": "pvp:pve", "interpret": True}, {"text": "! ", "color": "green"}, join_btn,
+            {"text": " (or use the Outbreak NPC)", "color": "gray"}]),
+        "tellraw @s " + tj([{"text": "☣ You lead the Outbreak lobby. Others can join now. ", "color": "green"}, start_btn,
+                            {"text": " (or start from the Outbreak NPC)", "color": "gray"}]),
+        "playsound minecraft:block.note_block.pling player @s ~ ~ ~ 1 0.8",
+    ])
+    fn("pve/leave_lobby", [
+        "execute unless entity @s[tag=pve.q] run return run " + say("@s", "You are not in the Outbreak lobby.", "gray"),
+        "tag @s remove pve.q", say("@s", "You left the Outbreak lobby.", "yellow"),
+        "execute if score #state pve matches 1 run tellraw @a[tag=pve.q] " + tj([{"selector": "@s", "color": "yellow"}, {"text": " left the Outbreak lobby.", "color": "gray"}]),
+        f"execute if entity @s[tag=pve.lead] run function {P}/lose_leader",
+    ])
+    fn("pve/lose_leader", [
+        "tag @a remove pve.lead",
+        f"execute unless entity @a[tag=pve.q] run return run function {P}/close",
+        "tag @a[tag=pve.q,limit=1,sort=arbitrary] add pve.lead",
+        "tellraw @a[tag=pve.q] " + tj([{"selector": "@a[tag=pve.lead]", "color": "yellow"}, {"text": " now leads the Outbreak lobby.", "color": "green"}]),
+        "tellraw @a[tag=pve.lead] " + tj([{"text": "You lead the lobby now. ", "color": "green"}, start_btn]),
+    ])
+    fn("pve/close", [
+        "scoreboard players set #state pve 0", "tag @a remove pve.q", "tag @a remove pve.lead",
+        f"tellraw @a[{LOBBY_BOX}] " + tj({"text": "☣ The Outbreak lobby closed.", "color": "gray"}),
+    ])
+    fn("pve/start_lobby", [
+        f"execute unless entity @s[tag=pve.lead] run return run {say('@s', 'Only the lobby leader can start the Outbreak.', 'red')}",
+        "execute unless score #state pve matches 1 run return 0",
+        "tag @a remove pve.lead", f"function {P}/start",
+    ])
+    fn("pve/lobby_sec", [   # the open lobby: keep only players still in the lobby area, keep a leader, close it if left idle
+        f"execute as @a[tag=pve.q] unless entity @s[{LOBBY_BOX}] run tag @s remove pve.lead",
+        f"execute as @a[tag=pve.q] unless entity @s[{LOBBY_BOX}] run tag @s remove pve.q",
+        f"execute unless entity @a[tag=pve.q] run return run function {P}/close",
+        f"execute unless entity @a[tag=pve.lead,tag=pve.q] run function {P}/lose_leader",
+        "scoreboard players add #plob pve 1",
+        f"execute if score #plob pve matches {PVE_LOBBY_IDLE - 60} run tellraw @a[tag=pve.lead] " + tj([
+            {"text": "☣ The Outbreak lobby closes in 1 minute unless you start. ", "color": "yellow"}, start_btn]),
+        f"execute if score #plob pve matches {PVE_LOBBY_IDLE}.. run return run function {P}/close",
+        "execute store result score #pqn pve if entity @a[tag=pve.q]",
+        "title @a[tag=pve.q,tag=!pve.lead] actionbar " + tj([{"text": "☣ ", "color": "green"}, {"nbt": "mapname", "storage": "pvp:pve", "interpret": True},
+            {"text": " lobby · ", "color": "green"}, {"score": {"name": "#pqn", "objective": "pve"}, "color": "white"},
+            {"text": " players · waiting for ", "color": "green"}, {"selector": "@a[tag=pve.lead]", "color": "yellow"}, {"text": " to start", "color": "green"}]),
+        "title @a[tag=pve.lead] actionbar " + tj([{"text": "☣ ", "color": "green"}, {"nbt": "mapname", "storage": "pvp:pve", "interpret": True},
+            {"text": " lobby · ", "color": "green"}, {"score": {"name": "#pqn", "objective": "pve"}, "color": "white"},
+            {"text": " players · start from the Outbreak NPC or the chat button", "color": "green"}]),
+    ])
+    fn("pve/pick_map", [   # as the clicking player: remember their map (the leader's sets the lobby's), then show the kit menu
         f"execute unless entity @s[{LOBBY_BOX}] run return run {say('@s', 'Join the Outbreak from the lobby (/spawn).', 'red')}",
         "execute if score #j pve matches 81.. run scoreboard players operation @s pve.map = #j pve",
         "execute if score #j pve matches 81.. run scoreboard players remove @s pve.map 80",
         f"execute if score #j pve matches 91 store result score @s pve.map run random value 1..{len(OUTBREAK_MAPS)}",
+        f"execute if entity @s[tag=pve.lead] if score #state pve matches 1 run return run function {P}/lead_map",
+        "execute if score #state pve matches 1 run tellraw @s " + tj([{"text": "This lobby is on ", "color": "gray"}, {"nbt": "mapname", "storage": "pvp:pve", "interpret": True},
+                                                                     {"text": " (the leader picks the map). Pick your kit.", "color": "gray"}]),
+        "execute if score #state pve matches 1 run return run pvpmenu pve",
         *[f"execute if score @s pve.map matches {i} run tellraw @s [{{\"text\":\"Map: \",\"color\":\"gray\"}},{{\"text\":\"{n}\",\"color\":\"{c}\",\"bold\":true}},"
           f"{{\"text\":\". Now pick your kit.\",\"color\":\"gray\"}}]" for i, (n, c) in names.items()],
         "playsound minecraft:ui.button.click player @s ~ ~ ~ 1 1",
         "pvpmenu pve",
     ])
-    fn("pve/countdown_start", ["scoreboard players set #state pve 1", "scoreboard players set #timer pve 200",
-                               *[f"execute if score #map pve matches {i} run tellraw @a[{LOBBY_BOX},tag=!pve.q] [{{\"text\":\"☣ An Outbreak on \",\"color\":\"green\"}},"
-                                 f"{{\"text\":\"{n}\",\"color\":\"{c}\",\"bold\":true}},{{\"text\":\" starts in 10 s. Talk to the Outbreak NPC to join.\",\"color\":\"green\"}}]"
-                                 for i, (n, c) in names.items()],
-                               "playsound minecraft:block.note_block.pling player @a[tag=pve.q] ~ ~ ~ 1 0.8"])
-    fn("pve/countdown_tick", [
-        "execute unless entity @a[tag=pve.q] run return run scoreboard players set #state pve 0",
-        "scoreboard players remove #timer pve 1",
-        "scoreboard players operation #s pve = #timer pve", "scoreboard players operation #s pve /= #20 pve",
-        *[f"execute if score #map pve matches {i} run title @a[tag=pve.q] actionbar [{{\"text\":\"☣ {n}\",\"color\":\"{c}\",\"bold\":true}},"
-          "{\"text\":\" starts in \",\"color\":\"green\",\"bold\":false},{\"score\":{\"name\":\"#s\",\"objective\":\"pve\"},\"color\":\"white\"},{\"text\":\"s\",\"color\":\"green\"}]"
-          for i, (n, c) in names.items()],
-        f"execute if score #timer pve matches ..0 run function {P}/start",
+    fn("pve/lead_map", [   # the leader changes the lobby's map
+        "scoreboard players operation #map pve = @s pve.map", *set_mapname,
+        "tellraw @a[tag=pve.q] " + tj([{"text": "☣ The lobby's map is now ", "color": "green"}, {"nbt": "mapname", "storage": "pvp:pve", "interpret": True},
+                                      {"text": ".", "color": "green"}]),
+        "playsound minecraft:ui.button.click player @s ~ ~ ~ 1 1",
     ])
     fn("pve/start", [
+        "tag @a remove pve.lead",
         f"execute unless score #map pve matches 1..{len(OUTBREAK_MAPS)} run scoreboard players set #map pve 1",
         *[f"execute if score #map pve matches {i} run data modify storage pvp:pve map set value {{bz:{z + 18.5}d}}"
           for (i, _, _, _, _, z, _) in OUTBREAK_MAPS],
