@@ -12,6 +12,10 @@
 
 ## CrispyTags (`proxy/crispytags`, 1.4.2)
 - Shows the lobby's cosmetic tags after names in the tab list and on name tags (through TAB), from the lobby's `tags.json`.
+  - Name tags need **VelocityScoreboardAPI** (2.1.1) next to TAB; without it TAB can't send scoreboard teams on Velocity.
+  - TAB's teams are off on Multiverse (`disable-condition: '%server%=Multiverse'`; TAB's `%server%` is the display
+    name): the PvP datapack shows its Outbreak and Tower sidebars by team colour (`sidebar.team.*`), and a TAB team
+    coloured by someone's name colour made the Tower sidebar stick. The ping objective is off too (`playerlist-objective`).
 - Owns `/vote` and `/cosmetics` on every server: off the lobby it connects the player to `lobby`
   (`-Dcrispytags.lobby` to change), then hands the command line to CrispyLobby on the `crispy:vote` plugin channel,
   which opens the menu. On the lobby it hands it over straight away.

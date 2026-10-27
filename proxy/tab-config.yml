@@ -30,11 +30,11 @@ scoreboard-teams:
     - "PLACEHOLDER_A_TO_Z:%player%"
   case-sensitive-sorting: true
   can-see-friendly-invisibles: false
-  disable-condition: '%world%=disabledworld'
+  disable-condition: '%server%=Multiverse'   # PvP's datapack sidebars and Outbreak/Tower teams need its own teams
 
 # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Playerlist-Objective
 playerlist-objective:
-  enabled: true
+  enabled: false
   value: "%ping%"
   fancy-value: "&7Ping: %ping%"
   title: "TAB" # Only visible on Bedrock Edition
