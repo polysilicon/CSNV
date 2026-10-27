@@ -23,6 +23,7 @@ with no bot change. Both versions read the lobby's `plugins/CrispyLobby/tags.jso
   - It puts the tag into the player's display name while a chat message is sent, and restores it 2 s later.
   - Clients show that name for signed chat, and EssentialsChat's `{DISPLAYNAME}` uses it.
   - A renderer pass adds the tag if a format left it out.
-  - Chat colours (1.4.0): the message text is recoloured from `chatcolors.json` before the format runs, with the
+  - Chat colours (1.4.0): the message text is recoloured from `chatcolors.json` before the format runs, and (1.4.1)
+    swapped into the finished line for formats that render their own copy of the message (EssentialsChat), with the
     same rules as the Fabric mod (links stay plain, typed `&` codes stay literal, `rainbow` and `a|b|c` sequences
     go letter by letter).

@@ -1,5 +1,5 @@
 name: CrispyChatTags
-version: 1.4.0
+version: 1.4.1
 softdepend: [Essentials, EssentialsChat]
 main: crispy.chattags.CrispyChatTags
 api-version: '1.21'

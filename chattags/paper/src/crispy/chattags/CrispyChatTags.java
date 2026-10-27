@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *  The message itself is shown in the sender's chat colour (chatcolors.json), unless it has a link.
  *  - The tagged name goes into the player's display name while the message is sent (what clients show for signed chat
  *    and what EssentialsChat's {DISPLAYNAME} uses), and is put back 2 s later so join/quit/death messages stay plain.
- *  - The finished line is rewritten if a format left the tag out.
+ *  - The finished line is rewritten if a format left the tag out or the colour off the message (EssentialsChat).
  *  - The old AsyncPlayerChatEvent is tagged too, for plugins that format chat there (SaberFactions).
  *  - system-chat: true sends tagged lines as plain server messages instead of signed chat, for servers where version
  *    translation shows clients the original signed message (Factions, 1.21.11 under ViaVersion). */
@@ -168,18 +168,35 @@ public class CrispyChatTags extends JavaPlugin implements Listener {
         if (o != null) e.getPlayer().displayName(o);
     }
 
+    /** EssentialsChat renders its own copy of the message text and ignores the event's message, so put the coloured
+     *  message in place of the last plain copy of it in the finished line (the last, so a message that matches the
+     *  sender's name doesn't colour the name). A format that already used the coloured message has no plain copy left
+     *  for a sequence colour, and swapping a one-colour copy for itself changes nothing. */
+    static Component recolor(Component line, String text, Component msgColored) {
+        int[] count = {0};
+        line.replaceText(TextReplacementConfig.builder().matchLiteral(text).replacement(b -> { count[0]++; return b; }).build());
+        if (count[0] == 0) return line;
+        int last = count[0];
+        return line.replaceText(TextReplacementConfig.builder().matchLiteral(text)
+                .condition((result, n, replaced) -> n == last ? net.kyori.adventure.text.PatternReplacementResult.REPLACE
+                        : net.kyori.adventure.text.PatternReplacementResult.CONTINUE)
+                .replacement(b -> msgColored).build());
+    }
+
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onChat(AsyncChatEvent e) {
         String name = e.getPlayer().getName();
         String text = PLAIN.serialize(e.message()), code = chatCode(name, text);
-        if (code != null) e.message(colored(code, text));
+        Component msgColored = code == null || text.isBlank() ? null : colored(code, text);
+        if (msgColored != null) e.message(msgColored);
         Component tagged = chatName(name, Component.text(name));
-        if (tagged == null) return;
-        String taggedText = PLAIN.serialize(tagged);
+        if (tagged == null && msgColored == null) return;
+        String taggedText = tagged == null ? null : PLAIN.serialize(tagged);
         ChatRenderer inner = e.renderer();
         ChatRenderer r = (source, displayName, message, viewer) -> {
             Component line = inner.render(source, displayName, message, viewer);
-            if (PLAIN.serialize(line).contains(taggedText)) return line;   // the format already used the tagged display name
+            if (msgColored != null) line = recolor(line, text, msgColored);
+            if (tagged == null || PLAIN.serialize(line).contains(taggedText)) return line;   // the format already used the tagged display name
             boolean[] hit = {false};
             Component out = line.replaceText(TextReplacementConfig.builder().matchLiteral(name).once()
                     .replacement(b -> { hit[0] = true; return tagged; }).build());
