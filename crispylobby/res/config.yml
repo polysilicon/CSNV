@@ -51,6 +51,7 @@ votes:
     - {name: Minecraft-Server-List, url: "https://minecraft-server-list.com/server/503605/vote/"}
     - {name: MMTop200, url: "https://mmtop200.com/vote/5176"}
     - {name: Minecraft-MP, url: "https://minecraft-mp.com/server/365762/vote/"}
+    - {name: ServerTilt, url: "https://www.servertilt.com/minecraft-servers/crispy-anarchy/vote"}
   servers:                  # order = menu order; a server with no commands only gets trails
     factions:
       label: "&e&lCrispy Factions"
