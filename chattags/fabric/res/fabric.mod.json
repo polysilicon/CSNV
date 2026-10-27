@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "crispy_chattags",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "name": "Crispy Chat Tags",
   "description": "Vote-cosmetic tags and name colours (from the lobby) in chat; %crispy:tag% and %crispy:name% for Styled Chat; combat state for the proxy.",
   "environment": "server",

@@ -200,6 +200,26 @@ cosmetics:
     fire:     {name: Fire, code: "&4|&c|&6|&e", cost: 12, icon: BLAZE_POWDER}
     ocean:    {name: Ocean, code: "&1|&9|&3|&b", cost: 12, icon: HEART_OF_THE_SEA}
     rainbow:  {name: Rainbow, code: rainbow, cost: 15, icon: PRISMARINE_CRYSTALS}
+  # chat colours: the sender's message text, on every server (chatcolors.json; same codes as name colours).
+  # Messages with a link keep their own formatting.
+  chat-colors:
+    stone:    {name: Stone, code: "&7", cost: 2, icon: LIGHT_GRAY_DYE}
+    aqua:     {name: Aqua, code: "&b", cost: 3, icon: LIGHT_BLUE_DYE}
+    lime:     {name: Lime, code: "&a", cost: 3, icon: LIME_DYE}
+    yellow:   {name: Yellow, code: "&e", cost: 3, icon: YELLOW_DYE}
+    gold:     {name: Gold, code: "&6", cost: 4, icon: ORANGE_DYE}
+    pink:     {name: Pink, code: "&d", cost: 4, icon: PINK_DYE}
+    red:      {name: Red, code: "&c", cost: 4, icon: RED_DYE}
+    forest:   {name: Forest, code: "&2", cost: 4, icon: GREEN_DYE}
+    blue:     {name: Blue, code: "&9", cost: 5, icon: BLUE_DYE}
+    teal:     {name: Teal, code: "&3", cost: 5, icon: CYAN_DYE}
+    purple:   {name: Purple, code: "&5", cost: 6, icon: PURPLE_DYE}
+    whisper:  {name: Whisper, code: "&7&o", cost: 6, icon: FEATHER}
+    toxic:    {name: Toxic, code: "&2|&a", cost: 10, icon: SLIME_BLOCK}
+    candy:    {name: Candy, code: "&d|&f", cost: 10, icon: PINK_TULIP}
+    fire:     {name: Fire, code: "&c|&6|&e", cost: 12, icon: BLAZE_POWDER}
+    ocean:    {name: Ocean, code: "&9|&3|&b", cost: 12, icon: HEART_OF_THE_SEA}
+    rainbow:  {name: Rainbow, code: rainbow, cost: 15, icon: PRISMARINE_CRYSTALS}
 
 # First join to the network (never on the lobby, no earlier trace on Anarchy/Vanilla): a title, a "Start here" menu of
 # the worlds, a welcome line in the lobby (and over the Discord bridge, so people say hi), and one nudge after

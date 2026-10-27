@@ -40,7 +40,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *  reward plus vote points. In /vote the player picks the server a reward goes to; it is queued and handed over by
  *  RCON the next time they are on that server. Points buy cosmetics that work on every server: tags (shown by the
  *  CrispyTags proxy plugin through TAB, and in chat by the chat-tags plugin/mod on each server, from tags.json) and
- *  chat name colours (namecolors.json, read by the same chat-tags plugin/mod).
+ *  chat name colours (namecolors.json, read by the same chat-tags plugin/mod) and chat colours for the message text
+ *  (chatcolors.json, same format, same readers).
  *  All data changes happen on the main thread; one worker thread does the RCON work from snapshots. */
 public class Votes implements Listener {
     static final ZoneId ZONE = ZoneId.of("America/Chicago");
@@ -50,7 +51,7 @@ public class Votes implements Listener {
         String name; int unclaimed, points, total;
         Map<String, Integer> months = new HashMap<>(), pending = new HashMap<>();
         Set<String> owned = new HashSet<>();
-        String tag, color;
+        String tag, color, chat;
         String trail;   // pre-1.5 walking trails; refunded and cleared on load
     }
     record Server(String key, String label, Material icon, Rcon rcon, List<String> reward, List<String> commands) {}
@@ -76,11 +77,11 @@ public class Votes implements Listener {
     }
 
     final CrispyLobby plugin;
-    final Path file, tagsFile, colorsFile;
+    final Path file, tagsFile, colorsFile, chatFile;
     Map<String, PD> players = new HashMap<>();
     final LinkedHashMap<String, Server> servers = new LinkedHashMap<>();
     final LinkedHashMap<String, Tag> tags = new LinkedHashMap<>();
-    final LinkedHashMap<String, NameColor> colors = new LinkedHashMap<>();
+    final LinkedHashMap<String, NameColor> colors = new LinkedHashMap<>(), chatColors = new LinkedHashMap<>();
     final ExecutorService worker = Executors.newSingleThreadExecutor(r -> { Thread t = new Thread(r, "CrispyLobby-votes"); t.setDaemon(true); return t; });
     final AtomicBoolean busy = new AtomicBoolean();
     final Set<String> inFlight = new HashSet<>();
@@ -93,6 +94,7 @@ public class Votes implements Listener {
         file = plugin.getDataFolder().toPath().resolve("votes.json");
         tagsFile = plugin.getDataFolder().toPath().resolve("tags.json");
         colorsFile = plugin.getDataFolder().toPath().resolve("namecolors.json");
+        chatFile = plugin.getDataFolder().toPath().resolve("chatcolors.json");
         try (Reader r = Files.newBufferedReader(file)) {
             Map<String, PD> m = GSON.fromJson(r, new TypeToken<Map<String, PD>>() {}.getType());
             if (m != null) players = m;
@@ -120,7 +122,7 @@ public class Votes implements Listener {
     void load() {
         ConfigurationSection c = cfg();
         servers.values().forEach(s -> s.rcon().close());
-        servers.clear(); tags.clear(); colors.clear();
+        servers.clear(); tags.clear(); colors.clear(); chatColors.clear();
         if (c == null) return;
         pointsPerVote = c.getInt("points-per-vote", 1);
         announce = c.getBoolean("announce", true);
@@ -151,6 +153,10 @@ public class Votes implements Listener {
         if (cs != null) for (String k : cs.getKeys(false))
             colors.put(k, new NameColor(k, cs.getString(k + ".name", k), cs.getString(k + ".code", "&f"), cs.getInt(k + ".cost", 5),
                     mat(cs.getString(k + ".icon"), Material.WHITE_DYE)));
+        ConfigurationSection cc = plugin.getConfig().getConfigurationSection("cosmetics.chat-colors");
+        if (cc != null) for (String k : cc.getKeys(false))
+            chatColors.put(k, new NameColor(k, cc.getString(k + ".name", k), cc.getString(k + ".code", "&f"), cc.getInt(k + ".cost", 5),
+                    mat(cc.getString(k + ".icon"), Material.WHITE_DYE)));
         writeTags();
     }
     static Material mat(String s, Material def) { Material m = s == null ? null : Material.matchMaterial(s); return m == null ? def : m; }
@@ -195,6 +201,13 @@ public class Votes implements Listener {
             Files.writeString(tmp, GSON.toJson(cols));
             Files.move(tmp, colorsFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) { plugin.getLogger().warning("namecolors.json write failed: " + e); }
+        Map<String, String> chat = new TreeMap<>();   // name (lowercase) -> colour code for their chat messages
+        players.forEach((k, pd) -> { NameColor c = pd.chat == null ? null : chatColors.get(pd.chat); if (c != null) chat.put(k, c.code()); });
+        try {
+            Path tmp = chatFile.resolveSibling("chatcolors.json.tmp");
+            Files.writeString(tmp, GSON.toJson(chat));
+            Files.move(tmp, chatFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) { plugin.getLogger().warning("chatcolors.json write failed: " + e); }
     }
     /** A name in a colour code ("&b"), a per-letter sequence ("&c|&6|&e") or "rainbow". */
     static String colored(String name, String code) {
@@ -389,10 +402,11 @@ public class Votes implements Listener {
         }
         put(m, 39, item(Material.GOLD_INGOT, "&6&lTop voters", List.of("&7This month's top 10 in chat"), false), "top");
         Tag tg = pd.tag == null ? null : tags.get(pd.tag);
-        NameColor nc = pd.color == null ? null : colors.get(pd.color);
-        put(m, 41, item(Material.AMETHYST_SHARD, "&b&lCosmetics", List.of("&7Tags and name colours that show on &fevery server&7.",
+        NameColor nc = pd.color == null ? null : colors.get(pd.color), cc = pd.chat == null ? null : chatColors.get(pd.chat);
+        put(m, 41, item(Material.AMETHYST_SHARD, "&b&lCosmetics", List.of("&7Tags, name colours and chat colours that", "&7show on &fevery server&7.",
                 "&7Bought with vote points (&d" + pd.points + "&7).", "",
-                "&7Tag: " + (tg == null ? "&8none" : tg.display()), "&7Name colour: " + (nc == null ? "&8none" : colored(nc.name(), nc.code())), "", "&eClick to browse"), false), "cosmetics");
+                "&7Tag: " + (tg == null ? "&8none" : tg.display()), "&7Name colour: " + (nc == null ? "&8none" : colored(nc.name(), nc.code())),
+                "&7Chat colour: " + (cc == null ? "&8none" : colored(cc.name(), cc.code())), "", "&eClick to browse"), false), "cosmetics");
         p.openInventory(m.inv);
     }
 
@@ -404,7 +418,7 @@ public class Votes implements Listener {
                 List.of("&7You get &d" + pointsPerVote + " &7per vote. &f/vote &7for the links."), false);
     }
 
-    /** Cosmetics hub: one button each for tags and name colours. */
+    /** Cosmetics hub: one button each for tags, name colours and chat colours. */
     void openCosmetics(Player p) {
         PD pd = pd(p.getName());
         Menu m = menu("cosmetics", 3, "&b&lCosmetics");
@@ -412,11 +426,15 @@ public class Votes implements Listener {
         NameColor nc = pd.color == null ? null : colors.get(pd.color);
         long ownTags = tags.keySet().stream().filter(k -> pd.owned.contains("tag:" + k)).count();
         long ownColors = colors.keySet().stream().filter(k -> pd.owned.contains("color:" + k)).count();
-        put(m, 11, item(tg == null ? Material.NAME_TAG : tg.icon(), "&f&lTags", List.of("&7Shown with your name in chat, the tab", "&7list and above your head, everywhere.", "",
+        NameColor cc = pd.chat == null ? null : chatColors.get(pd.chat);
+        long ownChat = chatColors.keySet().stream().filter(k -> pd.owned.contains("chat:" + k)).count();
+        put(m, 10, item(tg == null ? Material.NAME_TAG : tg.icon(), "&f&lTags", List.of("&7Shown with your name in chat, the tab", "&7list and above your head, everywhere.", "",
                 "&7Wearing: " + (tg == null ? "&8none" : tg.display()), "&7Owned: &f" + ownTags + "&7/" + tags.size(), "",
                 "&7Buy them with points, or &6earn &7them", "&7with advancements, top stats and", "&7mastering Multiverse characters.", "", "&eClick to browse"), tg != null), "tags");
-        put(m, 13, pointsItem(pd), null);
-        put(m, 15, item(nc == null ? Material.WHITE_DYE : nc.icon(), "&f&lName colours", List.of("&7Your name in colour in chat on", "&7every server (and in cross-chat).", "",
+        put(m, 4, pointsItem(pd), null);
+        put(m, 16, item(cc == null ? Material.WRITABLE_BOOK : cc.icon(), "&f&lChat colours", List.of("&7Your chat messages in colour on", "&7every server.", "",
+                "&7Using: " + (cc == null ? "&8none" : colored(cc.name(), cc.code())), "&7Owned: &f" + ownChat + "&7/" + chatColors.size(), "", "&eClick to browse"), cc != null), "chatcolors");
+        put(m, 13, item(nc == null ? Material.WHITE_DYE : nc.icon(), "&f&lName colours", List.of("&7Your name in colour in chat on", "&7every server (and in cross-chat).", "",
                 "&7Using: " + (nc == null ? "&8none" : colored(nc.name(), nc.code())), "&7Owned: &f" + ownColors + "&7/" + colors.size(), "", "&eClick to browse"), nc != null), "colors");
         put(m, 22, item(Material.ARROW, "&7Back to vote rewards", List.of(), false), "back");
         p.openInventory(m.inv);
@@ -563,6 +581,24 @@ public class Votes implements Listener {
         p.openInventory(m.inv);
     }
 
+    void openChatColors(Player p) {
+        PD pd = pd(p.getName());
+        Menu m = menu("chatcolors", 6, "&f&lChat colours &8(&d" + pd.points + " points&8)");
+        int i = 0;
+        for (NameColor c : chatColors.values()) {
+            if (i >= GRID.length) break;
+            boolean own = pd.owned.contains("chat:" + c.id()), on = c.id().equals(pd.chat);
+            List<String> lore = new ArrayList<>(List.of("&7Preview: &f<" + p.getName() + "> " + colored("hey, gg everyone", c.code()), "",
+                    on ? "&aUsing &7- click to take off" : own ? "&eOwned &7- click to use" : "&7Cost: &d" + c.cost() + " points"));
+            if (!own && pd.points < c.cost()) lore.add("&cNot enough points");
+            put(m, GRID[i++], item(c.icon(), colored(c.name(), c.code()), lore, on), "chat:" + c.id());
+        }
+        if (pd.chat != null) put(m, 48, item(Material.BARRIER, "&cGo back to plain chat", List.of(), false), "off:chat");
+        put(m, 49, item(Material.ARROW, "&7Back", List.of(), false), "cosmetics");
+        put(m, 50, pointsItem(pd), null);
+        p.openInventory(m.inv);
+    }
+
     @EventHandler public void onDrag(InventoryDragEvent e) { if (e.getInventory().getHolder() instanceof Menu) e.setCancelled(true); }
 
     @EventHandler public void onClick(InventoryClickEvent e) {
@@ -576,16 +612,17 @@ public class Votes implements Listener {
         else if (a.equals("cosmetics")) openCosmetics(p);
         else if (a.equals("tags") || a.equals("etags") || a.equals("mtags")) openTags(p, a);
         else if (a.equals("colors")) openColors(p);
+        else if (a.equals("chatcolors")) openChatColors(p);
         else if (a.startsWith("off:")) {
             PD pd = pd(p.getName());
-            if (a.equals("off:tag")) pd.tag = null; else pd.color = null;
+            if (a.equals("off:tag")) pd.tag = null; else if (a.equals("off:chat")) pd.chat = null; else pd.color = null;
             writeTags(); save();
             p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 1f);
-            if (a.equals("off:tag")) openTags(p, m.kind); else openColors(p);
+            if (a.equals("off:tag")) openTags(p, m.kind); else if (a.equals("off:chat")) openChatColors(p); else openColors(p);
         }
         else if (a.equals("back")) open(p);
         else if (a.startsWith("claim:")) claim(p, a.substring(6), e.isShiftClick());
-        else if (a.startsWith("tag:") || a.startsWith("color:")) cosmetic(p, a);
+        else if (a.startsWith("tag:") || a.startsWith("color:") || a.startsWith("chat:")) cosmetic(p, a);
     }
 
     // ------------------------------------------------------------------ "joined before" (the OG tag)
@@ -657,7 +694,9 @@ public class Votes implements Listener {
             openTags(p, et.page());
             return;
         }
-        int cost = isTag ? (tags.containsKey(id) ? tags.get(id).cost() : -1) : (colors.containsKey(id) ? colors.get(id).cost() : -1);
+        boolean isChat = key.startsWith("chat:");
+        Map<String, NameColor> pool = isChat ? chatColors : colors;
+        int cost = isTag ? (tags.containsKey(id) ? tags.get(id).cost() : -1) : (pool.containsKey(id) ? pool.get(id).cost() : -1);
         if (cost < 0) return;
         if (!pd.owned.contains(key)) {
             if (pd.points < cost) { msg(p, "&cYou need &d" + cost + " &cvote points (you have &d" + pd.points + "&c)."); p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.7f, 1f); return; }
@@ -667,9 +706,10 @@ public class Votes implements Listener {
             p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.6f, 1.2f);
         } else p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 1f);
         if (isTag) { pd.tag = id.equals(pd.tag) ? null : id; writeTags(); }
+        else if (isChat) { pd.chat = id.equals(pd.chat) ? null : id; writeTags(); }
         else { pd.color = id.equals(pd.color) ? null : id; writeTags(); }
         save();
-        if (isTag) openTags(p, "tags"); else openColors(p);
+        if (isTag) openTags(p, "tags"); else if (isChat) openChatColors(p); else openColors(p);
     }
 
     void links(CommandSender s) {

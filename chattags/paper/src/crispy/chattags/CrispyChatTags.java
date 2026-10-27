@@ -7,7 +7,10 @@ import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextReplacementConfig;
+import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.serializer.legacy.LegacyFormat;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -24,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** Shows the lobby's vote cosmetics in chat: the tag (tags.json) before the sender's name and the name in its bought
  *  colour (namecolors.json), for every viewer and the console, so the Discord bot's relay carries the tag too.
+ *  The message itself is shown in the sender's chat colour (chatcolors.json), unless it has a link.
  *  - The tagged name goes into the player's display name while the message is sent (what clients show for signed chat
  *    and what EssentialsChat's {DISPLAYNAME} uses), and is put back 2 s later so join/quit/death messages stay plain.
  *  - The finished line is rewritten if a format left the tag out.
@@ -49,7 +53,7 @@ public class CrispyChatTags extends JavaPlugin implements Listener {
         String get(String name) { return map.get(name.toLowerCase(Locale.ROOT)); }
     }
 
-    Source tags, colors;
+    Source tags, colors, chat;
     boolean systemChat;
     final Map<UUID, Component> original = new ConcurrentHashMap<>();
     final Map<UUID, Integer> pending = new ConcurrentHashMap<>();
@@ -59,9 +63,58 @@ public class CrispyChatTags extends JavaPlugin implements Listener {
         Path dir = Path.of(getConfig().getString("lobby-dir", "/AMPStorage/.ampdata/instances/CrispyLobby01/Minecraft/plugins/CrispyLobby"));
         tags = new Source(dir.resolve("tags.json"));
         colors = new Source(dir.resolve("namecolors.json"));
+        chat = new Source(dir.resolve("chatcolors.json"));
         systemChat = getConfig().getBoolean("system-chat", false);
         getServer().getPluginManager().registerEvents(this, this);
-        Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> { tags.reload(); colors.reload(); }, 20L, 60L);
+        Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> { tags.reload(); colors.reload(); chat.reload(); }, 20L, 60L);
+    }
+
+    /** The sender's chat colour code, or null (none, or the message has a link). */
+    String chatCode(String name, String text) {
+        String code = chat.get(name);
+        return code == null || text.contains("http://") || text.contains("https://") ? null : code;
+    }
+    static String[] sequence(String code) {
+        return (code.equalsIgnoreCase("rainbow") ? "&c|&6|&e|&a|&b|&9|&d" : code).split("\\|");
+    }
+    /** "&6&l" -> that style. */
+    static Style style(String code) {
+        Style st = Style.empty();
+        for (int i = 0; i + 1 < code.length(); i++) {
+            if (code.charAt(i) != '&' && code.charAt(i) != '\u00a7') continue;
+            LegacyFormat f = LegacyComponentSerializer.parseChar(code.charAt(++i));
+            if (f == null) continue;
+            if (f.reset()) st = Style.empty();
+            else if (f.color() != null) st = Style.style(f.color());
+            else if (f.decoration() != null) st = st.decoration(f.decoration(), TextDecoration.State.TRUE);
+        }
+        return st;
+    }
+    /** The message text, always literal (& codes typed in chat are not formatting), in a colour or per-letter sequence. */
+    static Component colored(String code, String text) {
+        String[] seq = sequence(code);
+        if (seq.length == 1) return Component.text(text, style(seq[0]));
+        Component out = Component.empty();
+        int k = 0;
+        for (int i = 0; i < text.length(); i++) {
+            String ch = String.valueOf(text.charAt(i));
+            out = out.append(Character.isWhitespace(text.charAt(i)) ? Component.text(ch) : Component.text(ch, style(seq[k++ % seq.length])));
+        }
+        return out;
+    }
+    /** The same with section codes, for the old chat event (SaberFactions builds its lines from that message). */
+    static String legacyColored(String code, String text) {
+        String[] seq = sequence(code);
+        StringBuilder b = new StringBuilder();
+        if (seq.length == 1) return seq[0].replace('&', '\u00a7') + text.replace("\u00a7", "");
+        int k = 0;
+        for (int i = 0; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (ch == '\u00a7') continue;
+            if (!Character.isWhitespace(ch)) b.append(seq[k++ % seq.length].replace('&', '\u00a7'));
+            b.append(ch);
+        }
+        return b.toString();
     }
 
     Component coloredName(String name) {
@@ -86,7 +139,11 @@ public class CrispyChatTags extends JavaPlugin implements Listener {
     // before AsyncChatEvent, so the name has to be tagged there too.
     @SuppressWarnings("deprecation")
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    public void tagNameLegacy(org.bukkit.event.player.AsyncPlayerChatEvent e) { tagName(e.getPlayer()); }
+    public void tagNameLegacy(org.bukkit.event.player.AsyncPlayerChatEvent e) {
+        tagName(e.getPlayer());
+        String code = chatCode(e.getPlayer().getName(), e.getMessage());
+        if (code != null) e.setMessage(legacyColored(code, e.getMessage()));
+    }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void tagName(AsyncChatEvent e) { tagName(e.getPlayer()); }
@@ -114,6 +171,8 @@ public class CrispyChatTags extends JavaPlugin implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onChat(AsyncChatEvent e) {
         String name = e.getPlayer().getName();
+        String text = PLAIN.serialize(e.message()), code = chatCode(name, text);
+        if (code != null) e.message(colored(code, text));
         Component tagged = chatName(name, Component.text(name));
         if (tagged == null) return;
         String taggedText = PLAIN.serialize(tagged);

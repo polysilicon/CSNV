@@ -70,7 +70,7 @@ Edit `votes.servers` in the live config, then run `/vote reload`.
 player to the lobby if they're elsewhere and opens the menu there (the command line goes to the lobby on the
 `crispy:vote` plugin channel). This replaces Factions' own `/vote` text; its links are in the lobby menu too.
 
-Cosmetics are bought once with vote points. `/cosmetics` (or Cosmetics in `/vote`) opens a hub with two buttons, **Tags** and **Name colours**. Each has its own menu, where you buy, wear or take off (or use the barrier button). A player can wear one tag and one name colour at a
+Cosmetics are bought once with vote points. `/cosmetics` (or Cosmetics in `/vote`) opens a hub with three buttons, **Tags**, **Name colours** and **Chat colours** (1.10.0). Each has its own menu, where you buy, wear or take off (or use the barrier button). A player can wear one tag, one name colour and one chat colour at a
 time, and both show on every server.
 
 - **Tags** (`cosmetics.tags`) appear before the name in chat, after it in the tab list, and on name tags.
@@ -79,6 +79,8 @@ time, and both show on every server.
   - The tab list and name tags come from the **CrispyTags** Velocity plugin (`proxy/crispytags`, needs TAB).
 - **Name colours** (`cosmetics.name-colors`, a colour code like `&b`, `&6&l`, or `rainbow`) colour the name in chat.
   - The lobby writes `plugins/CrispyLobby/namecolors.json`, which the same `chattags/` readers use.
+- **Chat colours** (`cosmetics.chat-colors`, same code format; `a|b|c` cycles the codes letter by letter) colour the
+  message text. The lobby writes `plugins/CrispyLobby/chatcolors.json`. Messages containing a link stay uncoloured.
 
 **Earned tags** (1.7.0) cost nothing. They're on their own page of the Tags menu.
 - **Advancements** (permanent once claimed): Dragonslayer, Withered, Beaconator, Netherite, Monster Hunter, Wanderer,

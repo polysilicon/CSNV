@@ -12,11 +12,12 @@ import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Map;
 
-/** Vote cosmetics from the lobby: tags.json (name -> "&a[Voter]") and namecolors.json (name -> "&b", a sequence "&c|&6|&e", or "rainbow"),
- *  each re-read when the file changes. */
+/** Vote cosmetics from the lobby: tags.json (name -> "&a[Voter]"), namecolors.json and chatcolors.json (name -> "&b",
+ *  a sequence "&c|&6|&e", or "rainbow"; the second colours the message text), each re-read when the file changes. */
 public final class Tags {
     static final Path DIR = Path.of(System.getProperty("crispytags.dir", "/AMPStorage/.ampdata/instances/CrispyLobby01/Minecraft/plugins/CrispyLobby"));
-    static final Source TAGS = new Source(DIR.resolve("tags.json")), COLORS = new Source(DIR.resolve("namecolors.json"));
+    static final Source TAGS = new Source(DIR.resolve("tags.json")), COLORS = new Source(DIR.resolve("namecolors.json")),
+            CHAT = new Source(DIR.resolve("chatcolors.json"));
 
     static final class Source {
         final Path file; volatile Map<String, String> map = Map.of(); long mtime = -1, checked;
@@ -43,13 +44,42 @@ public final class Tags {
     /** The name in the player's bought colour, or null if they have none. */
     public static MutableComponent coloredName(String name) {
         String code = COLORS.get(name);
-        if (code == null) return null;
+        return code == null ? null : colored(code, name);
+    }
+
+    /** The player's chat colour code, or null if they have none. Messages with a link keep their own formatting. */
+    public static String chatCode(String name, String message) {
+        String code = CHAT.get(name);
+        return code == null || message.contains("http://") || message.contains("https://") ? null : code;
+    }
+
+    /** text in a colour code ("&b", "&6&l"), a per-letter sequence ("&c|&6|&e"; spaces don't use up a colour) or
+     *  "rainbow". The text is always literal: & codes typed in a chat message are not formatting. */
+    public static MutableComponent colored(String code, String text) {
         if (code.equalsIgnoreCase("rainbow")) code = "&c|&6|&e|&a|&b|&9|&d";
-        if (!code.contains("|")) return legacy(code + name);
-        String[] seq = code.split("\\|");   // per-letter colour sequence, e.g. "&c|&6|&e"
+        if (!code.contains("|")) return Component.literal(text).setStyle(style(code));
+        String[] seq = code.split("\\|");
         MutableComponent out = Component.empty();
-        for (int i = 0; i < name.length(); i++) out.append(legacy(seq[i % seq.length] + name.charAt(i)));
+        int k = 0;
+        for (int i = 0; i < text.length(); i++) {
+            String ch = String.valueOf(text.charAt(i));
+            out.append(Character.isWhitespace(text.charAt(i)) ? Component.literal(ch) : Component.literal(ch).setStyle(style(seq[k++ % seq.length])));
+        }
         return out;
+    }
+
+    /** "&6&l" -> that style. */
+    static Style style(String code) {
+        Style st = Style.EMPTY;
+        for (int i = 0; i + 1 < code.length(); i++) {
+            if (code.charAt(i) != '&' && code.charAt(i) != '\u00a7') continue;
+            ChatFormatting f = ChatFormatting.getByCode(code.charAt(i + 1));
+            char c = Character.toLowerCase(code.charAt(i + 1));
+            boolean color = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+            if (f != null) st = f == ChatFormatting.RESET ? Style.EMPTY : color ? Style.EMPTY.applyFormat(f) : st.applyFormat(f);
+            i++;
+        }
+        return st;
     }
 
     /** "[Tag] " + coloured name (or the display name), or null when the player has neither cosmetic. */
