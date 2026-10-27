@@ -131,6 +131,7 @@ along your aim, so there are no arrows to carry. Shotguns hit everything in a sh
 | Arm Cannon (Power Beam) | Samus | 36 | 5 | 0.5 s | |
 | Militech Handgun | David Martinez | 30 | 6 | 0.6 s | |
 | Amban Rifle | Mandalorian | 60 | 12 | 2.5 s | glowing 3 s |
+| Laser Pistol | Leela | 28 | 4 | 0.6 s | glowing 1 s |
 
 Bows stay bows: Link's Hero Bow, Red's Slingshot and the Sniper's Sniper Rifle.
 
@@ -193,7 +194,7 @@ Bows stay bows: Link's Hero Bow, Red's Slingshot and the Sniper's Sniper Rifle.
 | Saul Goodman (Better Call Saul) | Gavel (mace: Density III, Breach I), loud yellow suit (Prot IV, Dodge II, Springs II shoes), Speed I | **You've Been Served** (16 blocks: 6 dmg, Weakness II + glowing 5 s, you heal 4; 16 s), **Loophole** (untouchable 1.5 s, clears Slowness/Weakness/Poison/Wither/Blindness/Nausea, Speed II 3 s, 20 s), **Fingertip Lightning** ("lightning bolts shoot from my fingertips": 16 blocks, 6 lightning dmg, arcs for 3 dmg to enemies within 3 blocks of the target, 10 s) |
 | Sniper (Team Fortress 2, was the classic Sniper) | Sniper Rifle (bow: Power III, Infinity, Lethal Sniper II), Kukri (Sharpness III, Bleed I), red shirt and brown vest, RED Sniper head, Night Vision | **Jarate** (thrown splash: Weakness II + glowing 8 s, Slowness I 3 s, 16 s), **Focus** (every enemy within 40 blocks glows 6 s, 20 s) |
 | Hank Hill (King of the Hill) | Grill Spatula (swings like an iron sword: Sharpness IV, Fire Aspect), white tee and jeans (Explosive Immunity III), Fire Resistance | **Propane Tank** (explosive throw, 10 s), **I'm Gonna Kick Your Ass** (Strength II + Speed I 6 s, knocks back enemies within 3 blocks, 22 s) |
-| Leela (Futurama) | No weapon: martial arts, fists +7 at sword speed; white top, black pants (Dodge II, Springs I), Speed I | **Martial Arts Kick** (dash, 7 dmg + knockback up close, 7 s), **Laser Pistol** (20 blocks: 5 dmg + glowing 2 s, 5 s) |
+| Leela (Futurama) | No weapon: martial arts, fists +7 at sword speed; white top, black pants (Dodge II, Springs I), Speed I | **Martial Arts Kick** (dash, 7 dmg + knockback up close, 7 s), **Laser Pistol** (gun: hitscan, 28 blocks, 4 dmg every 0.6 s, glowing 1 s; Pack-a-Punch works on it) |
 | Elliot (Mr. Robot) | Pocketknife (Sharpness III, Poison I), black hoodie (Dodge II), Night Vision; Elliot head (MineSkin upload) | **Blackout** (12 blocks: Darkness 6 s, Blindness 2 s, Slowness I 3 s, 22 s), **Mr. Robot** (Strength II + Resistance I + Speed I 6 s, 25 s) |
 | Tony Soprano (The Sopranos) | Baseball Bat (Sharpness IV, Knockback I), white bathrobe, 1.1×; Tony head (MineSkin upload) | **Gabagool** (Instant Health I, Regeneration II 4 s, full hunger, 15 s), **Whack** (16 blocks: 6 dmg, Wither I + Slowness II + glowing 4 s, 14 s) |
 | SpongeBob | Golden Spatula (swings like an iron sword: Sharpness IV, Knockback II), white shirt and brown shorts (Dodge II, Springs II), Jump Boost I, 0.8× | **Krabby Patty** (Instant Health I, Regeneration II 5 s, full hunger, 15 s), **Bubble Blower** (3 wind-charge bubbles that pop with knockback, 8 s) |
@@ -395,9 +396,9 @@ Everyone starts as a **random character**.
     - Thundergun: mace, Density VIII, Breach IV, Wind Burst III, + 16 wind charges; 150 uses.
   - Character gear: Lightsaber (Sharpness VI, Double Strike II), Darksaber (Sharpness VII, Fire Aspect), Arasaka
     Breaker (Sharpness VI axe, Cleave III).
-  - Character abilities: Propane Tank, Jarate, Laser Pistol, Fingertip Lightning, Charge Shot, Krabby Patty. They
+  - Character abilities: Propane Tank, Jarate, Fingertip Lightning, Charge Shot, Krabby Patty. They
     work like the kits' ability items, and like all gear they're lost when you go down.
-  - Guns (the kits' gun abilities, see Guns above): MA5 Assault Rifle, Super Shotgun, Lucky, Trunk M60, Amban Rifle.
+  - Guns (the kits' gun abilities, see Guns above): MA5 Assault Rifle, Super Shotgun, Lucky, Trunk M60, Amban Rifle, Laser Pistol.
   - Teddy Bear: nothing, and half the points (475) back.
 - **Co-op revive**: going down leaves a glowing marker where you fell. A teammate crouching next to it for 3 s revives you
   there (with your kit) and gets +250 points. Otherwise you're back at the start of the next wave as before.

@@ -432,7 +432,6 @@ BOX = [
     ("Arasaka Breaker", "red", [f"give @s {item('netherite_axe', 'Arasaka Breaker', 'red', {'sharpness': 6, CE + 'cleave': 3})}"]),
     ("Propane Tank", "aqua", [abilities.give("propane")]),
     ("Jarate", "yellow", [abilities.give("jarate")]),
-    ("Laser Pistol", "red", [abilities.give("laser_pistol")]),
     ("Fingertip Lightning", "aqua", [abilities.give("fingertips")]),
     ("Charge Shot", "gold", [abilities.give("charge_shot")]),
     ("Krabby Patty", "yellow", [abilities.give("krabby_patty")]),
@@ -441,6 +440,7 @@ BOX = [
     ("Lucky", "gold", [abilities.give("lucky")]),
     ("Trunk M60", "dark_gray", [abilities.give("m60")]),
     ("Amban Rifle", "gray", [abilities.give("amban")]),
+    ("Laser Pistol", "red", [abilities.give("laser_pistol")]),
     ("Teddy Bear", "gold", ["scoreboard players add @s pve.pts 475", "playsound minecraft:entity.panda.ambient player @s ~ ~ ~ 1 0.7",
                              "tellraw @s {\"text\":\"Bye bye! The box gave you a teddy bear (475 points back).\",\"color\":\"gray\",\"italic\":true}"]),
 ]

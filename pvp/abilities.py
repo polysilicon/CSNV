@@ -418,12 +418,9 @@ ABILITIES = {
         DASH, cone(3, damage(7)), cone(3, PUSH),
         "particle minecraft:sweep_attack ^ ^1 ^1.5 0 0 0 0 1", "particle minecraft:crit ~ ~1 ~ 0.4 0.4 0.4 0.3 15",
         snd("entity.player.attack.knockback", 1, 1.2), snd("entity.breeze.jump", 1, 1.4), bar("HI-YAH!", "light_purple")]),
-    "laser_pistol": ("Laser Pistol", "red", "prismarine_shard", 5, ["Zaps the enemy you aim at.", "20 blocks · 5 damage · glowing 2 s"], [
-        *ray(40),
-        hit(damage(5, "magic")), hit("effect give @s minecraft:glowing 2 0"),
-        hit("particle minecraft:dust{color:[1.0,0.1,0.1],scale:1.2} ~ ~1 ~ 0.3 0.5 0.3 0 25"),
-        "execute anchored eyes run particle minecraft:dust{color:[1.0,0.2,0.2],scale:0.8} ^ ^ ^3 0.05 0.05 2 0 30",
-        snd("block.beacon.deactivate", 1, 2), snd("entity.guardian.attack", 0.5, 2), bar("PEW", "red")]),
+    "laser_pistol": gun("Laser Pistol", "red", "prismarine_shard", 0.6, 4, 28, "Leela's laser pistol.", "block.beacon.deactivate", 2.0,
+                        [("glowing 1 s", "effect give @s minecraft:glowing 1 0"),
+                         ("", "particle minecraft:dust{color:[1.0,0.1,0.1],scale:1.2} ~ ~1 ~ 0.3 0.5 0.3 0 15")]),
     "blackout": ("Blackout", "dark_gray", "command_block", 22, ["Hacks the grid around you.", "12 blocks · Darkness 6 s + Blindness 2 s + Slowness I 3 s"], [
         around(12, "effect give @s minecraft:darkness 6 0"), around(12, "effect give @s minecraft:blindness 2 0"),
         around(12, "effect give @s minecraft:slowness 3 0"),
