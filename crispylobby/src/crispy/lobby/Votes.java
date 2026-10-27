@@ -414,7 +414,7 @@ public class Votes implements Listener {
     /** Cosmetics hub: one button each for tags, name colours and chat colours. */
     void openCosmetics(Player p) {
         PD pd = pd(p.getName());
-        Menu m = menu("cosmetics", 3, "&b&lCosmetics");
+        Menu m = menu("cosmetics", 4, "&b&lCosmetics");
         Tag tg = pd.tag == null ? null : tags.get(pd.tag);
         NameColor nc = pd.color == null ? null : colors.get(pd.color);
         long ownTags = tags.keySet().stream().filter(k -> pd.owned.contains("tag:" + k)).count();
@@ -429,7 +429,58 @@ public class Votes implements Listener {
                 "&7Using: " + (cc == null ? "&8none" : colored(cc.name(), cc.code())), "&7Owned: &f" + ownChat + "&7/" + chatColors.size(), "", "&eClick to browse"), cc != null), "chatcolors");
         put(m, 13, item(nc == null ? Material.WHITE_DYE : nc.icon(), "&f&lName colours", List.of("&7Your name in colour in chat on", "&7every server (and in cross-chat).", "",
                 "&7Using: " + (nc == null ? "&8none" : colored(nc.name(), nc.code())), "&7Owned: &f" + ownColors + "&7/" + colors.size(), "", "&eClick to browse"), nc != null), "colors");
-        put(m, 22, item(Material.ARROW, "&7Back to vote rewards", List.of(), false), "back");
+        int unlocked = owned(p, pd).size();
+        put(m, 22, item(Material.ENDER_CHEST, "&d&lMy cosmetics", List.of("&7Everything you've unlocked in one place:", "&7tags, name colours and chat colours.", "",
+                "&7Unlocked: &f" + unlocked, "", "&eClick to view"), false), "owned:0");
+        put(m, 31, item(Material.ARROW, "&7Back to vote rewards", List.of(), false), "back");
+        p.openInventory(m.inv);
+    }
+
+    /** Actions ("tag:x", "color:x", "chat:x") for every cosmetic the player can wear now: bought or claimed ones, and
+     *  ranked tags while they hold the rank. Tags first, then name colours, then chat colours, in menu order. */
+    List<String> owned(Player p, PD pd) {
+        List<String> out = new ArrayList<>();
+        Set<String> advs = null;
+        for (Tag t : tags.values()) {
+            if (pd.owned.contains("tag:" + t.id()) || t.id().equals(pd.tag)) out.add("tag:" + t.id());
+            else if (t.ranked()) {
+                if (advs == null) advs = advancements(p);
+                if (lockReason(p, t, advs) == null) out.add("tag:" + t.id());
+            }
+        }
+        for (NameColor c : colors.values()) if (pd.owned.contains("color:" + c.id())) out.add("color:" + c.id());
+        for (NameColor c : chatColors.values()) if (pd.owned.contains("chat:" + c.id())) out.add("chat:" + c.id());
+        return out;
+    }
+
+    /** "My cosmetics": everything unlocked, 28 to a page; click one to wear it or take it off. */
+    void openOwned(Player p, int page) {
+        PD pd = pd(p.getName());
+        List<String> all = owned(p, pd);
+        int pages = Math.max(1, (all.size() + GRID.length - 1) / GRID.length);
+        page = Math.max(0, Math.min(page, pages - 1));
+        Menu m = menu("owned:" + page, 6, "&d&lMy cosmetics" + (pages > 1 ? " &8(" + (page + 1) + "/" + pages + ")" : ""));
+        for (int i = 0; i < GRID.length && page * GRID.length + i < all.size(); i++) {
+            String key = all.get(page * GRID.length + i), id = key.substring(key.indexOf(':') + 1);
+            if (key.startsWith("tag:")) {
+                Tag t = tags.get(id);
+                boolean on = id.equals(pd.tag);
+                put(m, GRID[i], tagItem(t, List.of("&8Tag", "&7Preview: &f<" + t.display() + " &f" + p.getName() + "> hi", "",
+                        on ? "&aWearing &7- click to take off" : "&eClick to wear"), on), key);
+            } else {
+                boolean chat = key.startsWith("chat:");
+                NameColor c = (chat ? chatColors : colors).get(id);
+                boolean on = id.equals(chat ? pd.chat : pd.color);
+                String preview = chat ? "&f<" + p.getName() + "> " + colored("hey, gg everyone", c.code()) : "&f<" + colored(p.getName(), c.code()) + "&f> hi";
+                put(m, GRID[i], item(c.icon(), colored(c.name(), c.code()), List.of(chat ? "&8Chat colour" : "&8Name colour", "&7Preview: " + preview, "",
+                        on ? "&aUsing &7- click to take off" : "&eClick to use"), on), key);
+            }
+        }
+        if (all.isEmpty()) put(m, 22, item(Material.GRAY_DYE, "&7Nothing unlocked yet", List.of("&7Buy tags and colours with vote points,", "&7or earn tags in game."), false), null);
+        if (page > 0) put(m, 45, item(Material.ARROW, "&7Previous page", List.of(), false), "owned:" + (page - 1));
+        if (page < pages - 1) put(m, 53, item(Material.ARROW, "&7Next page", List.of(), false), "owned:" + (page + 1));
+        put(m, 49, item(Material.ARROW, "&7Back", List.of(), false), "cosmetics");
+        put(m, 50, pointsItem(pd), null);
         p.openInventory(m.inv);
     }
 
@@ -608,7 +659,11 @@ public class Votes implements Listener {
         }
         else if (a.equals("back")) open(p);
         else if (a.startsWith("claim:")) claim(p, a.substring(6), e.isShiftClick());
-        else if (a.startsWith("tag:") || a.startsWith("color:") || a.startsWith("chat:")) cosmetic(p, a);
+        else if (a.startsWith("owned:")) openOwned(p, Integer.parseInt(a.substring(6)));
+        else if (a.startsWith("tag:") || a.startsWith("color:") || a.startsWith("chat:")) {
+            cosmetic(p, a);
+            if (m.kind.startsWith("owned:")) openOwned(p, Integer.parseInt(m.kind.substring(6)));   // stay on My cosmetics
+        }
     }
 
     // ------------------------------------------------------------------ "joined before" (the OG tag)

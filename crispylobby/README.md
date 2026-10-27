@@ -79,6 +79,9 @@ time, and both show on every server.
   - The tab list and name tags come from the **CrispyTags** Velocity plugin (`proxy/crispytags`, needs TAB).
 - **Name colours** (`cosmetics.name-colors`, a colour code like `&b`, `&6&l`, or `rainbow`) colour the name in chat.
   - The lobby writes `plugins/CrispyLobby/namecolors.json`, which the same `chattags/` readers use.
+- **My cosmetics** (1.12.0): an ender chest in the `/cosmetics` hub lists everything the player can wear (bought and
+  claimed tags, ranked tags they currently hold, name and chat colours), 28 to a page. Clicking one wears it or takes
+  it off without leaving the page.
 - **Colour codes** (1.11.0, `ColorCodes.java`, shared with `chattags/`, `proxy/crispytags` and the Discord bot):
   `&b` / `&6&l` / `&#ff8800` for one style, `a|b|c` cycles the codes letter by letter (`rainbow`), `a>b>c` fades
   smoothly across the text (formats from the first stop) and `a/b/c` splits it into equal bands like a flag. Spaces
