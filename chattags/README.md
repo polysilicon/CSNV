@@ -30,5 +30,7 @@ with no bot change. Both versions read the lobby's `plugins/CrispyLobby/tags.jso
 
 Colour codes (Fabric 1.6.0, Paper 1.5.0): both use `ColorCodes.java`, the same file as the lobby and the proxy plugin,
 so fades (`&#ff5f6d>&#ffc371`) and flag bands (`&#5bcefa/&#f5a9b8/&#ffffff`) look the same everywhere. The Paper
-plugin turns hex colours into Spigot's `§x` form for SaberFactions' legacy chat event.
+plugin turns hex colours into Spigot's `§x` form for SaberFactions' legacy chat event, and (1.5.1) only colours that
+event's message where SaberFactions is installed (`legacy-chat-colors`): EssentialsChat on the Lobby stripped the codes
+from it and left the "x" of each hex colour behind.
 

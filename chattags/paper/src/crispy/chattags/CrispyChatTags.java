@@ -55,6 +55,7 @@ public class CrispyChatTags extends JavaPlugin implements Listener {
     }
 
     Source tags, colors, chat;
+    boolean legacyColors;
     boolean systemChat;
     final Map<UUID, Component> original = new ConcurrentHashMap<>();
     final Map<UUID, Integer> pending = new ConcurrentHashMap<>();
@@ -66,6 +67,9 @@ public class CrispyChatTags extends JavaPlugin implements Listener {
         colors = new Source(dir.resolve("namecolors.json"));
         chat = new Source(dir.resolve("chatcolors.json"));
         systemChat = getConfig().getBoolean("system-chat", false);
+        // Colour the old event's message only where a plugin builds chat from it (SaberFactions, plugin name Factions).
+        // Elsewhere EssentialsChat would strip the codes from that copy and leave the "x" of each hex colour behind.
+        legacyColors = getConfig().getBoolean("legacy-chat-colors", getServer().getPluginManager().getPlugin("Factions") != null);
         getServer().getPluginManager().registerEvents(this, this);
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> { tags.reload(); colors.reload(); chat.reload(); }, 20L, 60L);
     }
@@ -149,7 +153,7 @@ public class CrispyChatTags extends JavaPlugin implements Listener {
     public void tagNameLegacy(org.bukkit.event.player.AsyncPlayerChatEvent e) {
         tagName(e.getPlayer());
         String code = chatCode(e.getPlayer().getName(), e.getMessage());
-        if (code != null) e.setMessage(legacyColored(code, e.getMessage()));
+        if (code != null && legacyColors) e.setMessage(legacyColored(code, e.getMessage()));
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)

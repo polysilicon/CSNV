@@ -3,3 +3,6 @@ lobby-dir: /AMPStorage/.ampdata/instances/CrispyLobby01/Minecraft/plugins/Crispy
 # true: tagged chat goes out as plain server messages (use where clients don't see edited signed chat, e.g. a 1.21 server
 # behind ViaVersion). false: normal signed chat with the edited line.
 system-chat: false
+# Also colour the message in the old AsyncPlayerChatEvent, for plugins that build chat lines from it. Leave unset to
+# turn it on only when SaberFactions (plugin name Factions) is installed.
+# legacy-chat-colors: true
