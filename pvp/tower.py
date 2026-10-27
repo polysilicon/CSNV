@@ -126,7 +126,7 @@ def build(b):
 
     # ------------------------------------------------------------------ load / tick / second
     fn("tower/load", [
-        *[f"scoreboard objectives add {o}" for o in ["tw dummy", "tw.pick trigger", "tw.o1 dummy", "tw.o2 dummy", "tw.o3 dummy",
+        *[f"scoreboard objectives add {o}" for o in ["tw dummy", "tw.pick trigger", "tw.join trigger", "tw.o1 dummy", "tw.o2 dummy", "tw.o3 dummy",
                                                      "tw.lives dummy", "tw.best dummy", "tw.kc totalKillCount", "tw.falls dummy",
                                                      *[f"tw.u{u[0]} dummy" for u in UPGRADES]]],
         'scoreboard objectives add tw.side dummy {"text":"🗼 THE TOWER","color":"light_purple","bold":true}',
@@ -141,6 +141,11 @@ def build(b):
     ])
     fn("tower/tick", [
         f"scoreboard players enable {inn} tw.pick",
+        # the Tower menu (the NPC opens it): 1 = join the queue, 2 = leave it
+        f"scoreboard players enable @a[{b.LOBBY_BOX}] tw.join",
+        f"execute as @a[scores={{tw.join=1}}] run function {T}/join",
+        f"execute as @a[scores={{tw.join=2}}] run function {T}/leave_queue",
+        "scoreboard players set @a[scores={tw.join=1..}] tw.join 0",
         f"execute as @a[tag=tw.in,scores={{tw.pick=1..}}] run function {T}/picked",
         # anyone climbing who ends up outside the room (through the ceiling, a wall...) goes back in
         f"execute if score #tstate tw matches 2.. as {inn} unless entity @s[x={TCX - R},y={TY},z={TCZ - R},dx={2 * R},dy={WALL_H - 2},dz={2 * R}] run function {T}/escaped",
@@ -199,9 +204,16 @@ def build(b):
         "condition": "minecraft:entity_properties", "entity": "this",
         "predicate": {"minecraft:entity_type": "minecraft:interaction", "minecraft:nbt": "{Tags:[\"pvp.towernpc\"]}"}}]}}},
         "rewards": {"function": f"{T}/npc"}})
-    fn("tower/npc", [
+    fn("tower/npc", [   # the NPC opens the Tower menu (build.py "tower"), like the PvP Arena and Outbreak NPCs
         "advancement revoke @s only pvp:towernpc",
         "execute as @e[type=minecraft:interaction,tag=pvp.towernpc,distance=..8] run data remove entity @s interaction",
+        f"execute if entity @s[{b.LOBBY_BOX}] run pvpmenu tower",
+    ])
+    fn("tower/leave_queue", [
+        f"execute unless entity @s[tag=tw.q] run return run {say('@s', 'You are not in the queue for The Tower.', 'gray')}",
+        "tag @s remove tw.q", say("@s", "You left the queue for The Tower.", "gray"),   # an empty queue cancels itself (tower/sec)
+    ])
+    fn("tower/join", [   # menu: join (or open) the queue
         f"execute unless entity @s[{b.LOBBY_BOX}] run return 0",
         "execute if score #tstate tw matches 2.. run return run tellraw @s " + tj([
             {"text": "🗼 A climb is in progress (floor ", "color": "light_purple"}, {"score": {"name": "#floor", "objective": "tw"}, "color": "white"},
@@ -213,7 +225,7 @@ def build(b):
         f"execute if score #tstate tw matches 0 run scoreboard players set #tt tw {COUNTDOWN}",
         f"execute if score #tstate tw matches 0 run tellraw @a[{b.LOBBY_BOX}] " + tj([
             {"text": "🗼 ", "color": "light_purple"}, {"selector": "@s", "color": "yellow"}, {"text": " is climbing The Tower! ", "color": "light_purple"},
-            {"text": f"Right-click the Tower NPC within {COUNTDOWN} s to join (up to {MAX_PLAYERS}).", "color": "gray"}]),
+            {"text": f"Click the Tower NPC and pick Climb within {COUNTDOWN} s to join (up to {MAX_PLAYERS}).", "color": "gray"}]),
         "execute if score #tstate tw matches 1 run tellraw @a[tag=tw.q] " + tj([{"selector": "@s", "color": "yellow"}, {"text": " joined the climb!", "color": "light_purple"}]),
         "execute if score #tstate tw matches 0 run scoreboard players set #tstate tw 1",
         "playsound minecraft:block.beacon.activate player @s ~ ~ ~ 1 1.4",

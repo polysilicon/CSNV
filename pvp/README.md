@@ -224,7 +224,9 @@ Every character has its own mastery XP (`pvp.mx<kit id>`): +10 per PvP kill and 
 
 ## The Tower (`tower.py`)
 A roguelite climb, solo or up to 4 players. The **🗼 The Tower** NPC sits between the PvP Arena and Outbreak NPCs:
-the first click opens a 10 s queue that others join by clicking too. Everyone starts as a **random character**.
+clicking it opens the **Tower menu** (`pvpmenu tower`, like the other two NPCs): **Climb The Tower** joins the queue
+(`/trigger tw.join set 1`; the first player opens a 10 s queue that others join the same way), **Leave the queue**
+(`set 2`), plus how-it-works and best-floor info. Everyone starts as a **random character**.
 - One room (x 388..412, z -12..12 at y -61, kept force-loaded: `admin/build_tower` builds it), rebuilt every floor:
   - **mob floors**: cover pillars and low walls (6 layouts), 3 + floor/2 mobs (+2 per extra player, max 16) from a pool
     that changes every 5 floors (zombies/skeletons/spiders, then husks/strays, vindicators/wither skeletons,

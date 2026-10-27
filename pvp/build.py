@@ -527,6 +527,22 @@ def build():
                          "If a run is already starting, you join that map"]), "cmd": ""},
                         {"slot": 22, "item": icon("ender_eye", "Random map", "light_purple", ["Let fate decide", "", "Click to pick your kit"]), "cmd": "trigger pve.join set 91"},
                         {"slot": 26, "item": icon("barrier", "Leave the queue", "red", ["Stop waiting for the next Outbreak"], False), "cmd": "trigger pve.join set 99"}]},
+        "tower": {"title": {"text": "🗼 The Tower", "color": "dark_purple"}, "rows": 3, "fill": PANE, "items": [
+            {"slot": 4, "item": icon("end_rod", "The Tower", "light_purple", [
+                f"A roguelite climb, solo or up to {tower.MAX_PLAYERS} players", "Everyone starts as a random character",
+                "Clear a floor, pick 1 of 3 upgrades, climb on"]), "cmd": ""},
+            {"slot": 11, "item": icon("ladder", "Climb The Tower", "light_purple", [
+                "Join the queue for the next climb", f"The climb starts {tower.COUNTDOWN} s after the first player joins:",
+                f"anyone who joins in time climbs with you (max {tower.MAX_PLAYERS})", "", "Click to join"]), "cmd": "trigger tw.join set 1"},
+            {"slot": 13, "item": icon("written_book", "How it works", "yellow", [
+                "Mob floors: mobs get stronger every floor", "Every 3rd floor a challenge: Parkour, Glass Bridge,",
+                "Maze or Crafting", "Every 5th floor a boss", f"Challenges: {tower.MAX_FALLS} strikes on a floor and you're out",
+                "Upgrades: Common, Rare, Epic and Legendary,", "they stack for the whole climb",
+                "Dying ends your climb (unless you have an Extra Life)"]), "cmd": ""},
+            {"slot": 15, "item": icon("gold_block", "Best Tower Floor", "gold", [
+                "The highest floors reached are on", "the leaderboard in the lobby",
+                "Each floor also gives mastery XP", "for the character you're playing"]), "cmd": ""},
+            {"slot": 22, "item": icon("barrier", "Leave the queue", "red", ["Stop waiting for the next climb"], False), "cmd": "trigger tw.join set 2"}]},
         "pve_shop": {"title": {"text": "☣ Arsenal (points)", "color": "dark_green"}, "rows": 3, "fill": PANE, "items":
                      [{"slot": s, "item": icon(i[3], f"{i[1]}" + (f" · {i[4]}" if i[4] else ""), i[2], [i[5]]), "cmd": f"trigger pve.buy set {i[0]}"} for s, i in zip(SHOP_SLOTS, SHOP)]},
     }
