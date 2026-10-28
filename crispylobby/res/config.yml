@@ -72,8 +72,8 @@ votes:
       instance: Vanilla01
       commands: []            # no vote rewards on Vanilla (trails only)
     falling:
-      label: "&e&lCrispy Falling"
-      icon: GRAVEL
+      label: "&b&lCrispy Skyblock"
+      icon: OAK_SAPLING
       instance: Falling01
       reward: ["&f4 Iron Ingots", "&f16 Bone Meal", "&a2 Saplings"]
       commands: ["give %player% minecraft:iron_ingot 4", "give %player% minecraft:bone_meal 16", "give %player% minecraft:oak_sapling 2"]
@@ -338,9 +338,9 @@ welcome:
       icon: TNT
       lore: ["&7Old-school 2013 factions with 1.8", "&7combat, cannons and raiding.", "&7No pay-to-win kits."]
     falling:
-      name: "&6&lFalling"
-      icon: GRAVEL
-      lore: ["&7Your own island while blocks rain", "&7from the sky. Solo or with friends."]
+      name: "&b&lSkyblock"
+      icon: OAK_SAPLING
+      lore: ["&7Pick a themed starter island and grow", "&7it: challenges, island levels and the", "&7odd supply crate from the sky."]
     Vanilla:
       name: "&a&lVanilla"
       icon: GRASS_BLOCK
