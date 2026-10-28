@@ -70,7 +70,10 @@ public class SkyblockMod implements ModInitializer {
                 .then(Commands.literal("choose").executes(c -> choose(c.getSource())))
                 .then(Commands.literal("challenges").executes(c -> menu(c.getSource(), "challenges")))
                 .then(Commands.literal("level").executes(c -> IslandLevels.command(c.getSource())))
-                .then(Commands.literal("top").executes(c -> IslandLevels.top(c.getSource())));
+                .then(Commands.literal("top").executes(c -> IslandLevels.top(c.getSource())))
+                // run by the datapack after a new island, so an island left empty drops off the board right away
+                .then(Commands.literal("refreshboard").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .executes(c -> { IslandLevels.updateBoard(c.getSource().getServer()); return 1; }));
         d.register(root);
     }
 

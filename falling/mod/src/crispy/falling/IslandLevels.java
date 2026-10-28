@@ -121,13 +121,21 @@ public final class IslandLevels {
         return out;
     }
 
-    /** [id, level] pairs, best first. */
+    /** [id, level] pairs, best first. Islands nobody belongs to any more (everyone started a new one) are left out. */
     static List<int[]> ranking(MinecraftServer server) {
         CompoundTag all = server.getCommandStorage().get(LEVELS).getCompoundOrEmpty("islands");
+        Set<Integer> live = new HashSet<>();
+        Objective plot = server.getScoreboard().getObjective("cs_plot");
+        if (plot != null)
+            for (PlayerScoreEntry e : server.getScoreboard().listPlayerScores(plot))
+                if (!e.owner().startsWith("#")) live.add(e.value());
         List<int[]> out = new ArrayList<>();
         for (String k : all.keySet()) {
             int lvl = all.getCompoundOrEmpty(k).getIntOr("level", 0);
-            try { if (lvl > 0) out.add(new int[]{Integer.parseInt(k), lvl}); } catch (NumberFormatException ignored) {}
+            try {
+                int id = Integer.parseInt(k);
+                if (lvl > 0 && live.contains(id)) out.add(new int[]{id, lvl});
+            } catch (NumberFormatException ignored) {}
         }
         out.sort((a, b) -> Integer.compare(b[1], a[1]));
         return out;

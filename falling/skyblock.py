@@ -456,6 +456,7 @@ data modify storage {NS}:menus islands set value {snbt(MENUS["islands"])}
 data modify storage {NS}:menus challenges set value {snbt(MENUS["challenges"])}
 data modify storage {NS}:eco cfg set value {snbt(ECO)}
 execute unless score #hubv cs_cfg matches 2.. run function {NS}:hub
+execute if score #hubv cs_cfg matches 2 run function {NS}:hub_v3
 # respawn the merchants once the hub's entities are loaded (at startup they load after this runs)
 schedule function {NS}:npcs 100t replace
 execute unless data storage {NS}:d plots run function {NS}:setup
@@ -607,7 +608,7 @@ def hub_build():
         for cx_, cz_ in ((-1, -1), (-1, 1), (1, -1), (1, 1)):
             c.append(f"fill {sx + cx_} {Y + 1} {sz + cz_} {sx + cx_} {Y + 3} {sz + cz_} minecraft:spruce_fence")
         c += [f"fill {sx - 1} {Y + 4} {sz - 1} {sx + 1} {Y + 4} {sz + 1} minecraft:{wool}_wool",
-              f"setblock {sx} {Y + 5} {sz} minecraft:{wool}_carpet", f"setblock {sx} {Y + 3} {sz} minecraft:lantern[hanging=true]"]
+              f"setblock {sx} {Y + 5} {sz} minecraft:{wool}_carpet", f"setblock {sx} {Y + 3} {sz} minecraft:light[level=13]"]
     # the portal to your island
     c += portal_blocks(0, Y, HUB_PORTAL_Z, platform=False)
     c.append(label(0.5, Y + 5.6, HUB_PORTAL_Z + 0.5, snbt({"text": "Your Island", "color": "light_purple", "bold": True,
@@ -620,7 +621,7 @@ def hub_build():
           label(7.5, Y + 3.4, -14.5, snbt({"text": "Minions\n", "color": "aqua", "bold": True, "extra": [
               txt("Craft one: 8 of a resource around a wooden pickaxe.\nPlace it on your island; it gathers while you're offline.\nRight-click it to collect, upgrade (I to V) or pick it up.", "gray", bold=False)]}),
                 0.8, yaw=0)]
-    c += [f"setworldspawn 0 {Y + 1} 5", "scoreboard players set #hubv cs_cfg 2"]
+    c += [f"setworldspawn 0 {Y + 1} 5", "scoreboard players set #hubv cs_cfg 3"]
     return c
 
 def portal_blocks(x, y, z, platform=True):
@@ -644,6 +645,8 @@ def portal_blocks(x, y, z, platform=True):
 STALLS = [("farming", 12, -5, "lime", "farmer"), ("mining", 12, 5, "light_gray", "toolsmith"), ("foraging", -12, -5, "brown", "fletcher"),
           ("combat", -12, 5, "red", "weaponsmith"), ("supplies", 0, 14, "orange", "mason")]
 fn("hub", "\n".join(hub_build()))
+# hub v3: the stall lanterns sat where the merchants' labels go
+fn("hub_v3", "\n".join(f"setblock {sx} {Y + 3} {sz} minecraft:light[level=13]" for _k, sx, sz, _w, _p in STALLS) + "\nscoreboard players set #hubv cs_cfg 3")
 import math as _m
 npc_lines = [f"kill @e[type=minecraft:villager,tag=cs_npc]", f"kill @e[type=minecraft:text_display,tag=cs_npcl]"]
 shop_names = {k: (n, npc) for k, n, ic, npc, items in SHOP}
@@ -656,7 +659,7 @@ for key, sx, sz, wool, prof in STALLS:
         "VillagerData": {"profession": f"minecraft:{prof}", "level": 5, "type": "minecraft:plains"}, "Offers": {"Recipes": []}})[:-1]
         + f",Rotation:[{yaw}f,0f]}}")
     # one two-line label instead of the villager's own name tag
-    npc_lines.append(label(sx + 0.5, Y + 2.35, sz + 0.5, snbt({"text": who, "color": "gold", "bold": True,
+    npc_lines.append(label(sx + 0.5, Y + 3.15, sz + 0.5, snbt({"text": who, "color": "gold", "bold": True,
                      "extra": [txt(f"\n{cat} · click to trade", "gray", bold=False)]}), 0.7, bill="center", tag="cs_npcl"))
 fn("npcs", "\n".join(npc_lines))
 
@@ -983,6 +986,7 @@ data modify storage {NS}:d plots append from storage {NS}:d new
 function {NS}:plot/build with storage {NS}:d new
 function {NS}:plot/nbuild with storage {NS}:d new
 function {NS}:p/home
+island refreshboard
 tellraw @s [{{text:"Welcome to your island! ",color:"gold",bold:1b}},{{text:"Check the chest, then get a cobblestone generator going.",color:"yellow",bold:0b}}]
 tellraw @s {{text:"Esc → Island Menu for challenges, your island level and invites. The sky drops the odd gift while you're online.",color:"gray"}}
 """)

@@ -9,7 +9,7 @@ Skyblock on `Falling01` (Fabric 26.2, Velocity name `skyblock`, was `falling`). 
   already in `world/datapacks`.
 - `mod/` is the `crispy_skyblock` server mod (`crispy-skyblock-2.0.0.jar`, build with
   `mod/build.sh <lib-dir> <javac>`, same lib dir as `pvp/spawnmod` plus Fabric API's `fabric-events-interaction-v0`
-  unpacked into `fa/META-INF/jars/`). Now `crispy-skyblock-2.2.0.jar`.
+  unpacked into `fa/META-INF/jars/`). Now `crispy-skyblock-2.2.1.jar`.
 
 ## How it plays
 
@@ -47,7 +47,7 @@ Skyblock on `Falling01` (Fabric 26.2, Velocity name `skyblock`, was `falling`). 
   emerald, netherite blocks, beacons and the like more; fluids, plants, bedrock, spawners and portal frames nothing);
   100 points = 1 level. Once a minute per island on demand, and every 5 minutes for islands with someone online. It
   sets `cs_lvl` for the island and its members, keeps results in storage `crispy_skyblock:levels`, and rewrites the
-  Top Islands board in the hub (the text display tagged `cs_top`). `/island top` lists the top 10.
+  Top Islands board in the hub (the text display tagged `cs_top`). `/island top` lists the top 10. Islands nobody belongs to any more are left off, and the board refreshes when someone starts a new island.
 - **Menu.** Esc → Island Menu (a dialog): go home, challenges, level, top, invite, accept, info, hub, how to play, start
   a new island (wipes inventory, ender chest and XP; then the island picker opens; once per 10 min).
 
