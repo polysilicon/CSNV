@@ -318,6 +318,89 @@ for i, (key, name, icon, needs, rewards, xp, tier) in enumerate(CH):
     fn(f"ch/{key}", "\n".join(lines))
 fn("ch/reopen", "execute as @s run island challenges")
 
+# ======================================================================= economy and minions (read by the crispy_skyblock mod)
+# Shop: per category, (item, buy price, sell price) in coins; 0 = can't buy / can't sell at the merchant.
+SHOP = [
+    ("farming", "Farming", "golden_hoe", "Farm Merchant", [
+        ("wheat", 0, 2), ("wheat_seeds", 5, 0), ("carrot", 8, 1), ("potato", 8, 1), ("beetroot", 0, 1), ("beetroot_seeds", 6, 0),
+        ("sugar_cane", 10, 2), ("cactus", 10, 1), ("melon_slice", 0, 1), ("melon_seeds", 20, 0), ("pumpkin", 0, 4),
+        ("pumpkin_seeds", 20, 0), ("cocoa_beans", 10, 1), ("sweet_berries", 10, 1), ("nether_wart", 30, 2), ("egg", 0, 1),
+        ("bone_meal", 6, 0), ("brown_mushroom", 15, 1), ("red_mushroom", 15, 1), ("hay_block", 0, 18)]),
+    ("mining", "Mining", "iron_pickaxe", "Mine Merchant", [
+        ("cobblestone", 3, 1), ("stone", 0, 2), ("coal", 0, 2), ("raw_iron", 0, 3), ("iron_ingot", 12, 3), ("raw_gold", 0, 4),
+        ("gold_ingot", 16, 4), ("diamond", 0, 8), ("lapis_lazuli", 0, 1), ("redstone", 0, 1), ("emerald", 0, 6),
+        ("raw_copper", 0, 1), ("copper_ingot", 0, 2), ("quartz", 0, 2), ("obsidian", 0, 5), ("netherrack", 0, 1),
+        ("glowstone_dust", 0, 2), ("amethyst_shard", 0, 3)]),
+    ("foraging", "Foraging", "iron_axe", "Lumber Merchant", [
+        ("oak_log", 0, 2), ("birch_log", 0, 2), ("spruce_log", 0, 2), ("jungle_log", 0, 2), ("acacia_log", 0, 2),
+        ("dark_oak_log", 0, 2), ("cherry_log", 0, 2), ("mangrove_log", 0, 2), ("oak_sapling", 15, 0), ("birch_sapling", 15, 0),
+        ("spruce_sapling", 15, 0), ("jungle_sapling", 15, 0), ("acacia_sapling", 15, 0), ("dark_oak_sapling", 15, 0),
+        ("cherry_sapling", 25, 0), ("mangrove_propagule", 25, 0), ("apple", 0, 2), ("stick", 0, 0)]),
+    ("combat", "Combat", "iron_sword", "Monster Hunter", [
+        ("rotten_flesh", 0, 1), ("bone", 0, 1), ("arrow", 2, 1), ("string", 0, 1), ("spider_eye", 0, 2), ("gunpowder", 0, 3),
+        ("ender_pearl", 0, 7), ("slime_ball", 0, 3), ("blaze_rod", 0, 9), ("ghast_tear", 0, 15), ("magma_cream", 0, 4),
+        ("phantom_membrane", 0, 5), ("chicken", 0, 2), ("feather", 0, 1), ("beef", 0, 2), ("leather", 0, 2), ("mutton", 0, 2),
+        ("white_wool", 6, 2), ("porkchop", 0, 2), ("rabbit_hide", 0, 2)]),
+    ("supplies", "Builder & Supplies", "bricks", "Builder", [
+        ("dirt", 10, 0), ("grass_block", 20, 0), ("sand", 8, 2), ("red_sand", 10, 2), ("gravel", 8, 2), ("clay_ball", 6, 2),
+        ("glass", 6, 0), ("ice", 20, 0), ("lava_bucket", 200, 0), ("water_bucket", 60, 0), ("torch", 2, 0), ("oak_planks", 2, 0),
+        ("stone_bricks", 4, 0), ("bricks", 6, 0), ("lantern", 20, 0), ("chest", 15, 0), ("hopper", 120, 0),
+        ("cow_spawn_egg", 500, 0), ("pig_spawn_egg", 500, 0), ("sheep_spawn_egg", 500, 0), ("chicken_spawn_egg", 300, 0)]),
+]
+# Minions: key, name, head (block/item on its head), tool, leather colour, drops per action [(item, n)], recipe item
+MINIONS = [
+    ("cobblestone", "Cobblestone", "cobblestone", "wooden_pickaxe", 0x8A8A8A, [("cobblestone", 1)], "cobblestone"),
+    ("coal", "Coal", "coal_ore", "stone_pickaxe", 0x303030, [("coal", 1)], "coal"),
+    ("iron", "Iron", "iron_ore", "stone_pickaxe", 0xD8AF93, [("raw_iron", 1)], "iron_ingot"),
+    ("gold", "Gold", "gold_ore", "iron_pickaxe", 0xF5CC27, [("raw_gold", 1)], "gold_ingot"),
+    ("diamond", "Diamond", "diamond_ore", "iron_pickaxe", 0x4AEDD9, [("diamond", 1)], "diamond"),
+    ("lapis", "Lapis", "lapis_ore", "stone_pickaxe", 0x1E3FAD, [("lapis_lazuli", 2)], "lapis_lazuli"),
+    ("redstone", "Redstone", "redstone_ore", "iron_pickaxe", 0xB01010, [("redstone", 2)], "redstone"),
+    ("sand", "Sand", "sand", "wooden_shovel", 0xDBCFA3, [("sand", 1)], "sand"),
+    ("clay", "Clay", "clay", "wooden_shovel", 0xA0A6B4, [("clay_ball", 2)], "clay_ball"),
+    ("wheat", "Wheat", "hay_block", "wooden_hoe", 0xDCBB5A, [("wheat", 1), ("wheat_seeds", 1)], "wheat"),
+    ("carrot", "Carrot", "carrot", "wooden_hoe", 0xF08A1E, [("carrot", 2)], "carrot"),
+    ("potato", "Potato", "potato", "wooden_hoe", 0xC8A44E, [("potato", 2)], "potato"),
+    ("cane", "Sugar Cane", "sugar_cane", "wooden_hoe", 0x8DBA54, [("sugar_cane", 1)], "sugar_cane"),
+    ("melon", "Melon", "melon", "wooden_hoe", 0x6E9A2A, [("melon_slice", 3)], "melon_slice"),
+    ("pumpkin", "Pumpkin", "pumpkin", "wooden_hoe", 0xE38A1D, [("pumpkin", 1)], "pumpkin"),
+    ("oak", "Oak", "oak_log", "wooden_axe", 0x6B5434, [("oak_log", 1)], "oak_log"),
+    ("birch", "Birch", "birch_log", "wooden_axe", 0xD7CB8D, [("birch_log", 1)], "birch_log"),
+    ("chicken", "Chicken", "white_wool", "wooden_sword", 0xF0F0F0, [("chicken", 1), ("feather", 1)], "chicken"),
+    ("cow", "Cow", "brown_mushroom_block", "wooden_sword", 0x443626, [("beef", 1), ("leather", 1)], "beef"),
+    ("sheep", "Sheep", "white_wool", "shears", 0xE9ECEC, [("white_wool", 1), ("mutton", 1)], "white_wool"),
+    ("zombie", "Zombie", "zombie_head", "wooden_sword", 0x426E35, [("rotten_flesh", 1)], "rotten_flesh"),
+    ("skeleton", "Skeleton", "skeleton_skull", "bow", 0xBCBCBC, [("bone", 1), ("arrow", 1)], "bone"),
+    ("spider", "Spider", "cobweb", "wooden_sword", 0x332A23, [("string", 1), ("spider_eye", 1)], "string"),
+]
+ROMAN = ["", "I", "II", "III", "IV", "V"]
+# seconds per action, storage (items), upgrade cost from the tier below (coins, items of the minion's recipe item)
+TIERS = [(30, 64, 0, 0), (25, 128, 500, 64), (20, 192, 2000, 160), (15, 256, 8000, 320), (10, 384, 25000, 640)]
+MINION_BASE_LIMIT, MINION_MAX_LIMIT, LEVELS_PER_MINION = 5, 15, 20
+ECO = {
+    "shop": [{"key": k, "name": n, "icon": f"minecraft:{ic}", "npc": npc,
+              "items": [{"id": f"minecraft:{i}", "buy": b, "sell": sv} for i, b, sv in items]} for k, n, ic, npc, items in SHOP],
+    "minions": [{"key": k, "name": n, "head": f"minecraft:{h}", "tool": f"minecraft:{t}", "color": c, "recipe": f"minecraft:{r}",
+                 "drops": [{"id": f"minecraft:{i}", "n": q} for i, q in d]} for k, n, h, t, c, d, r in MINIONS],
+    "tiers": [{"secs": a, "cap": b, "coins": c, "items": d} for a, b, c, d in TIERS],
+    "limit": {"base": MINION_BASE_LIMIT, "max": MINION_MAX_LIMIT, "per_levels": LEVELS_PER_MINION},
+}
+def minion_item(key, name, head, tier=1):
+    return {"id": "minecraft:armor_stand", "count": 1, "components": {
+        "minecraft:custom_name": txt(f"{name} Minion {ROMAN[tier]}", "aqua", bold=True),
+        "minecraft:lore": [txt("Place it on your island. It gathers", "gray"), txt(f"{name.lower()} on its own, even while", "gray"),
+                           txt("you're offline, until its storage is full.", "gray"), txt(""),
+                           txt(f"Tier {ROMAN[tier]}: one action every {TIERS[tier - 1][0]}s, holds {TIERS[tier - 1][1]}", "dark_aqua"),
+                           txt("Right-click it to collect or upgrade.", "yellow")],
+        "minecraft:item_model": f"minecraft:{head}",
+        "minecraft:enchantment_glint_override": True,
+        "minecraft:max_stack_size": 1,
+        "minecraft:custom_data": {"cs_minion": {"type": key, "tier": tier}}}}
+for k, n, h, t, c, d, r in MINIONS:
+    tool_ing = "minecraft:wooden_pickaxe"
+    js(f"data/{NS}/recipe/minion_{k}.json", {"type": "minecraft:crafting_shaped", "category": "misc", "group": "crispy_minion",
+        "pattern": ["###", "#P#", "###"], "key": {"#": f"minecraft:{r}", "P": tool_ing}, "result": minion_item(k, n, h)})
+
 # ======================================================================= menus (read by the crispy_skyblock mod)
 GRID_SLOTS = [10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43]
 DIFF_COL = {"Easy": "green", "Normal": "yellow", "Hard": "red"}
@@ -363,6 +446,7 @@ scoreboard objectives add cs_nwas dummy
 scoreboard objectives add cs_nage dummy
 scoreboard objectives add cs_npend dummy
 scoreboard objectives add cs_lvl dummy
+scoreboard objectives add cs_coins dummy
 {CH_OBJS}
 scoreboard players set #8 cs_tmp 8
 scoreboard players set #64 cs_tmp {COLS}
@@ -370,6 +454,8 @@ scoreboard players set #grid cs_tmp {GRID}
 scoreboard players set #60 cs_tmp 60
 data modify storage {NS}:menus islands set value {snbt(MENUS["islands"])}
 data modify storage {NS}:menus challenges set value {snbt(MENUS["challenges"])}
+data modify storage {NS}:eco cfg set value {snbt(ECO)}
+function {NS}:npcs
 execute unless data storage {NS}:d plots run function {NS}:setup
 gamerule minecraft:respawn_radius 0
 gamerule minecraft:keep_inventory false
@@ -426,6 +512,24 @@ hub += [
           1.0, yaw=90, tag="cs_top"),
 ]
 fn("hub", "\n".join(hub))
+
+# merchants: villagers that don't move; the mod opens the shop category named in their cs_shop_<key> tag when clicked
+NPCS = [("farming", -9, -3, -90, "farmer"), ("mining", 9, -3, 90, "toolsmith"), ("foraging", -9, 4, -90, "fletcher"),
+        ("combat", 9, 4, 90, "weaponsmith"), ("supplies", 0, 9, 180, "mason")]
+npc_lines = [f"kill @e[type=minecraft:villager,tag=cs_npc]", f"kill @e[type=minecraft:text_display,tag=cs_npcl]"]
+shop_names = {k: (n, npc) for k, n, ic, npc, items in SHOP}
+for key, x, z, yaw, prof in NPCS:
+    cat, who = shop_names[key]
+    npc_lines.append(f"summon minecraft:villager {x + 0.5} {Y+1} {z + 0.5} " + snbt({
+        "NoAI": True, "Invulnerable": True, "Silent": True, "PersistenceRequired": True, "Rotation": [float(yaw), 0.0],
+        "Tags": [NS, "cs_npc", f"cs_shop_{key}"], "CustomName": txt(who, "gold", bold=True), "CustomNameVisible": True,
+        "VillagerData": {"profession": f"minecraft:{prof}", "level": 5, "type": "minecraft:plains"}, "Offers": {"Recipes": []}}).replace("[-90.0,0.0]", "[-90.0f,0.0f]").replace("[90.0,0.0]", "[90.0f,0.0f]").replace("[180.0,0.0]", "[180.0f,0.0f]"))
+    npc_lines.append(label(x + 0.5, Y + 3.25, z + 0.5, snbt(txt(cat + " shop", "yellow")), 0.7, bill="center", tag="cs_npcl"))
+npc_lines.append(label(-10.9, Y + 3.0, 0.5, snbt({"text": "Minions\n", "color": "aqua", "bold": True, "extra": [
+    txt("Craft one: 8 of a resource around a wooden pickaxe.\nPlace it on your island; it gathers while you're offline.\nRight-click it to collect, upgrade (I to V) or pick it up.", "gray", bold=False)]}),
+    0.8, yaw=-90, tag="cs_npcl"))
+fn("npcs", "\n".join(npc_lines))
+
 
 # ======================================================================= tick
 fn("tick", f"""
@@ -856,6 +960,8 @@ tellraw @s {{text:"• Use the lava and ice from your chest to build a cobblesto
 tellraw @s {{text:"• The sky still drops gifts while you're online: supply crates, meteors full of ore, animals, dungeons and later an End portal.",color:"yellow"}}
 tellraw @s {{text:"• Build a Nether portal to reach your island's own Nether: fortress wrecks bring blaze spawners.",color:"yellow"}}
 tellraw @s {{text:"• /island challenges: hand in items for rewards. /island level: score your island. /island top: the best islands.",color:"yellow"}}
+tellraw @s {{text:"• Coins: sell what you gather to the merchants in the hub (right-click them). /coins shows your purse, /pay sends coins.",color:"yellow"}}
+tellraw @s {{text:"• Minions: craft one with 8 of a resource around a wooden pickaxe, place it on your island and it gathers for you, even offline. Right-click it to collect or upgrade.",color:"yellow"}}
 tellraw @s {{text:"• Esc → Island Menu: go home, invite a player (or /invite <name>), accept invites, start over.",color:"yellow"}}
 """)
 

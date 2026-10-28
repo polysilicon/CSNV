@@ -3,6 +3,10 @@ package crispy.falling;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.event.player.UseEntityCallback;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
@@ -20,7 +24,8 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
  * Commands for the crispy_skyblock datapack (Skyblock on Falling01):
  * /island (alias /is) opens the Island Menu; /island choose the starter island picker; /island challenges (or
  * /challenges) the challenge menu; /island level works out your island's level; /island top lists the best islands;
- * /invite <player> (or /island invite <player>) invites someone by name.
+ * /invite <player> (or /island invite <player>) invites someone by name. Also coins and the merchants' shop
+ * (Economy, Shop), minions (Minions) and the per-player sidebar (Sidebar).
  * Menus are chest GUIs defined by the datapack in storage crispy_skyblock:menus (SkyMenus); levels are counted from
  * the blocks in the island's plot (IslandLevels).
  */
@@ -30,7 +35,21 @@ public class SkyblockMod implements ModInitializer {
     @Override
     public void onInitialize() {
         ServerTickEvents.END_SERVER_TICK.register(IslandLevels::onTick);
+        ServerTickEvents.END_SERVER_TICK.register(Minions::onTick);
+        ServerTickEvents.END_SERVER_TICK.register(Sidebar::onTick);
+        UseBlockCallback.EVENT.register(Minions::onUseBlock);
+        UseEntityCallback.EVENT.register((player, world, hand, entity, hit) -> {
+            // merchants: villagers tagged cs_npc + cs_shop_<category> open that shop instead of trading
+            if (entity.entityTags().contains("cs_npc")) {
+                if (hand == InteractionHand.MAIN_HAND && player instanceof ServerPlayer p)
+                    for (String t : entity.entityTags())
+                        if (t.startsWith("cs_shop_")) Shop.open(p.level().getServer(), p, t.substring(8));
+                return InteractionResult.SUCCESS;
+            }
+            return Minions.onUseEntity(player, world, hand, entity);
+        });
         CommandRegistrationCallback.EVENT.register((d, ctx, sel) -> {
+            Economy.register(d);
             d.register(Commands.literal("invite").then(Commands.argument("player", EntityArgument.player())
                     .executes(c -> invite(c.getSource(), EntityArgument.getPlayer(c, "player")))));
             d.register(Commands.literal("challenges")

@@ -8,7 +8,8 @@ Skyblock on `Falling01` (Fabric 26.2, Velocity name `skyblock`, was `falling`). 
   it zipped). Its dimension files make the overworld and the Nether void, so a new world must be created with the pack
   already in `world/datapacks`.
 - `mod/` is the `crispy_skyblock` server mod (`crispy-skyblock-2.0.0.jar`, build with
-  `mod/build.sh <lib-dir> <javac>`, same lib dir as `pvp/spawnmod`).
+  `mod/build.sh <lib-dir> <javac>`, same lib dir as `pvp/spawnmod` plus Fabric API's `fabric-events-interaction-v0`
+  unpacked into `fa/META-INF/jars/`). Now `crispy-skyblock-2.1.0.jar`.
 
 ## How it plays
 
@@ -40,6 +41,27 @@ Skyblock on `Falling01` (Fabric 26.2, Velocity name `skyblock`, was `falling`). 
   Top Islands board in the hub (the text display tagged `cs_top`). `/island top` lists the top 10.
 - **Menu.** Esc → Island Menu (a dialog): go home, challenges, level, top, invite, accept, info, hub, how to play, start
   a new island (wipes inventory, ender chest and XP; then the island picker opens; once per 10 min).
+
+## Economy and minions (2.1.0)
+
+Hypixel-style, vanilla only. Prices, shop categories, minion types and tiers are defined in `skyblock.py` (`SHOP`,
+`MINIONS`, `TIERS`) and loaded into storage `crispy_skyblock:eco cfg`, which the mod reads.
+
+- **Coins** are the `cs_coins` score. `/coins` (`/bal`, `/purse`), `/coins top`, `/pay <player> <amount>`;
+  staff: `/coins give <player> <amount>` (negative takes).
+- **Merchants**: five villagers in the hub (tagged `cs_npc` + `cs_shop_<category>`, respawned by `crispy_skyblock:npcs`
+  on every load): Farm Merchant, Mine Merchant, Lumber Merchant, Monster Hunter, Builder. Clicking one opens that
+  category of the shop (tabs switch categories). Left-click buys 1, shift-left a stack; right-click sells 1,
+  shift-right sells all of that item; **Sell everything** sells every sellable item. Only plain items are traded.
+- **Minions**: 23 types (ores, crops, logs, mob drops). Craft Tier I with 8 of the resource around a wooden pickaxe
+  (datapack recipes; the result is an armor stand item with `custom_data {cs_minion:{type,tier}}` and the resource's
+  model). Place it on your own island: a small dyed armor stand with the resource as its head and a tool in hand.
+  It does one action per tier interval (30/25/20/15/10 s), storing up to 64/128/192/256/384 items, on real time, so it
+  keeps going while you're offline until it's full. Right-click (island members or staff): collect all, upgrade
+  (coins + the recipe item: 500+64, 2,000+160, 8,000+320, 25,000+640), or pick it up. Each island gets 5 minions,
+  +1 per 20 island levels, up to 15. Records: storage `crispy_skyblock:minions`.
+- **Sidebar**: every player gets a SKYBLOCK sidebar (sent as packets only to them): location, purse, island level and
+  minions.
 
 ## Mod commands
 
