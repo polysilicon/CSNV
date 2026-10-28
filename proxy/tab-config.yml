@@ -175,7 +175,7 @@ placeholder-output-replacements:
     "anarchy": "Anarchy"
     "Vanilla": "Vanilla"
     "factions": "Factions"
-    "falling": "Skyblock"
+    "skyblock": "Skyblock"
     "multiverse": "Multiverse"
 
 # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Conditional-placeholders

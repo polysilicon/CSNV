@@ -3,7 +3,7 @@
 ## Network tab list: TAB 6.2.0 (NEZNAMY)
 - `plugins/TAB-6.2.0.jar` (Modrinth, sha512 checked). Live config: `plugins/tab/config.yml` and `groups.yml`
   (copies here as `tab-config.yml` / `tab-groups.yml`; the generated originals are kept as `*.orig` next to them).
-- Velocity server names (`/server <name>`): `lobby`, `anarchy` (was `og`), `Vanilla`, `factions`, `falling` (shown as Skyblock), `multiverse`
+- Velocity server names (`/server <name>`): `lobby`, `anarchy` (was `og`), `Vanilla`, `factions`, `skyblock` (was `falling`), `multiverse`
   (was `pvp`). Renamed on 2026-10-28; DeluxeHub's selector, CrispyLobby (`proxy:`), TAB's `%server%` names and
   CrispyTags' combat-tag lookup were updated with them.
 - Global player list: everyone on Lobby, Factions, Anarchy, Vanilla, Skyblock and Multiverse shows in one tab list,

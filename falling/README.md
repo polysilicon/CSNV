@@ -1,6 +1,6 @@
 # Crispy Skyblock
 
-Skyblock on `Falling01` (Fabric 26.2, Velocity name `falling`, shown as **Skyblock**). It replaced Crispy Falling on
+Skyblock on `Falling01` (Fabric 26.2, Velocity name `skyblock`, was `falling`). It replaced Crispy Falling on
 2026-10-28 with a fresh world. The old world is kept on the instance as `world_falling_backup`; `gen.py` is its retired
 `crispy_falling` datapack.
 

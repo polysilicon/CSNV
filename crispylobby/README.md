@@ -55,7 +55,7 @@ A vote server's key names it in saved data (pending rewards); `proxy:` is its Ve
 | Factions | `vote test %player% CrispyAnarchy`: CrispyFactions' normal vote reward ($5,000, a Crispy Case, a bonus key every 5th vote). It also counts toward Factions' vote party. |
 | Anarchy (key `og`, Velocity `anarchy`) | 3 diamonds, 2 golden apples, 5 levels |
 | Vanilla | no reward (trails only) |
-| Skyblock (key `falling`) | 4 iron, 16 bone meal, 2 saplings |
+| Skyblock (key `falling`, Velocity `skyblock`) | 4 iron, 16 bone meal, 2 saplings |
 | PvP | no item reward; it only gets trails |
 
 Edit `votes.servers` in the live config, then run `/vote reload`.

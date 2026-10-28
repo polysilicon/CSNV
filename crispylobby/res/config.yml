@@ -73,6 +73,7 @@ votes:
       commands: []            # no vote rewards on Vanilla (trails only)
     falling:
       label: "&b&lCrispy Skyblock"
+      proxy: skyblock
       icon: OAK_SAPLING
       instance: Falling01
       reward: ["&f4 Iron Ingots", "&f16 Bone Meal", "&a2 Saplings"]
