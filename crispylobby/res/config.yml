@@ -61,6 +61,7 @@ votes:
       commands: ["vote test %player% CrispyAnarchy"]   # CrispyFactions' own vote reward (also counts toward its vote party)
     og:
       label: "&d&lCrispy Anarchy"
+      proxy: anarchy          # Velocity server name (defaults to the key); the key also names saved pending rewards
       icon: OBSIDIAN
       instance: CrispyAnarchy01
       reward: ["&b3 Diamonds", "&62 Golden Apples", "&a5 XP levels"]
@@ -78,6 +79,7 @@ votes:
       commands: ["give %player% minecraft:iron_ingot 4", "give %player% minecraft:bone_meal 16", "give %player% minecraft:oak_sapling 2"]
     pvp:
       label: "&d&lMultiverse"
+      proxy: multiverse
       icon: NETHERITE_SWORD
       instance: CrispyPvP01
       commands: []

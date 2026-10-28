@@ -54,7 +54,8 @@ public class Votes implements Listener {
         String tag, color, chat;
         String trail;   // pre-1.5 walking trails; refunded and cleared on load
     }
-    record Server(String key, String label, Material icon, Rcon rcon, List<String> reward, List<String> commands) {}
+    /** A vote-reward server. key names it here and in saved data (pending rewards); proxy is its Velocity name. */
+    record Server(String key, String label, Material icon, Rcon rcon, List<String> reward, List<String> commands, String proxy) {}
     /** A tag costs vote points, or (earned tags) has a requirement instead: an advancement, a network stat milestone
      *  (stat + min) or a ranking (stat + top: wearable only while you hold it). stat "VOTES" = this month's votes.
      *  Mastery tags (score + min) unlock at that much mastery XP on a PvP objective (pvp.mx<kit id>); they have their
@@ -136,7 +137,7 @@ public class Votes implements Listener {
             ConfigurationSection s = ss.getConfigurationSection(k);
             servers.put(k, new Server(k, s.getString("label", k), mat(s.getString("icon"), Material.GRASS_BLOCK),
                     new Rcon(k, root.resolve(s.getString("instance", k)).resolve("Minecraft/server.properties")),
-                    s.getStringList("reward"), s.getStringList("commands")));
+                    s.getStringList("reward"), s.getStringList("commands"), s.getString("proxy", k)));
         }
         ConfigurationSection ts = plugin.getConfig().getConfigurationSection("cosmetics.tags");
         if (ts != null) for (String k : ts.getKeys(false)) {
@@ -279,10 +280,13 @@ public class Votes implements Listener {
         open(p);
     }
 
+    /** Send the player to a vote server, by its key here or its Velocity name. */
     void connect(Player p, String server) {
-        if (!servers.containsKey(server)) return;
+        Server s = servers.containsKey(server) ? servers.get(server)
+                : servers.values().stream().filter(x -> x.proxy().equalsIgnoreCase(server)).findFirst().orElse(null);
+        if (s == null) return;
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("Connect"); out.writeUTF(server);
+        out.writeUTF("Connect"); out.writeUTF(s.proxy());
         p.sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
     }
 

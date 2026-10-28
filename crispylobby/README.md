@@ -47,10 +47,13 @@ A claimed reward waits in `plugins/CrispyLobby/votes.json`. Every 5 s the lobby 
 
 Defaults:
 
+A vote server's key names it in saved data (pending rewards); `proxy:` is its Velocity name when that differs
+(`og` -> `anarchy`, `pvp` -> `multiverse`, 1.12.1). "Go now" and the start-here menu connect through it.
+
 | Server | Reward |
 |---|---|
 | Factions | `vote test %player% CrispyAnarchy`: CrispyFactions' normal vote reward ($5,000, a Crispy Case, a bonus key every 5th vote). It also counts toward Factions' vote party. |
-| Anarchy (`og`) | 3 diamonds, 2 golden apples, 5 levels |
+| Anarchy (key `og`, Velocity `anarchy`) | 3 diamonds, 2 golden apples, 5 levels |
 | Vanilla | no reward (trails only) |
 | Falling | 4 iron, 16 bone meal, 2 saplings |
 | PvP | no item reward; it only gets trails |

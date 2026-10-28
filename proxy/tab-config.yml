@@ -172,11 +172,11 @@ placeholders:
 placeholder-output-replacements:
   "%server%":
     "lobby": "Lobby"
-    "og": "Anarchy"
+    "anarchy": "Anarchy"
     "Vanilla": "Vanilla"
     "factions": "Factions"
     "falling": "Falling"
-    "pvp": "Multiverse"
+    "multiverse": "Multiverse"
 
 # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Conditional-placeholders
 conditions:

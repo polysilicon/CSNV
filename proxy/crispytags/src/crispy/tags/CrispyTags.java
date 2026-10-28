@@ -40,7 +40,7 @@ public class CrispyTags {
     static final Path INSTANCES = Path.of(System.getProperty("crispytags.instances", "/AMPStorage/.ampdata/instances"));
     /** Velocity server name -> AMP instance; each writes Minecraft/crispy_combat.json (name -> epoch ms when out of
      *  combat): the crispy_chattags mod on the Fabric servers, CrispyFactions' combat tag on Factions. */
-    static final Map<String, String> INSTANCE = Map.of("og", "CrispyAnarchy01", "vanilla", "Vanilla01", "pvp", "CrispyPvP01",
+    static final Map<String, String> INSTANCE = Map.of("anarchy", "CrispyAnarchy01", "vanilla", "Vanilla01", "multiverse", "CrispyPvP01",
             "factions", "Factions01", "falling", "Falling01");
     static final MinecraftChannelIdentifier CHANNEL = MinecraftChannelIdentifier.from("crispy:vote");
     final ProxyServer proxy;

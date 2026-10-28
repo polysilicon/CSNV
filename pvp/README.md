@@ -2,10 +2,11 @@
 
 **Shown to players as "Multiverse"** (36 characters from your favourite shows and games · PvP · Duels · Outbreak):
 the hub selector (DeluxeHub `menus/serverselector.yml` on the lobby), the welcome menu and stats (CrispyLobby
-`config.yml`), the tab list (`proxy/tab-config.yml`) and the spawn hologram here. Internally it's still `pvp`: the
-Velocity server name, the `CrispyPvP01` instance, this folder and the `pvp:` datapack namespace.
+`config.yml`), the tab list (`proxy/tab-config.yml`) and the spawn hologram here. Its Velocity server name is `multiverse`
+(was `pvp` until CrispyLobby 1.12.1). Internally it's still `pvp`: the `CrispyPvP01` instance, this folder, the `pvp:`
+datapack namespace and its vote-server key in the lobby (`proxy: multiverse`).
 
-Kit/arena PvP server (AMP instance `CrispyPvP01`, Fabric 26.2, Velocity name `pvp`). It replaces Bending, whose
+Kit/arena PvP server (AMP instance `CrispyPvP01`, Fabric 26.2, Velocity name `multiverse`). It replaces Bending, whose
 instance was deleted after a backup to `/AMPStorage/backups/Bending01-20261019.tgz`.
 
 ## Instance
