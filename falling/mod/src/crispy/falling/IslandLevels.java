@@ -193,7 +193,7 @@ public final class IslandLevels {
         }
         json.append("]");
         server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(),
-                "execute in minecraft:overworld run data modify entity @e[type=minecraft:text_display,tag=cs_top,limit=1] text set value " + json);
+                "execute in minecraft:overworld run data modify entity @e[type=minecraft:text_display,tag=cs_top] text set value " + json);
     }
 
     /** Every 5 minutes: recount the islands of everyone online in the overworld. */

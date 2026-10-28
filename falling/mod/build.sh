@@ -5,5 +5,5 @@ CP=$(find "$L" -name "*.jar" | tr '\n' ':')
 rm -rf "$D/out" && mkdir -p "$D/out"
 "$JAVAC" --release 25 -cp "$CP" -d "$D/out" $(find "$D/src" -name "*.java")
 cp "$D/res/fabric.mod.json" "$D/out/"
-(cd "$D/out" && jar cf "$D/crispy-skyblock-2.2.1.jar" .)
-echo "built $D/crispy-skyblock-2.2.1.jar"
+(cd "$D/out" && jar cf "$D/crispy-skyblock-2.2.2.jar" .)
+echo "built $D/crispy-skyblock-2.2.2.jar"
