@@ -25,7 +25,7 @@ public final class Sidebar {
     private Sidebar() {}
 
     static final String OBJ = "cs_side";
-    static final int HUB = 14, GRID = 1024, COLS = 64;
+    static final int HUB = 50, GRID = 1024, COLS = 64;
     private static final Map<ServerPlayer, List<String>> shown = new WeakHashMap<>();
     private static int tick;
 

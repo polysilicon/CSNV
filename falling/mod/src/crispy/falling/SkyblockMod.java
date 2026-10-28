@@ -3,6 +3,7 @@ package crispy.falling;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.minecraft.world.InteractionHand;
@@ -25,7 +26,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
  * /island (alias /is) opens the Island Menu; /island choose the starter island picker; /island challenges (or
  * /challenges) the challenge menu; /island level works out your island's level; /island top lists the best islands;
  * /invite <player> (or /island invite <player>) invites someone by name. Also coins and the merchants' shop
- * (Economy, Shop), minions (Minions) and the per-player sidebar (Sidebar).
+ * (Economy, Shop), minions (Minions), the per-player sidebar (Sidebar) and the hub portals (Portals).
  * Menus are chest GUIs defined by the datapack in storage crispy_skyblock:menus (SkyMenus); levels are counted from
  * the blocks in the island's plot (IslandLevels).
  */
@@ -37,6 +38,8 @@ public class SkyblockMod implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(IslandLevels::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Minions::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Sidebar::onTick);
+        ServerTickEvents.END_SERVER_TICK.register(Portals::onTick);
+        PlayerBlockBreakEvents.BEFORE.register(Portals::canBreak);
         UseBlockCallback.EVENT.register(Minions::onUseBlock);
         UseEntityCallback.EVENT.register((player, world, hand, entity, hit) -> {
             // merchants: villagers tagged cs_npc + cs_shop_<category> open that shop instead of trading

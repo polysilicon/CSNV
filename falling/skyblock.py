@@ -455,7 +455,9 @@ scoreboard players set #60 cs_tmp 60
 data modify storage {NS}:menus islands set value {snbt(MENUS["islands"])}
 data modify storage {NS}:menus challenges set value {snbt(MENUS["challenges"])}
 data modify storage {NS}:eco cfg set value {snbt(ECO)}
-function {NS}:npcs
+execute unless score #hubv cs_cfg matches 2.. run function {NS}:hub
+# respawn the merchants once the hub's entities are loaded (at startup they load after this runs)
+schedule function {NS}:npcs 100t replace
 execute unless data storage {NS}:d plots run function {NS}:setup
 gamerule minecraft:respawn_radius 0
 gamerule minecraft:keep_inventory false
@@ -465,7 +467,6 @@ fn("setup", f"""
 data modify storage {NS}:d plots set value [{{id:0}}]
 scoreboard players set #next cs_tmp 0
 function {NS}:hub
-setworldspawn 0 {HUB_Y+1} 0
 """)
 
 # ======================================================================= hub
@@ -478,56 +479,185 @@ def label(x, y, z, text, scale=1.5, yaw=0, bill="fixed", tag=None):
             "transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[%sf,%sf,%sf]}}"
             % (json.dumps(tags), bill, yaw, text, scale, scale, scale))
 Y = HUB_Y
-hub = [
-    "forceload add -16 -16 15 15",
-    f"fill -14 {Y-1} -14 14 {Y+8} 14 minecraft:air",
-    f"fill -13 {Y} -13 13 {Y} 13 minecraft:polished_deepslate",
-    f"fill -12 {Y} -12 12 {Y} 12 minecraft:smooth_quartz",
-    f"fill -6 {Y} -6 6 {Y} 6 minecraft:moss_block",
-    f"fill -2 {Y} -2 2 {Y} 2 minecraft:chiseled_quartz_block",
-    f"fill -13 {Y+1} -13 13 {Y+1} 13 minecraft:polished_deepslate_wall",
-    f"fill -12 {Y+1} -12 12 {Y+1} 12 minecraft:air",
-    f"fill -13 {Y-4} -13 13 {Y-1} 13 minecraft:dirt replace minecraft:air",
-    f"fill -11 {Y-6} -11 11 {Y-5} 11 minecraft:stone replace minecraft:air",
-] + [f"setblock {x} {Y+2} {z} minecraft:lantern" for x in (-13, 13) for z in (-13, 13)] + [
-    f"setblock {x} {Y+3} {z} minecraft:light[level=15]" for x in (-9, 0, 9) for z in (-9, 0, 9)] + [
-    f"fill -4 {Y+1} -8 4 {Y+5} -8 minecraft:quartz_bricks",
-    f"fill -4 {Y+6} -8 4 {Y+6} -8 minecraft:quartz_slab",
-]
-BTNS = [(-3, "execute as @p[distance=..6] run function %s:act/home" % NS, ["", "MY", "ISLAND", ""], "lime"),
-        (-1, "dialog show @p[distance=..6] %s:menu" % NS, ["", "ISLAND", "MENU", ""], "yellow"),
-        (1, "execute as @p[distance=..6] run island challenges", ["", "CHALLENGES", "", ""], "orange"),
-        (3, "execute as @p[distance=..6] run function %s:act/hub_help" % NS, ["", "HOW TO", "PLAY", ""], "light_blue")]
-for x, cmd, lines, col in BTNS:
-    hub += [f"setblock {x} {Y+2} -9 minecraft:command_block[facing=up]" + "{Command:%s,TrackOutput:0b}" % json.dumps(cmd),
-            f"setblock {x} {Y+2} -7 minecraft:stone_button[face=wall,facing=south]",
-            f"setblock {x} {Y+3} -7 minecraft:dark_oak_wall_sign[facing=south]" + hsign(lines, col)]
-hub += [
-    f"kill @e[type=minecraft:text_display,tag={NS}]",
-    label(0.5, Y + 5.3, -6.9, '{text:"Crispy Skyblock",color:"gold",bold:1b}', 2.5),
-    label(0.5, Y + 4.6, -6.9, '{text:"Pick an island. The sky still drops the odd gift.",color:"gray"}', 0.8),
-    label(0.5, Y + 3.5, 0.5, '{text:"Press Esc → Island Menu anytime",color:"yellow"}', 1.0, bill="vertical"),
-    # top islands board, rewritten by the mod whenever an island level is worked out
-    label(10.9, Y + 3.2, 0.5, '{text:"Top Islands\\n",color:"gold",bold:1b,extra:[{text:"Use /island level to get on the board",color:"gray",bold:0b}]}',
-          1.0, yaw=90, tag="cs_top"),
-]
-fn("hub", "\n".join(hub))
+HUB_R = 50                       # the hub area (adventure mode, no island bounds) is |x|,|z| <= HUB_R
+HUB_SPAWN = (0.5, Y + 1, 5.5)    # facing north, towards the island portal
+PORTAL_DZ = -14                  # every island's hub portal: 14 blocks north of the island centre, over the void
+HUB_PORTAL_Z = -18               # the hub's portal home, north of the plaza
 
-# merchants: villagers that don't move; the mod opens the shop category named in their cs_shop_<key> tag when clicked
-NPCS = [("farming", -9, -3, -90, "farmer"), ("mining", 9, -3, 90, "toolsmith"), ("foraging", -9, 4, -90, "fletcher"),
-        ("combat", 9, 4, 90, "weaponsmith"), ("supplies", 0, 9, 180, "mason")]
+def _hash(ix, iz, seed):
+    h = (ix * 374761393 + iz * 668265263 + seed * 2147483647) & 0xFFFFFFFF
+    h = ((h ^ (h >> 13)) * 1274126177) & 0xFFFFFFFF
+    return ((h ^ (h >> 16)) & 0xFFFF) / 65535.0
+def noise(x, z, seed):
+    """Smooth value noise in [0, 1]."""
+    ix, iz = int(x // 1), int(z // 1)
+    fx, fz = x - ix, z - iz
+    sx, sz = fx * fx * (3 - 2 * fx), fz * fz * (3 - 2 * fz)
+    a, b = _hash(ix, iz, seed), _hash(ix + 1, iz, seed)
+    c, d = _hash(ix, iz + 1, seed), _hash(ix + 1, iz + 1, seed)
+    return (a + (b - a) * sx) + ((c + (d - c) * sx) - (a + (b - a) * sx)) * sz
+
+def hub_build():
+    """A big natural floating island: grassy hills around a flat plaza with a fountain, market stalls for the merchants,
+    the portal to your island to the north, a pond, trees, flowers and a rocky underside."""
+    import math
+    rnd = random.Random(42)
+    c = ["forceload add -64 -64 63 63", f"kill @e[type=minecraft:text_display,tag={NS},x=-64,y=0,z=-64,dx=128,dy=320,dz=128]"]
+    c += [f"fill -{HUB_R} {y} -{HUB_R} {HUB_R} {y} {HUB_R} minecraft:air" for y in range(Y - 40, Y + 21)]
+    top, edge = {}, {}
+    pond = (-24, 16, 5.2)
+    for x in range(-HUB_R + 2, HUB_R - 1):
+        for z in range(-HUB_R + 2, HUB_R - 1):
+            r = math.hypot(x, z)
+            lim = 37 + 9 * noise(x * 0.05 + 7, z * 0.05 + 3, 1)
+            if r > lim: continue
+            inner = max(0.0, min(1.0, (r - 16) / 7)) * max(0.0, min(1.0, (lim - r) / 5))
+            h = int(round(5 * noise(x * 0.07, z * 0.07, 2) * inner))
+            if math.hypot(x - pond[0], z - pond[1]) < pond[2] + 2: h = 0
+            depth = int(3 + 27 * (1 - r / lim) ** 0.9 + 5 * noise(x * 0.15, z * 0.15, 3))
+            t = Y + h
+            top[(x, z)] = t
+            c.append(f"fill {x} {t - depth} {z} {x} {t - 4} {z} minecraft:stone")
+            c.append(f"fill {x} {t - 3} {z} {x} {t - 1} {z} minecraft:dirt")
+            c.append(f"setblock {x} {t} {z} minecraft:grass_block")
+            under = rnd.choice(["stone", "stone", "andesite", "cobblestone", "tuff", "mossy_cobblestone", "coal_ore", "iron_ore", "copper_ore"])
+            c.append(f"setblock {x} {t - depth} {z} minecraft:{under}")
+    def surf(x, z, block):
+        if (x, z) in top: c.append(f"setblock {x} {top[(x, z)]} {z} minecraft:{block}")
+    used = set()
+    # pond with a sandy shore
+    for (x, z), t in top.items():
+        d = math.hypot(x - pond[0], z - pond[1])
+        if d <= pond[2]:
+            c += [f"setblock {x} {t} {z} minecraft:water", f"setblock {x} {t - 1} {z} minecraft:water", f"setblock {x} {t - 2} {z} minecraft:sand"]
+            used.add((x, z))
+        elif d <= pond[2] + 1.3:
+            surf(x, z, "sand"); used.add((x, z))
+    for _ in range(5):
+        a = rnd.random() * 6.28; rr = rnd.random() * (pond[2] - 1)
+        px, pz = int(pond[0] + rr * math.cos(a)), int(pond[1] + rr * math.sin(a))
+        if (px, pz) in top: c.append(f"setblock {px} {top[(px, pz)] + 1} {pz} minecraft:lily_pad")
+    # plaza: polished andesite with a stone brick ring
+    for (x, z) in top:
+        r = math.hypot(x, z)
+        if r <= 8.5: surf(x, z, "polished_andesite"); used.add((x, z))
+        elif r <= 9.6: surf(x, z, "stone_bricks"); used.add((x, z))
+    # paths: north to the portal, east and west to the stalls, south past spawn, and four out into the hills
+    def path(points, width=1, block="dirt_path"):
+        for (ax, az), (bx, bz) in zip(points, points[1:]):
+            n = max(abs(bx - ax), abs(bz - az))
+            for i in range(n + 1):
+                x, z = round(ax + (bx - ax) * i / n), round(az + (bz - az) * i / n)
+                for dx in range(-width, width + 1):
+                    for dz in range(-width, width + 1):
+                        if (x + dx, z + dz) in top and (x + dx, z + dz) not in used:
+                            surf(x + dx, z + dz, block); used.add((x + dx, z + dz))
+    path([(0, -9), (0, HUB_PORTAL_Z + 1)], 1, "stone_bricks")
+    path([(0, 9), (0, 17)], 1, "stone_bricks")
+    for ang in (35, 145, 215, 325):
+        a = math.radians(ang)
+        path([(round(10 * math.cos(a)), round(10 * math.sin(a))), (round(31 * math.cos(a)), round(31 * math.sin(a)))], 1)
+        for k in (16, 23, 30):
+            lx, lz = round(k * math.cos(a)) + 2, round(k * math.sin(a))
+            if (lx, lz) in top and (lx, lz) not in used:
+                t = top[(lx, lz)]
+                c += [f"setblock {lx} {t + 1} {lz} minecraft:oak_fence", f"setblock {lx} {t + 2} {lz} minecraft:lantern[hanging=false]"]
+                used.add((lx, lz))
+    # fountain
+    for (x, z) in list(top):
+        r = math.hypot(x, z)
+        if r <= 2.6: c += [f"setblock {x} {Y} {z} minecraft:water", f"setblock {x} {Y - 1} {z} minecraft:stone_bricks"]
+        elif r <= 3.6: c += [f"setblock {x} {Y} {z} minecraft:stone_bricks", f"setblock {x} {Y + 1} {z} minecraft:stone_brick_wall"]
+    c += [f"fill 0 {Y} 0 0 {Y + 2} 0 minecraft:chiseled_stone_bricks", f"setblock 0 {Y + 3} 0 minecraft:water"]
+    # trees around the hills
+    trees = []
+    keys = sorted(top)
+    rnd.shuffle(keys)
+    for (x, z) in keys:
+        r = math.hypot(x, z)
+        if not (17 < r < 34) or (x, z) in used: continue
+        if any(math.hypot(x - a, z - b) < 7 for a, b in trees): continue
+        if len(trees) >= 26: break
+        trees.append((x, z))
+    for i, (x, z) in enumerate(trees):
+        t = top[(x, z)]
+        log, leaves = [("oak_log", "oak_leaves"), ("birch_log", "birch_leaves"), ("oak_log", "oak_leaves"), ("cherry_log", "cherry_leaves")][i % 4]
+        h = 4 + rnd.randint(0, 2)
+        L = f"minecraft:{leaves}[persistent=true]"
+        for dy in (h - 2, h - 1):
+            c.append(f"fill {x - 2} {t + dy} {z - 2} {x + 2} {t + dy} {z + 2} {L} replace minecraft:air")
+        c.append(f"fill {x - 1} {t + h} {z - 1} {x + 1} {t + h} {z + 1} {L} replace minecraft:air")
+        c.append(f"setblock {x} {t + h + 1} {z} {L}")
+        c.append(f"fill {x} {t + 1} {z} {x} {t + h - 1} {z} minecraft:{log}")
+        for dx in range(-2, 3):
+            for dz in range(-2, 3): used.add((x + dx, z + dz))
+    # flowers and grass
+    flowers = ["short_grass"] * 6 + ["poppy", "dandelion", "oxeye_daisy", "cornflower", "allium", "azure_bluet", "fern"]
+    for (x, z), t in top.items():
+        if (x, z) in used or math.hypot(x, z) < 11: continue
+        if rnd.random() < 0.16: c.append(f"setblock {x} {t + 1} {z} minecraft:{rnd.choice(flowers)}")
+    # no monsters: light blocks every 10 blocks (invisible, you walk through them)
+    for x in range(-40, 41, 10):
+        for z in range(-40, 41, 10):
+            if (x, z) in top: c.append(f"setblock {x} {top[(x, z)] + 3} {z} minecraft:light[level=15]")
+    # market stalls with the merchants
+    for key, sx, sz, wool, prof in STALLS:
+        yaw = math.degrees(math.atan2(-sx, sz))   # face the plaza centre
+        c += [f"fill {sx - 1} {Y} {sz - 1} {sx + 1} {Y} {sz + 1} minecraft:spruce_planks"]
+        for cx_, cz_ in ((-1, -1), (-1, 1), (1, -1), (1, 1)):
+            c.append(f"fill {sx + cx_} {Y + 1} {sz + cz_} {sx + cx_} {Y + 3} {sz + cz_} minecraft:spruce_fence")
+        c += [f"fill {sx - 1} {Y + 4} {sz - 1} {sx + 1} {Y + 4} {sz + 1} minecraft:{wool}_wool",
+              f"setblock {sx} {Y + 5} {sz} minecraft:{wool}_carpet", f"setblock {sx} {Y + 3} {sz} minecraft:lantern[hanging=true]"]
+    # the portal to your island
+    c += portal_blocks(0, Y, HUB_PORTAL_Z, platform=False)
+    c.append(label(0.5, Y + 5.6, HUB_PORTAL_Z + 0.5, snbt({"text": "Your Island", "color": "light_purple", "bold": True,
+                   "extra": [txt("\nWalk through", "gray", bold=False)]}), 1.0, bill="center"))
+    c += [label(0.5, Y + 7.2, -24.5, '{text:"Crispy Skyblock",color:"gold",bold:1b}', 3.0, bill="center"),
+          label(HUB_SPAWN[0], Y + 2.6, HUB_SPAWN[2] + 2, '{text:"Press Esc → Island Menu anytime",color:"yellow"}', 0.9, bill="vertical"),
+          # top islands board, rewritten by the mod whenever an island level is worked out
+          label(-6.5, Y + 3.4, -14.5, '{text:"Top Islands\\n",color:"gold",bold:1b,extra:[{text:"Use /island level to get on the board",color:"gray",bold:0b}]}',
+                0.9, yaw=0, tag="cs_top"),
+          label(7.5, Y + 3.4, -14.5, snbt({"text": "Minions\n", "color": "aqua", "bold": True, "extra": [
+              txt("Craft one: 8 of a resource around a wooden pickaxe.\nPlace it on your island; it gathers while you're offline.\nRight-click it to collect, upgrade (I to V) or pick it up.", "gray", bold=False)]}),
+                0.8, yaw=0)]
+    c += [f"setworldspawn 0 {Y + 1} 5", "scoreboard players set #hubv cs_cfg 2"]
+    return c
+
+def portal_blocks(x, y, z, platform=True):
+    """A portal frame across x at (x, y, z) (y = the floor under it): crying obsidian posts and lintel around a 3x3
+    opening. Islands get a 5x5 platform of reinforced deepslate and obsidian under it, out over the void. Everything
+    is blast-proof and can't be pushed; the mod also stops players breaking it."""
+    c = []
+    if platform:
+        c += [f"fill {x - 2} {y} {z - 2} {x + 2} {y} {z + 2} minecraft:reinforced_deepslate",
+              f"fill {x - 1} {y} {z - 1} {x + 1} {y} {z + 1} minecraft:obsidian",
+              f"fill {x - 1} {y - 1} {z - 1} {x + 1} {y - 1} {z + 1} minecraft:reinforced_deepslate"]
+    c += [f"fill {x - 2} {y + 1} {z} {x - 2} {y + 4} {z} minecraft:crying_obsidian",
+          f"fill {x + 2} {y + 1} {z} {x + 2} {y + 4} {z} minecraft:crying_obsidian",
+          f"fill {x - 1} {y + 4} {z} {x + 1} {y + 4} {z} minecraft:crying_obsidian",
+          f"fill {x - 1} {y + 1} {z} {x + 1} {y + 3} {z} minecraft:air",
+          f"setblock {x} {y + 5} {z} minecraft:amethyst_cluster[facing=up]",
+          f"setblock {x - 2} {y + 5} {z} minecraft:end_rod[facing=up]", f"setblock {x + 2} {y + 5} {z} minecraft:end_rod[facing=up]"]
+    return c
+
+# merchants stand in market stalls around the plaza; the mod opens the shop category named in their cs_shop_<key> tag
+STALLS = [("farming", 12, -5, "lime", "farmer"), ("mining", 12, 5, "light_gray", "toolsmith"), ("foraging", -12, -5, "brown", "fletcher"),
+          ("combat", -12, 5, "red", "weaponsmith"), ("supplies", 0, 14, "orange", "mason")]
+fn("hub", "\n".join(hub_build()))
+import math as _m
 npc_lines = [f"kill @e[type=minecraft:villager,tag=cs_npc]", f"kill @e[type=minecraft:text_display,tag=cs_npcl]"]
 shop_names = {k: (n, npc) for k, n, ic, npc, items in SHOP}
-for key, x, z, yaw, prof in NPCS:
+for key, sx, sz, wool, prof in STALLS:
     cat, who = shop_names[key]
-    npc_lines.append(f"summon minecraft:villager {x + 0.5} {Y+1} {z + 0.5} " + snbt({
-        "NoAI": True, "Invulnerable": True, "Silent": True, "PersistenceRequired": True, "Rotation": [float(yaw), 0.0],
-        "Tags": [NS, "cs_npc", f"cs_shop_{key}"], "CustomName": txt(who, "gold", bold=True), "CustomNameVisible": True,
-        "VillagerData": {"profession": f"minecraft:{prof}", "level": 5, "type": "minecraft:plains"}, "Offers": {"Recipes": []}}).replace("[-90.0,0.0]", "[-90.0f,0.0f]").replace("[90.0,0.0]", "[90.0f,0.0f]").replace("[180.0,0.0]", "[180.0f,0.0f]"))
-    npc_lines.append(label(x + 0.5, Y + 3.25, z + 0.5, snbt(txt(cat + " shop", "yellow")), 0.7, bill="center", tag="cs_npcl"))
-npc_lines.append(label(-10.9, Y + 3.0, 0.5, snbt({"text": "Minions\n", "color": "aqua", "bold": True, "extra": [
-    txt("Craft one: 8 of a resource around a wooden pickaxe.\nPlace it on your island; it gathers while you're offline.\nRight-click it to collect, upgrade (I to V) or pick it up.", "gray", bold=False)]}),
-    0.8, yaw=-90, tag="cs_npcl"))
+    yaw = round(_m.degrees(_m.atan2(sx, -sz)), 1)   # look at the plaza centre
+    npc_lines.append(f"summon minecraft:villager {sx + 0.5} {Y+1} {sz + 0.5} " + snbt({
+        "NoAI": True, "Invulnerable": True, "Silent": True, "PersistenceRequired": True,
+        "Tags": [NS, "cs_npc", f"cs_shop_{key}"],
+        "VillagerData": {"profession": f"minecraft:{prof}", "level": 5, "type": "minecraft:plains"}, "Offers": {"Recipes": []}})[:-1]
+        + f",Rotation:[{yaw}f,0f]}}")
+    # one two-line label instead of the villager's own name tag
+    npc_lines.append(label(sx + 0.5, Y + 2.35, sz + 0.5, snbt({"text": who, "color": "gold", "bold": True,
+                     "extra": [txt(f"\n{cat} · click to trade", "gray", bold=False)]}), 0.7, bill="center", tag="cs_npcl"))
 fn("npcs", "\n".join(npc_lines))
 
 
@@ -538,10 +668,10 @@ execute as @a[scores={{cs_act=1..}}] at @s run function {NS}:act/dispatch
 execute as @a unless score @s cs_seen matches 1 run function {NS}:first_join
 execute as @e[type=minecraft:player,scores={{cs_die=1..}}] run function {NS}:p/respawned
 # hub = adventure, everywhere else = survival
-execute as @a[gamemode=survival] at @s if dimension minecraft:overworld if entity @s[x=-14,y={Y-20},z=-14,dx=28,dy=60,dz=28] run gamemode adventure @s
-execute as @a[gamemode=adventure] at @s unless entity @s[x=-14,y={Y-20},z=-14,dx=28,dy=60,dz=28] run gamemode survival @s
+execute as @a[gamemode=survival] at @s if dimension minecraft:overworld if entity @s[x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}] run gamemode adventure @s
+execute as @a[gamemode=adventure] at @s unless entity @s[x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}] run gamemode survival @s
 execute as @a[gamemode=adventure] at @s unless dimension minecraft:overworld run gamemode survival @s
-execute as @e[type=minecraft:player,x=-14,y={Y-60},z=-14,dx=28,dy=50,dz=28] run tp @s 0.5 {Y+1} 0.5
+execute as @e[type=minecraft:player,x=-{HUB_R},y={Y-110},z=-{HUB_R},dx={2*HUB_R},dy=64,dz={2*HUB_R}] run function {NS}:act/hub
 scoreboard players add #t cs_tmp 1
 execute if score #t cs_tmp matches 10 run function {NS}:p/bounds_all
 execute if score #t cs_tmp matches 10 run function {NS}:p/nbounds_all
@@ -549,6 +679,8 @@ execute if score #t cs_tmp matches 20.. run function {NS}:second
 """)
 fn("second", f"""
 scoreboard players set #t cs_tmp 0
+particle minecraft:portal 0.5 {Y+2.5} {HUB_PORTAL_Z+0.5} 0.9 0.9 0.05 0.3 30 force
+kill @e[type=#{NS}:hostile,x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}]
 scoreboard players remove @a[scores={{cs_cd=1..}}] cs_cd 1
 scoreboard players reset * cs_on
 scoreboard players reset * cs_non
@@ -596,6 +728,8 @@ $scoreboard players add #p$(id) cs_age 1
 {dng}
 $execute if score #p$(id) cs_age matches {PORTAL_AGE} run function {NS}:ev/portal with storage {NS}:d cur
 function {NS}:plot/ntick with storage {NS}:d cur
+$execute unless data storage {NS}:d plots[$(id)].portal run function {NS}:portal/retro with storage {NS}:d cur
+$execute positioned $(cx) {ISLAND_Y} $(cz) run particle minecraft:portal ~0.5 ~2.5 ~{PORTAL_DZ + 0.5} 0.9 0.9 0.05 0.3 25
 # hostile cap: mobs already here stay; brand-new spawns over the cap are sent into the void
 $execute store result score #h cs_tmp if entity @e[type=#{NS}:hostile,x=$(x),y=-64,z=$(z),dx={SIZE-1},dy=400,dz={SIZE-1}]
 $execute if score #h cs_tmp matches {HOSTILE_CAP+1}.. as @e[type=#{NS}:hostile,tag=!cs_old,x=$(x),y=-64,z=$(z),dx={SIZE-1},dy=400,dz={SIZE-1}] run function {NS}:mob_cull
@@ -794,7 +928,7 @@ particle minecraft:explosion_emitter ~ ~2 ~ 0 0 0 0 1 force
 """)
 fn("p/nbounds_all", f"execute as @a[gamemode=survival,tag=!cs_staff] at @s if dimension minecraft:the_nether run function {NS}:p/nbounds")
 fn("p/nbounds", f"""
-execute unless score @s cs_plot matches 1.. run return run execute in minecraft:overworld run tp @s 0.5 {Y+1} 0.5
+execute unless score @s cs_plot matches 1.. run return run function {NS}:act/hub
 function {NS}:p/ctx
 function {NS}:p/nbounds2 with storage {NS}:d cur
 """)
@@ -844,6 +978,7 @@ execute store result storage {NS}:d new.z int 1 run scoreboard players get #r cs
                     ("ix", "c", SIZE // 2 - R), ("iz", "r", SIZE // 2 - R), ("ix1", "c", SIZE // 2 + R), ("iz1", "r", SIZE // 2 + R)]) + f"""
 function {NS}:plot/nfields with storage {NS}:d new
 data modify storage {NS}:d new merge from storage {NS}:d nf
+data modify storage {NS}:d new.portal set value 1b
 data modify storage {NS}:d plots append from storage {NS}:d new
 function {NS}:plot/build with storage {NS}:d new
 function {NS}:plot/nbuild with storage {NS}:d new
@@ -854,7 +989,30 @@ tellraw @s {{text:"Esc → Island Menu for challenges, your island level and inv
 fn("plot/build", f"""
 $forceload add $(x) $(z) $(x1) $(z1)
 $execute positioned $(cx) {ISLAND_Y} $(cz) run function {NS}:island/$(theme)
+$execute positioned $(cx) {ISLAND_Y} $(cz) positioned ~ ~ ~{PORTAL_DZ} run function {NS}:portal/build
 function {NS}:island/biome with storage {NS}:d new
+""")
+# the island's hub portal, out over the void: players bridge to it. Run positioned at the platform centre.
+pb = Build(0)
+pb.fill(-2, 0, -2, 2, 0, 2, "reinforced_deepslate")
+pb.fill(-1, 0, -1, 1, 0, 1, "obsidian")
+pb.fill(-1, -1, -1, 1, -1, 1, "reinforced_deepslate")
+pb.fill(-2, 1, 0, -2, 4, 0, "crying_obsidian")
+pb.fill(2, 1, 0, 2, 4, 0, "crying_obsidian")
+pb.fill(-1, 4, 0, 1, 4, 0, "crying_obsidian")
+pb.fill(-1, 1, 0, 1, 3, 0, "air")
+pb.set(0, 5, 0, "amethyst_cluster[facing=up]")
+pb.set(-2, 5, 0, "end_rod[facing=up]")
+pb.set(2, 5, 0, "end_rod[facing=up]")
+fn("portal/build", "\n".join(pb.c) + "\n" + "summon minecraft:text_display ~0.5 ~6 ~0.5 " + snbt({
+    "Tags": [NS, "cs_portall"], "billboard": "center", "background": 1073741824, "shadow": True,
+    "text": {"text": "Hub Portal", "color": "light_purple", "bold": True, "extra": [txt("\nBuild a bridge, then walk through", "gray", bold=False)]},
+    "transformation": {"left_rotation": [0.0, 0.0, 0.0, 1.0], "right_rotation": [0.0, 0.0, 0.0, 1.0], "translation": [0.0, 0.0, 0.0], "scale": [0.9, 0.9, 0.9]}}).replace("0.0,", "0.0f,").replace("1.0]", "1.0f]").replace("0.9,", "0.9f,").replace("0.9]", "0.9f]").replace("0.0]", "0.0f]"))
+fn("portal/retro", f"""
+# islands made before portals existed get theirs the next time a member is there
+$execute positioned $(cx) {ISLAND_Y} $(cz) positioned ~ ~ ~{PORTAL_DZ} run function {NS}:portal/build
+$data modify storage {NS}:d plots[$(id)].portal set value 1b
+$tellraw @a[scores={{cs_plot=$(id)}}] [{{text:"✦ ",color:"light_purple"}},{{text:"A Hub Portal appeared just north of your island. Build a bridge to it!",color:"light_purple"}}]
 """)
 
 # ======================================================================= per-player helpers
@@ -882,9 +1040,9 @@ function {NS}:p/ctx
 function {NS}:p/respawned2 with storage {NS}:d cur
 """)
 fn("p/respawned2", f"$execute unless entity @s[x=$(x),y=-64,z=$(z),dx={SIZE-1},dy=400,dz={SIZE-1}] run function {NS}:p/home")
-fn("p/bounds_all", f"execute as @a[gamemode=survival,tag=!cs_staff] at @s if dimension minecraft:overworld unless entity @s[x=-14,y={Y-20},z=-14,dx=28,dy=60,dz=28] run function {NS}:p/bounds")
+fn("p/bounds_all", f"execute as @a[gamemode=survival,tag=!cs_staff] at @s if dimension minecraft:overworld unless entity @s[x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}] run function {NS}:p/bounds")
 fn("p/bounds", f"""
-execute unless score @s cs_plot matches 1.. run return run tp @s 0.5 {Y+1} 0.5
+execute unless score @s cs_plot matches 1.. run return run function {NS}:act/hub
 function {NS}:p/ctx
 function {NS}:p/bounds2 with storage {NS}:d cur
 """)
@@ -895,7 +1053,7 @@ tellraw @s {{text:"That's the edge of your island's space.",color:"red"}}
 """)
 fn("first_join", f"""
 scoreboard players set @s cs_seen 1
-tp @s 0.5 {Y+1} 0.5
+function {NS}:act/hub
 tellraw @s [{{text:"Welcome to Crispy Skyblock! ",color:"gold",bold:1b}},{{text:"Click ",color:"yellow",bold:0b}},{{text:"[Pick my island]",color:"green",bold:1b,click_event:{{action:"run_command",command:"trigger cs_act set 1"}},hover_event:{{action:"show_text",value:"Choose a starter island and go there"}}}}]
 """)
 
@@ -911,7 +1069,7 @@ execute unless score @s cs_plot matches 1.. run return run function {NS}:act/cho
 function {NS}:p/home
 """)
 fn("act/choose", "execute as @s run island choose")
-fn("act/hub", f"tp @s 0.5 {Y+1} 0.5")
+fn("act/hub", f"execute in minecraft:overworld run tp @s {HUB_SPAWN[0]} {HUB_SPAWN[1]} {HUB_SPAWN[2]} 180 0")
 fn("act/invite_player", f"""
 execute unless score @s cs_plot matches 1.. run return run tellraw @s {{text:"Pick an island first.",color:"red"}}
 tag @s add cs_me

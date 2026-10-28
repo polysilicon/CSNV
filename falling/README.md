@@ -9,7 +9,7 @@ Skyblock on `Falling01` (Fabric 26.2, Velocity name `skyblock`, was `falling`). 
   already in `world/datapacks`.
 - `mod/` is the `crispy_skyblock` server mod (`crispy-skyblock-2.0.0.jar`, build with
   `mod/build.sh <lib-dir> <javac>`, same lib dir as `pvp/spawnmod` plus Fabric API's `fabric-events-interaction-v0`
-  unpacked into `fa/META-INF/jars/`). Now `crispy-skyblock-2.1.0.jar`.
+  unpacked into `fa/META-INF/jars/`). Now `crispy-skyblock-2.2.0.jar`.
 
 ## How it plays
 
@@ -26,6 +26,15 @@ Skyblock on `Falling01` (Fabric 26.2, Velocity name `skyblock`, was `falling`). 
   | Shrek's Swamp | swamp | mud, lily-pad pond, vines, an outhouse; slimes at night |
   | Tegridy Farms | plains | ripe wheat, carrot and potato rows, a barn and a scarecrow |
 
+- **Hub** (rebuilt in hub v2, `crispy_skyblock:hub`, run once when `#hubv cs_cfg` is below 2): a natural floating island
+  about 80 blocks across: grassy hills, trees (oak, birch, cherry), flowers, a pond, a deep rocky underside, and a
+  stone plaza with a fountain. Merchants stand in five market stalls around the plaza; spawn is just south of the
+  fountain facing the portal home. Light blocks keep monsters away and any that appear are removed. The hub area is
+  |x|,|z| <= 50 (adventure mode).
+- **Hub portals.** Every island has a portal frame (crying obsidian on a reinforced deepslate and obsidian platform)
+  14 blocks north of its centre, out over the void, so players bridge to it; walking through takes you to the hub. The
+  hub's portal (north of the plaza) takes you to your island. The blocks are blast-proof and immovable, and the mod
+  (`Portals`) stops players breaking them. Islands made before portals get theirs the next time a member is there.
 - **Sky events** while a member is online (by island play time): an animal every 15 min, a supply crate (barrel with
   the `chests/supply` loot table) every 25 min, a meteor of ores every 45 min, dungeons at 30, 90 and 180 min, and an
   End portal at 150 min. They all land within 6 blocks of the island centre.
@@ -50,7 +59,7 @@ Hypixel-style, vanilla only. Prices, shop categories, minion types and tiers are
 - **Coins** are the `cs_coins` score. `/coins` (`/bal`, `/purse`), `/coins top`, `/pay <player> <amount>`;
   staff: `/coins give <player> <amount>` (negative takes).
 - **Merchants**: five villagers in the hub (tagged `cs_npc` + `cs_shop_<category>`, respawned by `crispy_skyblock:npcs`
-  on every load): Farm Merchant, Mine Merchant, Lumber Merchant, Monster Hunter, Builder. Clicking one opens that
+  5 s after every load, once the hub's entities are in): Farm Merchant, Mine Merchant, Lumber Merchant, Monster Hunter, Builder. Clicking one opens that
   category of the shop (tabs switch categories). Left-click buys 1, shift-left a stack; right-click sells 1,
   shift-right sells all of that item; **Sell everything** sells every sellable item. Only plain items are traded.
 - **Minions**: 23 types (ores, crops, logs, mob drops). Craft Tier I with 8 of the resource around a wooden pickaxe
