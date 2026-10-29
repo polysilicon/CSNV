@@ -401,6 +401,11 @@ for k, n, h, t, c, d, r in MINIONS:
     js(f"data/{NS}/recipe/minion_{k}.json", {"type": "minecraft:crafting_shaped", "category": "misc", "group": "crispy_minion",
         "pattern": ["###", "#P#", "###"], "key": {"#": f"minecraft:{r}", "P": tool_ing}, "result": minion_item(k, n, h)})
 
+# ======================================================================= crafted armor sets and weapons (gear.py)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gear
+GEAR = gear.build(NS, fn, js, txt)
+
 # ======================================================================= menus (read by the crispy_skyblock mod)
 GRID_SLOTS = [10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43]
 DIFF_COL = {"Easy": "green", "Normal": "yellow", "Hard": "red"}
@@ -425,6 +430,7 @@ MENUS = {
                 "items": isl_items},
     "challenges": {"title": txt("Challenges", "dark_gray"), "rows": 6, "fill": item("black_stained_glass_pane", txt("")),
                    "items": ch_items + [{"slot": 49, "cmd": "trigger cs_act set 7", "item": item("arrow", txt("Island Menu", "gray"))}]},
+    "gear": GEAR["menu"],
 }
 
 # ======================================================================= load / setup
@@ -455,6 +461,8 @@ scoreboard players set #grid cs_tmp {GRID}
 scoreboard players set #60 cs_tmp 60
 data modify storage {NS}:menus islands set value {snbt(MENUS["islands"])}
 data modify storage {NS}:menus challenges set value {snbt(MENUS["challenges"])}
+data modify storage {NS}:menus gear set value {snbt(MENUS["gear"])}
+scoreboard objectives add cs_gearv dummy
 data modify storage {NS}:eco cfg set value {snbt(ECO)}
 execute unless score #hubv cs_cfg matches 2.. run function {NS}:hub
 execute if score #hubv cs_cfg matches 2 run function {NS}:hub_v3
@@ -686,6 +694,7 @@ scoreboard players set #t cs_tmp 0
 particle minecraft:portal 0.5 {Y+2.5} {HUB_PORTAL_Z+0.5} 0.9 0.9 0.05 0.3 30 force
 kill @e[type=#{NS}:hostile,x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}]
 execute as @e[tag=cs_boss] at @s run function {NS}:boss/tick
+function {NS}:gear/second
 scoreboard players remove @a[scores={{cs_cd=1..}}] cs_cd 1
 scoreboard players reset * cs_on
 scoreboard players reset * cs_non
@@ -1371,6 +1380,7 @@ js(f"data/{NS}/dialog/menu.json", {
     "actions": [
         btn({"text": "Go to my island", "color": "green"}, "trigger cs_act set 1", "Pick your starter island the first time"),
         btn({"text": "Challenges", "color": "gold"}, "island challenges", "Hand in items for rewards"),
+        btn({"text": "Armor & Weapons", "color": "aqua"}, "gear", "Craftable sets and weapons, with their recipes"),
         btn({"text": "Island level"}, "island level", "Score the blocks on your island"),
         btn({"text": "Top islands"}, "island top"),
         btn({"text": "Invite a player…"}, dialog=f"{NS}:invite", tip="Type their username (or use /invite <name>)"),
@@ -1446,10 +1456,10 @@ ADV = [  # key, parent, icon, title, description, criteria, frame
      {"c": {"trigger": "minecraft:changed_dimension", "conditions": {"to": "minecraft:the_nether"}}}, "task"),
     ("blaze", "nether", "blaze_rod", "Hot Stuff", "Get a blaze rod", has("minecraft:blaze_rod"), "task"),
     ("eye", "blaze", "ender_eye", "Eyes on the Sky", "Craft an Eye of Ender", has("minecraft:ender_eye"), "task"),
-    ("end", "eye", "end_stone", "The End?", "Enter the End through your island's portal",
-     {"c": {"trigger": "minecraft:changed_dimension", "conditions": {"to": "minecraft:the_end"}}}, "goal"),
-    ("dragon", "end", "dragon_head", "Sky Fall", "Defeat the Ender Dragon",
-     {"c": {"trigger": "minecraft:player_killed_entity", "conditions": {"entity": [{"condition": "minecraft:entity_properties", "entity": "this", "predicate": {"minecraft:entity_type": "minecraft:ender_dragon"}}]}}}, "challenge"),
+    ("end", "eye", "end_stone", "The End?", "Enter your island's End through its portal",
+     {"c": {"trigger": "minecraft:changed_dimension", "conditions": {"to": f"{NS}:end"}}}, "goal"),
+    ("dragon", "end", "dragon_head", "Sky Fall", "Defeat a boss in your island's End",
+     {"c": {"trigger": "minecraft:player_killed_entity", "conditions": {"entity": [{"condition": "minecraft:entity_properties", "entity": "this", "predicate": {"minecraft:nbt": "{Tags:[\"cs_boss_e\"]}"}}]}}}, "challenge"),
     ("elytra", "end", "elytra", "Falling With Style", "Find an Elytra", has("minecraft:elytra"), "goal"),
     ("beacon", "blaze", "beacon", "Lighthouse", "Build a beacon", {"c": {"trigger": "minecraft:construct_beacon"}}, "challenge"),
 ]
@@ -1461,4 +1471,4 @@ for key, parent, icon, title, desc, crit, frame in ADV:
     else: d["display"]["background"] = "minecraft:gui/advancements/backgrounds/stone"
     js(f"data/{NS}/advancement/{key}.json", d)
 
-print(f"islands: {len(ISLANDS)}; challenges: {len(CH)}; advancements: {len(ADV)}")
+print(f"islands: {len(ISLANDS)}; challenges: {len(CH)}; advancements: {len(ADV)}; gear: {GEAR['sets']} sets, {GEAR['weapons']} weapons/tools, {GEAR['count']} recipes")

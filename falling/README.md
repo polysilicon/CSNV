@@ -9,7 +9,7 @@ Skyblock on `Falling01` (Fabric 26.2, Velocity name `skyblock`, was `falling`). 
   already in `world/datapacks`.
 - `mod/` is the `crispy_skyblock` server mod (`crispy-skyblock-2.0.0.jar`, build with
   `mod/build.sh <lib-dir> <javac>`, same lib dir as `pvp/spawnmod` plus Fabric API's `fabric-events-interaction-v0`
-  unpacked into `fa/META-INF/jars/`). Now `crispy-skyblock-2.3.1.jar`. Since 2.3.0 it has a Mixin
+  unpacked into `fa/META-INF/jars/`). Now `crispy-skyblock-2.4.0.jar`. Since 2.3.0 it has a Mixin
   (`EndPortalBlock.getPortalDestination`), so `build.sh` takes Sponge Mixin's jar as a third argument.
 
 ## How it plays
@@ -97,8 +97,53 @@ Hypixel-style, vanilla only. Prices, shop categories, minion types and tiers are
 - **Sidebar**: every player gets a SKYBLOCK sidebar (sent as packets only to them): location, purse, island level and
   minions.
 
+## Armor and weapons (2.4.0)
+
+`gear.py` (imported by `skyblock.py`) defines craftable Hypixel-style gear. Everything is made at a crafting table from
+farmable blocks; the top tier needs boss loot. The recipes are unlocked in every player's recipe book, and `/gear`
+(`/island gear`, or Island Menu > Armor & Weapons) shows each item with its recipe. Items are unbreakable and carry
+vanilla enchantments plus ones from `crispy_enchants` (the Anarchy/PvP custom enchant pack, also installed on Skyblock
+as `world/datapacks/crispy_enchants.zip`; build it with `anarchy/enchants/gen.py`).
+
+Armor pieces use the main block and core item in the piece's shape (helmet `#C#/# #`, chestplate `# #/#C#/###`,
+leggings `#C#/# #/# #`, boots `# #/C C`). Wearing all four gives the set bonus (checked once a second, `gear/bonus`).
+
+| Set | Rarity | Crafted from | Full set bonus |
+|---|---|---|---|
+| Farm Suit | Uncommon | Hay Block + Wheat | Bountiful Harvest: Speed I and Haste I. |
+| Mushroom Armor | Uncommon | Red Mushroom Block + Brown Mushroom | Night Stalker: At night: Strength I and Regeneration I. |
+| Cactus Armor | Uncommon | Cactus + Green Dye | Desert Bloom: Regeneration I while standing on sand. Attackers get pricked. |
+| Pumpkin Armor | Uncommon | Pumpkin + Jack O Lantern | Squash Buckler: Resistance I: you take 20% less damage. |
+| Angler Armor | Uncommon | Dried Kelp Block + Cod | Deep Sea Diver: Water Breathing, Dolphin's Grace and Luck II (better fishing loot). |
+| Lapis Armor | Rare | Lapis Block + Diamond | Deep Core: +4 hearts and Luck II. Each piece gives +1 heart too. |
+| Miner's Outfit | Rare | Coal Block + Iron Pickaxe | Pickaxe Prodigy: Haste II. Each piece mines a bit faster. |
+| Golem Armor | Rare | Iron Block + Carved Pumpkin | Iron Skin: Resistance I. Every 30s you get Absorption II. |
+| Blaze Armor | Epic | Magma Block + Blaze Rod | Hellfire: Fire Resistance. In the Nether: Strength I and Speed I too. |
+| Ender Armor | Epic | Purpur Block + Ender Eye | End Born: Speed I. In your island's End: Strength II and Regeneration I. |
+| Voidwalker Armor | Legendary | Shulker Shell + Netherite Ingot | Void Touched: Strength I, Speed I, Resistance I and +4 hearts. Fall into the void and you drift down slowly. |
+
+Weapons and tools. Right-click abilities are handled by the mod (`Gear`): an item with `custom_data`
+`{cs_ability, cs_cd}` runs `gear/ab/<key>` and goes on its own cooldown (`use_cooldown` group). Abilities only hit mobs
+in `#crispy_skyblock:gear_targets` (never players, villagers or pets) and never set fire to or break blocks.
+
+| Item | Rarity | Crafted from | Ability / notes |
+|---|---|---|---|
+| Undead Sword | Uncommon | 2 Bone Block, 1 Stick | Deals extra damage to zombies, skeletons and other undead. |
+| Rogue Sword | Uncommon | 1 Gold Block, 1 Sugar, 1 Stick | Speed Boost (right-click, 15s): Gain Speed III for 6 seconds. |
+| Zombie Sword | Rare | 4 Rotten Flesh, 2 Iron Block, 1 Stick | Instant Heal (right-click, 20s): Heal yourself and players within 7 blocks for 4 hearts. |
+| Golem Sword | Rare | 2 Iron Block, 2 Carved Pumpkin, 1 Stick | Iron Punch (right-click, 8s): Slam the ground: 10 damage to every enemy within 5 blocks and knocks them into the air. |
+| Leaping Sword | Rare | 2 Feather, 1 Slime Block, 1 Stick | Leap (right-click, 4s): Launch yourself forward and fall slowly for a moment. |
+| Aspect of the End | Rare | 2 Ender Eye, 1 Diamond Sword | Instant Transmission (right-click, 2s): Teleport 8 blocks ahead of you and gain Speed II for 3 seconds. |
+| Ember Rod | Epic | 1 Magma Block, 2 Blaze Rod | Fire Blast (right-click, 3s): Shoot a blast of flame at the first enemy in your sight (12 damage, up to 16 blocks). |
+| Pigman Sword | Epic | 2 Cooked Porkchop, 2 Gold Block, 1 Blaze Rod | Burning Souls (right-click, 20s): 8 damage to enemies within 6 blocks, then Absorption II for 15 seconds. |
+| Voidedge | Legendary | 4 Dragon Breath, 2 Shulker Shell, 1 Netherite Sword | Shadow Step (right-click, 8s): Teleport behind the nearest enemy within 12 blocks and strike it for 16 damage. |
+| Runaan's Crossbow | Rare | 4 Bone Block, 2 String, 1 Crossbow | Fires three arrows at once and reloads in a flash. |
+| Stonk | Rare | 3 Gold Block, 2 Stick | Mines faster than any vanilla pickaxe, smelts ores and puts the drops straight in your bag. |
+| Treecapitator | Epic | 3 Obsidian, 2 Stick | A good chance to fell a whole tree with one swing. |
+| Angler's Rod | Uncommon | 3 Dried Kelp Block, 2 String | Better catches, and they bite much sooner. |
+
 ## Mod commands
 
-`/island` (alias `/is`) opens the Island Menu; `/island choose|challenges|level|top`; `/invite <player>` (also
+`/island` (alias `/is`) opens the Island Menu; `/island choose|challenges|gear|level|top`; `/gear`; `/invite <player>` (also
 `/island invite <player>`). Menus are chest GUIs defined by the datapack in storage `crispy_skyblock:menus` (set on
 every load); an entry with `done:"<objective>"` shows its `item_done` once the viewer's score there is 1 or more.

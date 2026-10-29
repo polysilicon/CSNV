@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -42,6 +43,7 @@ public class SkyblockMod implements ModInitializer {
         PlayerBlockBreakEvents.BEFORE.register(Portals::canBreak);
         UseBlockCallback.EVENT.register(Realms::onUseBlock);
         UseBlockCallback.EVENT.register(Minions::onUseBlock);
+        UseItemCallback.EVENT.register(Gear::onUseItem);
         UseEntityCallback.EVENT.register((player, world, hand, entity, hit) -> {
             // merchants: villagers tagged cs_npc + cs_shop_<category> open that shop instead of trading
             if (entity.entityTags().contains("cs_npc")) {
@@ -58,6 +60,8 @@ public class SkyblockMod implements ModInitializer {
                     .executes(c -> invite(c.getSource(), EntityArgument.getPlayer(c, "player")))));
             d.register(Commands.literal("challenges")
                     .executes(c -> menu(c.getSource(), "challenges")));
+            d.register(Commands.literal("gear")
+                    .executes(c -> menu(c.getSource(), "gear")));
             register(d, "island");
             register(d, "is");
         });
@@ -70,6 +74,7 @@ public class SkyblockMod implements ModInitializer {
                         .executes(c -> invite(c.getSource(), EntityArgument.getPlayer(c, "player")))))
                 .then(Commands.literal("choose").executes(c -> choose(c.getSource())))
                 .then(Commands.literal("challenges").executes(c -> menu(c.getSource(), "challenges")))
+                .then(Commands.literal("gear").executes(c -> menu(c.getSource(), "gear")))
                 .then(Commands.literal("level").executes(c -> IslandLevels.command(c.getSource())))
                 .then(Commands.literal("top").executes(c -> IslandLevels.top(c.getSource())))
                 // run by the datapack after a new island, so an island left empty drops off the board right away
