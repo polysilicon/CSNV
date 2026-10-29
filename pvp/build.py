@@ -381,7 +381,7 @@ def alt(text, codes):
 HW_COSMETICS = [
     (1, "tag", "hw_lostmyhead", "Lost My Head", "&8[&4☠ " + alt("Lost My Head", ["&c", "&4"]) + "&8]"),
     (2, "tag", "hw_pumpkinking", "Pumpkin King", "&8[&6☾ " + alt("Pumpkin", ["&6&l", "&e&l"]) + " &8&lKing&8]"),
-    (3, "tag", "hw_graveborn", "Graveborn", "&8[&7✝ " + alt("Graveborn", ["&7", "&8", "&f"]) + "&8]"),
+    (3, "tag", "hw_spookyscary", "Spooky Scary", "&8[&7☠ " + alt("Spooky", ["&f", "&7"]) + " " + alt("Scary", ["&6", "&8"]) + "&8]"),
     (4, "tag", "hw_crispyhalloween", "Crispy Halloween '26", "&8[&6☾ " + alt("Crispy", ["&6&l", "&e&l"]) + " " + alt("Halloween", ["&6", "&5"]) + " &d'26&8]"),
     (5, "tag", "hw_trickortreat", "Trick or Treat", "&6[" + alt("Trick or Treat", ["&e", "&6", "&f"]) + "&6]"),
     (6, "tag", "hw_slasher", "Slasher", "&4[&c⚔ " + alt("Slasher", ["&4&l", "&c&l"]) + "&4]"),

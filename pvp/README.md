@@ -467,7 +467,7 @@ Michael Myers, with jack o'lanterns, at 6.5 101 5.5 in the lobby; `admin/place_h
   |---|---|---|---|
   | 1 | tag | Lost My Head | `&8[&4☠ &cL&4o&cs&4t &cM&4y &cH&4e&ca&4d&8]` |
   | 2 | tag | Pumpkin King | `&8[&6☾ &6&lP&e&lu&6&lm&e&lp&6&lk&e&li&6&ln &8&lKing&8]` |
-  | 3 | tag | Graveborn | `&8[&7✝ &7G&8r&fa&7v&8e&fb&7o&8r&fn&8]` |
+  | 3 | tag | Spooky Scary | `&8[&7☠ &fS&7p&fo&7o&fk&7y &6S&8c&6a&8r&6y&8]` |
   | 4 | tag | Crispy Halloween '26 | `&8[&6☾ &6&lC&e&lr&6&li&e&ls&6&lp&e&ly &6H&5a&6l&5l&6o&5w&6e&5e&6n &d'26&8]` |
   | 5 | tag | Trick or Treat | `&6[&eT&6r&fi&ec&6k &fo&er &6T&fr&ee&6a&ft&6]` |
   | 6 | tag | Slasher | `&4[&c⚔ &4&lS&c&ll&4&la&c&ls&4&lh&c&le&4&lr&4]` |
