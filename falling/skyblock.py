@@ -942,7 +942,7 @@ for realm, bosses in BOSSES.items():
 summon minecraft:{ent} ~ ~ ~ {nbt}
 $scoreboard players set @e[tag=cs_bnew,limit=1,sort=nearest] cs_bplot $(id)
 tag @e[tag=cs_bnew] remove cs_bnew
-$bossbar add {NS}:{realm}$(id) {snbt(txt(name, color if color != "white" else "gray", bold=True))}
+$bossbar add {NS}:{realm}$(id) {snbt(txt(name, {"white": "gray", "purple": "light_purple", "pink": "light_purple"}.get(color, color), bold=True))}
 $bossbar set {NS}:{realm}$(id) color {color}
 $bossbar set {NS}:{realm}$(id) max {hp}
 $bossbar set {NS}:{realm}$(id) value {hp}
