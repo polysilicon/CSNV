@@ -465,12 +465,12 @@ Michael Myers, with jack o'lanterns, at 6.5 101 5.5 in the lobby; `admin/place_h
 
   | # | Kind | Name | Code |
   |---|---|---|---|
-| 1 | tag | Pumpkin King | `&6&l[Pumpkin King]` |
-  | 2 | tag | Slasher | `&4[Slasher]` |
-  | 3 | tag | Haunted | `&5[Haunted]` |
-  | 4 | tag | Ghoul | `&2[Ghoul]` |
-  | 5 | tag | Trick or Treat | `&6[Trick or &5Treat&6]` |
-  | 6 | tag | Survivor '26 | `&8[&7☠ Survivor '26&8]` |
+  | 1 | tag | Horseman's Bane | `&8[&4☠ &4H&co&4r&cs&4e&cm&4a&cn&4'&cs &4B&ca&4n&ce&8]` |
+  | 2 | tag | Pumpkin King | `&8[&6☾ &6&lP&e&lu&6&lm&e&lp&6&lk&e&li&6&ln &8&lKing&8]` |
+  | 3 | tag | Graveborn | `&8[&7✝ &7G&8r&fa&7v&8e&fb&7o&8r&fn&8]` |
+  | 4 | tag | Night Survivor '26 | `&5[&d☾ &5Night &dS&5u&dr&5v&di&5v&do&5r &d'26&5]` |
+  | 5 | tag | Trick or Treat | `&6[&eT&6r&fi&ec&6k &fo&er &6T&fr&ee&6a&ft&6]` |
+  | 6 | tag | Slasher | `&4[&c⚔ &4&lS&c&ll&4&la&c&ls&4&lh&c&le&4&lr&4]` |
   | 7 | name colour | Pumpkin | `&#ff7518>&#ffb347` |
   | 8 | name colour | Candy Corn | `&#ffd23f/&#ff8c1a/&#ffffff` |
   | 9 | name colour | Witch's Brew | `&#7fff00>&#8a2be2` |
