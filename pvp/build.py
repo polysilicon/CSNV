@@ -356,9 +356,9 @@ HALLOWEEN_KITS = [
     (47, "ghostface", "Ghostface", "white", "black_dye", ["Buck 120 Knife: Sharpness III, Assassin II · black robe (Dodge II)", ab_line("stalk", "ambush")],
      [f"give @s {item('iron_sword', 'Buck 120 Knife', 'white', {'sharpness': 3, CE + 'assassin': 2})}", AB("stalk"), AB("ambush")]
      + suit("leather", 3, dye=1907233, extra={"chest": {CE + "dodge": 2}}) + head("ghostface", "Ghostface", "white"), []),
-    (48, "chucky", "Chucky", "red", "red_dye", ["Knife: Sharpness IV, Poison II · overalls · tiny and quick", ab_line("voodoo", "hide_and_seek")],
-     [f"give @s {item('iron_sword', 'Knife', 'red', {'sharpness': 4, CE + 'poison': 2})}", AB("voodoo"), AB("hide_and_seek")]
-     + suit("leather", 4, dye={"head": 3103400, "chest": 3103400, "legs": 3103400, "feet": 15790320}) + head("chucky", "Chucky", "red") + size(0.65), []),
+    (48, "fazbear", "Freddy Fazbear", "gold", "jukebox", ["Microphone (mace): Density II, Stun II · animatronic suit · big", ab_line("jumpscare", "power_outage")],
+     [f"give @s {item('mace', 'Microphone', 'gold', {'density': 2, CE + 'stun': 2})}", AB("jumpscare"), AB("power_outage")]
+     + suit("leather", 3, dye=7948840, extra={"chest": {CE + "hardened": 2}}) + head("fazbear", "Freddy Fazbear", "gold") + size(1.2), []),
 ]
 HW_IDS = [k[0] for k in HALLOWEEN_KITS]
 ALL_KITS = KITS + HALLOWEEN_KITS

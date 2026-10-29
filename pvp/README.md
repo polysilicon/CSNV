@@ -446,10 +446,9 @@ Michael Myers, with jack o'lanterns, at 6.5 101 5.5 in the lobby; `admin/place_h
   | Jason Voorhees | Machete (axe): Sharpness III, Cleave II · big and tough | Machete Throw · Shift |
   | Freddy Krueger | Bladed Glove: Sharpness III, Lifesteal II · striped sweater | Nightmare · Dream Demon |
   | Ghostface | Buck 120 Knife: Sharpness III, Assassin II · black robe (Dodge II) | Stalk · Ambush |
-  | Chucky | Knife: Sharpness IV, Poison II · overalls · tiny and quick | Voodoo Doll · Hide and Seek |
+  | Freddy Fazbear | Microphone (mace): Density II, Stun II · animatronic suit · big | Jumpscare · Power Outage |
 
-  Freddy, Jason, Michael Myers and Ghostface heads come from the Head Index cache; Chucky's skin was drawn for this and
-  uploaded to mineskin.org.
+  All five heads come from the Head Index (minecraft-heads.com) cache.
 - **Mobs** (its own roster, rolled instead of the normal pool): Pumpkinheads (zombies in carved pumpkins), Restless Bones
   (skeletons with jack o'lanterns, wave 2+), Graveyard Spiders (2+), Witches (3+), Ghosts (vexes, 4+), Ghouls (zombie
   villagers, 5+), Reapers (wither skeletons, 6+), Jack-o-Creepers (7+).

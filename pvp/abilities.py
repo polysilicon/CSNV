@@ -496,16 +496,15 @@ ABILITIES = {
         DASH, cone(3, damage(7)), cone(3, "effect give @s minecraft:slowness 2 1"),
         "execute anchored eyes run particle minecraft:crit ^ ^ ^2 0.5 0.4 0.5 0.2 20",
         snd("entity.player.attack.strong", 1, 0.8), bar("AMBUSH", "gray")]),
-    "voodoo": ("Voodoo Doll", "dark_red", "totem_of_undying", 10, ["Stabs a voodoo doll of the enemy you aim at.", "24 blocks · 9 magic damage (through armor) · Wither I 3 s"], [
-        *ray(48),
-        hit(damage(9, "magic")), hit("effect give @s minecraft:wither 3 0"),
-        hit("particle minecraft:damage_indicator ~ ~1 ~ 0.3 0.5 0.3 0.1 6"),
-        "execute unless entity @e[tag=pvp.hit] run " + snd("block.fire.extinguish", 0.5, 1.5),
-        snd("entity.witch.celebrate", 1, 1.4), bar("HI, I'M CHUCKY. WANNA PLAY?", "dark_red")]),
-    "hide_and_seek": ("Hide and Seek", "red", "recovery_compass", 18, ["Duck out of sight and scurry away.", "Invisibility · Speed II · Jump Boost II · 5 s"], [
-        "effect give @s minecraft:invisibility 5 0 true", "effect give @s minecraft:speed 5 1 true", "effect give @s minecraft:jump_boost 5 1 true",
-        "particle minecraft:poof ~ ~0.5 ~ 0.3 0.3 0.3 0.02 20",
-        snd("entity.witch.ambient", 1, 1.8), bar("HIDE AND SEEK", "red")]),
+    "jumpscare": ("Jumpscare", "gold", "jukebox", 9, ["Lunge at what's in front of you with a scream.", "3 blocks · 9 damage · Blindness 2 s · Slowness III 2 s"], [
+        DASH, cone(3, damage(9)), cone(3, "effect give @s minecraft:blindness 2 0"), cone(3, "effect give @s minecraft:slowness 2 2"),
+        "execute anchored eyes run particle minecraft:angry_villager ^ ^ ^2 0.5 0.4 0.5 0 8",
+        snd("entity.ravager.roar", 1, 1.6), snd("entity.zombie.attack_iron_door", 1, 0.7), bar("JUMPSCARE", "gold")]),
+    "power_outage": ("Power Outage", "dark_gray", "redstone_lamp", 18, ["The lights go out for everyone near you.", "16 blocks · Darkness + Slowness I 6 s · you get Speed II + Strength I 5 s"], [
+        around(16, "effect give @s minecraft:darkness 6 0"), around(16, "effect give @s minecraft:slowness 6 0"),
+        "effect give @s minecraft:speed 5 1", "effect give @s minecraft:strength 5 0",
+        "particle minecraft:smoke ~ ~1 ~ 4 1 4 0.02 80",
+        snd("block.beacon.deactivate", 1, 0.6), snd("block.note_block.chime", 0.6, 0.5), bar("POWER OUTAGE", "dark_gray")]),
 }
 
 
