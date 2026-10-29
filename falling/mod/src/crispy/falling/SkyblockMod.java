@@ -40,6 +40,7 @@ public class SkyblockMod implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(Sidebar::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Portals::onTick);
         PlayerBlockBreakEvents.BEFORE.register(Portals::canBreak);
+        UseBlockCallback.EVENT.register(Realms::onUseBlock);
         UseBlockCallback.EVENT.register(Minions::onUseBlock);
         UseEntityCallback.EVENT.register((player, world, hand, entity, hit) -> {
             // merchants: villagers tagged cs_npc + cs_shop_<category> open that shop instead of trading

@@ -448,6 +448,7 @@ scoreboard objectives add cs_npend dummy
 scoreboard objectives add cs_lvl dummy
 scoreboard objectives add cs_coins dummy
 {CH_OBJS}
+function {NS}:boss/objectives
 scoreboard players set #8 cs_tmp 8
 scoreboard players set #64 cs_tmp {COLS}
 scoreboard players set #grid cs_tmp {GRID}
@@ -684,6 +685,7 @@ fn("second", f"""
 scoreboard players set #t cs_tmp 0
 particle minecraft:portal 0.5 {Y+2.5} {HUB_PORTAL_Z+0.5} 0.9 0.9 0.05 0.3 30 force
 kill @e[type=#{NS}:hostile,x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}]
+execute as @e[tag=cs_boss] at @s run function {NS}:boss/tick
 scoreboard players remove @a[scores={{cs_cd=1..}}] cs_cd 1
 scoreboard players reset * cs_on
 scoreboard players reset * cs_non
@@ -732,6 +734,8 @@ $scoreboard players add #p$(id) cs_age 1
 $execute if score #p$(id) cs_age matches {PORTAL_AGE} run function {NS}:ev/portal with storage {NS}:d cur
 function {NS}:plot/ntick with storage {NS}:d cur
 $execute unless data storage {NS}:d plots[$(id)].portal run function {NS}:portal/retro with storage {NS}:d cur
+$execute if score #p$(id) cs_bce matches 1.. run scoreboard players remove #p$(id) cs_bce 1
+$execute if score #p$(id) cs_bcn matches 1.. run scoreboard players remove #p$(id) cs_bcn 1
 $execute positioned $(cx) {ISLAND_Y} $(cz) run particle minecraft:portal ~0.5 ~2.5 ~{PORTAL_DZ + 0.5} 0.9 0.9 0.05 0.3 25
 # hostile cap: mobs already here stay; brand-new spawns over the cap are sent into the void
 $execute store result score #h cs_tmp if entity @e[type=#{NS}:hostile,x=$(x),y=-64,z=$(z),dx={SIZE-1},dy=400,dz={SIZE-1}]
@@ -804,21 +808,247 @@ summon minecraft:zombie ~1 ~1 ~-1
 summon minecraft:skeleton ~-1 ~1 ~1
 particle minecraft:explosion_emitter ~ ~2 ~ 0 0 0 0 1 force
 """)
-fn("ev/portal", spot() + f"\nfunction {NS}:ev/portal_at with storage {NS}:d ev")
-fn("ev/portal_at", f"""
-$execute positioned $(x) {SKY_Y} $(z) positioned over motion_blocking_no_leaves run function {NS}:ev/portal_build
-$tellraw @a[scores={{cs_plot=$(id)}}] [{{text:"✦ ",color:"light_purple"}},{{text:"An End portal crashed into your island! Fill it with 12 Eyes of Ender to reach the End.",color:"light_purple"}}]
+END_DX = 14                # the island's End portal: on its own platform 14 blocks east of the island centre
+fn("ev/portal", f"""
+# the End portal: on its own platform east of the island, out over the void, so it never lands on anything built
+$execute positioned $(cx) {ISLAND_Y} $(cz) positioned ~{END_DX} ~ ~ run function {NS}:ev/portal_build
+$data modify storage {NS}:d plots[$(id)].endp set value 1b
+$tellraw @a[scores={{cs_plot=$(id)}}] [{{text:"✦ ",color:"light_purple"}},{{text:"An End portal appeared east of your island, over the void. Bridge to it and fill it with 12 Eyes of Ender to reach your island's own End.",color:"light_purple"}}]
 $execute as @a[scores={{cs_plot=$(id)}}] at @s run playsound minecraft:block.end_portal_frame.fill master @s ~ ~ ~ 1 0.5
 """)
-fn("ev/portal_build", """
-fill ~-3 ~ ~-3 ~3 ~ ~3 minecraft:stone_bricks replace minecraft:air
-fill ~-2 ~1 ~-2 ~2 ~3 ~2 minecraft:air
-fill ~-1 ~1 ~-2 ~1 ~1 ~-2 minecraft:end_portal_frame[facing=south]
-fill ~-1 ~1 ~2 ~1 ~1 ~2 minecraft:end_portal_frame[facing=north]
-fill ~-2 ~1 ~-1 ~-2 ~1 ~1 minecraft:end_portal_frame[facing=east]
-fill ~2 ~1 ~-1 ~2 ~1 ~1 minecraft:end_portal_frame[facing=west]
-particle minecraft:portal ~ ~2 ~ 1.5 1 1.5 0.5 200 force
+epb = Build(0)
+epb.fill(-3, 0, -3, 3, 0, 3, "reinforced_deepslate")
+epb.fill(-2, 0, -2, 2, 0, 2, "end_stone_bricks")
+epb.fill(-2, -1, -2, 2, -1, 2, "reinforced_deepslate")
+epb.fill(-1, 0, -1, 1, 0, 1, "obsidian")
+epb.fill(-1, 1, -2, 1, 1, -2, "end_portal_frame[facing=south]")
+epb.fill(-1, 1, 2, 1, 1, 2, "end_portal_frame[facing=north]")
+epb.fill(-2, 1, -1, -2, 1, 1, "end_portal_frame[facing=east]")
+epb.fill(2, 1, -1, 2, 1, 1, "end_portal_frame[facing=west]")
+for cx_, cz_ in ((-3, -3), (-3, 3), (3, -3), (3, 3)): epb.set(cx_, 1, cz_, "end_rod[facing=up]")
+fn("ev/portal_build", "\n".join(epb.c) + "\nparticle minecraft:portal ~ ~2 ~ 1.5 1 1.5 0.5 200 force\n" + "summon minecraft:text_display ~0.5 ~3.2 ~0.5 " + snbt({
+    "Tags": [NS], "billboard": "center", "background": 1073741824,
+    "text": {"text": "End Portal", "color": "dark_purple", "bold": True, "extra": [txt("\n12 Eyes of Ender: your own End and its boss", "gray", bold=False)]}}))
+
+# ======================================================================= each island's own End: a void dimension, one sky island per island
+END_Y = 64
+etype = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "the_end_type.json")))
+etype["has_ender_dragon_fight"] = False
+js(f"data/{NS}/dimension_type/sky_end.json", etype)
+js(f"data/{NS}/dimension/end.json", {"type": f"{NS}:sky_end", "generator": {"type": "minecraft:flat", "settings": {
+    "biome": "minecraft:the_end", "layers": [{"block": "minecraft:air", "height": 1}], "lakes": False, "features": False, "structure_overrides": []}}})
+eb = Build(11)
+eb.blob(10, 7, "end_stone", "end_stone", "end_stone")
+eb.disk(0, 5.5, "purpur_block")
+eb.disk(0, 4.5, "end_stone_bricks")
+eb.fill(-1, 0, -1, 1, 0, 1, "crying_obsidian")
+eb.set(0, 1, 0, "lodestone")
+for cx_, cz_ in ((-1, -1), (-1, 1), (1, -1), (1, 1)): eb.set(cx_, 1, cz_, "end_rod[facing=up]")
+for px, pz, h in ((7, -3, 4), (-7, 2, 5), (4, 7, 3), (-5, -6, 3)):
+    eb.fill(px, 1, pz, px, h, pz, "obsidian"); eb.set(px, h + 1, pz, "end_rod[facing=up]")
+for fx, fz in ((-7, -2), (7, 3), (-3, 8), (2, -7)): eb.set(fx, 1, fz, "chorus_flower[age=0]")
+# the way home: a purpur gateway on the north edge
+eb.fill(-2, 0, -10, 2, 0, -8, "end_stone_bricks")
+eb.fill(-2, 1, -9, -2, 4, -9, "purpur_pillar")
+eb.fill(2, 1, -9, 2, 4, -9, "purpur_pillar")
+eb.fill(-1, 4, -9, 1, 4, -9, "purpur_block")
+eb.fill(-1, 1, -9, 1, 3, -9, "air")
+eb.set(0, 5, -9, "end_rod[facing=up]")
+def tdisp(dx, dy, dz, text):
+    return f"summon minecraft:text_display ~{dx} ~{dy} ~{dz} " + snbt({"Tags": [NS, "cs_realml"], "billboard": "center", "background": 1073741824, "text": text})
+fn("end/island", "\n".join(eb.c) + "\n" + "\n".join([
+    tdisp(0.5, 2.2, 0.5, {"text": "Summoning Altar", "color": "light_purple", "bold": True, "extra": [txt("\nRight-click the lodestone to call your boss", "gray", bold=False)]}),
+    tdisp(0.5, 5.8, -8.5, {"text": "Back to your island", "color": "aqua", "bold": True, "extra": [txt("\nWalk through", "gray", bold=False)]})]))
+
+# ======================================================================= the Nether boss arena, a short bridge south of the island's Nether island
+ARENA_DZ = 16
+ab = Build(12)
+ab.blob(8, 6, "blackstone", "basalt", "blackstone")
+ab.disk(0, 6.5, "polished_blackstone_bricks")
+ab.disk(0, 5.5, "blackstone")
+ab.fill(-1, 0, -1, 1, 0, 1, "crying_obsidian")
+ab.set(0, 1, 0, "lodestone")
+for cx_, cz_ in ((-5, -5), (-5, 5), (5, -5), (5, 5)):
+    ab.set(cx_, 1, cz_, "polished_blackstone_wall"); ab.set(cx_, 2, cz_, "soul_lantern")
+fn("nether/arena", "\n".join(ab.c) + "\n" + tdisp(0.5, 2.2, 0.5, {"text": "Summoning Altar", "color": "red", "bold": True,
+   "extra": [txt("\nRight-click the lodestone to call your boss", "gray", bold=False)]}))
+fn("nether/arena_retro", f"""
+$execute in minecraft:the_nether positioned $(ncx) {NFLOOR_Y} $(ncz) positioned ~ ~ ~{ARENA_DZ} run function {NS}:nether/arena
+$data modify storage {NS}:d plots[$(id)].narena set value 1b
+$tellraw @a[scores={{cs_plot=$(id)}}] [{{text:"🔥 ",color:"gold"}},{{text:"A boss arena rose out of the lava south of your Nether island. Bridge to it and right-click the altar!",color:"gold"}}]
 """)
+
+# ======================================================================= bosses: four per realm, each island works up its own ladder
+# key, name, entity, bossbar colour, health, attributes, extra NBT, ability every N seconds, coins
+BOSSES = {
+    "e": [("colossus", "Ender Colossus", "enderman", "purple", 400, {"scale": 3.0, "attack_damage": 14.0, "movement_speed": 0.32, "knockback_resistance": 1.0, "follow_range": 48.0}, {}, 6),
+          ("ravager", "Void Ravager", "ravager", "purple", 500, {"scale": 1.6, "attack_damage": 16.0, "knockback_resistance": 1.0, "follow_range": 48.0}, {}, 10),
+          ("matriarch", "Shulker Matriarch", "shulker", "pink", 450, {"scale": 3.0, "armor": 10.0}, {"Color": 10}, 9),
+          ("archmage", "The Archmage", "evoker", "purple", 350, {"scale": 1.8, "follow_range": 48.0}, {}, 7)],
+    "n": [("blaze", "Blaze King", "blaze", "yellow", 400, {"scale": 2.5, "attack_damage": 10.0, "follow_range": 48.0}, {}, 9),
+          ("magma", "Magma Titan", "magma_cube", "red", 500, {"attack_damage": 10.0, "follow_range": 48.0, "knockback_resistance": 1.0}, {"Size": 5}, 8),
+          ("warlord", "Brute Warlord", "piglin_brute", "red", 450, {"scale": 2.0, "attack_damage": 16.0, "knockback_resistance": 1.0, "follow_range": 48.0},
+           {"IsImmuneToZombification": True, "equipment": {"mainhand": {"id": "minecraft:netherite_axe"}, "head": {"id": "minecraft:golden_helmet"}}}, 12),
+          ("knight", "Wither Knight", "wither_skeleton", "white", 500, {"scale": 2.5, "attack_damage": 14.0, "follow_range": 48.0, "knockback_resistance": 1.0},
+           {"equipment": {"mainhand": {"id": "minecraft:netherite_sword"}, "head": {"id": "minecraft:netherite_helmet"}, "chest": {"id": "minecraft:netherite_chestplate"}}}, 6)],
+}
+REALM_COINS = {"e": 3000, "n": 1500}
+
+REALM_NAME = {"e": "End", "n": "Nether"}
+BOSS_COOLDOWN = 1200          # seconds of island play time between boss fights
+BOSS_OBJS = "\n".join(f"scoreboard objectives add {o}{r} dummy" for r in "en" for o in ("cs_ba", "cs_bc", "cs_bi", "cs_bk")) + \
+    "\nscoreboard objectives add cs_bplot dummy\nscoreboard objectives add cs_btm dummy\nscoreboard objectives add cs_bidle dummy\nscoreboard players set #4 cs_tmp 4"
+fn("boss/objectives", BOSS_OBJS)
+ABILITY = {
+    "colossus": ["playsound minecraft:entity.enderman.scream hostile @a[distance=..32] ~ ~ ~ 2 0.5",
+                 "particle minecraft:reverse_portal ~ ~1 ~ 3 1 3 0.1 150 force",
+                 "damage @a[distance=..5,gamemode=!creative,gamemode=!spectator] 8 minecraft:mob_attack by @s",
+                 "effect give @a[distance=..5,gamemode=!creative,gamemode=!spectator] minecraft:levitation 1 3"],
+    "ravager": ["playsound minecraft:entity.ravager.roar hostile @a[distance=..32] ~ ~ ~ 2 0.7",
+                "summon minecraft:endermite ~2 ~1 ~ {Tags:[\"cs_bminion\",\"cs_bmnew\",\"cs_old\"]}",
+                "summon minecraft:endermite ~-2 ~1 ~ {Tags:[\"cs_bminion\",\"cs_bmnew\",\"cs_old\"]}",
+                "summon minecraft:endermite ~ ~1 ~2 {Tags:[\"cs_bminion\",\"cs_bmnew\",\"cs_old\"]}"],
+    "matriarch": ["playsound minecraft:entity.shulker.shoot hostile @a[distance=..32] ~ ~ ~ 2 0.5",
+                  "summon minecraft:phantom ~2 ~6 ~ {Tags:[\"cs_bminion\",\"cs_bmnew\",\"cs_old\"]}",
+                  "summon minecraft:phantom ~-2 ~6 ~ {Tags:[\"cs_bminion\",\"cs_bmnew\",\"cs_old\"]}",
+                  "effect give @a[distance=..10,gamemode=!creative,gamemode=!spectator] minecraft:levitation 2 1"],
+    "archmage": ["particle minecraft:witch ~ ~1.5 ~ 1 1 1 0.1 60 force",
+                 "spreadplayers ~ ~ 1 6 false @s",
+                 "effect give @a[distance=..12,gamemode=!creative,gamemode=!spectator] minecraft:blindness 2 0"],
+    "blaze": ["playsound minecraft:entity.blaze.ambient hostile @a[distance=..32] ~ ~ ~ 2 0.5",
+              "summon minecraft:blaze ~2 ~1 ~ {Tags:[\"cs_bminion\",\"cs_bmnew\",\"cs_old\"]}",
+              "summon minecraft:blaze ~-2 ~1 ~ {Tags:[\"cs_bminion\",\"cs_bmnew\",\"cs_old\"]}"],
+    "magma": ["playsound minecraft:entity.magma_cube.squish hostile @a[distance=..32] ~ ~ ~ 2 0.4",
+              "particle minecraft:lava ~ ~0.5 ~ 2 0.2 2 0 60 force",
+              "damage @a[distance=..4,gamemode=!creative,gamemode=!spectator] 6 minecraft:mob_attack by @s",
+              "effect give @a[distance=..7,gamemode=!creative,gamemode=!spectator] minecraft:slowness 3 1"],
+    "warlord": ["playsound minecraft:entity.piglin_brute.angry hostile @a[distance=..32] ~ ~ ~ 2 0.6",
+                "summon minecraft:piglin_brute ~2 ~1 ~ {IsImmuneToZombification:1b,Tags:[\"cs_bminion\",\"cs_bmnew\",\"cs_old\"]}",
+                "summon minecraft:piglin_brute ~-2 ~1 ~ {IsImmuneToZombification:1b,Tags:[\"cs_bminion\",\"cs_bmnew\",\"cs_old\"]}"],
+    "knight": ["playsound minecraft:entity.wither_skeleton.ambient hostile @a[distance=..32] ~ ~ ~ 2 0.5",
+               "particle minecraft:smoke ~ ~1 ~ 2 1 2 0.02 80 force",
+               "effect give @a[distance=..6,gamemode=!creative,gamemode=!spectator] minecraft:wither 4 1"],
+}
+for realm, bosses in BOSSES.items():
+    for i, (key, name, ent, color, hp, attrs, extra, every) in enumerate(bosses):
+        data = {"Tags": [NS, "cs_boss", "cs_bnew", "cs_old", f"cs_boss_{realm}", f"cs_bt_{key}"],
+                "CustomName": txt(name, "light_purple" if realm == "e" else "red", bold=True), "CustomNameVisible": True,
+                "PersistenceRequired": True, "Health": f"{hp}.0f", "DeathLootTable": f"{NS}:entities/boss_{key}",
+                "attributes": [{"id": "minecraft:max_health", "base": float(hp)}] + [{"id": f"minecraft:{a}", "base": v} for a, v in attrs.items()],
+                "drop_chances": {"mainhand": 0.0, "head": 0.0, "chest": 0.0}}
+        data.update(extra)
+        nbt = snbt(data).replace(f'"{hp}.0f"', f"{hp}.0f")
+        fn(f"boss/{realm}/{i}", f"""
+summon minecraft:{ent} ~ ~ ~ {nbt}
+$scoreboard players set @e[tag=cs_bnew,limit=1,sort=nearest] cs_bplot $(id)
+tag @e[tag=cs_bnew] remove cs_bnew
+$bossbar add {NS}:{realm}$(id) {snbt(txt(name, color if color != "white" else "gray", bold=True))}
+$bossbar set {NS}:{realm}$(id) color {color}
+$bossbar set {NS}:{realm}$(id) max {hp}
+$bossbar set {NS}:{realm}$(id) value {hp}
+$bossbar set {NS}:{realm}$(id) players @a[distance=..48]
+$tellraw @a[scores={{cs_plot=$(id)}}] [{{text:"☠ ",color:"dark_red"}},{{text:"{name}",color:"{'light_purple' if realm == 'e' else 'red'}",bold:1b}},{{text:" has been summoned!",color:"gray",bold:0b}}]
+playsound minecraft:entity.wither.spawn hostile @a[distance=..48] ~ ~ ~ 1 {'0.7' if realm == 'e' else '1.1'}
+particle minecraft:explosion_emitter ~ ~1 ~ 0 0 0 0 1 force
+""")
+        fn(f"boss/ab/{key}", "\n".join(ABILITY[key] + ["scoreboard players set @s cs_btm 0"]))
+    # loot: each boss
+fn("boss/summon", f"""
+# right-clicking a summoning altar (the mod runs this as the player): {{r:"e"|"n", id, x, y, z}} = realm, island, where the boss appears
+$execute unless score @s cs_plot matches $(id) run return run tellraw @s {{text:"This isn't your island's altar.",color:"red"}}
+# a boss that's gone without being killed (fell into the void...) doesn't block the next one
+$execute if score #p$(id) cs_ba$(r) matches 1 positioned $(x) $(y) $(z) unless entity @e[tag=cs_boss_$(r),distance=..96] run scoreboard players reset #p$(id) cs_ba$(r)
+$execute if score #p$(id) cs_ba$(r) matches 1 run return run tellraw @s {{text:"Your boss is already out there!",color:"red"}}
+$execute if score #p$(id) cs_bc$(r) matches 1.. run scoreboard players operation #m cs_tmp = #p$(id) cs_bc$(r)
+$execute if score #p$(id) cs_bc$(r) matches 1.. run scoreboard players operation #m cs_tmp /= #60 cs_tmp
+$execute if score #p$(id) cs_bc$(r) matches 1.. run return run tellraw @s [{{text:"The altar is still recharging: about ",color:"red"}},{{score:{{name:"#m",objective:"cs_tmp"}},color:"white"}},{{text:" more minutes of island play.",color:"red"}}]
+# each island starts on a different boss of the realm's four
+$execute unless score #p$(id) cs_bi$(r) matches 0.. run scoreboard players set #p$(id) cs_bi$(r) $(id)
+$scoreboard players operation #p$(id) cs_bi$(r) %= #4 cs_tmp
+$execute if score #p$(id) cs_bi$(r) matches 0 positioned $(x) $(y) $(z) run function {NS}:boss/$(r)/0 {{id:$(id)}}
+$execute if score #p$(id) cs_bi$(r) matches 1 positioned $(x) $(y) $(z) run function {NS}:boss/$(r)/1 {{id:$(id)}}
+$execute if score #p$(id) cs_bi$(r) matches 2 positioned $(x) $(y) $(z) run function {NS}:boss/$(r)/2 {{id:$(id)}}
+$execute if score #p$(id) cs_bi$(r) matches 3 positioned $(x) $(y) $(z) run function {NS}:boss/$(r)/3 {{id:$(id)}}
+$scoreboard players set #p$(id) cs_ba$(r) 1
+""")
+fn("boss/tick", f"""
+# every second, as each boss: bossbar, abilities, and leaving if nobody's near for 2 minutes
+execute store result storage {NS}:d b.id int 1 run scoreboard players get @s cs_bplot
+data modify storage {NS}:d b.r set value "e"
+execute if entity @s[tag=cs_boss_n] run data modify storage {NS}:d b.r set value "n"
+function {NS}:boss/tick2 with storage {NS}:d b
+""")
+abil = "\n".join(f"execute if entity @s[tag=cs_bt_{k}] if score @s cs_btm matches {every}.. run function {NS}:boss/ab/{k}"
+                 for bosses in BOSSES.values() for (k, _n, _e, _c, _h, _a, _x, every) in bosses)
+fn("boss/tick2", f"""
+$execute store result bossbar {NS}:$(r)$(id) value run data get entity @s Health
+$bossbar set {NS}:$(r)$(id) players @a[distance=..48]
+scoreboard players add @s cs_btm 1
+{abil}
+$tag @e[tag=cs_bmnew] add cs_bm_$(r)$(id)
+tag @e[tag=cs_bmnew] remove cs_bmnew
+execute if entity @a[distance=..64] run scoreboard players set @s cs_bidle 0
+execute unless entity @a[distance=..64] run scoreboard players add @s cs_bidle 1
+$execute if score @s cs_bidle matches 120.. run function {NS}:boss/despawn {{r:"$(r)",id:$(id)}}
+""")
+fn("boss/despawn", f"""
+$kill @e[tag=cs_bm_$(r)$(id)]
+$bossbar remove {NS}:$(r)$(id)
+$scoreboard players reset #p$(id) cs_ba$(r)
+$tellraw @a[scores={{cs_plot=$(id)}}] {{text:"Your boss got bored and left (nobody was near it). Summon it again any time.",color:"gray"}}
+data modify entity @s DeathLootTable set value "minecraft:empty"
+tp @s ~ -500 ~
+kill @s
+""")
+# kill credit: an advancement fires for whoever lands the killing blow
+js(f"data/{NS}/advancement/boss_kill.json", {"criteria": {"k": {"trigger": "minecraft:player_killed_entity", "conditions": {"entity": [
+    {"condition": "minecraft:entity_properties", "entity": "this", "predicate": {"nbt": "{Tags:[\"cs_boss\"]}"}}]}}},
+    "rewards": {"function": f"{NS}:boss/killed"}})
+fn("boss/killed", f"""
+advancement revoke @s only {NS}:boss_kill
+execute store result storage {NS}:d b.id int 1 run scoreboard players get @s cs_plot
+data modify storage {NS}:d b.r set value "e"
+execute if dimension minecraft:the_nether run data modify storage {NS}:d b.r set value "n"
+execute if dimension minecraft:the_nether run data modify storage {NS}:d b.c set value {REALM_COINS["n"]}
+execute unless dimension minecraft:the_nether run data modify storage {NS}:d b.c set value {REALM_COINS["e"]}
+function {NS}:boss/killed2 with storage {NS}:d b
+""")
+names = "\n".join(f"$execute if score #p$(id) cs_bi{r} matches {i} if data storage {NS}:d b{{r:\"{r}\"}} run tellraw @a [{{selector:\"@s\",color:\"gold\"}},{{text:\"'s island defeated \",color:\"gray\"}},{{text:\"{n}\",color:\"{'light_purple' if r == 'e' else 'red'}\",bold:1b}},{{text:\"!\",color:\"gray\"}}]"
+                  for r, bosses in BOSSES.items() for i, (_k, n, *_x) in enumerate(bosses))
+fn("boss/killed2", f"""
+$execute unless score #p$(id) cs_ba$(r) matches 1 run return 0
+$scoreboard players reset #p$(id) cs_ba$(r)
+$kill @e[tag=cs_bm_$(r)$(id)]
+$bossbar remove {NS}:$(r)$(id)
+{names}
+$scoreboard players add @a[scores={{cs_plot=$(id)}}] cs_coins $(c)
+$tellraw @a[scores={{cs_plot=$(id)}}] [{{text:"+$(c) coins ",color:"gold",bold:1b}},{{text:"for everyone on the island. The next boss waits at the altar after a {BOSS_COOLDOWN // 60}-minute recharge.",color:"gray",bold:0b}}]
+$scoreboard players add #p$(id) cs_bk$(r) 1
+$scoreboard players add #p$(id) cs_bi$(r) 1
+$scoreboard players operation #p$(id) cs_bi$(r) %= #4 cs_tmp
+$scoreboard players set #p$(id) cs_bc$(r) {BOSS_COOLDOWN}
+$execute as @a[scores={{cs_plot=$(id)}}] at @s run playsound minecraft:ui.toast.challenge_complete master @s ~ ~ ~ 1 0.8
+""")
+def L(it, w_, lo=1, hi=1):
+    d = {"type": "minecraft:item", "name": f"minecraft:{it}", "weight": w_}
+    if hi > 1: d["functions"] = [{"function": "minecraft:set_count", "count": {"type": "minecraft:uniform", "min": lo, "max": hi}}]
+    return d
+def chance(it, p, lo=1, hi=1):
+    e = L(it, 1, lo, hi); e.pop("weight")
+    return {"rolls": 1, "conditions": [{"condition": "minecraft:random_chance", "chance": p}], "entries": [e]}
+END_COMMON = [L("ender_pearl", 10, 4, 8), L("shulker_shell", 6, 1, 3), L("chorus_fruit", 8, 4, 10), L("dragon_breath", 4, 2, 4),
+              L("end_crystal", 2), L("diamond", 5, 2, 4), L("experience_bottle", 8, 8, 16), L("popped_chorus_fruit", 4, 4, 8)]
+NETHER_COMMON = [L("blaze_rod", 10, 4, 8), L("ghast_tear", 5, 1, 3), L("magma_cream", 8, 4, 8), L("gold_block", 5, 1, 3),
+                 L("quartz", 8, 8, 16), L("ancient_debris", 3, 1, 2), L("experience_bottle", 8, 8, 16), L("nether_wart", 6, 4, 8)]
+SPECIAL = {"colossus": [chance("elytra", 0.25), chance("ender_eye", 1.0, 4, 8)], "ravager": [chance("elytra", 0.25), chance("saddle", 0.5)],
+           "matriarch": [chance("shulker_shell", 1.0, 4, 6), chance("elytra", 0.2)], "archmage": [chance("totem_of_undying", 1.0), chance("elytra", 0.2)],
+           "blaze": [chance("netherite_scrap", 0.5, 1, 2), chance("blaze_rod", 1.0, 6, 10)], "magma": [chance("netherite_scrap", 0.5, 1, 2), chance("magma_block", 1.0, 8, 16)],
+           "warlord": [chance("netherite_scrap", 1.0, 1, 2), chance("netherite_upgrade_smithing_template", 0.3)],
+           "knight": [chance("wither_skeleton_skull", 0.35), chance("netherite_scrap", 0.6, 1, 2)]}
+for realm, bosses in BOSSES.items():
+    for (key, *_r) in bosses:
+        js(f"data/{NS}/loot_table/entities/boss_{key}.json", {"type": "minecraft:entity", "pools": [
+            {"rolls": {"type": "minecraft:uniform", "min": 4, "max": 6}, "entries": END_COMMON if realm == "e" else NETHER_COMMON}] + SPECIAL[key]})
 
 # ======================================================================= the island's Nether
 fn("plot/nfields", f"""
@@ -857,6 +1087,8 @@ fn("plot/npend", f"""
 $execute in minecraft:the_nether unless loaded $(nwx) {NFLOOR_Y} $(nwz) run return run execute in minecraft:the_nether run forceload add $(nwx) $(nwz) $(nwx1) $(nwz1)
 $execute in minecraft:the_nether unless loaded $(nwx1) {NFLOOR_Y} $(nwz1) run return 0
 $execute in minecraft:the_nether positioned $(ncx) {NFLOOR_Y} $(ncz) run function {NS}:plot/nisland
+$execute in minecraft:the_nether positioned $(ncx) {NFLOOR_Y} $(ncz) positioned ~ ~ ~16 run function {NS}:nether/arena
+$data modify storage {NS}:d plots[$(id)].narena set value 1b
 $fillbiome $(nx) {NFLOOR_Y} $(nz) $(nx1) {NFLOOR_Y} $(nz1) minecraft:nether_wastes
 $scoreboard players reset #p$(id) cs_npend
 $execute unless score #p$(id) cs_nwas matches 1.. in minecraft:the_nether run forceload remove $(nwx) $(nwz) $(nwx1) $(nwz1)
@@ -872,6 +1104,7 @@ $execute unless score #p$(id) cs_non matches 1.. run return run scoreboard playe
 $execute unless score #p$(id) cs_nwas matches 1.. in minecraft:the_nether run forceload add $(nwx) $(nwz) $(nwx1) $(nwz1)
 $scoreboard players set #p$(id) cs_nwas 1
 $scoreboard players add #p$(id) cs_nage 1
+$execute unless data storage {NS}:d plots[$(id)].narena run function {NS}:nether/arena_retro with storage {NS}:d cur
 $execute if score #p$(id) cs_nage matches 1 run tellraw @a[scores={{cs_plot=$(id)}}] [{{text:"🔥 ",color:"gold"}},{{text:"Welcome to your island's Nether. A fortress wreck with a blaze spawner crashes in after 2 minutes here; a bastion after 10.",color:"gold"}}]
 {fort}
 {bast}

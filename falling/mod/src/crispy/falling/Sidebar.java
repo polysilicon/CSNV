@@ -73,6 +73,10 @@ public final class Sidebar {
     static String where(MinecraftServer server, ServerPlayer p, int plot) {
         Level lv = p.level();
         if (lv.dimension() == Level.NETHER) return "The Nether";
+        if (lv.dimension() == Realms.END) {
+            int id = Realms.plotAt(p.getBlockX(), p.getBlockZ());
+            return id == plot && plot > 0 ? "Your End" : "The End";
+        }
         if (lv.dimension() == Level.END) return "The End";
         int x = p.getBlockX(), z = p.getBlockZ();
         if (Math.abs(x) <= HUB && Math.abs(z) <= HUB) return "Hub";

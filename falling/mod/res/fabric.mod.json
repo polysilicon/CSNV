@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "crispy_skyblock",
-  "version": "2.2.2",
+  "version": "2.3.0",
   "name": "Crispy Skyblock (island commands, menus and levels)",
   "description": "/island, /invite, coins and merchants, minions, the island picker and challenge menus, island levels and the sidebar for the crispy_skyblock datapack.",
   "environment": "server",
@@ -16,5 +16,8 @@
     "minecraft": "26.2",
     "fabric-lifecycle-events-v1": "*",
     "fabric-events-interaction-v0": "*"
-  }
+  },
+  "mixins": [
+    "crispy_skyblock.mixins.json"
+  ]
 }

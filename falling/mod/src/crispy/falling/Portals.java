@@ -19,13 +19,14 @@ import java.util.WeakHashMap;
 /**
  * Hub portals. Every island has one 14 blocks north of its centre on a platform over the void (built by the datapack's
  * crispy_skyblock:portal/build); walking through it takes you to the hub. The hub's portal (north of the plaza) takes
- * you home. Portal blocks can't be broken by players (they're blast-proof and immovable anyway). Positions follow the
+ * you home, and each island's End has a gateway home. Portal blocks, End portal platforms and boss altars can't be
+ * broken by players (they're blast-proof and immovable anyway). Positions follow the
  * datapack's island grid: plots of 128 on a 1024 grid from z=2048, islands centred at y=100.
  */
 public final class Portals {
     private Portals() {}
 
-    static final int GRID = 1024, COLS = 64, HALF = 64, ISLAND_Y = 100, PORTAL_DZ = -14, HUB_Y = 100, HUB_PORTAL_Z = -18;
+    static final int GRID = 1024, COLS = 64, HALF = 64, ISLAND_Y = 100, PORTAL_DZ = -14, END_DX = 14, HUB_Y = 100, HUB_PORTAL_Z = -18;
     private static final Map<ServerPlayer, Integer> cooldown = new WeakHashMap<>();
     private static int tick;
 
@@ -39,11 +40,16 @@ public final class Portals {
     static void onTick(MinecraftServer server) {
         tick++;
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-            if (p.level() != server.overworld() || p.isSpectator()) continue;
-            if (cooldown.getOrDefault(p, 0) > tick) continue;
+            if (p.isSpectator() || cooldown.getOrDefault(p, 0) > tick) continue;
             int x = p.getBlockX(), y = p.getBlockY(), z = p.getBlockZ();
             String fn = null;
-            if (z == HUB_PORTAL_Z && Math.abs(x) <= 1 && y >= HUB_Y + 1 && y <= HUB_Y + 3) fn = "act/home";
+            if (p.level().dimension() == Realms.END) {
+                // the End island's gateway home, on its north edge
+                int id = Realms.plotAt(x, z);
+                if (id > 0 && z == Realms.cz(id) + Realms.RETURN_DZ && Math.abs(x - Realms.cx(id)) <= 1 && y >= Realms.END_Y + 1 && y <= Realms.END_Y + 3) fn = "act/home";
+            }
+            else if (p.level() != server.overworld()) continue;
+            else if (z == HUB_PORTAL_Z && Math.abs(x) <= 1 && y >= HUB_Y + 1 && y <= HUB_Y + 3) fn = "act/home";
             else {
                 int[] pt = portalFor(x, z);
                 if (pt != null && z == pt[1] && Math.abs(x - pt[0]) <= 1 && y >= ISLAND_Y + 1 && y <= ISLAND_Y + 3) fn = "act/hub";
@@ -58,12 +64,18 @@ public final class Portals {
 
     /** PlayerBlockBreakEvents.BEFORE: false stops the break. */
     static boolean canBreak(Level world, Player player, BlockPos pos, BlockState state, BlockEntity be) {
-        if (!(player instanceof ServerPlayer p) || world != p.level().getServer().overworld()) return true;
-        int[] pt = portalFor(pos.getX(), pos.getZ());
-        if (pt == null || Math.abs(pos.getX() - pt[0]) > 2 || Math.abs(pos.getZ() - pt[1]) > 2
-                || pos.getY() < ISLAND_Y - 1 || pos.getY() > ISLAND_Y + 5) return true;
+        if (!(player instanceof ServerPlayer p) || !isProtected(world, pos)) return true;
         if (p.isCreative() && Commands.hasPermission(Commands.LEVEL_GAMEMASTERS).test(p.createCommandSourceStack())) return true;
-        p.sendSystemMessage(Component.literal("The Hub Portal can't be broken.").withStyle(ChatFormatting.RED));
+        p.sendSystemMessage(Component.literal("That can't be broken.").withStyle(ChatFormatting.RED));
         return false;
+    }
+
+    /** An island's hub portal or End portal platform, or an altar / the End's gateway home. */
+    static boolean isProtected(Level world, BlockPos pos) {
+        if (world.dimension() != Level.OVERWORLD) return Realms.isProtected(world, pos);
+        int[] pt = portalFor(pos.getX(), pos.getZ());
+        if (pt == null || pos.getY() < ISLAND_Y - 1 || pos.getY() > ISLAND_Y + 5) return false;
+        if (Math.abs(pos.getX() - pt[0]) <= 2 && Math.abs(pos.getZ() - pt[1]) <= 2) return true;                      // hub portal
+        return Math.abs(pos.getX() - (pt[0] + END_DX)) <= 3 && Math.abs(pos.getZ() - (pt[1] - PORTAL_DZ)) <= 3;       // End portal
     }
 }

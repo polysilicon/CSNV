@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "crispy.falling.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "server": ["EndPortalMixin"],
+  "injectors": { "defaultRequire": 1 }
+}
