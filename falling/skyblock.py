@@ -327,7 +327,7 @@ SHOP = [
         ("pumpkin_seeds", 20, 0), ("cocoa_beans", 10, 1), ("sweet_berries", 10, 1), ("nether_wart", 30, 2), ("egg", 0, 1),
         ("bone_meal", 6, 0), ("brown_mushroom", 15, 1), ("red_mushroom", 15, 1), ("hay_block", 0, 18)]),
     ("mining", "Mining", "iron_pickaxe", "Mine Merchant", [
-        ("cobblestone", 3, 1), ("stone", 0, 2), ("coal", 0, 2), ("raw_iron", 0, 3), ("iron_ingot", 12, 3), ("raw_gold", 0, 4),
+        ("cobblestone", 3, 1), ("stone", 0, 2), ("coal", 8, 2), ("raw_iron", 0, 3), ("iron_ingot", 12, 3), ("raw_gold", 0, 4),
         ("gold_ingot", 16, 4), ("diamond", 60, 4), ("lapis_lazuli", 6, 1), ("redstone", 6, 1), ("emerald", 0, 6),
         ("raw_copper", 0, 1), ("copper_ingot", 0, 2), ("quartz", 0, 2), ("obsidian", 0, 5), ("netherrack", 0, 1),
         ("glowstone_dust", 0, 2), ("amethyst_shard", 0, 3)]),
