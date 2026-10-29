@@ -470,6 +470,7 @@ execute if score #hubv cs_cfg matches 2 run function {NS}:hub_v3
 schedule function {NS}:npcs 100t replace
 execute unless data storage {NS}:d plots run function {NS}:setup
 gamerule minecraft:respawn_radius 0
+gamerule minecraft:spawn_phantoms false
 gamerule minecraft:keep_inventory false
 """)
 fn("setup", f"""
