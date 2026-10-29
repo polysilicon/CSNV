@@ -158,7 +158,8 @@ TGT = "type=#crispy_skyblock:gear_targets"
 CASTER = "@a[tag=cs_caster,limit=1]"
 
 
-def build(NS, fn, js, txt):
+def build(NS, fn, js, txt, extra_recipes=()):
+    """extra_recipes: other recipe ids (e.g. the minions) to unlock in the recipe book along with the gear."""
     def mods(attrs, slot):
         return [{"type": f"minecraft:{a}", "id": f"{NS}:gear_{a}_{slot}", "amount": v, "operation": op, "slot": slot}
                 for a, (op, v) in attrs.items()]
@@ -222,9 +223,10 @@ def build(NS, fn, js, txt):
 scoreboard players add #gear30 cs_tmp 1
 execute if score #gear30 cs_tmp matches 30.. run scoreboard players set #gear30 cs_tmp 0
 execute as @a[gamemode=!spectator] at @s run function {NS}:gear/bonus
-execute as @a unless score @s cs_gearv matches {len(recipes)} run function {NS}:gear/unlock
+execute as @a unless score @s cs_gearv matches {len(recipes) + len(extra_recipes)} run function {NS}:gear/unlock
 """)
-    fn("gear/unlock", "\n".join(f"recipe give @s {NS}:gear/{r}" for r in recipes) + f"\nscoreboard players set @s cs_gearv {len(recipes)}")
+    unlock = [f"{NS}:gear/{r}" for r in recipes] + list(extra_recipes)
+    fn("gear/unlock", "\n".join(f"recipe give @s {r}" for r in unlock) + f"\nscoreboard players set @s cs_gearv {len(unlock)}")
 
     # ---------------------------------------------------------------- abilities (as and at the player)
     def ability(key, body):

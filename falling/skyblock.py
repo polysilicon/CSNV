@@ -404,7 +404,7 @@ for k, n, h, t, c, d, r in MINIONS:
 # ======================================================================= crafted armor sets and weapons (gear.py)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import gear
-GEAR = gear.build(NS, fn, js, txt)
+GEAR = gear.build(NS, fn, js, txt, [f"{NS}:minion_{k}" for k, *_r in MINIONS])
 
 # ======================================================================= menus (read by the crispy_skyblock mod)
 GRID_SLOTS = [10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43]

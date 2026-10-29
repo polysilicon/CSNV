@@ -101,7 +101,7 @@ Hypixel-style, vanilla only. Prices, shop categories, minion types and tiers are
 ## Armor and weapons (2.4.0)
 
 `gear.py` (imported by `skyblock.py`) defines craftable Hypixel-style gear. Everything is made at a crafting table from
-farmable blocks; the top tier needs boss loot. The recipes are unlocked in every player's recipe book, and `/gear`
+farmable blocks; the top tier needs boss loot. The recipes (and all minion recipes) are unlocked in every player's recipe book, and `/gear`
 (`/island gear`, or Island Menu > Armor & Weapons) shows each item with its recipe. Items are unbreakable and carry
 vanilla enchantments plus ones from `crispy_enchants` (the Anarchy/PvP custom enchant pack, also installed on Skyblock
 as `world/datapacks/crispy_enchants.zip`; build it with `anarchy/enchants/gen.py`).
