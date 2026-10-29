@@ -483,7 +483,7 @@ ABILITIES = {
         around(10, "effect give @s minecraft:nausea 5 0"), around(10, "effect give @s minecraft:slowness 3 1"),
         "particle minecraft:ash ~ ~1 ~ 4 1.5 4 0 200", "particle minecraft:large_smoke ~ ~1 ~ 2 1 2 0.01 30",
         snd("block.sculk_shrieker.shriek", 0.8, 0.6), bar("STATIC", "dark_gray")]),
-    "tendrils": ("Tendrils", "black", "chain", 12, ["Drags everyone near you right in front of you.", "8 blocks · 6 damage · Slowness III 2 s"], [
+    "tendrils": ("Tendrils", "black", "iron_chain", 12, ["Drags everyone near you right in front of you.", "8 blocks · 6 damage · Slowness III 2 s"], [
         f"execute as @e[distance=..8,{TGT}] run tp @s ^ ^ ^1.5",
         around(3, damage(6)), around(3, "effect give @s minecraft:slowness 2 2"),
         "execute anchored eyes run particle minecraft:squid_ink ^ ^ ^1.5 0.6 0.6 0.6 0.02 40",

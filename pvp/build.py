@@ -350,8 +350,8 @@ HALLOWEEN_KITS = [
     (45, "jason", "Jason Voorhees", "dark_green", "iron_axe", ["Machete (axe): Sharpness III, Cleave II · big and tough", ab_line("machete_throw", "shift")],
      [f"give @s {item('iron_axe', 'Machete', 'dark_green', {'sharpness': 3, CE + 'cleave': 2})}", AB("machete_throw"), AB("shift")]
      + suit("leather", 3, dye={"head": 4873507, "chest": 4873507, "legs": 3684408, "feet": 2829099}) + head("jason", "Jason Voorhees", "dark_green") + size(1.15), []),
-    (46, "slenderman", "Slender Man", "dark_gray", "chain", ["Tendril (sword): Sharpness III, Blind II · black suit · very tall", ab_line("static", "tendrils")],
-     [f"give @s {item('iron_sword', 'Tendril', 'dark_gray', {'sharpness': 3, CE + 'blind': 2}, model('chain'))}", AB("static"), AB("tendrils")]
+    (46, "slenderman", "Slender Man", "dark_gray", "iron_chain", ["Tendril (sword): Sharpness III, Blind II · black suit · very tall", ab_line("static", "tendrils")],
+     [f"give @s {item('iron_sword', 'Tendril', 'dark_gray', {'sharpness': 3, CE + 'blind': 2}, model('iron_chain'))}", AB("static"), AB("tendrils")]
      + suit("leather", 3, dye=1710618, extra={"chest": {CE + "dodge": 1}}) + head("slenderman", "Slender Man", "dark_gray") + size(1.3), []),
     (47, "ghostface", "Ghostface", "white", "black_dye", ["Buck 120 Knife: Sharpness III, Assassin II · black robe (Dodge II)", ab_line("stalk", "ambush")],
      [f"give @s {item('iron_sword', 'Buck 120 Knife', 'white', {'sharpness': 3, CE + 'assassin': 2})}", AB("stalk"), AB("ambush")]
