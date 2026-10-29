@@ -48,7 +48,8 @@ Skyblock on `Falling01` (Fabric 26.2, Velocity name `skyblock`, was `falling`). 
   `crispy_skyblock:end` (End sky and fog, no dragon fight; type `the_end_type.json` from the server jar with
   `has_ender_dragon_fight` false), at the island's x/z, y 64. It's built the first time anyone goes (`end/island`):
   end stone with a purpur ring, obsidian pillars, chorus, the summoning altar in the middle and a purpur gateway home on
-  its north edge (walk through it to go home).
+  its north edge (walk through it to go home). Players are kept within the same 128x128 square as their island
+  (`p/ebounds`, once a second), so nobody can fly over to another island's End.
 - **Nether boss arena.** Every island's Nether plot has a blackstone arena 16 blocks south of its starter island with
   its own altar (built with new Nether islands; older ones get it the next time a member is in their Nether).
 - **Bosses.** Right-clicking the lodestone on an altar asks "Are you sure you want to summon a boss right now?"; a

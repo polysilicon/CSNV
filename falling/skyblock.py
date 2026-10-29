@@ -687,6 +687,7 @@ execute as @e[type=minecraft:player,x=-{HUB_R},y={Y-110},z=-{HUB_R},dx={2*HUB_R}
 scoreboard players add #t cs_tmp 1
 execute if score #t cs_tmp matches 10 run function {NS}:p/bounds_all
 execute if score #t cs_tmp matches 10 run function {NS}:p/nbounds_all
+execute if score #t cs_tmp matches 10 run function {NS}:p/ebounds_all
 execute if score #t cs_tmp matches 20.. run function {NS}:second
 """)
 fn("second", f"""
@@ -1294,6 +1295,19 @@ fn("p/bounds2", f"""
 $execute if entity @s[x=$(x),y=-128,z=$(z),dx={SIZE-1},dy=500,dz={SIZE-1}] run return 0
 function {NS}:p/home
 tellraw @s {{text:"That's the edge of your island's space.",color:"red"}}
+""")
+# the island's End: same 128x128 square as the island (End islands sit at the island's x/z), so nobody can fly
+# (elytra from the End bosses) over to another island's End
+fn("p/ebounds_all", f"execute as @a[gamemode=survival,tag=!cs_staff] at @s if dimension {NS}:end run function {NS}:p/ebounds")
+fn("p/ebounds", f"""
+execute unless score @s cs_plot matches 1.. run return run function {NS}:act/hub
+function {NS}:p/ctx
+function {NS}:p/ebounds2 with storage {NS}:d cur
+""")
+fn("p/ebounds2", f"""
+$execute if entity @s[x=$(x),y=-128,z=$(z),dx={SIZE-1},dy=500,dz={SIZE-1}] run return 0
+$execute in {NS}:end positioned $(cx) {END_Y + 1} $(cz) run tp @s ~0.5 ~ ~6.5
+tellraw @s {{text:"That's the edge of your island's End.",color:"red"}}
 """)
 fn("first_join", f"""
 scoreboard players set @s cs_seen 1
