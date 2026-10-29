@@ -856,9 +856,8 @@ eb.fill(-1, 1, -9, 1, 3, -9, "air")
 eb.set(0, 5, -9, "end_rod[facing=up]")
 def tdisp(dx, dy, dz, text):
     return f"summon minecraft:text_display ~{dx} ~{dy} ~{dz} " + snbt({"Tags": [NS, "cs_realml"], "billboard": "center", "background": 1073741824, "text": text})
-fn("end/island", "\n".join(eb.c) + "\n" + "\n".join([
-    tdisp(0.5, 2.2, 0.5, {"text": "Summoning Altar", "color": "light_purple", "bold": True, "extra": [txt("\nRight-click the lodestone to call your boss", "gray", bold=False)]}),
-    tdisp(0.5, 5.8, -8.5, {"text": "Back to your island", "color": "aqua", "bold": True, "extra": [txt("\nWalk through", "gray", bold=False)]})]))
+fn("end/island", "\n".join(eb.c) + "\n" +
+   tdisp(0.5, 5.8, -8.5, {"text": "Back to your island", "color": "aqua", "bold": True, "extra": [txt("\nWalk through", "gray", bold=False)]}))
 
 # ======================================================================= the Nether boss arena, a short bridge south of the island's Nether island
 ARENA_DZ = 16
@@ -870,8 +869,7 @@ ab.fill(-1, 0, -1, 1, 0, 1, "crying_obsidian")
 ab.set(0, 1, 0, "lodestone")
 for cx_, cz_ in ((-5, -5), (-5, 5), (5, -5), (5, 5)):
     ab.set(cx_, 1, cz_, "polished_blackstone_wall"); ab.set(cx_, 2, cz_, "soul_lantern")
-fn("nether/arena", "\n".join(ab.c) + "\n" + tdisp(0.5, 2.2, 0.5, {"text": "Summoning Altar", "color": "red", "bold": True,
-   "extra": [txt("\nRight-click the lodestone to call your boss", "gray", bold=False)]}))
+fn("nether/arena", "\n".join(ab.c))
 fn("nether/arena_retro", f"""
 $execute in minecraft:the_nether positioned $(ncx) {NFLOOR_Y} $(ncz) positioned ~ ~ ~{ARENA_DZ} run function {NS}:nether/arena
 $data modify storage {NS}:d plots[$(id)].narena set value 1b

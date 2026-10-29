@@ -22,19 +22,26 @@ import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.Map;
+import java.util.WeakHashMap;
+
 /**
  * Each island's own End and Nether boss realms.
  * - End: the datapack's void dimension crispy_skyblock:end (End sky, no dragon). An island's End portal (east of the
  *   island, built by ev/portal) sends you to that island's End island at the same x/z as the island, y 64; it's built
  *   (crispy_skyblock:end/island) the first time anyone goes. EndPortalBlockMixin calls destination().
  * - Nether: the island's Nether plot (under island/8) has a boss arena 16 blocks south of its starter island.
- * - Both have a summoning altar (a lodestone): right-clicking it runs crispy_skyblock:boss/summon.
+ * - Both have a summoning altar (a lodestone): right-click it once to be asked, again within 10 s to run
+ *   crispy_skyblock:boss/summon.
  */
 public final class Realms {
     private Realms() {}
 
     static final ResourceKey<Level> END = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath(SkyblockMod.NS, "end"));
-    static final int END_Y = 64, NFLOOR_Y = 64, ARENA_DZ = 16, RETURN_DZ = -9;
+    static final int END_Y = 64, NFLOOR_Y = 64, ARENA_DZ = 16, RETURN_DZ = -9, CONFIRM_TICKS = 200;
+    /** The altar each player last clicked and the tick it was clicked: a second click there in time summons. */
+    private static final Map<ServerPlayer, Long> asked = new WeakHashMap<>();
+    private static final Map<ServerPlayer, BlockPos> askedAt = new WeakHashMap<>();
 
     /** Island id for overworld/End x,z (islands sit on the same grid in both), or 0. */
     static int plotAt(int x, int z) {
@@ -106,6 +113,17 @@ public final class Realms {
             }
         }
         if (realm == null) return InteractionResult.PASS;
+        long now = level.getServer().getTickCount();
+        Long when = asked.get(p);
+        if (when == null || now - when > CONFIRM_TICKS || !pos.equals(askedAt.get(p))) {
+            asked.put(p, now);
+            askedAt.put(p, pos.immutable());
+            p.sendSystemMessage(Component.literal("Are you sure you want to summon a boss right now? ").withStyle(ChatFormatting.GOLD)
+                    .append(Component.literal("Right-click the altar again to confirm.").withStyle(ChatFormatting.GRAY)));
+            return InteractionResult.SUCCESS;
+        }
+        asked.remove(p);
+        askedAt.remove(p);
         level.getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack().withPermission(LevelBasedPermissionSet.GAMEMASTER).withSuppressedOutput(),
                 "function " + SkyblockMod.NS + ":boss/summon {r:\"" + realm + "\",id:" + id + ",x:" + sx + ",y:" + sy + ",z:" + sz + "}");
         return InteractionResult.SUCCESS;

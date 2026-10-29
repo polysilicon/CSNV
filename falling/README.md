@@ -9,7 +9,7 @@ Skyblock on `Falling01` (Fabric 26.2, Velocity name `skyblock`, was `falling`). 
   already in `world/datapacks`.
 - `mod/` is the `crispy_skyblock` server mod (`crispy-skyblock-2.0.0.jar`, build with
   `mod/build.sh <lib-dir> <javac>`, same lib dir as `pvp/spawnmod` plus Fabric API's `fabric-events-interaction-v0`
-  unpacked into `fa/META-INF/jars/`). Now `crispy-skyblock-2.3.0.jar`. Since 2.3.0 it has a Mixin
+  unpacked into `fa/META-INF/jars/`). Now `crispy-skyblock-2.3.1.jar`. Since 2.3.0 it has a Mixin
   (`EndPortalBlock.getPortalDestination`), so `build.sh` takes Sponge Mixin's jar as a third argument.
 
 ## How it plays
@@ -51,7 +51,8 @@ Skyblock on `Falling01` (Fabric 26.2, Velocity name `skyblock`, was `falling`). 
   its north edge (walk through it to go home).
 - **Nether boss arena.** Every island's Nether plot has a blackstone arena 16 blocks south of its starter island with
   its own altar (built with new Nether islands; older ones get it the next time a member is in their Nether).
-- **Bosses.** Right-clicking the lodestone on an altar summons that realm's next boss for the island, with a boss bar.
+- **Bosses.** Right-clicking the lodestone on an altar asks "Are you sure you want to summon a boss right now?"; a
+  second right-click within 10 s summons that realm's next boss for the island, with a boss bar.
   Each island climbs its own ladder (starting at a different boss per island, then in turn after each kill):
 
   | Realm | Bosses (HP) | Reward to every member |
