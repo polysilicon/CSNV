@@ -33,7 +33,7 @@ SETS = [
      [2, 4, 3, 2], 0, {"max_health": ("add_value", 1.0)},
      {"head": {"crispy_enchants:glowing": 1}},
      "Night Stalker", ["At night: Strength I and", "Regeneration I."],
-     ["execute store result score #tod cs_tmp run time query daytime",
+     ["execute store result score #tod cs_tmp run time query minecraft:day",
       "execute if score #tod cs_tmp matches 13000..23000 run effect give @s minecraft:strength 3 0 true",
       "execute if score #tod cs_tmp matches 13000..23000 run effect give @s minecraft:regeneration 3 0 true"]),
     ("cactus", "Cactus Armor", "UNCOMMON", "leather", 0x3E7A1E, "cactus", "green_dye",
@@ -298,7 +298,7 @@ execute as @e[{TGT},distance=..12,sort=nearest,limit=1] at @s run function {NS}:
 """)
     fn("gear/shadow_hit", f"""
 execute rotated as @s rotated ~ 0 positioned ^ ^ ^-1.5 if block ~ ~ ~ #{NS}:passable if block ~ ~1 ~ #{NS}:passable run tp {CASTER} ~ ~ ~ facing entity @s feet
-execute unless entity {CASTER}[distance=..2.5] run tp {CASTER} ~ ~ ~ facing entity @s feet
+execute unless entity @a[tag=cs_caster,distance=..2.5] run tp {CASTER} ~ ~ ~ facing entity @s feet
 damage @s 16 minecraft:player_attack by {CASTER}
 particle minecraft:reverse_portal ~ ~1 ~ 0.4 0.8 0.4 0.05 40
 playsound minecraft:entity.enderman.teleport player @a[distance=..16] ~ ~ ~ 1 0.6
