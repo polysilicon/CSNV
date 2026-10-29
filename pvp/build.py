@@ -57,7 +57,20 @@ OUTBREAK_MAPS = [
       (4, 20, "blaze", "")]),
     (5, "orbital", "Orbital Station", "aqua", "end_rod", 700,
      [(2, 12, "endermite", ""), (4, 20, "stray", ',equipment:{mainhand:{id:"minecraft:bow",count:1}},drop_chances:{mainhand:0.0f}')]),
+    # Halloween only (the Haunted Night NPC; not in the map menu or Random): its own mob roster, rolls up to 100 so the
+    # normal pool is never used
+    (6, "haunted", "Haunted Night", "gold", "jack_o_lantern", 800,
+     [(1, 28, "zombie", ',CustomName:{text:"Pumpkinhead",color:"gold"},equipment:{head:{id:"minecraft:carved_pumpkin",count:1}},drop_chances:{head:0.0f}'),
+      (2, 42, "skeleton", ',CustomName:{text:"Restless Bones",color:"gray"},equipment:{mainhand:{id:"minecraft:bow",count:1},head:{id:"minecraft:jack_o_lantern",count:1}},drop_chances:{mainhand:0.0f,head:0.0f}'),
+      (2, 52, "spider", ',CustomName:{text:"Graveyard Spider",color:"dark_red"}'),
+      (3, 62, "witch", ',CustomName:{text:"Witch",color:"dark_purple"}'),
+      (4, 72, "vex", ',CustomName:{text:"Ghost",color:"white"}'),
+      (5, 80, "zombie_villager", ',CustomName:{text:"Ghoul",color:"dark_green"}'),
+      (6, 88, "wither_skeleton", ',CustomName:{text:"Reaper",color:"dark_gray"},equipment:{mainhand:{id:"minecraft:stone_hoe",count:1}},drop_chances:{mainhand:0.0f}'),
+      (7, 94, "creeper", ',CustomName:{text:"Jack-o-Creeper",color:"gold"}'),
+      (1, 100, "zombie", ',CustomName:{text:"Pumpkinhead",color:"gold"},equipment:{head:{id:"minecraft:carved_pumpkin",count:1}},drop_chances:{head:0.0f}')]),
 ]
+NORMAL_MAPS = OUTBREAK_MAPS[:5]   # the Outbreak NPC's maps (and Random)
 PVE_BOXES = {m[0]: box(PCX, m[5], PR, AY - 1, 35) for m in OUTBREAK_MAPS}
 PVE_BOX = PVE_BOXES[1]
 BREAK_TICKS = 400        # break between waves
@@ -67,6 +80,8 @@ MAP_LORE = {
     "mine": ["Abandoned toxic mine", "Rock outcrops, mine-cart loop", "Sludge puddles slow you down", "Extra: cave spiders, silverfish"],
     "neon": ["Night-time crossroads", "Tower, noodle bar, car park, arcade", "Extra: pillagers, vindicators"],
     "hellfort": ["Nether keep with four gates", "Lava pools, basalt, a giant ribcage", "Extra: wither skeletons, blazes"],
+    "haunted": ["A moonlit graveyard around a ruined chapel", "Tombstones, a crypt, a pumpkin patch", "10 waves, then it's over: survive them all",
+                "Bosses: The Scarecrow (wave 5), the Headless Horseman (wave 10)"],
     "orbital": ["A roofed, wheel-shaped space station", "Round hub, four wide spokes, an outer ring", "Labs, cryo pods, server racks, hydroponics", "Mobs come in from the ring", "Extra: endermites, strays"],
 }
 POWERUP_CHANCE = 4       # % of kills that drop a power-up
@@ -327,6 +342,51 @@ KITS = [
      + suit("leather", 4, dye={"head": 1908001, "chest": 1908001, "legs": 1908001, "feet": 15961002}, extra={"chest": {CE + "dodge": 2}})
      + head("rebecca", "Rebecca", "light_purple") + size(0.75), ["gorilla", "tendons", "reflex", "kiroshi"]),
 ] + FRANCHISE_KITS
+# Halloween (Haunted Night only, outbreak map 6): horror icons. Never in the arena, duel, Tower or random-character pools.
+HALLOWEEN_KITS = [
+    (44, "myers", "Michael Myers", "dark_gray", "iron_sword", ["Kitchen Knife: Sharpness IV, Bleed II · coveralls · a bit big", ab_line("the_shape", "relentless")],
+     [f"give @s {item('iron_sword', 'Kitchen Knife', 'gray', {'sharpness': 4, CE + 'bleed': 2})}", AB("the_shape"), AB("relentless")]
+     + suit("leather", 3, dye=2834005, extra={"chest": {CE + "hardened": 2}}) + head("myers", "Michael Myers", "dark_gray") + size(1.08), []),
+    (45, "jason", "Jason Voorhees", "dark_green", "iron_axe", ["Machete (axe): Sharpness III, Cleave II · big and tough", ab_line("machete_throw", "shift")],
+     [f"give @s {item('iron_axe', 'Machete', 'dark_green', {'sharpness': 3, CE + 'cleave': 2})}", AB("machete_throw"), AB("shift")]
+     + suit("leather", 3, dye={"head": 4873507, "chest": 4873507, "legs": 3684408, "feet": 2829099}) + head("jason", "Jason Voorhees", "dark_green") + size(1.15), []),
+    (46, "freddy", "Freddy Krueger", "red", "shears", ["Bladed Glove: Sharpness III, Lifesteal II · striped sweater", ab_line("nightmare", "dream_demon")],
+     [f"give @s {item('iron_sword', 'Bladed Glove', 'red', {'sharpness': 3, CE + 'lifesteal': 2}, model('shears'))}", AB("nightmare"), AB("dream_demon")]
+     + suit("leather", 3, dye={"head": 5978153, "chest": 10365483, "legs": 5978153, "feet": 3877402}) + head("freddy", "Freddy Krueger", "red"), []),
+    (47, "ghostface", "Ghostface", "white", "black_dye", ["Buck 120 Knife: Sharpness III, Assassin II · black robe (Dodge II)", ab_line("stalk", "ambush")],
+     [f"give @s {item('iron_sword', 'Buck 120 Knife', 'white', {'sharpness': 3, CE + 'assassin': 2})}", AB("stalk"), AB("ambush")]
+     + suit("leather", 3, dye=1907233, extra={"chest": {CE + "dodge": 2}}) + head("ghostface", "Ghostface", "white"), []),
+    (48, "chucky", "Chucky", "red", "red_dye", ["Knife: Sharpness IV, Poison II · overalls · tiny and quick", ab_line("voodoo", "hide_and_seek")],
+     [f"give @s {item('iron_sword', 'Knife', 'red', {'sharpness': 4, CE + 'poison': 2})}", AB("voodoo"), AB("hide_and_seek")]
+     + suit("leather", 4, dye={"head": 3103400, "chest": 3103400, "legs": 3103400, "feet": 15790320}) + head("chucky", "Chucky", "red") + size(0.65), []),
+]
+HW_IDS = [k[0] for k in HALLOWEEN_KITS]
+ALL_KITS = KITS + HALLOWEEN_KITS
+HW_MAP = 6           # Outbreak map id of Haunted Night
+HW_WAVES = 10        # beat this many waves to complete it
+HW_END = "2026-11-07"   # last day it's open (the mod sets #halloween pvp to 1 until then)
+HW_NPC = (6.5, LOBBY_Y + 1, 5.5)
+# Haunted Night cosmetics: each completed run unlocks one the player doesn't have yet, at random. Score pvp.hw<n> = 1
+# when unlocked; the lobby (CrispyLobby, config generated by halloween_cosmetics.py) reads them from the scoreboard.
+# n, kind (tag / name / chat colour), lobby id, name, display (tags) or colour code
+HW_COSMETICS = [
+    (1, "tag", "hw_pumpkinking", "Pumpkin King", "&6&l[Pumpkin King]"),
+    (2, "tag", "hw_slasher", "Slasher", "&4[Slasher]"),
+    (3, "tag", "hw_haunted", "Haunted", "&5[Haunted]"),
+    (4, "tag", "hw_ghoul", "Ghoul", "&2[Ghoul]"),
+    (5, "tag", "hw_trickortreat", "Trick or Treat", "&6[Trick or &5Treat&6]"),
+    (6, "tag", "hw_survivor", "Survivor '26", "&8[&7☠ Survivor '26&8]"),
+    (7, "name", "hw_pumpkin", "Pumpkin", "&#ff7518>&#ffb347"),
+    (8, "name", "hw_candycorn", "Candy Corn", "&#ffd23f/&#ff8c1a/&#ffffff"),
+    (9, "name", "hw_witchbrew", "Witch's Brew", "&#7fff00>&#8a2be2"),
+    (10, "name", "hw_bloodmoon", "Blood Moon", "&#8b0000>&#ff3b3b"),
+    (11, "name", "hw_ghostly", "Ghostly", "&#ffffff>&#8a8f99"),
+    (12, "chat", "hw_pumpkinspice", "Pumpkin Spice", "&#e8823a"),
+    (13, "chat", "hw_candycorn", "Candy Corn", "&#ffd23f/&#ff8c1a/&#ffffff"),
+    (14, "chat", "hw_witchbrew", "Witch's Brew", "&#7fff00>&#8a2be2"),
+    (15, "chat", "hw_spectral", "Spectral", "&#7df9ff>&#ffffff"),
+]
+HW_KIND = {"tag": "tag", "name": "name colour", "chat": "chat colour"}
 # Admin-only test kits: never in a menu. /function pvp:admin/test_david queues you for Outbreak with it.
 TEST_KIT_ID = 60
 TEST_KIT = [
@@ -365,7 +425,7 @@ UP_BOOST = {   # per tier, added to the existing enchants; kind -> (item tag/id,
 WALL_BUYS = [("m1911", 500), ("olympia", 750), ("mp40", 1000), ("kar98k", 1250), ("stakeout", 1500), ("stg44", 1750)]
 WALL_MAPS = {"ruins": ["m1911", "olympia", "mp40", "kar98k"], "mine": ["m1911", "stakeout", "mp40", "stg44"],
              "neon": ["m1911", "olympia", "stg44", "kar98k"], "hellfort": ["m1911", "stakeout", "kar98k", "mp40"],
-             "orbital": ["m1911", "olympia", "stg44", "stakeout"]}
+             "orbital": ["m1911", "olympia", "stg44", "stakeout"], "haunted": ["m1911", "olympia", "kar98k", "stakeout"]}
 VETERAN_PER_WAVE, VETERAN_MAX = 25, 1000
 # Kit mastery: XP per character (score pvp.mx<kit id>), +10 per PvP kill and +1 per Outbreak kill with that kit.
 MASTERY = [50, 150, 400, 800, 1500]      # XP for levels I..V (V = Master)
@@ -580,18 +640,27 @@ def build():
                    {"slot": 47, "item": icon("barrier", "Leave the lobby", "red", ["Stop waiting for the next Outbreak"], False), "cmd": "trigger pve.join set 99"},
                    {"slot": 45, "item": icon("filled_map", "Back to maps", "yellow", ["Pick a different map"], False), "cmd": "pvpmenu pve_maps"},
                    {"slot": 49, "item": icon("zombie_head", "How Outbreak works", "green", [
-                       f"{len(OUTBREAK_MAPS)} maps, each with its own mobs", "Endless waves; every 5th wave brings a boss", "100 points per kill + a bonus each wave",
+                       f"{len(NORMAL_MAPS)} maps, each with its own mobs", "Endless waves; every 5th wave brings a boss", "100 points per kill + a bonus each wave",
                        "Kills can drop power-ups: Max Ammo, Insta-Kill,", "Double Points, Nuke",
                        f"{BREAK_TICKS // 20} s break between waves to re-buy gear",
                        "Spend points at the Arsenal in the arena", "or buy guns off the walls (right-click)", "Pack-a-Punch weapons (4 tiers), upgrade armor, buy perks", "Your best wave adds starting points", "Go down and you're back next wave", "Game over when the whole team is down"]), "cmd": ""}]},
         "pve_maps": {"title": {"text": "☣ Outbreak: pick a map", "color": "dark_green"}, "rows": 3, "fill": PANE, "items":
                      [{"slot": s, "item": icon(m[4], m[2], m[3], MAP_LORE[m[1]] + ["", "Click to pick your kit"]), "cmd": f"trigger pve.join set {80 + m[0]}"}
-                      for s, m in zip((11, 12, 13, 14, 15), OUTBREAK_MAPS)]
+                      for s, m in zip((11, 12, 13, 14, 15), NORMAL_MAPS)]
                      + [{"slot": 4, "item": icon("zombie_head", "Outbreak (PvE)", "green", [
                          "Fight endless waves of mobs, solo or as a team", "Pick a map, then your kit, to open a lobby:",
                          "you lead it, others join it from the Outbreak NPC,", "and you start the run when everyone's in"]), "cmd": ""},
                         {"slot": 22, "item": icon("ender_eye", "Random map", "light_purple", ["Let fate decide", "", "Click to pick your kit"]), "cmd": "trigger pve.join set 91"}]},
         **pve_menus(),
+        "pve_hw": {"title": {"text": "🎃 Haunted Night: pick your killer", "color": "gold"}, "rows": 3, "fill": PANE, "items":
+                   [{"slot": sl, "item": kit_icon(k, k[5] + ["", "Click to queue with this character"]), "cmd": f"trigger pve.join set {k[0]}"}
+                    for sl, k in zip((11, 12, 13, 14, 15), HALLOWEEN_KITS)]
+                   + [{"slot": 4, "item": icon("jack_o_lantern", "Haunted Night", "gold", MAP_LORE["haunted"] + [
+                       "", "Only these horror icons can play it", "Survive all 10 waves to unlock a random", "Halloween cosmetic (tag, name or chat colour)",
+                       f"Open until {HW_END}"]), "cmd": ""},
+                      {"slot": 22, "item": icon("ender_eye", "🎲 Random killer", "light_purple", ["Let fate pick one", "", "Click to queue as a random one"]),
+                       "cmd": f"trigger pve.join set {RANDOM_KIT}"},
+                      {"slot": 18, "item": icon("barrier", "Leave the lobby", "red", ["Stop waiting for this run"], False), "cmd": "trigger pve.join set 99"}]},
         **tower_menus(),
         "pve_shop": {"title": {"text": "☣ Arsenal (points)", "color": "dark_green"}, "rows": 3, "fill": PANE, "items":
                      [{"slot": s, "item": icon(i[3], f"{i[1]}" + (f" · {i[4]}" if i[4] else ""), i[2], [i[5]]), "cmd": f"trigger pve.buy set {i[0]}"} for s, i in zip(SHOP_SLOTS, SHOP)]},
@@ -610,7 +679,8 @@ def build():
             "pvp.hurt minecraft.custom:minecraft.damage_taken", "pvp.ct dummy",
             "pvp.cur dummy", "pvp.mastery trigger", "pvp.mastered dummy", "pvp.kk dummy", "pvp.kd dummy",
             "pvp.elo dummy", "pvp.dwin dummy", "pvp.dloss dummy", "pvp.dfrom dummy", "pvp.dtm dummy", "pvp.dpit dummy",
-            "pvp.duela trigger", "pvp.dueld trigger", "pvp.duelstats trigger", *[f"pvp.mx{k[0]} dummy" for k in KITS],
+            "pvp.duela trigger", "pvp.dueld trigger", "pvp.duelstats trigger", *[f"pvp.mx{k[0]} dummy" for k in ALL_KITS],
+            *[f"pvp.hw{c[0]} dummy" for c in HW_COSMETICS], "pvp.hwwins dummy",
             "pve dummy", "pve.join trigger", "pve.buy trigger", "pve.k totalKillCount", "pve.kit dummy", "pve.best dummy", "pve.arm dummy", "pve.gun dummy", "pve.map dummy", "pve.rv dummy", "pve.wb dummy"]],
         'scoreboard objectives add pvp.kills playerKillCount {"text":"⚔ Kills","color":"aqua","bold":true}',
         'scoreboard objectives add pve.pts dummy {"text":"☣ Points","color":"green","bold":true}',
@@ -627,7 +697,7 @@ def build():
         *[f"gamerule {k} {v}" for k, v in rules.items()],
         f"function {NS}:ability/migrate",
         "time set 18000", "weather clear", f"setworldspawn 0 {LOBBY_Y + 1} 0", "scoreboard players set #t pvp 0",
-        "scoreboard players set #100 pve 100", "scoreboard players set #5 pve 5", "scoreboard players set #20 pve 20", "scoreboard players set #4c pve 4", "scoreboard players set #2c pve 2", f"scoreboard players set #vet pve {VETERAN_PER_WAVE}",
+        "scoreboard players set #100 pve 100", "scoreboard players set #5 pve 5", "scoreboard players set #20 pve 20", "scoreboard players set #4c pve 4", "scoreboard players set #2c pve 2", "scoreboard players set #8c pve 8", "scoreboard players set #12c pve 12", f"scoreboard players set #vet pve {VETERAN_PER_WAVE}",
         "execute unless score #state pve matches 0.. run scoreboard players set #state pve 0",
         "execute unless score #record pve matches 0.. run scoreboard players set #record pve 0",
         *[f"data modify storage pvp:menus {k} set value {tj(v)}" for k, v in menus.items()],
@@ -658,6 +728,7 @@ def build():
     ])
     fn("second", [
         "scoreboard players set #t pvp 0",
+        f"function {NS}:hw/gate",
         f"effect give @a[{LOBBY_BOX}] minecraft:resistance 3 4 true",
         f"effect give @a[{LOBBY_BOX}] minecraft:weakness 3 255 true",
         f"effect give @a[{LOBBY_BOX}] minecraft:saturation 3 0 true",
@@ -705,7 +776,7 @@ def build():
         "scoreboard players set @s pvp.dead 0",
         f"execute if entity @s[tag=pve.in] run return run function {NS}:pve/downed",
         f"execute if entity @s[tag=tw.in] run return run function {NS}:tower/died",
-        *[f"execute if score @s pvp.cur matches {k[0]} run scoreboard players add #{k[1]} pvp.kd 1" for k in KITS],   # deaths per character
+        *[f"execute if score @s pvp.cur matches {k[0]} run scoreboard players add #{k[1]} pvp.kd 1" for k in ALL_KITS],   # deaths per character
         f"execute if entity @s[tag=pvp.duel] run return run function {NS}:duel/lose",
         "execute if score @s pvp.streak matches 3.. run tellraw @a [{\"selector\":\"@s\",\"color\":\"yellow\"},{\"text\":\"'s \",\"color\":\"gray\"},"
         "{\"score\":{\"name\":\"@s\",\"objective\":\"pvp.streak\"},\"color\":\"gold\"},{\"text\":\" kill streak was ended.\",\"color\":\"gray\"}]",
@@ -713,7 +784,7 @@ def build():
         f"function {NS}:to_lobby",
     ])
     fn("killed", [
-        *[f"execute if score @s pvp.cur matches {k[0]} run scoreboard players add #{k[1]} pvp.kk 1" for k in KITS],   # kills per character
+        *[f"execute if score @s pvp.cur matches {k[0]} run scoreboard players add #{k[1]} pvp.kk 1" for k in ALL_KITS],   # kills per character
         f"scoreboard players set #g pvp {MASTERY_PVP}", f"function {NS}:mastery/gain",
         "scoreboard players add @s pvp.streak 1", "scoreboard players set @s pvp.kn 0", "scoreboard players add @s pvp.best 0",
         "execute if score @s pvp.streak > @s pvp.best run scoreboard players operation @s pvp.best = @s pvp.streak",
@@ -735,8 +806,8 @@ def build():
             f"execute if score #k pvp matches {RANDOM_KIT} run scoreboard players operation #k pvp = #rk pvp",
             "tag @s remove pve.q", "clear @s", "effect clear @s", "function cyber:admin/reset", "scoreboard players set #ok pvp 0"]
     give = []
-    for (kid, key, name, color, ic, blurb, items, implants) in KITS:
-        pick.append(f"execute if score #k pvp matches {kid} run function {NS}:kit/{key}")
+    for (kid, key, name, color, ic, blurb, items, implants) in ALL_KITS:
+        if kid not in HW_IDS: pick.append(f"execute if score #k pvp matches {kid} run function {NS}:kit/{key}")
         give.append(f"execute if score @s pve.kit matches {kid} run function {NS}:kit/{key}")
         fn(f"kit/{key}", items + FOOD + [f"function cyber:implant/{i}/kit" for i in implants] + [
             f"tellraw @s [{{\"text\":\"Kit: \",\"color\":\"gray\"}},{{\"text\":\"{name}\",\"color\":\"{color}\",\"bold\":true}},"
@@ -758,7 +829,13 @@ def build():
     build_mastery()
     build_duels()
     tower.build(sys.modules[__name__])
-    fn("kit/valid_pve", [f"execute if score #j pve matches {k[0]} run return 1" for k in KITS] + ["return 0"])   # #j pve is a real kit id
+    fn("kit/valid_pve", [f"execute if score #jm pve matches {HW_MAP} if score #j pve matches {k[0]} run return 1" for k in HALLOWEEN_KITS]
+       + [f"execute if score #jm pve matches {HW_MAP} run return 0"]
+       + [f"execute if score #j pve matches {k[0]} run return 1" for k in KITS] + ["return 0"])   # #j pve is a real kit id, #jm pve the map
+    fn("kit/roll_hw", [f"execute store result score #r pvp run random value 1..{len(HALLOWEEN_KITS)}",
+                       *[f"execute if score #r pvp matches {i} run scoreboard players set #rk pvp {k[0]}" for i, k in enumerate(HALLOWEEN_KITS, 1)],
+                       *[f"execute if score #rk pvp matches {k[0]} run tellraw @s " + tj([{"text": "🎲 Random character: ", "color": "gold"},
+                                                                                          {"text": k[2], "color": k[3], "bold": True}]) for k in HALLOWEEN_KITS]])
     # admin-made kits are given by the mod ("pvpkit give <id>", ids 101+)
     fn("kit/custom", ["execute store result storage pvp:tmp k int 1 run scoreboard players get #k pvp", f"function {NS}:kit/custom_give with storage pvp:tmp"])
     fn("kit/custom_give", ["$execute store result score #ok pvp run pvpkit give $(k)"])
@@ -781,6 +858,7 @@ def build():
     npc_adv("shopnpc", "pvp.shopnpc", "pve_shop")
 
     build_pve()
+    build_halloween()
 
     # ------------------------------------------------------------------ admin: build the lobby + arenas (chunks must be loaded)
     holo = lambda y, z, text, scale=1: (f"summon minecraft:text_display 0.5 {y} {z} {{Tags:[\"pvp.holo\"],billboard:\"center\",background:0,"
@@ -1194,9 +1272,9 @@ def build_mastery():
     roman = ["I", "II", "III", "IV", "V"]
     stars = lambda n: [{"text": "★" * n, "color": "gold"}, {"text": "☆" * (5 - n), "color": "dark_gray"}]
     fn("mastery/gain", ["execute unless score #g pvp matches 1.. run return 0"]
-       + [f"execute if score @s pvp.cur matches {k[0]} run return run function {NS}:mastery/gain/{k[1]}" for k in KITS])
+       + [f"execute if score @s pvp.cur matches {k[0]} run return run function {NS}:mastery/gain/{k[1]}" for k in ALL_KITS])
     shows, rows = [], []
-    for (kid, key, name, color, *_rest) in KITS:
+    for (kid, key, name, color, *_rest) in ALL_KITS:
         o = f"pvp.mx{kid}"
         g = [f"scoreboard players add @s {o} 0", f"scoreboard players operation #x pvp = @s {o}",
              f"scoreboard players operation @s {o} += #g pvp", f"scoreboard players operation #y pvp = @s {o}"]
@@ -1371,6 +1449,7 @@ def build_pve():
         "execute if score #dp pve matches 1.. run scoreboard players remove #dp pve 1",
         "execute if score #dp pve matches 1 run tellraw @a[tag=pve.in] {\"text\":\"Double Points has worn off.\",\"color\":\"yellow\"}",
         "execute store result bossbar pvp:boss value run data get entity @n[tag=pve.boss] Health",
+        f"execute if score #state pve matches 2 if score #map pve matches {HW_MAP} run function {NS}:hw/second",
         "execute unless entity @e[tag=pve.boss] run bossbar set pvp:boss visible false",
     ])
 
@@ -1400,14 +1479,18 @@ def build_pve():
         f"execute if score #j pve matches 81..{80 + len(OUTBREAK_MAPS)} run return run function {P}/pick_map",
         f"execute if score #j pve matches 91 run return run function {P}/pick_map",
         f"execute if score #j pve matches 92 unless entity @s[{LOBBY_BOX}] run return run {say('@s', 'Join the Outbreak from the lobby (/spawn).', 'red')}",
-        "execute if score #j pve matches 92 run return run pvpmenu pve",
+        f"execute if score #j pve matches 92 run return run function {P}/kit_menu",
         f"execute if score #j pve matches 93 run return run function {P}/start_lobby",
         f"execute if score #j pve matches 99 run return run function {P}/leave_lobby",
-        f"execute if score #j pve matches {RANDOM_KIT} run function {NS}:kit/roll",
+        # #jm pve: the map this kit is for (the open lobby's or run's, else the player's pick)
+        "scoreboard players operation #jm pve = @s pve.map", "execute if score #state pve matches 1.. run scoreboard players operation #jm pve = #map pve",
+        f"execute if score #j pve matches {RANDOM_KIT} if score #jm pve matches {HW_MAP} run function {NS}:kit/roll_hw",
+        f"execute if score #j pve matches {RANDOM_KIT} unless score #jm pve matches {HW_MAP} run function {NS}:kit/roll",
         f"execute if score #j pve matches {RANDOM_KIT} run scoreboard players operation #j pve = #rk pvp",
         f"execute if entity @s[tag=pve.in] run return run {say('@s', 'You are already in the Outbreak.', 'red')}",
         f"execute unless entity @s[{LOBBY_BOX}] run return run {say('@s', 'Join the Outbreak from the lobby (/spawn).', 'red')}",
         f"execute if score #j pve matches {TEST_KIT_ID} unless entity @s[tag=pvp.tester] run return 0",
+        f"execute if score #jm pve matches {HW_MAP} unless function {NS}:kit/valid_pve run return run {say('@s', 'Haunted Night is played as one of its horror characters.', 'gold')}",
         f"execute unless score #j pve matches 101..199 unless score #j pve matches {TEST_KIT_ID} unless function {NS}:kit/valid_pve run return 0",
         # already in the lobby: just a new kit
         f"execute if entity @s[tag=pve.q] if score #state pve matches 1 run scoreboard players operation @s pve.kit = #j pve",
@@ -1415,6 +1498,7 @@ def build_pve():
         "scoreboard players operation @s pve.kit = #j pve", "tag @s remove tw.q", "tag @s remove tw.lead", "tag @s add pve.q",
         f"execute unless score @s pve.map matches 1..{len(OUTBREAK_MAPS)} run scoreboard players operation @s pve.map = #map pve",
         f"execute unless score @s pve.map matches 1..{len(OUTBREAK_MAPS)} run scoreboard players set @s pve.map 1",
+        f"execute if score @s pve.map matches {HW_MAP} unless function {NS}:hw/active run scoreboard players set @s pve.map 1",
         f"execute if score #state pve matches 0 run return run function {P}/create",
         f"execute if score #state pve matches 2..3 run return run {say('@s', 'Outbreak in progress: you will drop in at the next wave break.', 'green')}",
         # joining the open lobby
@@ -1481,16 +1565,21 @@ def build_pve():
         f"execute unless entity @s[{LOBBY_BOX}] run return run {say('@s', 'Join the Outbreak from the lobby (/spawn).', 'red')}",
         "execute if score #j pve matches 81.. run scoreboard players operation @s pve.map = #j pve",
         "execute if score #j pve matches 81.. run scoreboard players remove @s pve.map 80",
-        f"execute if score #j pve matches 91 store result score @s pve.map run random value 1..{len(OUTBREAK_MAPS)}",
+        f"execute if score #j pve matches 91 store result score @s pve.map run random value 1..{len(NORMAL_MAPS)}",
+        f"execute if score #j pve matches {80 + HW_MAP} unless function {NS}:hw/active run return run {say('@s', 'Haunted Night is over for this year.', 'gold')}",
         f"execute if entity @s[tag=pve.lead] if score #state pve matches 1 run return run function {P}/lead_map",
         "execute if score #state pve matches 1 run tellraw @s " + tj([{"text": "This lobby is on ", "color": "gray"}, {"nbt": "mapname", "storage": "pvp:pve", "interpret": True},
                                                                      {"text": " (the leader picks the map). Pick your kit.", "color": "gray"}]),
-        "execute if score #state pve matches 1 run return run pvpmenu pve",
+        f"execute if score #state pve matches 1 run return run function {P}/kit_menu",
         *[f"execute if score @s pve.map matches {i} run tellraw @s [{{\"text\":\"Map: \",\"color\":\"gray\"}},{{\"text\":\"{n}\",\"color\":\"{c}\",\"bold\":true}},"
           f"{{\"text\":\". Now pick your kit.\",\"color\":\"gray\"}}]" for i, (n, c) in names.items()],
         "playsound minecraft:ui.button.click player @s ~ ~ ~ 1 1",
-        "pvpmenu pve",
+        f"function {P}/kit_menu",
     ])
+    fn("pve/kit_menu", [   # as the player: Haunted Night has its own (horror) characters
+        f"execute if score #state pve matches 1.. if score #map pve matches {HW_MAP} run return run pvpmenu pve_hw",
+        f"execute unless score #state pve matches 1.. if score @s pve.map matches {HW_MAP} run return run pvpmenu pve_hw",
+        "pvpmenu pve"])
     fn("pve/lead_map", [   # the leader changes the lobby's map
         "scoreboard players operation #map pve = @s pve.map", *set_mapname,
         "tellraw @a[tag=pve.q] " + tj([{"text": "☣ The lobby's map is now ", "color": "green"}, {"nbt": "mapname", "storage": "pvp:pve", "interpret": True},
@@ -1525,7 +1614,10 @@ def build_pve():
         "scoreboard players operation @s pve.pts += #vb pve",
         "execute if score #vb pve matches 1.. run tellraw @s [{\"text\":\"Veteran bonus: +\",\"color\":\"gold\"},{\"score\":{\"name\":\"#vb\",\"objective\":\"pve\"},\"color\":\"white\"},{\"text\":\" starting points (best wave \",\"color\":\"gold\"},{\"score\":{\"name\":\"@s\",\"objective\":\"pve.best\"},\"color\":\"white\"},{\"text\":\").\",\"color\":\"gold\"}]",
         "clear @s", "effect clear @s", "function cyber:admin/reset", "gamemode adventure @s",
+        f"execute if score #map pve matches {HW_MAP} unless score @s pve.kit matches {min(HW_IDS)}..{max(HW_IDS)} run function {NS}:hw/fix_kit",
+        f"execute unless score #map pve matches {HW_MAP} if score @s pve.kit matches {min(HW_IDS)}..{max(HW_IDS)} run function {NS}:hw/unfix_kit",
         f"function {NS}:kit/give_pve", f"function {P}/tp_spawn",
+        f"execute if score #map pve matches {HW_MAP} run return run function {NS}:hw/enter_title",
         "title @s title {\"text\":\"☣ OUTBREAK\",\"color\":\"dark_green\",\"bold\":true}",
         "playsound minecraft:entity.zombie_villager.converted player @s ~ ~ ~ 1 0.7",
     ])
@@ -1569,6 +1661,7 @@ def build_pve():
         "scoreboard players set #state pve 3", f"scoreboard players set #timer pve {BREAK_TICKS}",
         f"execute as @a[tag=pve.down] run function {P}/revive",   # back now, so they can re-buy during the break
         "kill @e[type=minecraft:armor_stand,tag=pve.body]",
+        f"execute if score #map pve matches {HW_MAP} if score #wave pve matches {HW_WAVES}.. run return run function {NS}:hw/victory",
         "scoreboard players operation #m pve = #wave pve", "scoreboard players operation #m pve %= #5 pve",
         f"execute if score #m pve matches 0 run give @a[tag=pve.in,tag=!pve.down] {CELL}",
         "execute if score #m pve matches 0 run tellraw @a[tag=pve.in] [{\"text\":\"☣ Boss down! Everyone standing gets a \",\"color\":\"light_purple\"},"
@@ -1623,6 +1716,8 @@ def build_pve():
         "execute store result entity @s Health float 1 run attribute @s minecraft:max_health get",
     ])
     fn("pve/boss", [
+        f"execute if score #map pve matches {HW_MAP} run return run function {NS}:hw/boss",
+        'bossbar set pvp:boss name {"text":"Abomination","color":"dark_red"}', "bossbar set pvp:boss color red",
         f"function {P}/boss_summon with storage pvp:pve map",
         f"execute as @e[tag=pve.new] run function {P}/scale with storage pvp:pve s",
         "execute store result bossbar pvp:boss max run data get entity @n[tag=pve.boss] Health",
@@ -1732,7 +1827,7 @@ def build_pve():
         "scoreboard players set #state pve 0", "kill @e[type=minecraft:armor_stand,tag=pve.body]", "kill @e[tag=pve.mob]", "kill @e[type=minecraft:item,tag=pve.pu]", "scoreboard players set #dp pve 0",
         *[f"forceload remove {PCX - PR - 1} {z - PR - 1} {PCX + PR + 1} {z + PR + 1}" for (_, _, _, _, _, z, _) in OUTBREAK_MAPS],
         "bossbar set pvp:boss visible false",
-        "tellraw @a[tag=pve.in] [{\"text\":\"☣ Outbreak over. You reached wave \",\"color\":\"red\"},{\"score\":{\"name\":\"#wave\",\"objective\":\"pve\"},\"color\":\"white\",\"bold\":true},{\"text\":\".\",\"color\":\"red\"}]",
+        "execute unless score #hwwon pve matches 1 run tellraw @a[tag=pve.in] [{\"text\":\"☣ Outbreak over. You reached wave \",\"color\":\"red\"},{\"score\":{\"name\":\"#wave\",\"objective\":\"pve\"},\"color\":\"white\",\"bold\":true},{\"text\":\".\",\"color\":\"red\"}]",
         "scoreboard players add @a[tag=pve.in] pve.best 0",   # unset scores never compare, so a first run would never count
         "execute as @a[tag=pve.in] if score #wave pve > @s pve.best run scoreboard players operation @s pve.best = #wave pve",
         "execute if score #wave pve > #record pve run tellraw @a [{\"text\":\"☣ New Outbreak record: wave \",\"color\":\"gold\"},{\"score\":{\"name\":\"#wave\",\"objective\":\"pve\"},\"color\":\"white\",\"bold\":true},"
@@ -1740,7 +1835,7 @@ def build_pve():
         "execute if score #wave pve > #record pve run scoreboard players operation #record pve = #wave pve",
         f"execute as @a[tag=pve.in] run function {NS}:to_lobby",
         "team empty pve",   # players who logged off mid-run are still on the team (green name) until they rejoin
-        "scoreboard players set #wave pve 0",
+        "scoreboard players set #wave pve 0", "scoreboard players set #hwwon pve 0",
     ])
 
     # Arsenal shop
@@ -1792,10 +1887,134 @@ def build_pve():
         fn(f"admin/build_pve_{m[1]}", build_pve_map(m))
     fn("admin/build_pve", [f"function {NS}:admin/build_pve_{m[1]}" for m in OUTBREAK_MAPS])
 
+def build_halloween():
+    """Haunted Night (Halloween): Outbreak map 6 played with the horror characters, 10 waves, The Scarecrow at wave 5
+    and the Headless Horseman at wave 10. Surviving wave 10 ends the run and unlocks a random Halloween cosmetic for
+    everyone in it. Open while hw/active (the mod sets #halloween pvp until HW_END; #hwforce pvp 1 opens it for tests)."""
+    H = f"{NS}:hw"
+    fn("hw/active", ["execute if score #hwforce pvp matches 1 run return 1", "execute if score #halloween pvp matches 1 run return 1", "return 0"])
+    # the lobby NPC (a mannequin dressed as Michael Myers) with pumpkins around it; it goes away when the event ends
+    x, y, z = HW_NPC
+    deco = [(5, 4), (8, 4), (5, 7), (8, 7)]
+    fn("admin/place_hw", [
+        "kill @e[tag=pvp.hwnpc]", "kill @e[tag=pvp.hwdeco]",
+        f"summon minecraft:mannequin {x} {y} {z} {{Tags:[\"pvp.hwnpc\"],Rotation:[130f,0f],Invulnerable:1b,Silent:1b,immovable:1b,hide_description:1b,"
+        f"profile:{{properties:[{{name:\"textures\",value:\"{HEADS['myers']}\"}}]}},CustomNameVisible:1b,"
+        f"CustomName:{tj({'text': '🎃 Haunted Night 🎃', 'color': 'gold', 'bold': True})},equipment:{{mainhand:{{id:\"minecraft:iron_sword\",count:1}}}}}}",
+        f"summon minecraft:interaction {x} {y} {z} {{Tags:[\"pvp.hwnpc\"],width:1.2f,height:2.2f,response:1b}}",
+        f"summon minecraft:text_display {x} {y + 2.75} {z} {{Tags:[\"pvp.hwdeco\"],billboard:\"center\",background:0,"
+        f"text:{tj([{'text': 'Halloween event', 'color': 'dark_purple'}, {'text': chr(10) + 'until ' + HW_END, 'color': 'gray'}])}}}",
+        *[f"setblock {dx} {y} {dz} minecraft:jack_o_lantern[facing=north]" for dx, dz in deco],
+    ])
+    fn("admin/remove_hw", ["kill @e[tag=pvp.hwnpc]", "kill @e[tag=pvp.hwdeco]", *[f"setblock {dx} {y} {dz} minecraft:air" for dx, dz in deco]])
+    npc_adv("hwnpc", "pvp.hwnpc", f"function {H}/npc")
+    busy = say("@s", "An Outbreak is running right now. Haunted Night opens when it's over.", "gold")
+    fn("hw/npc", [
+        f"execute unless function {H}/active run return run {say('@s', 'Haunted Night is over for this year. Thanks for playing!', 'gold')}",
+        f"execute if score #state pve matches 1.. unless score #map pve matches {HW_MAP} run return run {busy}",
+        f"execute if score #state pve matches 1.. run return run function {NS}:pve/open_menu",
+        f"scoreboard players set #j pve {80 + HW_MAP}", f"function {NS}:pve/pick_map"])
+    # once a second (pvp second): the NPC disappears when the event is over
+    fn("hw/gate", [f"execute unless function {H}/active if entity @e[tag=pvp.hwnpc] run function {NS}:admin/remove_hw"])
+    fn("hw/fix_kit", [f"function {NS}:kit/roll_hw", "scoreboard players operation @s pve.kit = #rk pvp"])
+    fn("hw/unfix_kit", [f"function {NS}:kit/roll", "scoreboard players operation @s pve.kit = #rk pvp"])
+    fn("hw/enter_title", ["title @s title {\"text\":\"🎃 HAUNTED NIGHT\",\"color\":\"gold\",\"bold\":true}",
+                          f"title @s subtitle {tj({'text': f'Survive {HW_WAVES} waves', 'color': 'gray'})}",
+                          "playsound minecraft:entity.wither.ambient player @s ~ ~ ~ 0.6 0.6"])
+
+    # bosses: The Scarecrow (wave 5) and the Headless Horseman on his skeleton horse (wave 10)
+    mob = "Tags:[\"pve.mob\",\"pve.boss\",\"pve.new\"{t}],PersistenceRequired:1b,CanPickUpLoot:0b,DeathLootTable:\"minecraft:empty\",CustomNameVisible:1b"
+    fn("hw/boss", [f"execute if score #wave pve matches {HW_WAVES}.. run return run function {H}/boss_horseman with storage pvp:pve map",
+                   f"function {H}/boss_scarecrow with storage pvp:pve map"])
+    def boss_done(name, color, bar):
+        return [f"execute as @e[tag=pve.new] run function {NS}:pve/scale with storage pvp:pve s",
+                f"bossbar set pvp:boss name {tj({'text': name, 'color': color, 'bold': True})}", f"bossbar set pvp:boss color {bar}",
+                "execute store result bossbar pvp:boss max run data get entity @n[tag=pve.boss] Health",
+                "bossbar set pvp:boss players @a[tag=pve.in]", "bossbar set pvp:boss visible true",
+                f"tellraw @a[tag=pve.in] {tj([{'text': '🎃 ', 'color': color}, {'text': name, 'color': color, 'bold': True}, {'text': ' rises from the graves!', 'color': 'gray'}])}",
+                "execute as @a[tag=pve.in] at @s run playsound minecraft:entity.wither.spawn player @s ~ ~ ~ 0.5 0.7"]
+    fn("hw/boss_scarecrow", [
+        f"$summon minecraft:zombie {PCX + 0.5} {AY + 1} $(bz) {{" + mob.format(t=',"pvp.scarecrow"') + ",IsBaby:0b,"
+        "CustomName:{\"text\":\"The Scarecrow\",\"color\":\"gold\",\"bold\":true},"
+        "equipment:{head:{id:\"minecraft:carved_pumpkin\",count:1},chest:{id:\"minecraft:leather_chestplate\",count:1,components:{\"minecraft:dyed_color\":9127187}},"
+        "mainhand:{id:\"minecraft:iron_hoe\",count:1}},drop_chances:{head:0.0f,chest:0.0f,mainhand:0.0f},"
+        "attributes:[{id:\"minecraft:follow_range\",base:64d},{id:\"minecraft:scale\",base:1.8d},{id:\"minecraft:max_health\",base:220d},"
+        "{id:\"minecraft:attack_damage\",base:9d},{id:\"minecraft:knockback_resistance\",base:0.8d},{id:\"minecraft:movement_speed\",base:0.27d}]}"]
+        + boss_done("The Scarecrow", "gold", "yellow"))
+    fn("hw/boss_horseman", [
+        f"$summon minecraft:skeleton_horse {PCX + 0.5} {AY + 1} $(bz) {{Tags:[\"pve.mob\",\"pve.new\",\"pvp.hwhorse\"],PersistenceRequired:1b,"
+        "DeathLootTable:\"minecraft:empty\",Tame:0b,attributes:[{id:\"minecraft:max_health\",base:80d},{id:\"minecraft:movement_speed\",base:0.3d}],"
+        "Passengers:[{id:\"minecraft:wither_skeleton\"," + mob.format(t=',"pvp.horseman"') + ","
+        "CustomName:{\"text\":\"The Headless Horseman\",\"color\":\"dark_red\",\"bold\":true},"
+        "equipment:{chest:{id:\"minecraft:leather_chestplate\",count:1,components:{\"minecraft:dyed_color\":1381653}},"
+        "legs:{id:\"minecraft:leather_leggings\",count:1,components:{\"minecraft:dyed_color\":1381653}},"
+        "mainhand:{id:\"minecraft:netherite_hoe\",count:1},offhand:{id:\"minecraft:jack_o_lantern\",count:1}},"
+        "drop_chances:{chest:0.0f,legs:0.0f,mainhand:0.0f,offhand:0.0f},"
+        "attributes:[{id:\"minecraft:follow_range\",base:64d},{id:\"minecraft:scale\",base:1.3d},{id:\"minecraft:max_health\",base:420d},"
+        "{id:\"minecraft:attack_damage\",base:12d},{id:\"minecraft:knockback_resistance\",base:1.0d}]}]}"]
+        + boss_done("The Headless Horseman", "dark_red", "red"))
+    # boss abilities, once a second during a wave (#hwt counts seconds)
+    fn("hw/second", ["scoreboard players add #hwt pve 1",
+                     f"execute as @e[tag=pvp.scarecrow] at @s run function {H}/scarecrow",
+                     f"execute as @e[tag=pvp.horseman] at @s run function {H}/horseman"])
+    fn("hw/scarecrow", [   # every 8 s: a cloud of crows (slows and blinds nearby players) and two Pumpkinheads
+        "scoreboard players operation #m pve = #hwt pve", "scoreboard players operation #m pve %= #8c pve",
+        "execute unless score #m pve matches 0 run return 0",
+        "effect give @a[tag=pve.in,tag=!pve.down,distance=..7] minecraft:slowness 3 1",
+        "effect give @a[tag=pve.in,tag=!pve.down,distance=..7] minecraft:blindness 2 0",
+        "particle minecraft:squid_ink ~ ~2 ~ 3 1 3 0.05 60", "playsound minecraft:entity.parrot.imitation.phantom hostile @a[distance=..32] ~ ~ ~ 1 0.6",
+        *[f"summon minecraft:zombie ~{dx} ~ ~ {{Tags:[\"pve.mob\",\"pve.new\"],PersistenceRequired:1b,CanPickUpLoot:0b,DeathLootTable:\"minecraft:empty\","
+          "CustomName:{text:\"Pumpkinhead\",color:\"gold\"},equipment:{head:{id:\"minecraft:carved_pumpkin\",count:1}},drop_chances:{head:0.0f},"
+          "attributes:[{id:\"minecraft:follow_range\",base:64d}]}" for dx in (2, -2)],
+        f"execute as @e[tag=pve.new] run function {NS}:pve/scale with storage pvp:pve s"])
+    fn("hw/horseman", [   # every 4 s: graves burst under two players; every 12 s: two Ghosts; below half health: faster
+        "scoreboard players operation #m pve = #hwt pve", "scoreboard players operation #m pve %= #4c pve",
+        f"execute if score #m pve matches 0 as @a[tag=pve.in,tag=!pve.down,distance=..40,sort=random,limit=2] at @s run function {H}/grave_burst",
+        "scoreboard players operation #m pve = #hwt pve", "scoreboard players operation #m pve %= #12c pve",
+        "execute if score #m pve matches 0 run summon minecraft:vex ~ ~2 ~ {Tags:[\"pve.mob\",\"pve.new\"],PersistenceRequired:1b,DeathLootTable:\"minecraft:empty\",CustomName:{text:\"Ghost\",color:\"white\"}}",
+        "execute if score #m pve matches 0 run summon minecraft:vex ~ ~2 ~ {Tags:[\"pve.mob\",\"pve.new\"],PersistenceRequired:1b,DeathLootTable:\"minecraft:empty\",CustomName:{text:\"Ghost\",color:\"white\"}}",
+        "execute if score #m pve matches 0 run playsound minecraft:entity.vex.charge hostile @a[distance=..32] ~ ~ ~ 1 0.5",
+        f"execute as @e[tag=pve.new] run function {NS}:pve/scale with storage pvp:pve s",
+        "execute store result score #hp pve run data get entity @s Health", "execute store result score #hpm pve run attribute @s minecraft:max_health get",
+        "scoreboard players operation #hpm pve /= #2c pve",
+        "execute if score #hp pve <= #hpm pve on vehicle run effect give @s minecraft:speed 2 1 true",
+        "execute if score #hp pve <= #hpm pve run particle minecraft:flame ~ ~2 ~ 0.3 0.4 0.3 0.02 6"])
+    fn("hw/grave_burst", ["summon minecraft:evoker_fangs ~ ~ ~ {warmup:10}", "summon minecraft:evoker_fangs ~1 ~ ~ {warmup:12}",
+                          "summon minecraft:evoker_fangs ~-1 ~ ~ {warmup:12}",
+                          "particle minecraft:soul ~ ~0.2 ~ 0.6 0.1 0.6 0.02 15", "playsound minecraft:entity.evoker.prepare_attack hostile @a[distance=..16] ~ ~ ~ 1 0.6"])
+
+    # winning: everyone in the run gets a random Halloween cosmetic they don't have yet
+    fn("hw/victory", [
+        "scoreboard players set #hwwon pve 1",
+        f"tellraw @a {tj([{'text': '🎃 ', 'color': 'gold'}, {'selector': '@a[tag=pve.in]', 'color': 'yellow'}, {'text': ' survived ', 'color': 'gold'}, {'text': 'Haunted Night', 'color': 'gold', 'bold': True}, {'text': '!', 'color': 'gold'}])}",
+        "title @a[tag=pve.in] title {\"text\":\"YOU SURVIVED\",\"color\":\"gold\",\"bold\":true}",
+        "title @a[tag=pve.in] subtitle {\"text\":\"Haunted Night is over... for now\",\"color\":\"gray\"}",
+        "execute as @a[tag=pve.in] at @s run playsound minecraft:ui.toast.challenge_complete player @s ~ ~ ~ 1 0.8",
+        "execute as @a[tag=pve.in] at @s run particle minecraft:totem_of_undying ~ ~1 ~ 0.5 1 0.5 0.4 60",
+        "scoreboard players add @a[tag=pve.in] pvp.hwwins 1",
+        f"execute as @a[tag=pve.in] run function {H}/reward",
+        f"function {NS}:pve/game_over"])
+    n = len(HW_COSMETICS)
+    fn("hw/reward", [   # as a winner: one cosmetic they don't own yet, picked at random
+        "scoreboard players set #c pvp 0",
+        *[f"execute unless score @s pvp.hw{c[0]} matches 1 run scoreboard players add #c pvp 1" for c in HW_COSMETICS],
+        f"execute if score #c pvp matches 0 run return run tellraw @s {tj([{'text': '🎃 You already have every Haunted Night cosmetic (' + str(n) + '/' + str(n) + '). Respect.', 'color': 'gold'}])}",
+        "execute store result score #r pvp run random value 0..999999", "scoreboard players operation #r pvp %= #c pvp",
+        *[l for c in HW_COSMETICS for l in (
+            f"execute unless score @s pvp.hw{c[0]} matches 1 if score #r pvp matches 0 run function {H}/grant/{c[0]}",
+            f"execute unless score @s pvp.hw{c[0]} matches 1 run scoreboard players remove #r pvp 1")],
+    ])
+    for (i, kind, lid, name, code) in HW_COSMETICS:
+        fn(f"hw/grant/{i}", [
+            f"scoreboard players set @s pvp.hw{i} 1", "scoreboard players set #r pvp -1",
+            f"tellraw @s {tj([{'text': '🎃 Unlocked the ', 'color': 'gold'}, {'text': name, 'color': 'yellow', 'bold': True}, {'text': ' ' + HW_KIND[kind] + '! ', 'color': 'gold'}, {'text': 'Wear it from /cosmetics > Halloween on any server (it shows up there within 5 minutes).', 'color': 'gray'}])}",
+            "playsound minecraft:entity.player.levelup player @s ~ ~ ~ 1 1.2"])
+
+
 
 PVE_THEMES = {"ruins": ("stone_bricks", "polished_andesite"), "mine": ("stone", "polished_tuff"),   # outer wall, Arsenal platform
               "neon": ("black_concrete", "light_blue_concrete"), "hellfort": ("nether_bricks", "polished_blackstone"),
-              "orbital": ("black_concrete", "cyan_concrete")}   # the station sits in black "space"
+              "orbital": ("black_concrete", "cyan_concrete"), "haunted": ("deepslate_bricks", "polished_blackstone")}   # the station sits in black "space"
 
 
 def wallbuys(g, cz, key):

@@ -154,7 +154,8 @@ final class NetworkStats {
                 if (scores instanceof List<?> l) for (Object o : l) {
                     if (!(o instanceof Map<?, ?> e) || !(e.get("Name") instanceof String name) || name.startsWith("#")) continue;
                     String obj = String.valueOf(e.get("Objective"));
-                    if (obj.startsWith("pvp.mx") && e.get("Score") instanceof Number n) {   // per-character mastery XP (mastery tags)
+                    // per-character mastery XP (mastery tags) and Halloween unlocks (pvp.hw<n>, event cosmetics)
+                    if ((obj.startsWith("pvp.mx") || obj.startsWith("pvp.hw")) && e.get("Score") instanceof Number n) {
                         out.computeIfAbsent(name.toLowerCase(Locale.ROOT), k -> new Row(name)).mastery.merge(obj, n.longValue(), Math::max);
                         continue;
                     }
@@ -196,7 +197,7 @@ final class NetworkStats {
     }
 
     boolean loaded() { return updatedAt > 0; }
-    /** A PvP mastery objective (pvp.mx<kit id>) for this player, 0 if none. */
+    /** A PvP mastery (pvp.mx<kit id>) or Halloween unlock (pvp.hw<n>) objective for this player, 0 if none. */
     long mastery(String name, String objective) { Row r = rows.get(name.toLowerCase(Locale.ROOT)); return r == null ? 0 : r.mastery.getOrDefault(objective, 0L); }
     long value(String name, Cat c) { Row r = rows.get(name.toLowerCase(Locale.ROOT)); return r == null ? 0 : r.total[c.ordinal()]; }
     /** 1-based rank in a category, or 0 if the player has nothing there. */

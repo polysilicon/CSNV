@@ -1,6 +1,6 @@
 # Crispy PvP
 
-**Shown to players as "Multiverse"** (36 characters from your favourite shows and games · PvP · Duels · Outbreak):
+**Shown to players as "Multiverse"** (36 characters from your favourite shows and games · PvP · Duels · Outbreak; Haunted Night for Halloween 2026):
 the hub selector (DeluxeHub `menus/serverselector.yml` on the lobby), the welcome menu and stats (CrispyLobby
 `config.yml`), the tab list (`proxy/tab-config.yml`) and the spawn hologram here. Its Velocity server name is `multiverse`
 (was `pvp` until CrispyLobby 1.12.1). Internally it's still `pvp`: the `CrispyPvP01` instance, this folder, the `pvp:`
@@ -423,6 +423,62 @@ collect them. Maps built before this: `function pvp:admin/lock_containers` (with
 empties them in place.
 
 Kits, shop, mob pool, spawns and arena layouts are tables at the top of `build.py`.
+
+## Haunted Night (Halloween 2026)
+A limited-time Outbreak variant, open until **2026-11-07** (UTC). The **🎃 Haunted Night** NPC (a mannequin dressed as
+Michael Myers, with jack o'lanterns, at 6.5 101 5.5 in the lobby; `admin/place_hw` / `admin/remove_hw`) opens it.
+- **Gate**: the mod (`Events.java`) sets `#halloween pvp` to 1 every 5 s until 2026-11-07, then 0. While it's 0 the NPC
+  is removed (`hw/gate`, every second) and the map can't be picked. `scoreboard players set #hwforce pvp 1` opens it
+  anyway (for testing).
+- It's Outbreak map 6 (`haunted`, centre 0, -60, 800; `admin/build_pve_haunted`): a moonlit graveyard around a
+  ruined chapel, gravel paths, rows of tombstones, dead trees with cobwebs, a fenced crypt, a pumpkin patch with
+  scarecrows and a witch's camp. It isn't in the Outbreak map menu or Random. Lobbies, drop-in, the Arsenal, wall-buys
+  (M1911, Olympia, Kar98k, Stakeout), revive and power-ups all work as in Outbreak, but only one Outbreak lobby/run
+  exists at a time, so the NPC says so if a normal Outbreak is on.
+- **Horror characters only** (`HALLOWEEN_KITS`, ids 44-48; their own menu `pve_hw` with a random
+  pick). They're never in the arena, duels, the Tower or random rolls elsewhere. Kits that don't fit the lobby's map
+  are swapped for a random fitting one when the run starts (`hw/fix_kit`, `hw/unfix_kit`). They have mastery like
+  every character.
+
+  | Character | Gear | Abilities |
+  |---|---|---|
+| Michael Myers | Kitchen Knife: Sharpness IV, Bleed II · coveralls · a bit big | The Shape · Relentless |
+  | Jason Voorhees | Machete (axe): Sharpness III, Cleave II · big and tough | Machete Throw · Shift |
+  | Freddy Krueger | Bladed Glove: Sharpness III, Lifesteal II · striped sweater | Nightmare · Dream Demon |
+  | Ghostface | Buck 120 Knife: Sharpness III, Assassin II · black robe (Dodge II) | Stalk · Ambush |
+  | Chucky | Knife: Sharpness IV, Poison II · overalls · tiny and quick | Voodoo Doll · Hide and Seek |
+
+  Freddy, Jason, Michael Myers and Ghostface heads come from the Head Index cache; Chucky's skin was drawn for this and
+  uploaded to mineskin.org.
+- **Mobs** (its own roster, rolled instead of the normal pool): Pumpkinheads (zombies in carved pumpkins), Restless Bones
+  (skeletons with jack o'lanterns, wave 2+), Graveyard Spiders (2+), Witches (3+), Ghosts (vexes, 4+), Ghouls (zombie
+  villagers, 5+), Reapers (wither skeletons, 6+), Jack-o-Creepers (7+).
+- **Bosses**: wave 5 **The Scarecrow** (a big zombie in a pumpkin and hay coat; every 8 s a cloud of crows slows and
+  blinds nearby players and two Pumpkinheads join), wave 10 **the Headless Horseman** (a wither skeleton on a
+  skeleton horse, holding a jack o'lantern; every 4 s graves burst under two players (evoker fangs), every 12 s two
+  Ghosts, faster below half health). Boss abilities run from `hw/second`.
+- **Winning**: clearing wave 10 ends the run (`hw/victory`): everyone in it counts a win (`pvp.hwwins`) and gets
+  one random Halloween cosmetic they don't own yet (`hw/reward`, `pvp.hw<n>` = 1). With all of them, they're told so.
+- **Cosmetics** (15, `HW_COSMETICS`): worn network-wide from the lobby's `/cosmetics` > Halloween page
+  (CrispyLobby 1.13.0 reads the `pvp.hw<n>` scores; `halloween_cosmetics.py <config.yml>` writes their config).
+
+  | # | Kind | Name | Code |
+  |---|---|---|---|
+| 1 | tag | Pumpkin King | `&6&l[Pumpkin King]` |
+  | 2 | tag | Slasher | `&4[Slasher]` |
+  | 3 | tag | Haunted | `&5[Haunted]` |
+  | 4 | tag | Ghoul | `&2[Ghoul]` |
+  | 5 | tag | Trick or Treat | `&6[Trick or &5Treat&6]` |
+  | 6 | tag | Survivor '26 | `&8[&7☠ Survivor '26&8]` |
+  | 7 | name colour | Pumpkin | `&#ff7518>&#ffb347` |
+  | 8 | name colour | Candy Corn | `&#ffd23f/&#ff8c1a/&#ffffff` |
+  | 9 | name colour | Witch's Brew | `&#7fff00>&#8a2be2` |
+  | 10 | name colour | Blood Moon | `&#8b0000>&#ff3b3b` |
+  | 11 | name colour | Ghostly | `&#ffffff>&#8a8f99` |
+  | 12 | chat colour | Pumpkin Spice | `&#e8823a` |
+  | 13 | chat colour | Candy Corn | `&#ffd23f/&#ff8c1a/&#ffffff` |
+  | 14 | chat colour | Witch's Brew | `&#7fff00>&#8a2be2` |
+  | 15 | chat colour | Spectral | `&#7df9ff>&#ffffff` |
 
 ## Balance (2026-10-25)
 Kits were tuned so no character wins on stats alone. Each kit was scored as effective HP (health, armor, toughness,

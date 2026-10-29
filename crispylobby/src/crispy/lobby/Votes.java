@@ -64,9 +64,16 @@ public class Votes implements Listener {
                String advancement, String stat, long min, int top, String score, String head) {
         boolean earned() { return advancement != null || stat != null || score != null; }
         boolean ranked() { return stat != null && top > 0; }
-        String page() { return score != null ? "mtags" : earned() ? "etags" : "tags"; }
+        boolean event() { return score != null && score.startsWith(EVENT_SCORE); }
+        String page() { return event() ? "event" : score != null ? "mtags" : earned() ? "etags" : "tags"; }
     }
-    record NameColor(String id, String name, String code, int cost, Material icon) {}
+    /** A name or chat colour: bought with vote points, or (score set, e.g. pvp.hw<n>) an event colour, free once that
+     *  Multiverse score is 1 or more. Event colours only show on the Halloween page. */
+    record NameColor(String id, String name, String code, int cost, Material icon, String score) {
+        boolean event() { return score != null; }
+    }
+    /** Halloween cosmetics: unlocked one at a time by completing Haunted Night in the Multiverse (score pvp.hw<n>). */
+    static final String EVENT_SCORE = "pvp.hw";
     // what each retired trail cost, for the refund
     static final Map<String, Integer> TRAIL_REFUND = Map.of("hearts", 3, "flames", 4, "notes", 4, "soul", 5, "sakura", 5,
             "sparks", 6, "runes", 6, "glitch", 10, "endrod", 8, "totem", 12);
@@ -153,11 +160,11 @@ public class Votes implements Listener {
         ConfigurationSection cs = plugin.getConfig().getConfigurationSection("cosmetics.name-colors");
         if (cs != null) for (String k : cs.getKeys(false))
             colors.put(k, new NameColor(k, cs.getString(k + ".name", k), cs.getString(k + ".code", "&f"), cs.getInt(k + ".cost", 5),
-                    mat(cs.getString(k + ".icon"), Material.WHITE_DYE)));
+                    mat(cs.getString(k + ".icon"), Material.WHITE_DYE), cs.getString(k + ".score")));
         ConfigurationSection cc = plugin.getConfig().getConfigurationSection("cosmetics.chat-colors");
         if (cc != null) for (String k : cc.getKeys(false))
             chatColors.put(k, new NameColor(k, cc.getString(k + ".name", k), cc.getString(k + ".code", "&f"), cc.getInt(k + ".cost", 5),
-                    mat(cc.getString(k + ".icon"), Material.WHITE_DYE)));
+                    mat(cc.getString(k + ".icon"), Material.WHITE_DYE), cc.getString(k + ".score")));
         writeTags();
     }
     static Material mat(String s, Material def) { Material m = s == null ? null : Material.matchMaterial(s); return m == null ? def : m; }
@@ -436,6 +443,14 @@ public class Votes implements Listener {
         int unlocked = owned(p, pd).size();
         put(m, 22, item(Material.ENDER_CHEST, "&d&lMy cosmetics", List.of("&7Everything you've unlocked in one place:", "&7tags, name colours and chat colours.", "",
                 "&7Unlocked: &f" + unlocked, "", "&eClick to view"), false), "owned:0");
+        if (tags.values().stream().anyMatch(Tag::event)) {
+            long have = owned(p, pd).stream().filter(k -> { String id = k.substring(k.indexOf(':') + 1);
+                return k.startsWith("tag:") ? tags.get(id).event() : (k.startsWith("chat:") ? chatColors : colors).get(id).event(); }).count();
+            long all = tags.values().stream().filter(Tag::event).count() + colors.values().stream().filter(NameColor::event).count()
+                    + chatColors.values().stream().filter(NameColor::event).count();
+            put(m, 24, item(Material.JACK_O_LANTERN, "&6&lHalloween", List.of("&7Event cosmetics from &6Haunted Night", "&7in the Multiverse.", "",
+                    "&7Unlocked: &f" + have + "&7/" + all, "", "&eClick to browse"), false), "event");
+        }
         put(m, 31, item(Material.ARROW, "&7Back to vote rewards", List.of(), false), "back");
         p.openInventory(m.inv);
     }
@@ -447,13 +462,14 @@ public class Votes implements Listener {
         Set<String> advs = null;
         for (Tag t : tags.values()) {
             if (pd.owned.contains("tag:" + t.id()) || t.id().equals(pd.tag)) out.add("tag:" + t.id());
+            else if (t.event() && plugin.stats.mastery(p.getName(), t.score()) >= Math.max(1, t.min())) out.add("tag:" + t.id());
             else if (t.ranked()) {
                 if (advs == null) advs = advancements(p);
                 if (lockReason(p, t, advs) == null) out.add("tag:" + t.id());
             }
         }
-        for (NameColor c : colors.values()) if (pd.owned.contains("color:" + c.id())) out.add("color:" + c.id());
-        for (NameColor c : chatColors.values()) if (pd.owned.contains("chat:" + c.id())) out.add("chat:" + c.id());
+        for (NameColor c : colors.values()) if (pd.owned.contains("color:" + c.id()) || eventUnlocked(p, c)) out.add("color:" + c.id());
+        for (NameColor c : chatColors.values()) if (pd.owned.contains("chat:" + c.id()) || eventUnlocked(p, c)) out.add("chat:" + c.id());
         return out;
     }
 
@@ -533,7 +549,8 @@ public class Votes implements Listener {
     // ------------------------------------------------------------------ earned tags
     List<String> requirement(Tag t) {
         List<String> l = new ArrayList<>();
-        if (t.score() != null) { l.add("&7Master &f" + (t.note() != null ? t.note() : t.id()) + " &7in the Multiverse"); l.add("&8" + String.format("%,d", t.min()) + " mastery XP with that character"); }
+        if (t.event()) { l.add("&7Survive &6Haunted Night &7in the Multiverse"); l.add("&8Each completed run unlocks one random"); l.add("&8Halloween cosmetic you don't have yet"); }
+        else if (t.score() != null) { l.add("&7Master &f" + (t.note() != null ? t.note() : t.id()) + " &7in the Multiverse"); l.add("&8" + String.format("%,d", t.min()) + " mastery XP with that character"); }
         else if (t.advancement() != null) l.add("&7Advancement: &f" + (t.note() != null ? t.note() : t.advancement()));
         else if ("VOTES".equals(t.stat())) l.add("&7Be the &f#1 voter &7this month");
         else if (t.stat() != null) {
@@ -558,6 +575,10 @@ public class Votes implements Listener {
     /** null if the player meets the tag's requirement, else a lore line saying where they stand. */
     String lockReason(Player p, Tag t, Set<String> advs) {
         if (t.advancement() != null) return advs.contains(t.advancement()) ? null : "&cNot unlocked yet";
+        if (t.event()) {
+            if (!plugin.stats.loaded()) return "&8Stats are loading, try again in a minute";
+            return plugin.stats.mastery(p.getName(), t.score()) >= Math.max(1, t.min()) ? null : "&cNot unlocked yet";
+        }
         if (t.score() != null) {
             if (!plugin.stats.loaded()) return "&8Stats are loading, try again in a minute";
             long v = plugin.stats.mastery(p.getName(), t.score());
@@ -613,6 +634,36 @@ public class Votes implements Listener {
 
     static final String[][] COLOR_PAGES = {{"classic", "&f&lClassic", "WHITE_DYE"}, {"fades", "&d&lFades", "AMETHYST_SHARD"}, {"flags", "&b&lFlags", "WHITE_BANNER"}};
 
+    // ------------------------------------------------------------------ Halloween (event) cosmetics
+    boolean eventUnlocked(Player p, NameColor c) { return c.event() && plugin.stats.mastery(p.getName(), c.score()) >= 1; }
+
+    /** The Halloween page: every event tag, name colour and chat colour, unlocked ones first-come wearable. */
+    void openEvent(Player p) {
+        PD pd = pd(p.getName());
+        Menu m = menu("event", 6, "&6&lHalloween &8- &7Haunted Night");
+        put(m, 4, item(Material.JACK_O_LANTERN, "&6&lHalloween cosmetics", List.of("&7Survive &6Haunted Night &7in the Multiverse:", "&7every completed run unlocks one of these",
+                "&7at random (one you don't have yet).", "", "&8Event cosmetics are yours to keep.", "&8New unlocks show up here within 5 minutes."), false), null);
+        int i = 0;
+        boolean loaded = plugin.stats.loaded();
+        for (Tag t : tags.values()) {
+            if (!t.event() || i >= GRID.length) continue;
+            boolean on = t.id().equals(pd.tag), open = loaded && lockReason(p, t, Set.of()) == null;
+            put(m, GRID[i++], tagItem(t, List.of("&8Tag", "&7Preview: &f<" + t.display() + " &f" + p.getName() + "> hi", "",
+                    on ? "&aWearing &7- click to take off" : open ? "&eClick to wear" : loaded ? "&cLocked" : "&8Stats are loading"), on), "tag:" + t.id());
+        }
+        for (boolean chat : new boolean[]{false, true})
+            for (NameColor c : (chat ? chatColors : colors).values()) {
+                if (!c.event() || i >= GRID.length) continue;
+                boolean on = c.id().equals(chat ? pd.chat : pd.color), open = eventUnlocked(p, c);
+                String preview = chat ? "&f<" + p.getName() + "> " + colored("happy halloween!", c.code()) : "&f<" + colored(p.getName(), c.code()) + "&f> boo";
+                put(m, GRID[i++], item(c.icon(), colored(c.name(), c.code()), List.of(chat ? "&8Chat colour" : "&8Name colour", "&7Preview: " + preview, "",
+                        on ? "&aUsing &7- click to take off" : open ? "&eClick to use" : loaded ? "&cLocked" : "&8Stats are loading"), on), (chat ? "chat:" : "color:") + c.id());
+            }
+        put(m, 49, item(Material.ARROW, "&7Back", List.of(), false), "cosmetics");
+        put(m, 50, pointsItem(pd), null);
+        p.openInventory(m.inv);
+    }
+
     void openColors(Player p, String page) { openColorMenu(p, false, page); }
     void openChatColors(Player p, String page) { openColorMenu(p, true, page); }
 
@@ -623,7 +674,7 @@ public class Votes implements Listener {
         Menu m = menu(base + ":" + page, 6, (chat ? "&f&lChat colours" : "&f&lName colours") + " &8(&d" + pd.points + " points&8)");
         int i = 0;
         for (NameColor c : (chat ? chatColors : colors).values()) {
-            if (i >= GRID.length || !ColorCodes.page(c.code()).equals(page)) continue;
+            if (i >= GRID.length || c.event() || !ColorCodes.page(c.code()).equals(page)) continue;
             boolean own = pd.owned.contains(prefix + c.id()), on = c.id().equals(using);
             String preview = chat ? "&f<" + p.getName() + "> " + colored("hey, gg everyone", c.code()) : "&f<" + colored(p.getName(), c.code()) + "&f> hi";
             List<String> lore = new ArrayList<>(List.of("&7Preview: " + preview, "",
@@ -651,6 +702,7 @@ public class Votes implements Listener {
         else if (a.equals("top")) { p.closeInventory(); top(p); }
         else if (a.equals("cosmetics")) openCosmetics(p);
         else if (a.equals("tags") || a.equals("etags") || a.equals("mtags")) openTags(p, a);
+        else if (a.equals("event")) openEvent(p);
         else if (a.equals("colors") || a.startsWith("colors:")) openColors(p, a.contains(":") ? a.substring(7) : "classic");
         else if (a.equals("chatcolors") || a.startsWith("chatcolors:")) openChatColors(p, a.contains(":") ? a.substring(11) : "classic");
         else if (a.startsWith("off:")) {
@@ -667,6 +719,7 @@ public class Votes implements Listener {
         else if (a.startsWith("tag:") || a.startsWith("color:") || a.startsWith("chat:")) {
             cosmetic(p, a);
             if (m.kind.startsWith("owned:")) openOwned(p, Integer.parseInt(m.kind.substring(6)));   // stay on My cosmetics
+            else if (m.kind.equals("event")) openEvent(p);
         }
     }
 
@@ -736,11 +789,25 @@ public class Votes implements Listener {
                 p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.6f, 1.2f);
             } else p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 1f);
             pd.tag = wearing ? null : id; writeTags(); save();
-            openTags(p, et.page());
+            if (!et.event()) openTags(p, et.page());
             return;
         }
         boolean isChat = key.startsWith("chat:");
         Map<String, NameColor> pool = isChat ? chatColors : colors;
+        NameColor ev = isTag ? null : pool.get(id);
+        if (ev != null && ev.event()) {
+            boolean using = id.equals(isChat ? pd.chat : pd.color);
+            if (!using && !eventUnlocked(p, ev)) {
+                msg(p, colored(ev.name(), ev.code()) + " &7is locked: survive &6Haunted Night &7in the Multiverse to win Halloween cosmetics.");
+                p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.7f, 1f);
+                return;
+            }
+            if (pd.owned.add(key)) { msg(p, "&aUnlocked " + colored(ev.name(), ev.code()) + "&a!"); p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.6f, 1.2f); }
+            else p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 1f);
+            if (isChat) pd.chat = using ? null : id; else pd.color = using ? null : id;
+            writeTags(); save();
+            return;
+        }
         int cost = isTag ? (tags.containsKey(id) ? tags.get(id).cost() : -1) : (pool.containsKey(id) ? pool.get(id).cost() : -1);
         if (cost < 0) return;
         if (!pd.owned.contains(key)) {

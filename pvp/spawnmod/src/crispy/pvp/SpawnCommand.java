@@ -23,6 +23,7 @@ public class SpawnCommand implements ModInitializer {
     @Override
     public void onInitialize() {
         ServerTickEvents.END_SERVER_TICK.register(Leaderboards::onTick);
+        ServerTickEvents.END_SERVER_TICK.register(Events::onTick);
         CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> {
             ForceEnchant.register(dispatcher, context);
             for (String name : new String[]{"spawn", "lobby"}) {

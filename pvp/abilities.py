@@ -457,6 +457,55 @@ ABILITIES = {
         "effect give @s minecraft:strength 8 0", "effect give @s minecraft:speed 8 0", "effect give @s minecraft:regeneration 8 0",
         "particle minecraft:flame ~ ~0.3 ~ 0.2 0.1 0.2 0.03 15",
         snd("entity.generic.drink", 1, 0.8), snd("entity.player.burp", 1, 0.6), bar("OLDE FORTRAN", "gold")]),
+    # ---------------------------------------------------------------- Halloween (Haunted Night only)
+    "the_shape": ("The Shape", "dark_gray", "ink_sac", 20, ["Fade into the dark and stalk.", "Invisibility · Speed I · Strength I · 6 s"], [
+        "effect give @s minecraft:invisibility 6 0 true", "effect give @s minecraft:speed 6 0 true", "effect give @s minecraft:strength 6 0 true",
+        "particle minecraft:large_smoke ~ ~1 ~ 0.3 0.8 0.3 0.02 30",
+        snd("entity.warden.heartbeat", 1, 0.8), snd("block.sculk_sensor.clicking", 1, 0.6), bar("THE SHAPE", "dark_gray")]),
+    "relentless": ("Relentless", "gray", "iron_nugget", 22, ["Nothing keeps you down.", "Regeneration III 4 s · Resistance II 5 s"], [
+        "effect give @s minecraft:regeneration 4 2", "effect give @s minecraft:resistance 5 1",
+        "particle minecraft:dust{color:[0.6,0.6,0.6],scale:1.2} ~ ~1 ~ 0.4 0.8 0.4 0 30",
+        snd("entity.iron_golem.repair", 1, 0.6), bar("RELENTLESS", "gray")]),
+    "machete_throw": ("Machete Throw", "dark_green", "iron_sword", 6, ["Hurls a machete at the enemy you aim at.", "16 blocks · 10 damage · Slowness II 2 s"], [
+        *ray(32),
+        hit(damage(10)), hit("effect give @s minecraft:slowness 2 1"),
+        hit("particle minecraft:block{block_state:\"minecraft:redstone_block\"} ~ ~1 ~ 0.3 0.5 0.3 0.2 25"),
+        snd("item.trident.throw", 1, 0.7), bar("MACHETE THROW", "dark_green")]),
+    "shift": ("Shift", "dark_aqua", "echo_shard", 12, ["Vanish and reappear behind the nearest enemy.", "12 blocks · 8 damage · Blindness 2 s"], [
+        f"execute unless entity @e[distance=..12,{TGT}] run return run " + bar("NOBODY TO HUNT", "gray"),
+        f"execute as @e[distance=..12,{TGT},sort=nearest,limit=1] at @s rotated as @s rotated ~ 0 positioned ^ ^ ^-1.5 run tp @p[tag=pvp.caster] ~ ~ ~ facing entity @s feet",
+        f"execute as @e[distance=..12,{TGT},sort=nearest,limit=1] at @s run " + damage(8),
+        f"execute as @e[distance=..12,{TGT},sort=nearest,limit=1] run effect give @s minecraft:blindness 2 0",
+        "particle minecraft:reverse_portal ~ ~1 ~ 0.4 0.8 0.4 0.05 40",
+        snd("entity.enderman.teleport", 1, 0.6), bar("KI KI KI... MA MA MA", "dark_aqua")]),
+    "nightmare": ("Nightmare", "dark_red", "fermented_spider_eye", 14, ["Drags everyone near you into a bad dream.", "8 blocks · 4 damage · Blindness, Nausea, Slowness II"], [
+        around(8, damage(4, "magic")), around(8, "effect give @s minecraft:blindness 3 0"),
+        around(8, "effect give @s minecraft:nausea 5 0"), around(8, "effect give @s minecraft:slowness 3 1"),
+        "particle minecraft:squid_ink ~ ~1 ~ 3 0.8 3 0.02 80",
+        snd("entity.phantom.ambient", 1, 0.5), snd("ambient.cave", 1, 1), bar("WELCOME TO MY NIGHTMARE", "dark_red")]),
+    "dream_demon": ("Dream Demon", "red", "netherite_scrap", 16, ["Slashes everything around you with your claws.", "4 blocks · 8 damage · heals you if you hit anything"], [
+        around(4, damage(8)),
+        f"execute if entity @e[distance=..4,{TGT}] run effect give @s minecraft:instant_health 1 0",
+        "particle minecraft:sweep_attack ~1.5 ~1 ~ 0 0 0 0 1", "particle minecraft:sweep_attack ~-1.5 ~1 ~ 0 0 0 0 1",
+        "particle minecraft:sweep_attack ~ ~1 ~1.5 0 0 0 0 1", "particle minecraft:sweep_attack ~ ~1 ~-1.5 0 0 0 0 1",
+        snd("entity.player.attack.sweep", 1, 0.6), snd("block.chain.break", 1, 1.4), bar("DREAM DEMON", "red")]),
+    "stalk": ("Stalk", "white", "phantom_membrane", 14, ["Mark every enemy near you.", "24 blocks · they glow 10 s · you get Speed II 5 s"], [
+        around(24, "effect give @s minecraft:glowing 10 0"), "effect give @s minecraft:speed 5 1",
+        snd("block.bell.use", 0.6, 0.5), bar("WHAT'S YOUR FAVOURITE SCARY MOVIE?", "white")]),
+    "ambush": ("Ambush", "gray", "bone", 7, ["Lunge forward and stab what's in front of you.", "3 blocks · 7 damage · Slowness II 2 s"], [
+        DASH, cone(3, damage(7)), cone(3, "effect give @s minecraft:slowness 2 1"),
+        "execute anchored eyes run particle minecraft:crit ^ ^ ^2 0.5 0.4 0.5 0.2 20",
+        snd("entity.player.attack.strong", 1, 0.8), bar("AMBUSH", "gray")]),
+    "voodoo": ("Voodoo Doll", "dark_red", "totem_of_undying", 10, ["Stabs a voodoo doll of the enemy you aim at.", "24 blocks · 9 magic damage (through armor) · Wither I 3 s"], [
+        *ray(48),
+        hit(damage(9, "magic")), hit("effect give @s minecraft:wither 3 0"),
+        hit("particle minecraft:damage_indicator ~ ~1 ~ 0.3 0.5 0.3 0.1 6"),
+        "execute unless entity @e[tag=pvp.hit] run " + snd("block.fire.extinguish", 0.5, 1.5),
+        snd("entity.witch.celebrate", 1, 1.4), bar("HI, I'M CHUCKY. WANNA PLAY?", "dark_red")]),
+    "hide_and_seek": ("Hide and Seek", "red", "recovery_compass", 18, ["Duck out of sight and scurry away.", "Invisibility · Speed II · Jump Boost II · 5 s"], [
+        "effect give @s minecraft:invisibility 5 0 true", "effect give @s minecraft:speed 5 1 true", "effect give @s minecraft:jump_boost 5 1 true",
+        "particle minecraft:poof ~ ~0.5 ~ 0.3 0.3 0.3 0.02 20",
+        snd("entity.witch.ambient", 1, 1.8), bar("HIDE AND SEEK", "red")]),
 }
 
 

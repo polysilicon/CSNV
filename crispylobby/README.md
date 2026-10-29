@@ -113,5 +113,12 @@ time, and both show on every server.
   category or `VOTES`. The stats board also gained Outbreak Best Wave and PvP Best Kill Streak (read from the PvP
   server's `scoreboard.dat`) and UNO Wins.
 
+**Halloween cosmetics** (1.13.0): tags, name colours and chat colours from Haunted Night, the Multiverse's Halloween
+2026 mode. Each completed run unlocks one at random on the PvP server (score `pvp.hw<n>` = 1, read with the mastery
+scores from its `scoreboard.dat`, so new unlocks show within a stats refresh, 5 min). A tag with a `pvp.hw*` score, or a
+name/chat colour with a `score`, is an event cosmetic: free once unlocked, shown only on the **Halloween** page (the
+jack o'lantern in the `/cosmetics` hub, slot 24) and in My cosmetics, never in the shops. The config entries are written
+by `pvp/halloween_cosmetics.py <config.yml>` (between `# ---- halloween` markers).
+
 Walking trails were retired in 1.5.0. Their points were refunded on the first load, and the `crispy_cosmetics`
 datapack was removed from every server.

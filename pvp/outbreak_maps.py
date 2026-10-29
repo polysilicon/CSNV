@@ -20,9 +20,10 @@ WALL_H = 6      # wall rows dy 0..5 (build.py's walls() puts barrier above)
 
 # blocks you can walk through, and blocks that need another block to hold them up
 PASSABLE = ("air", "carpet", "rail", "short_grass", "fern", "roots", "sprouts", "candle", "pressure_plate", "button",
-            "glow_lichen", "poppy", "dandelion", "cornflower", "torch", "lantern", "fungus")
+            "glow_lichen", "poppy", "dandelion", "cornflower", "torch", "lantern", "fungus", "dead_bush", "mushroom")
 ATTACHED = ("lantern", "rail", "carpet", "candle", "torch", "end_rod", "short_grass", "fern", "roots", "sprouts",
-            "pointed_dripstone", "glow_lichen", "pressure_plate", "poppy", "dandelion", "cornflower", "fungus", "fire")
+            "pointed_dripstone", "glow_lichen", "pressure_plate", "poppy", "dandelion", "cornflower", "fungus", "fire",
+            "dead_bush", "mushroom", "button")
 NOT_FULL = ("slab", "stairs", "fence", "_wall", "pane", "bars", "chain", "lava", "water", "glass_pane", "campfire",
             "cauldron", "trapdoor", "door", "barrel_x") + PASSABLE + ATTACHED
 DIRS = {"north": (0, -1), "south": (0, 1), "east": (1, 0), "west": (-1, 0)}
@@ -712,7 +713,108 @@ def orbital(mob_points, spawns):
     return g
 
 
-MAPS = {"ruins": ruins, "mine": mine, "neon": neon, "hellfort": hellfort, "orbital": orbital}
+
+# ---------------------------------------------------------------------------------------------- Haunted Night
+def haunted(mob_points, spawns):
+    """Halloween: a moonlit graveyard. A ruined chapel around the Arsenal, gravel paths out to the four sides, rows
+    of tombstones, dead trees hung with cobwebs, a fenced crypt, a pumpkin patch with scarecrows and a witch's camp."""
+    rnd = random.Random(31)
+    g = base(mob_points, spawns, lambda x, y, z, t: rnd.choices(["deepslate_bricks", "cracked_deepslate_bricks", "mossy_cobblestone", "cobbled_deepslate"], [5, 2, 2, 1])[0],
+             "soul_campfire")
+    ground, rot = Noise(41, 5), Noise(42, 4)
+    for (x, z) in g.floor():
+        c = max(abs(x), abs(z))
+        if (abs(x) <= 1 or abs(z) <= 1) and c >= 3:          # gravel paths from the chapel to the four sides
+            g.put(x, 0, z, rnd.choices(["gravel", "coarse_dirt", "tuff"], [6, 2, 1])[0]); continue
+        if c <= 6:                                             # chapel floor
+            g.put(x, 0, z, rnd.choices(["deepslate_tiles", "cracked_deepslate_tiles", "polished_deepslate"], [6, 2, 2])[0]); continue
+        n = ground(x, z)
+        b = "podzol" if n < 0.3 else "coarse_dirt" if n < 0.45 else "grass_block" if n < 0.7 else "soul_soil" if n < 0.85 else "mud"
+        g.put(x, 0, z, b)
+        if b in ("grass_block", "podzol") and rot(x, z) > 0.6:
+            r = rnd.random()
+            if r < 0.25: g.put(x, 1, z, "short_grass")
+            elif r < 0.33: g.put(x, 1, z, "fern")
+            elif r < 0.37: g.put(x, 1, z, "dead_bush")
+    # ruined chapel: broken walls on ring 7 with a doorway on each side, iron-barred windows, tall corners
+    for x in range(-7, 8):
+        for z in range(-7, 8):
+            if max(abs(x), abs(z)) != 7: continue
+            t = z if abs(x) == 7 else x
+            if abs(t) <= 1: continue                           # doorways
+            h = 4 if min(abs(x), abs(z)) == 7 else (1 + (rnd.random() < 0.6) + (rnd.random() < 0.4) + (rnd.random() < 0.3))
+            for y in range(1, h + 1):
+                b = "iron_bars" if y == 2 and abs(t) in (4,) else rnd.choices(["deepslate_bricks", "cracked_deepslate_bricks", "cobbled_deepslate", "mossy_cobblestone"], [5, 3, 2, 2])[0]
+                g.put(x, y, z, b, force=True)
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            for y in range(5, 7): g.put(7 * sx, y, 7 * sz, "deepslate_bricks", force=True)
+            g.put(7 * sx, 7, 7 * sz, "soul_lantern", force=True)
+            g.put(5 * sx, 1, 5 * sz, "candle[candles=3,lit=true]")
+    # tombstones in rows, each with a little grave mound in front
+    for qx in (-1, 1):
+        for qz in (-1, 1):
+            for row in range(3):
+                for col in range(4):
+                    x, z = qx * (11 + col * 4), qz * (11 + row * 5)
+                    if rnd.random() < 0.2 or max(abs(x), abs(z)) > 29: continue
+                    stone = rnd.choice(["cobblestone_wall", "mossy_stone_brick_wall", "stone_brick_wall", "chiseled_stone_bricks", "mossy_cobblestone_wall"])
+                    g.put(x, 1, z, stone)
+                    if stone.endswith("_wall") and rnd.random() < 0.5: g.put(x, 2, z, "stone_button[face=floor]")
+                    g.put(x, 0, z + qz, "coarse_dirt")
+                    if rnd.random() < 0.3: g.put(x, 1, z + qz, "candle[candles=1,lit=true]")
+    # dead trees with cobwebs
+    for n, (x, z) in enumerate(((20, 4), (-20, -4), (4, -20), (-4, 20), (27, 20), (-27, -20), (20, -27), (-25, 25))):
+        h = 4 + n % 3
+        for y in range(1, h + 1): g.put(x, y, z, "dark_oak_log[axis=y]" if y % 3 else "stripped_dark_oak_log[axis=y]")
+        for (ox, oz), ax in (((1, 0), "x"), ((-1, 0), "x"), ((0, 1), "z"), ((0, -1), "z")):
+            if rnd.random() < 0.6:
+                g.put(x + ox, h - 1, z + oz, f"dark_oak_log[axis={ax}]")
+                if rnd.random() < 0.6: g.put(x + 2 * ox, h, z + 2 * oz, f"dark_oak_log[axis={ax}]")
+                if rnd.random() < 0.5: g.put(x + ox, h - 2, z + oz, "cobweb")
+        g.put(x, h + 1, z, "cobweb")
+    # fenced crypt (north-east): a small deepslate tomb with an open door, iron fence around it
+    cx, cz = 22, -14
+    for x in range(cx - 4, cx + 5):
+        for z in range(cz - 3, cz + 4):
+            edge = abs(x - cx) == 4 or abs(z - cz) == 3
+            if edge:
+                if not (z == cz + 3 and abs(x - cx) <= 1): g.put(x, 1, z, "iron_bars")
+                continue
+            if abs(x - cx) <= 2 and abs(z - cz) <= 1:
+                for y in range(1, 4):
+                    door = z == cz + 1 and x == cx and y <= 2
+                    g.put(x, y, z, "air" if door else rnd.choice(["polished_blackstone_bricks", "cracked_polished_blackstone_bricks"]), force=door)
+                g.put(x, 4, z, "polished_blackstone_brick_slab[type=bottom]")
+    g.put(cx, 3, cz + 2, "chiseled_deepslate")
+    for x in (cx - 3, cx + 3): g.put(x, 1, cz + 2, "jack_o_lantern[facing=south]")
+    # pumpkin patch with scarecrows (south-west)
+    for x in range(-27, -14):
+        for z in range(13, 23):
+            if (x + z) % 3 == 0 and rnd.random() < 0.55:
+                g.put(x, 0, z, "rooted_dirt")
+                g.put(x, 1, z, rnd.choice(["pumpkin", "carved_pumpkin[facing=north]", "carved_pumpkin[facing=east]", "jack_o_lantern[facing=south]"]))
+    for (x, z) in ((-23, 17), (-17, 21)):
+        g.put(x, 1, z, "oak_fence"); g.put(x, 2, z, "hay_block"); g.put(x, 3, z, "carved_pumpkin[facing=north]")
+        g.put(x - 1, 2, z, "oak_fence"); g.put(x + 1, 2, z, "oak_fence")
+    # witch's camp (south-east): cauldron over a soul fire, mushrooms, a broken cart of hay
+    g.put(18, 1, 18, "cauldron"); g.put(18, 0, 18, "soul_campfire[lit=true]")
+    for (x, z) in ((16, 17), (20, 19), (17, 20)): g.put(x, 1, z, rnd.choice(["red_mushroom", "brown_mushroom"]))
+    for (x, z) in ((24, 24), (25, 24)): g.put(x, 1, z, "hay_block")
+    # lanterns on fence posts along the paths and jack o'lanterns by the doorways
+    for t in (12, 20, 28):
+        for (x, z) in ((2, t), (-2, -t), (t, -2), (-t, 2)):
+            g.put(x, 1, z, "spruce_fence"); g.put(x, 2, z, "lantern")
+    for (x, z, f) in ((2, 8, "south"), (-2, 8, "south"), (2, -8, "north"), (-2, -8, "north"), (8, 2, "east"), (8, -2, "east"), (-8, 2, "west"), (-8, -2, "west")):
+        g.put(x, 1, z, f"jack_o_lantern[facing={f}]")
+    # buttresses with soul lanterns along the outer wall
+    for (x, z), d, t in wall_sides():
+        if t in (-24, -8, 8, 24):
+            for y in range(1, 6): g.put(x, y, z, "deepslate_bricks")
+            g.put(x, 6, z, "soul_lantern")
+    return g
+
+MAPS = {"ruins": ruins, "mine": mine, "neon": neon, "hellfort": hellfort, "orbital": orbital, "haunted": haunted}
 
 
 # ---------------------------------------------------------------------------------------------- output
