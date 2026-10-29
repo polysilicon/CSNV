@@ -1440,6 +1440,10 @@ def build_pve():
         # items players throw stay (they despawn normally after 5 minutes); anything else (mob leftovers) is cleared
         *[f"execute as @e[type=minecraft:item,{b},tag=!pve.pu] unless data entity @s Thrower run kill @s" for b in PVE_BOXES.values()],
         *[f"kill @e[type=minecraft:experience_orb,{b}]" for b in PVE_BOXES.values()],
+        # mobs that leave the map (Ghosts are vexes and fly through blocks, under the floor or into the next map) are
+        # put back at a mob window, so a wave can't stall on a mob nobody can reach
+        *[f"execute if score #map pve matches {i} as @e[tag=pve.mob] unless entity @s[{b}] run tp @s {PCX + map_points(key)[0][0] + 0.5} {AY + 1} {z + map_points(key)[0][1] + 0.5}"
+          for (i, key, _, _, _, z, _), b in zip(OUTBREAK_MAPS, PVE_BOXES.values())],
         # spiders that climb the walls get pulled back down
         *[f"execute as @e[tag=pve.mob,x={PCX - PR - 1},y={AY + 8},z={z - PR - 1},dx={2 * PR + 2},dy=30,dz={2 * PR + 2}] at @s run tp @s {PCX + 0.5} {AY + 1} {z + 0.5}"
           for (_, _, _, _, _, z, _) in OUTBREAK_MAPS],

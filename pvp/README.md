@@ -407,6 +407,8 @@ Everyone starts as a **random character**.
   Arsenal (**Assemble: Annihilator**) build the Annihilator, a gun ability (50 blocks, 24 damage, 8 more to everything
   within 3 blocks of the hit, 0.8 s) that can be Pack-a-Punched like the other guns.
 - **Food**: Rations in the Arsenal, plus 4 steak for every survivor whenever a wave is cleared.
+- **Strays**: any wave mob outside the map's area (Ghosts are vexes and fly through blocks, under the floor or into the
+  next map) is put back at a mob window once a second, so a wave can't stall on a mob nobody can reach.
 - **Cleanup**: the map is force-loaded for the length of a run, so when the last player leaves or goes down every mob is
   killed. Any `pve.mob` found while no wave is running (for example, one saved in a chunk that loads later) is
   removed too.
