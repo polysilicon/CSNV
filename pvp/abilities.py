@@ -478,17 +478,16 @@ ABILITIES = {
         f"execute as @e[distance=..12,{TGT},sort=nearest,limit=1] run effect give @s minecraft:blindness 2 0",
         "particle minecraft:reverse_portal ~ ~1 ~ 0.4 0.8 0.4 0.05 40",
         snd("entity.enderman.teleport", 1, 0.6), bar("KI KI KI... MA MA MA", "dark_aqua")]),
-    "nightmare": ("Nightmare", "dark_red", "fermented_spider_eye", 14, ["Drags everyone near you into a bad dream.", "8 blocks · 4 damage · Blindness, Nausea, Slowness II"], [
-        around(8, damage(4, "magic")), around(8, "effect give @s minecraft:blindness 3 0"),
-        around(8, "effect give @s minecraft:nausea 5 0"), around(8, "effect give @s minecraft:slowness 3 1"),
-        "particle minecraft:squid_ink ~ ~1 ~ 3 0.8 3 0.02 80",
-        snd("entity.phantom.ambient", 1, 0.5), snd("ambient.cave", 1, 1), bar("WELCOME TO MY NIGHTMARE", "dark_red")]),
-    "dream_demon": ("Dream Demon", "red", "netherite_scrap", 16, ["Slashes everything around you with your claws.", "4 blocks · 8 damage · heals you if you hit anything"], [
-        around(4, damage(8)),
-        f"execute if entity @e[distance=..4,{TGT}] run effect give @s minecraft:instant_health 1 0",
-        "particle minecraft:sweep_attack ~1.5 ~1 ~ 0 0 0 0 1", "particle minecraft:sweep_attack ~-1.5 ~1 ~ 0 0 0 0 1",
-        "particle minecraft:sweep_attack ~ ~1 ~1.5 0 0 0 0 1", "particle minecraft:sweep_attack ~ ~1 ~-1.5 0 0 0 0 1",
-        snd("entity.player.attack.sweep", 1, 0.6), snd("block.chain.break", 1, 1.4), bar("DREAM DEMON", "red")]),
+    "static": ("Static", "dark_gray", "sculk_sensor", 14, ["Your presence scrambles everyone near you.", "10 blocks · 4 damage · Blindness, Nausea, Slowness II"], [
+        around(10, damage(4, "magic")), around(10, "effect give @s minecraft:blindness 3 0"),
+        around(10, "effect give @s minecraft:nausea 5 0"), around(10, "effect give @s minecraft:slowness 3 1"),
+        "particle minecraft:ash ~ ~1 ~ 4 1.5 4 0 200", "particle minecraft:large_smoke ~ ~1 ~ 2 1 2 0.01 30",
+        snd("block.sculk_shrieker.shriek", 0.8, 0.6), bar("STATIC", "dark_gray")]),
+    "tendrils": ("Tendrils", "black", "chain", 12, ["Drags everyone near you right in front of you.", "8 blocks · 6 damage · Slowness III 2 s"], [
+        f"execute as @e[distance=..8,{TGT}] run tp @s ^ ^ ^1.5",
+        around(3, damage(6)), around(3, "effect give @s minecraft:slowness 2 2"),
+        "execute anchored eyes run particle minecraft:squid_ink ^ ^ ^1.5 0.6 0.6 0.6 0.02 40",
+        snd("block.chain.place", 1, 0.5), snd("entity.warden.attack_impact", 0.6, 0.8), bar("TENDRILS", "black")]),
     "stalk": ("Stalk", "white", "phantom_membrane", 14, ["Mark every enemy near you.", "24 blocks · they glow 10 s · you get Speed II 5 s"], [
         around(24, "effect give @s minecraft:glowing 10 0"), "effect give @s minecraft:speed 5 1",
         snd("block.bell.use", 0.6, 0.5), bar("WHAT'S YOUR FAVOURITE SCARY MOVIE?", "white")]),

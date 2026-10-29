@@ -444,7 +444,7 @@ Michael Myers, with jack o'lanterns, at 6.5 101 5.5 in the lobby; `admin/place_h
   |---|---|---|
 | Michael Myers | Kitchen Knife: Sharpness IV, Bleed II · coveralls · a bit big | The Shape · Relentless |
   | Jason Voorhees | Machete (axe): Sharpness III, Cleave II · big and tough | Machete Throw · Shift |
-  | Freddy Krueger | Bladed Glove: Sharpness III, Lifesteal II · striped sweater | Nightmare · Dream Demon |
+  | Slender Man | Tendril (sword): Sharpness III, Blind II · black suit · very tall | Static · Tendrils |
   | Ghostface | Buck 120 Knife: Sharpness III, Assassin II · black robe (Dodge II) | Stalk · Ambush |
   | Freddy Fazbear | Microphone (mace): Density II, Stun II · animatronic suit · big | Jumpscare · Power Outage |
 
