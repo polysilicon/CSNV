@@ -902,7 +902,7 @@ fn("boss/objectives", BOSS_OBJS)
 ABILITY = {
     "colossus": ["playsound minecraft:entity.enderman.scream hostile @a[distance=..32] ~ ~ ~ 2 0.5",
                  "particle minecraft:reverse_portal ~ ~1 ~ 3 1 3 0.1 150 force",
-                 "damage @a[distance=..5,gamemode=!creative,gamemode=!spectator] 8 minecraft:mob_attack by @s",
+                 "execute as @a[distance=..5,gamemode=!creative,gamemode=!spectator] run damage @s 8 minecraft:mob_attack",
                  "effect give @a[distance=..5,gamemode=!creative,gamemode=!spectator] minecraft:levitation 1 3"],
     "ravager": ["playsound minecraft:entity.ravager.roar hostile @a[distance=..32] ~ ~ ~ 2 0.7",
                 "summon minecraft:endermite ~2 ~1 ~ {Tags:[\"cs_bminion\",\"cs_bmnew\",\"cs_old\"]}",
@@ -920,7 +920,7 @@ ABILITY = {
               "summon minecraft:blaze ~-2 ~1 ~ {Tags:[\"cs_bminion\",\"cs_bmnew\",\"cs_old\"]}"],
     "magma": ["playsound minecraft:entity.magma_cube.squish hostile @a[distance=..32] ~ ~ ~ 2 0.4",
               "particle minecraft:lava ~ ~0.5 ~ 2 0.2 2 0 60 force",
-              "damage @a[distance=..4,gamemode=!creative,gamemode=!spectator] 6 minecraft:mob_attack by @s",
+              "execute as @a[distance=..4,gamemode=!creative,gamemode=!spectator] run damage @s 6 minecraft:mob_attack",
               "effect give @a[distance=..7,gamemode=!creative,gamemode=!spectator] minecraft:slowness 3 1"],
     "warlord": ["playsound minecraft:entity.piglin_brute.angry hostile @a[distance=..32] ~ ~ ~ 2 0.6",
                 "summon minecraft:piglin_brute ~2 ~1 ~ {IsImmuneToZombification:1b,Tags:[\"cs_bminion\",\"cs_bmnew\",\"cs_old\"]}",
