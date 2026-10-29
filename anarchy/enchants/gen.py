@@ -702,8 +702,11 @@ SLOTS = [(f"Inventory[{{Slot:{i}b}}]", f"container.{i}") for i in range(36)] + \
         [(f"equipment.{s}", f"armor.{s}") for s in ("head", "chest", "legs", "feet")] + [("equipment.offhand", "weapon.offhand")] + \
         [(f"EnderItems[{{Slot:{i}b}}]", f"enderchest.{i}") for i in range(27)]
 fn("migrate/all", f"scoreboard players set #mig ce 0\nexecute as @a run function {NS}:migrate/player")
+# "if items" checks the slot without copying the player's whole NBT ("if data entity" does, per check: with
+# inventories full of shulker boxes that was ~70 x 300 KB every 2 s and a 0.5 s lag spike), so only slots that hold an
+# item with custom_data get the NBT checks
 fn("migrate/player", "\n".join(
-    f"execute if data entity @s {p}.components.\"minecraft:custom_data\" run function {NS}:migrate/slot {{p:'{p}',s:\"{s}\"}}" for p, s in SLOTS))
+    f"execute if items entity @s {s} *[minecraft:custom_data] run function {NS}:migrate/slot {{p:'{p}',s:\"{s}\"}}" for p, s in SLOTS))
 fn("migrate/slot", f"""
 $execute store result score #n ce run data get entity @s $(p).components."minecraft:custom_data"
 $execute if data entity @s $(p).components."minecraft:custom_data".slots run scoreboard players remove #n ce 1
