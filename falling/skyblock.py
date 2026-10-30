@@ -477,7 +477,7 @@ data modify storage {NS}:eco cfg set value {snbt(ECO)}
 execute unless score #hubv cs_cfg matches 2.. run function {NS}:hub
 execute if score #hubv cs_cfg matches 2 run function {NS}:hub_v3
 # hub v4 (new portals): rebuilt once the hub's entities have loaded, so the old labels are cleared first
-execute if score #hubv cs_cfg matches 2..7 run schedule function {NS}:hub_v4 160t replace
+execute if score #hubv cs_cfg matches 2..8 run schedule function {NS}:hub_v4 160t replace
 # respawn the merchants once the hub's entities are loaded (at startup they load after this runs)
 schedule function {NS}:npcs 100t replace
 execute unless data storage {NS}:d plots run function {NS}:setup
@@ -560,27 +560,65 @@ def hub_build():
     def surf(x, z, block):
         if (x, z) in top: c.append(f"setblock {x} {top[(x, z)]} {z} minecraft:{block}")
     used = {(x, z) for (x, z) in top if district.in_plot(x, z, 1)}   # the plots and their corner posts
-    # pond with a sandy shore
+    # the pond: a wobbly shoreline, a bowl that's shallow at the edges and 5 deep in the middle, a mixed bottom,
+    # water plants in the deeper parts, and sand, gravel and reeds round the shore
+    pt0 = Y + pond_h
+    water = {}
     for (x, z), t in top.items():
-        d = math.hypot(x - pond[0], z - pond[1])
-        if d <= pond[2]:
-            c += [f"setblock {x} {t} {z} minecraft:water", f"setblock {x} {t - 1} {z} minecraft:water", f"setblock {x} {t - 2} {z} minecraft:water",
-                  f"setblock {x} {t - 3} {z} minecraft:sand"]
+        dx_, dz_ = x - pond[0], z - pond[1]
+        d = math.hypot(dx_, dz_)
+        if d > pond[2] + 3: continue
+        edge = pond[2] - 2.5 * noise(math.cos(math.atan2(dz_, dx_)) * 2 + 9, math.sin(math.atan2(dz_, dx_)) * 2 + 9, 6)   # only ever inside pond[2]
+        f = d / edge
+        if f <= 1:
+            depth = 1 + round(4 * (1 - f) ** 0.8 + noise(x * 0.3, z * 0.3, 7) - 0.5)
+            depth = max(1, min(5, depth))
+            water[(x, z)] = depth
+            n = noise(x * 0.25 + 3, z * 0.25 + 5, 8)
+            bottom = "sand" if depth <= 1 else "gravel" if n < 0.3 else "clay" if n < 0.45 else "mud" if n < 0.6 and depth >= 3 else "dirt" if n < 0.7 else "sand"
+            c += [f"fill {x} {pt0 - depth + 1} {z} {x} {pt0} {z} minecraft:water", f"setblock {x} {pt0 - depth} {z} minecraft:{bottom}"]
+            r_ = rnd.random()
+            if depth >= 4 and r_ < 0.12:
+                kh = rnd.randint(1, depth - 2)
+                if kh > 1: c.append(f"fill {x} {pt0 - depth + 1} {z} {x} {pt0 - depth + kh - 1} {z} minecraft:kelp_plant")
+                c.append(f"setblock {x} {pt0 - depth + kh} {z} minecraft:kelp")
+            elif depth >= 3 and r_ < 0.30:
+                c += [f"setblock {x} {pt0 - depth + 1} {z} minecraft:tall_seagrass[half=lower]", f"setblock {x} {pt0 - depth + 2} {z} minecraft:tall_seagrass[half=upper]"]
+            elif depth >= 2 and r_ < 0.55:
+                c.append(f"setblock {x} {pt0 - depth + 1} {z} minecraft:seagrass")
             used.add((x, z))
-        elif d <= pond[2] + 1.3:
-            surf(x, z, "sand"); used.add((x, z))
-    for _ in range(14):
-        a = rnd.random() * 6.28; rr = rnd.random() * (pond[2] - 1)
-        px, pz = int(pond[0] + rr * math.cos(a)), int(pond[1] + rr * math.sin(a))
-        if (px, pz) in top and px < pond[0]: c.append(f"setblock {px} {top[(px, pz)] + 1} {pz} minecraft:lily_pad")
+    for (x, z), t in top.items():      # the shore: a sandy, gravelly strip with reeds and ferns
+        if (x, z) in water: continue
+        near = [(x + a, z + b) in water for a in (-1, 0, 1) for b in (-1, 0, 1)]
+        near2 = any((x + a, z + b) in water for a in (-2, -1, 0, 1, 2) for b in (-2, -1, 0, 1, 2))
+        if not near2: continue
+        n = noise(x * 0.4 + 1, z * 0.4 + 1, 9)
+        surf(x, z, "sand" if n < 0.45 else "gravel" if n < 0.6 else "coarse_dirt" if n < 0.7 else "grass_block")
+        used.add((x, z))
+        r_ = rnd.random()
+        beside = any((x + a, z + b) in water for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1)))   # cane needs water right beside it
+        if beside and n < 0.6 and r_ < 0.3 and t == pt0:
+            c.append(f"fill {x} {t + 1} {z} {x} {t + rnd.randint(1, 3)} {z} minecraft:sugar_cane")
+        elif not any(near) and r_ < 0.25:
+            c.append(f"setblock {x} {t + 1} {z} minecraft:{rnd.choice(['fern', 'short_grass', 'large_fern[half=lower]'])}")
+            if c[-1].endswith("large_fern[half=lower]"): c.append(f"setblock {x} {t + 2} {z} minecraft:large_fern[half=upper]")
+    for bx, bz in ((pond[0] - pond[2] + 1, pond[1] - 7), (pond[0] - 4, pond[1] + pond[2] + 1)):   # two mossy boulders on the shore
+        bx, bz = round(bx), round(bz)
+        if (bx, bz) in top:
+            t = top[(bx, bz)]
+            c += [f"fill {bx} {t + 1} {bz} {bx + 1} {t + 1} {bz + 1} minecraft:mossy_cobblestone", f"setblock {bx} {t + 2} {bz} minecraft:mossy_cobblestone",
+                  f"setblock {bx + 1} {t + 2} {bz} minecraft:moss_carpet"]
+    for (x, z), depth in water.items():   # lily pads on the calmer, western half
+        if depth >= 2 and x < pond[0] + 2 and rnd.random() < 0.06: c.append(f"setblock {x} {pt0 + 1} {z} minecraft:lily_pad")
     # a little dock out from the plaza side, with a lantern and a sign
     pw, pt = round(pond[0] + pond[2]) - 7, Y + pond_h     # the dock: 7 blocks out from the east shore
     dx0 = round(pond[0] + pond[2] + 1)
     c += [f"fill {pw + 1} {pt} {pond[1] - 1} {dx0} {pt} {pond[1] + 1} minecraft:spruce_planks",
           f"setblock {pw + 1} {pt + 1} {pond[1] - 1} minecraft:spruce_fence", f"setblock {pw + 1} {pt + 2} {pond[1] - 1} minecraft:lantern",
           f"setblock {pw + 1} {pt + 1} {pond[1] + 1} minecraft:spruce_fence",
-          f"fill {pw + 1} {pt - 1} {pond[1] - 1} {pw + 1} {pt - 3} {pond[1] - 1} minecraft:spruce_log",
-          f"fill {pw + 1} {pt - 1} {pond[1] + 1} {pw + 1} {pt - 3} {pond[1] + 1} minecraft:spruce_log",
+          f"fill {pw + 1} {pt - 1} {pond[1] - 1} {pw + 1} {pt - 5} {pond[1] - 1} minecraft:spruce_log replace minecraft:water",
+          f"fill {pw + 1} {pt - 1} {pond[1] + 1} {pw + 1} {pt - 5} {pond[1] + 1} minecraft:spruce_log replace minecraft:water",
+          f"fill {pw + 1} {pt - 1} {pond[1] - 1} {pw + 1} {pt - 5} {pond[1] + 1} minecraft:spruce_log replace minecraft:seagrass",
           label(dx0 + 0.5, pt + 2.4, pond[1] + 0.5, snbt({"text": "Fishing Pond", "color": "aqua", "bold": True,
                 "extra": [txt("\nCast a line · Fishing skill XP", "gray", bold=False)]}), 0.8, bill="center")]
     for x in range(pw + 1, dx0 + 1):
@@ -694,7 +732,7 @@ def hub_build():
               txt("Craft one: 8 of a resource around a wooden pickaxe.\nPlace it on your island; it gathers while you're offline.\nRight-click it to collect, upgrade (I to V) or pick it up.", "gray", bold=False)]}),
                 0.8, yaw=0)]
     c += district.features(txt, snbt, label, hsign)
-    c += [f"setworldspawn 0 {Y + 1} 5", "scoreboard players set #hubv cs_cfg 8"]
+    c += [f"setworldspawn 0 {Y + 1} 5", "scoreboard players set #hubv cs_cfg 9"]
     return c
 
 def portal_blocks(x, y, z, platform=True):
