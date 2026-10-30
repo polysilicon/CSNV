@@ -88,6 +88,13 @@ def build(NS, fn, js, txt, snbt, Build):
     cmds += [f"fill {wx - 2} {wy} {wz - 2} {wx + 2} {wy} {wz + 2} minecraft:polished_andesite",
              f"summon minecraft:text_display {wx + 0.5} {wy + 3} {wz + 0.5} {{Tags:[\"{NS}\",\"cs_zonel\"],billboard:\"center\",text:"
              + snbt({"text": "The Deep Mines", "color": "gray", "bold": True, "extra": [txt("\nOres grow back · mobs lurk below · /warp hub", "dark_gray", bold=False)]}) + "}"]
+    # the portal back to the hub, just behind the arrival platform
+    cmds += [f"fill {wx - 3} {wy} {wz - 5} {wx + 3} {wy} {wz - 2} minecraft:polished_andesite",
+             f"fill {wx - 3} {wy - 1} {wz - 5} {wx + 3} {wy - 1} {wz - 2} minecraft:cobbled_deepslate",
+             f"fill {wx - 3} {wy + 1} {wz - 5} {wx + 3} {wy + 8} {wz - 2} minecraft:air",
+             f"execute positioned {wx} {wy} {wz - 3} run function {NS}:portal/style_mines",
+             f"summon minecraft:text_display {wx + 0.5} {wy + 7.2} {wz - 2.5} {{Tags:[\"{NS}\",\"cs_zonel\"],billboard:\"center\",text:"
+             + snbt({"text": "Hub", "color": "gold", "bold": True, "extra": [txt("\nWalk through to go back", "gray", bold=False)]}) + "}"]
     mine_spawns = [(round((PIT - d - 1) * math.cos(a)), -d + 1, round((PIT - d - 1) * math.sin(a))) for d in (4, 9, 14, 19) for a in (0.4, 2.0, 3.6, 5.2)]
     fn("zones/build_mines", "\n".join(cmds))
 
@@ -109,9 +116,16 @@ def build(NS, fn, js, txt, snbt, Build):
     wood_cmds = [f"execute positioned {WOODS[0]} {WOODS[1]} {WOODS[2]} run function {NS}:zones/woods_island",
                  f"summon minecraft:text_display {WOODS[0] + 0.5} {WOODS[1] + 3} {WOODS[2] - 26.5} {{Tags:[\"{NS}\",\"cs_zonel\"],billboard:\"center\",text:"
                  + snbt({"text": "Whispering Woods", "color": "dark_green", "bold": True, "extra": [txt("\nLogs grow back · beware the spiders · /warp hub", "dark_gray", bold=False)]}) + "}"]
+    wood_cmds += [f"fill {WOODS[0] - 3} {WOODS[1]} {WOODS[2] - 33} {WOODS[0] + 3} {WOODS[1]} {WOODS[2] - 29} minecraft:moss_block",
+                  f"fill {WOODS[0] - 3} {WOODS[1] - 1} {WOODS[2] - 33} {WOODS[0] + 3} {WOODS[1] - 1} {WOODS[2] - 29} minecraft:dirt",
+                  f"fill {WOODS[0] - 3} {WOODS[1] + 1} {WOODS[2] - 33} {WOODS[0] + 3} {WOODS[1] + 9} {WOODS[2] - 30} minecraft:air",
+                  f"execute positioned {WOODS[0]} {WOODS[1]} {WOODS[2] - 31} run function {NS}:portal/style_woods",
+                  f"summon minecraft:text_display {WOODS[0] + 0.5} {WOODS[1] + 8.4} {WOODS[2] - 30.5} {{Tags:[\"{NS}\",\"cs_zonel\"],billboard:\"center\",text:"
+                  + snbt({"text": "Hub", "color": "gold", "bold": True, "extra": [txt("\nWalk through to go back", "gray", bold=False)]}) + "}"]
     fn("zones/woods_island", "\n".join(b.c))
     fn("zones/build_woods", "\n".join(wood_cmds))
     woods_spawns = [(x, 1, z + 2) for x, z in spots[::3]][:16]
+    fn("zones/portals_v2", "\n".join(cmds[-5:] + wood_cmds[-5:]))
     fn("zones/build_all", "\n".join([
         "kill @e[type=minecraft:text_display,tag=cs_zonel]",
         *[f"forceload add {c[0] - h - 2} {c[2] - h - 2} {c[0] + h + 2} {c[2] + h + 2}" for k, n, c, h, *_ in ZONES],
@@ -124,6 +138,8 @@ def build(NS, fn, js, txt, snbt, Build):
     for z in ZONES:
         key, name, c, h, y, allow, secs, mobs, w = z
         spawns = mine_spawns if key == "mines" else woods_spawns
+        rp = (c[0], c[1], c[2] - 33) if key == "mines" else (c[0], c[1], c[2] - 31)
+        sec += [f"execute if entity @a[{box(z)}] positioned {rp[0]} {rp[1]} {rp[2]} run function {NS}:portal/fx_{key}"]
         sec += [f"execute unless entity @a[{box(z)}] run kill @e[tag=cs_zone_{key}]",
                 f"execute if entity @a[{box(z)}] run function {NS}:zones/{key}/tick"]
         roll = [f"execute store result score #n cs_tmp if entity @e[tag=cs_zone_{key}]",

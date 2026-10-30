@@ -28,6 +28,8 @@ public final class Portals {
 
     static final int GRID = 1024, COLS = 64, HALF = 64, ISLAND_Y = 100, PORTAL_DZ = -14, END_DX = 14, HUB_Y = 100, HUB_PORTAL_Z = -18;
     private static final Map<ServerPlayer, Integer> cooldown = new WeakHashMap<>();
+    /** Fixed overworld portals (skyblock.py HUB_ZONE_PORTALS, expansion.py): frame centre x, floor y, z, and the warp. */
+    static final Object[][] FIXED = {{-13, HUB_Y, -14, "mines"}, {13, HUB_Y, -14, "woods"}, {-260, 90, -393, "hub"}, {260, 100, -391, "hub"}};
     private static int tick;
 
     /** Centre of the island portal's frame for the plot containing (x, z), or null outside the grid. */
@@ -50,6 +52,12 @@ public final class Portals {
             }
             else if (p.level() != server.overworld()) continue;
             else if (z == HUB_PORTAL_Z && Math.abs(x) <= 1 && y >= HUB_Y + 1 && y <= HUB_Y + 3) fn = "act/home";
+            else if (fixed(x, y, z) != null) {
+                cooldown.put(p, tick + 60);
+                p.playSound(SoundEvents.ENDERMAN_TELEPORT, 0.8f, 1.2f);
+                Zones.warp(p, fixed(x, y, z));
+                continue;
+            }
             else {
                 int[] pt = portalFor(x, z);
                 if (pt != null && z == pt[1] && Math.abs(x - pt[0]) <= 1 && y >= ISLAND_Y + 1 && y <= ISLAND_Y + 3) fn = "act/hub";
@@ -60,6 +68,14 @@ public final class Portals {
             server.getCommands().performPrefixedCommand(p.createCommandSourceStack().withPermission(LevelBasedPermissionSet.GAMEMASTER).withSuppressedOutput(),
                     "function " + SkyblockMod.NS + ":" + fn);
         }
+    }
+
+    static String fixed(int x, int y, int z) {
+        for (Object[] f : FIXED) {
+            int fx = (Integer) f[0], fy = (Integer) f[1], fz = (Integer) f[2];
+            if (z == fz && Math.abs(x - fx) <= 1 && y >= fy + 1 && y <= fy + 3) return (String) f[3];
+        }
+        return null;
     }
 
     /** PlayerBlockBreakEvents.BEFORE: false stops the break. */

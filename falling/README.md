@@ -133,6 +133,12 @@ and gives +2 hearts. Staff: `/pets grant <player> <pet>`.
 - Only the zone's resource blocks can be broken; a mined block is bedrock until it grows back (all are restored when
   the server stops). Nothing can be placed. Hostile mobs spawn while players are there (8 + 2 per player).
 - Build or rebuild them with `function crispy_skyblock:zones/build_all`.
+- Portals (2.8.0): the hub has a portal to each zone either side of the island portal (Mines at -13 -14, Woods at
+  13 -14), and each zone has a portal back to the hub behind its arrival platform. Every portal (hub, zones and each
+  island's hub portal) now has a themed frame (`portal/style_island|mines|woods`) around a swirling portal surface
+  (a `block_display` of nether_portal, tag `cs_portalfx`; it doesn't lead to the Nether) and themed particles
+  (`portal/fx_*`). Walking through is handled by `Portals.FIXED` in the mod. Existing island portals are restyled
+  the next time a member is on the island (`plots[id].portal` 1b -> 2b); the hub rebuilds once (`hub_v4`).
 
 **Zone RPG rules** (2.7.0, `ZoneRules.java`):
 - Zone mobs get a level when they spawn: in the Deep Mines 2 + one per block below the rim (about Lv 2 at the top,

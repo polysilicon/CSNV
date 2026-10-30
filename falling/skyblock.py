@@ -474,6 +474,8 @@ scoreboard objectives add cs_gearv dummy
 data modify storage {NS}:eco cfg set value {snbt(ECO)}
 execute unless score #hubv cs_cfg matches 2.. run function {NS}:hub
 execute if score #hubv cs_cfg matches 2 run function {NS}:hub_v3
+# hub v4 (new portals): rebuilt once the hub's entities have loaded, so the old labels are cleared first
+execute if score #hubv cs_cfg matches 2..3 run schedule function {NS}:hub_v4 160t replace
 # respawn the merchants once the hub's entities are loaded (at startup they load after this runs)
 schedule function {NS}:npcs 100t replace
 execute unless data storage {NS}:d plots run function {NS}:setup
@@ -573,6 +575,11 @@ def hub_build():
                             surf(x + dx, z + dz, block); used.add((x + dx, z + dz))
     path([(0, -9), (0, HUB_PORTAL_Z + 1)], 1, "stone_bricks")
     path([(0, 9), (0, 17)], 1, "stone_bricks")
+    for _k, px, pz, *_ in HUB_ZONE_PORTALS:
+        sx = 1 if px > 0 else -1
+        path([(7 * sx, -6), (px, pz + 4)], 1, "stone_bricks")
+        for dx in range(-6, 7):
+            for dz in range(-6, 7): used.add((px + dx, pz + dz))
     for ang in (35, 145, 215, 325):
         a = math.radians(ang)
         path([(round(10 * math.cos(a)), round(10 * math.sin(a))), (round(31 * math.cos(a)), round(31 * math.sin(a)))], 1)
@@ -629,7 +636,17 @@ def hub_build():
               f"setblock {sx} {Y + 5} {sz} minecraft:{wool}_carpet", f"setblock {sx} {Y + 3} {sz} minecraft:light[level=13]"]
     # the portal to your island
     c += portal_blocks(0, Y, HUB_PORTAL_Z, platform=False)
-    c.append(label(0.5, Y + 5.6, HUB_PORTAL_Z + 0.5, snbt({"text": "Your Island", "color": "light_purple", "bold": True,
+    c.append(f"execute positioned 0 {Y} {HUB_PORTAL_Z} run function {NS}:portal/style_island")
+    # portals to the resource zones: a flat stone brick pad each, with a path from the plaza
+    for key, px, pz, name, col, line in HUB_ZONE_PORTALS:
+        c += [f"fill {px - 3} {Y + 1} {pz - 3} {px + 3} {Y + 9} {pz + 3} minecraft:air",
+              f"fill {px - 3} {Y - 3} {pz - 3} {px + 3} {Y - 1} {pz + 3} minecraft:stone",
+              f"fill {px - 3} {Y} {pz - 3} {px + 3} {Y} {pz + 3} minecraft:stone_bricks",
+              f"fill {px - 2} {Y} {pz - 1} {px + 2} {Y} {pz + 1} minecraft:{'polished_deepslate' if key == 'mines' else 'moss_block'}",
+              f"execute positioned {px} {Y} {pz} run function {NS}:portal/style_{key}",
+              label(px + 0.5, Y + (7.2 if key == "mines" else 8.4), pz + 0.5, snbt({"text": name, "color": col, "bold": True,
+                    "extra": [txt(f"\n{line}", "gray", bold=False)]}), 1.0, bill="center")]
+    c.append(label(0.5, Y + 6.5, HUB_PORTAL_Z + 0.5, snbt({"text": "Your Island", "color": "light_purple", "bold": True,
                    "extra": [txt("\nWalk through", "gray", bold=False)]}), 1.0, bill="center"))
     c += [label(0.5, Y + 7.2, -24.5, '{text:"Crispy Skyblock",color:"gold",bold:1b}', 3.0, bill="center"),
           label(HUB_SPAWN[0], Y + 2.6, HUB_SPAWN[2] + 2, '{text:"Press Esc → Island Menu anytime",color:"yellow"}', 0.9, bill="vertical"),
@@ -639,7 +656,7 @@ def hub_build():
           label(7.5, Y + 3.4, -14.5, snbt({"text": "Minions\n", "color": "aqua", "bold": True, "extra": [
               txt("Craft one: 8 of a resource around a wooden pickaxe.\nPlace it on your island; it gathers while you're offline.\nRight-click it to collect, upgrade (I to V) or pick it up.", "gray", bold=False)]}),
                 0.8, yaw=0)]
-    c += [f"setworldspawn 0 {Y + 1} 5", "scoreboard players set #hubv cs_cfg 3"]
+    c += [f"setworldspawn 0 {Y + 1} 5", "scoreboard players set #hubv cs_cfg 4"]
     return c
 
 def portal_blocks(x, y, z, platform=True):
@@ -659,11 +676,62 @@ def portal_blocks(x, y, z, platform=True):
           f"setblock {x - 2} {y + 5} {z} minecraft:end_rod[facing=up]", f"setblock {x + 2} {y + 5} {z} minecraft:end_rod[facing=up]"]
     return c
 
+# ---- portal styles: a decorated frame across x around a 3x3 opening filled with a swirling portal (a block_display of
+# nether_portal: it looks like a portal but doesn't take you to the Nether; the mod does the teleporting). Run
+# positioned at the floor block under the opening's centre. Island portals keep within |dx|,|dz| <= 2 and y <= 5,
+# the part the mod protects.
+def portal_style(theme):
+    b = Build(0)
+    if theme == "island":
+        post, cap, lintel, mid, butt, light = "crying_obsidian", "obsidian", "crying_obsidian", "amethyst_block", "blackstone_wall", "soul_lantern"
+    elif theme == "mines":
+        post, cap, lintel, mid, butt, light = "deepslate_bricks", "polished_deepslate", "deepslate_tiles", "raw_gold_block", "cobbled_deepslate_wall", "lantern"
+    else:
+        post, cap, lintel, mid, butt, light = "stripped_spruce_log", "mossy_stone_bricks", "stripped_spruce_log[axis=x]", "moss_block", "mossy_stone_brick_wall", "lantern"
+    b.c.append("kill @e[type=minecraft:block_display,tag=cs_portalfx,distance=..3]")
+    b.fill(-1, 1, 0, 1, 3, 0, "air")
+    for x in (-2, 2):
+        b.set(x, 1, 0, cap); b.fill(x, 2, 0, x, 3, 0, post); b.set(x, 4, 0, cap)
+        for z in (-1, 1):                       # buttresses either side of each post, a light on top
+            b.fill(x, 1, z, x, 2, z, butt); b.set(x, 3, z, light)
+    b.fill(-1, 4, 0, 1, 4, 0, lintel)
+    b.set(0, 4, 0, mid)
+    if theme == "island":
+        b.fill(-1, 5, 0, 1, 5, 0, "purpur_slab[type=bottom]")
+        b.set(0, 5, 0, "amethyst_cluster[facing=up]")
+        b.set(-2, 5, 0, "end_rod[facing=up]"); b.set(2, 5, 0, "end_rod[facing=up]")
+        for x in (-2, 2):
+            for z in (-2, 2): b.set(x, 1, z, "amethyst_cluster[facing=up]")
+    elif theme == "mines":
+        b.fill(-2, 5, 0, 2, 5, 0, "polished_deepslate_slab[type=bottom]")
+        b.set(-1, 4, 0, "raw_iron_block"); b.set(1, 4, 0, "raw_copper_block")
+        b.set(-2, 6, 0, "lantern"); b.set(2, 6, 0, "lantern")
+        b.fill(-2, 5, 0, -2, 5, 0, "polished_deepslate"); b.fill(2, 5, 0, 2, 5, 0, "polished_deepslate")
+    else:
+        b.fill(-3, 5, -1, 3, 5, 1, "flowering_azalea_leaves[persistent=true]")
+        b.fill(-2, 6, -1, 2, 6, 1, "azalea_leaves[persistent=true]")
+        b.fill(-1, 7, 0, 1, 7, 0, "flowering_azalea_leaves[persistent=true]")
+        for x in (-3, 3): b.set(x, 4, 0, "vine[up=true]")
+    b.c.append("summon minecraft:block_display ~-1 ~1 ~ {Tags:[\"%s\",\"cs_portalfx\"],block_state:{Name:\"minecraft:nether_portal\",Properties:{axis:\"x\"}},"
+               "brightness:{sky:15,block:15},transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],"
+               "translation:[0f,0f,0f],scale:[3f,3f,1f]}}" % NS)
+    return b.c
+PORTAL_FX = {"island": "minecraft:portal ~0.5 ~2.5 ~0.5 0.9 0.9 0.05 0.3 25",
+             "mines": "minecraft:small_flame ~0.5 ~2.5 ~0.5 0.9 0.9 0.1 0.01 6",
+             "woods": "minecraft:spore_blossom_air ~0.5 ~2.5 ~0.5 1.2 1.0 0.3 0 10"}
+for _t in ("island", "mines", "woods"):
+    fn(f"portal/style_{_t}", "\n".join(portal_style(_t)))
+    fn(f"portal/fx_{_t}", f"particle minecraft:portal ~0.5 ~2.5 ~0.5 0.9 0.9 0.05 0.3 15\nparticle {PORTAL_FX[_t]}")
+# the hub's portals to the resource zones, either side of the island portal (Portals.java knows these spots)
+HUB_ZONE_PORTALS = [("mines", -13, -14, "The Deep Mines", "gray", "Ores that grow back · Lv 2-25 mobs"),
+                    ("woods", 13, -14, "Whispering Woods", "dark_green", "Logs that grow back · Lv 3-8 mobs")]
+
 # merchants stand in market stalls around the plaza; the mod opens the shop category named in their cs_shop_<key> tag
 STALLS = [("farming", 12, -5, "lime", "farmer"), ("mining", 12, 5, "light_gray", "toolsmith"), ("foraging", -12, -5, "brown", "fletcher"),
           ("combat", -12, 5, "red", "weaponsmith"), ("supplies", 0, 14, "orange", "mason")]
 fn("hub", "\n".join(hub_build()))
 # hub v3: the stall lanterns sat where the merchants' labels go
+fn("hub_v4", f"function {NS}:hub\nfunction {NS}:npcs")
 fn("hub_v3", "\n".join(f"setblock {sx} {Y + 3} {sz} minecraft:light[level=13]" for _k, sx, sz, _w, _p in STALLS) + "\nscoreboard players set #hubv cs_cfg 3")
 import math as _m
 npc_lines = [f"kill @e[type=minecraft:villager,tag=cs_npc]", f"kill @e[type=minecraft:text_display,tag=cs_npcl]"]
@@ -710,7 +778,9 @@ execute if score #t cs_tmp matches 20.. run function {NS}:second
 """)
 fn("second", f"""
 scoreboard players set #t cs_tmp 0
-particle minecraft:portal 0.5 {Y+2.5} {HUB_PORTAL_Z+0.5} 0.9 0.9 0.05 0.3 30 force
+execute positioned 0 {Y} {HUB_PORTAL_Z} run function {NS}:portal/fx_island
+execute positioned -13 {Y} -14 run function {NS}:portal/fx_mines
+execute positioned 13 {Y} -14 run function {NS}:portal/fx_woods
 kill @e[type=#{NS}:hostile,x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}]
 execute as @e[tag=cs_boss] at @s run function {NS}:boss/tick
 function {NS}:gear/second
@@ -764,9 +834,10 @@ $scoreboard players add #p$(id) cs_age 1
 $execute if score #p$(id) cs_age matches {PORTAL_AGE} run function {NS}:ev/portal with storage {NS}:d cur
 function {NS}:plot/ntick with storage {NS}:d cur
 $execute unless data storage {NS}:d plots[$(id)].portal run function {NS}:portal/retro with storage {NS}:d cur
+$execute if data storage {NS}:d plots[$(id)]{{portal:1b}} run function {NS}:portal/restyle with storage {NS}:d cur
 $execute if score #p$(id) cs_bce matches 1.. run scoreboard players remove #p$(id) cs_bce 1
 $execute if score #p$(id) cs_bcn matches 1.. run scoreboard players remove #p$(id) cs_bcn 1
-$execute positioned $(cx) {ISLAND_Y} $(cz) run particle minecraft:portal ~0.5 ~2.5 ~{PORTAL_DZ + 0.5} 0.9 0.9 0.05 0.3 25
+$execute positioned $(cx) {ISLAND_Y} $(cz) positioned ~ ~ ~{PORTAL_DZ} run function {NS}:portal/fx_island
 # hostile cap: mobs already here stay; brand-new spawns over the cap are sent into the void
 $execute store result score #h cs_tmp if entity @e[type=#{NS}:hostile,x=$(x),y=-64,z=$(z),dx=$(sd),dy=400,dz=$(sd)]
 $execute if score #h cs_tmp matches {HOSTILE_CAP+1}.. as @e[type=#{NS}:hostile,tag=!cs_old,x=$(x),y=-64,z=$(z),dx=$(sd),dy=400,dz=$(sd)] run function {NS}:mob_cull
@@ -1243,7 +1314,7 @@ execute store result storage {NS}:d new.z int 1 run scoreboard players get #r cs
                     ("ix", "c", SIZE // 2 - R), ("iz", "r", SIZE // 2 - R), ("ix1", "c", SIZE // 2 + R), ("iz1", "r", SIZE // 2 + R)]) + f"""
 function {NS}:plot/nfields with storage {NS}:d new
 data modify storage {NS}:d new merge from storage {NS}:d nf
-data modify storage {NS}:d new.portal set value 1b
+data modify storage {NS}:d new.portal set value 2b
 data modify storage {NS}:d plots append from storage {NS}:d new
 function {NS}:plot/build with storage {NS}:d new
 function {NS}:plot/nbuild with storage {NS}:d new
@@ -1263,21 +1334,20 @@ pb = Build(0)
 pb.fill(-2, 0, -2, 2, 0, 2, "reinforced_deepslate")
 pb.fill(-1, 0, -1, 1, 0, 1, "obsidian")
 pb.fill(-1, -1, -1, 1, -1, 1, "reinforced_deepslate")
-pb.fill(-2, 1, 0, -2, 4, 0, "crying_obsidian")
-pb.fill(2, 1, 0, 2, 4, 0, "crying_obsidian")
-pb.fill(-1, 4, 0, 1, 4, 0, "crying_obsidian")
-pb.fill(-1, 1, 0, 1, 3, 0, "air")
-pb.set(0, 5, 0, "amethyst_cluster[facing=up]")
-pb.set(-2, 5, 0, "end_rod[facing=up]")
-pb.set(2, 5, 0, "end_rod[facing=up]")
+pb.c += portal_style("island")
 fn("portal/build", "\n".join(pb.c) + "\n" + "summon minecraft:text_display ~0.5 ~6 ~0.5 " + snbt({
     "Tags": [NS, "cs_portall"], "billboard": "center", "background": 1073741824, "shadow": True,
     "text": {"text": "Hub Portal", "color": "light_purple", "bold": True, "extra": [txt("\nBuild a bridge, then walk through", "gray", bold=False)]},
     "transformation": {"left_rotation": [0.0, 0.0, 0.0, 1.0], "right_rotation": [0.0, 0.0, 0.0, 1.0], "translation": [0.0, 0.0, 0.0], "scale": [0.9, 0.9, 0.9]}}).replace("0.0,", "0.0f,").replace("1.0]", "1.0f]").replace("0.9,", "0.9f,").replace("0.9]", "0.9f]").replace("0.0]", "0.0f]"))
+fn("portal/restyle", f"""
+# portals built before the v2 style get the new frame and swirl
+$execute positioned $(cx) {ISLAND_Y} $(cz) positioned ~ ~ ~{PORTAL_DZ} run function {NS}:portal/style_island
+$data modify storage {NS}:d plots[$(id)].portal set value 2b
+""")
 fn("portal/retro", f"""
 # islands made before portals existed get theirs the next time a member is there
 $execute positioned $(cx) {ISLAND_Y} $(cz) positioned ~ ~ ~{PORTAL_DZ} run function {NS}:portal/build
-$data modify storage {NS}:d plots[$(id)].portal set value 1b
+$data modify storage {NS}:d plots[$(id)].portal set value 2b
 $tellraw @a[scores={{cs_plot=$(id)}}] [{{text:"✦ ",color:"light_purple"}},{{text:"A Hub Portal appeared just north of your island. Build a bridge to it!",color:"light_purple"}}]
 """)
 
