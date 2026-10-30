@@ -20,11 +20,13 @@ from above (mobs can't see through glass, so they don't fixate on the people wat
 SCALE = 0.0625                        # players: the smallest scale there is
 MOB_SCALE = 0.085                     # mobs a bit bigger than the players (zombie height vs player height)
 GIANT_SCALE = 0.25
-SLOW = -0.5                           # movement speed x0.5 for players and mobs (full speed felt frantic at this size)
+SLOW = -0.5                           # player movement speed x0.5 (full speed felt frantic at this size)
+MOB_SLOW = -0.2                       # mobs x0.8 (x0.5 made them too slow to catch anyone)
 JUMP = -0.45                          # player jump strength: about a third of the height (1-block toy blocks are obstacles)
 # Mob melee reach is a fixed 0.83 blocks unless the held item has an attack_range component (26.2), so micro mobs
-# hold one with the reach scaled to their size
-REACH, GIANT_REACH = round(0.83 * MOB_SCALE, 3), round(0.83 * GIANT_SCALE, 3)
+# hold one with a short reach. Not quite 0.83 x scale: at this size the shove between entities that bump each other
+# doesn't shrink with them, so a strictly scaled reach never lands a hit
+REACH, GIANT_REACH = 0.2, 0.45
 X1, X2, Z1, Z2 = -8, 8, 6, 10        # interior
 FLOOR = 97                            # floor blocks; players stand at FLOOR + 1
 SPAWN = (0.5, FLOOR + 1, 8.5)
@@ -180,7 +182,7 @@ def build(b):
     reach = lambda r_: ('item modify entity @s weapon.mainhand {function:"minecraft:set_components",components:{"minecraft:attack_range":'
                         f'{{max_reach:{r_}f,min_reach:0.0f}}}}}}')
     fn("micro/scale", ["tag @s remove mo.new",
-                       f"attribute @s minecraft:movement_speed modifier add {NS}:micro {SLOW} add_multiplied_base",
+                       f"attribute @s minecraft:movement_speed modifier add {NS}:micro {MOB_SLOW} add_multiplied_base",
                        # reach to scale: a stick if the hand is empty, then the attack_range on whatever is held
                        "execute unless items entity @s weapon.mainhand * run item replace entity @s weapon.mainhand with minecraft:stick",
                        "data modify entity @s drop_chances.mainhand set value 0.0f",

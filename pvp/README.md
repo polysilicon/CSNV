@@ -432,10 +432,11 @@ Outbreak at 1/16 scale. The **🔬 Micro Outbreak** NPC (west of spawn, -6.5 101
   two blocks of headroom). Its ceiling is the lobby floor, which is glass there, so everyone in the lobby watches
   from above. Mobs can't see through glass, so they don't fixate on the people watching. `admin/build_micro` builds
   it (also run by `admin/build_lobby`).
-- **Scale**: players are at scale 0.0625 (the smallest there is) and mobs at 0.085, a bit bigger than them. Both move at
-  half speed and players jump about a third as high, so the 1-block toy blocks are obstacles. Mob melee reach is a
-  fixed 0.83 blocks unless the held item has an `attack_range` component, so every micro mob holds one (a stick if
-  its hand is empty) with the reach scaled to its size: 0.071 blocks, 0.207 for the Giant. To them the room is about 270 x 80 blocks
+- **Scale**: players are at scale 0.0625 (the smallest there is) and mobs at 0.085, a bit bigger than them. Players
+  move at half speed and jump about a third as high (so the 1-block toy blocks are obstacles); mobs move at 80%.
+  Mob melee reach is a fixed 0.83 blocks unless the held item has an `attack_range` component, so every micro mob
+  holds one (a stick if its hand is empty) with a short reach: 0.2 blocks, 0.45 for the Giant. A strictly scaled
+  reach (0.07) never landed a hit, because the shove between entities that bump each other doesn't shrink with them. To them the room is about 270 x 80 blocks
   with a 32-block ceiling; the floor-to-ceiling bookshelves are pillars you go round, the concrete "toy blocks" are
   platforms.
 - **No clipping**: everything in and around the arena is a full cube (planks, concrete, bookshelves, hay bales,
