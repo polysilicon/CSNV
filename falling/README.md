@@ -131,7 +131,9 @@ and gives +2 hearts. Staff: `/pets grant <player> <pet>`.
 - The Deep Mines (-260, 90, -360): a rock island riddled with caves: a cave mouth by the arrival platform leads
   down tunnels through four chambers (to ~26 blocks deep), with side tunnels, two sinkholes and lanterns; ores line
   the cave walls, richer deeper. Ores and stone regrow after 45 s.
-- Whispering Woods (260, 100, -360): a forest island. Logs regrow after 30 s.
+- Whispering Woods (260, 100, -360): a dense forest on rolling ground: big 2x2 dark oaks, tall spruces, birches,
+  vine-hung oaks and a few cherries; ferns, bushes, mushrooms and flowers underneath; mossy fallen logs and boulders;
+  a lantern-lit path from the arrival spot to a clearing with a stone circle round a campfire. Logs regrow after 30 s.
 - Only the zone's resource blocks can be broken; a mined block is bedrock until it grows back (all are restored when
   the server stops). Nothing can be placed. Hostile mobs spawn while players are there (8 + 2 per player).
 - Build or rebuild them with `function crispy_skyblock:zones/build_all`.

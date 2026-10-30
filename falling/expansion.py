@@ -171,22 +171,163 @@ def build(NS, fn, js, txt, snbt, Build):
              + snbt({"text": "Hub", "color": "gold", "bold": True, "extra": [txt("\nWalk through to go back", "gray", bold=False)]}) + "}"]
     fn("zones/build_mines", "\n".join(cmds))
 
-    # ---- Whispering Woods: a grassy island thick with trees
+    # ---- Whispering Woods: a dense forest on gently rolling ground. Big dark oaks, tall spruces, birches and vine-hung
+    # oaks packed close, an undergrowth of ferns, bushes, mushrooms and flowers, mossy fallen logs and boulders, and a
+    # lantern-lit path from the arrival spot to a clearing with a stone circle round a campfire.
     b = Build(91)
-    b.blob(34, 12, "grass_block", "dirt", "stone")
+    wr = b.rnd
+    WR = 34
+    def n2(x, z, seed, f=0.09):
+        return (math.sin(x * f * 12.9898 + z * f * 78.233 + seed) * 0.5 + math.sin(x * f * 3.1 - z * f * 4.7 + seed * 2) * 0.5 + 1) / 2
+    path = [(0, -27), (1, -21), (-2, -15), (1, -9), (0, -4)]
+    def near_path(x, z, d):
+        for (ax, az), (bx, bz) in zip(path, path[1:]):
+            for i in range(11):
+                px, pz = ax + (bx - ax) * i / 10, az + (bz - az) * i / 10
+                if math.hypot(x - px, z - pz) <= d: return True
+        return False
+    top = {}
+    for x in range(-WR - 1, WR + 2):
+        for z in range(-WR - 1, WR + 2):
+            dist = math.hypot(x, z)
+            edge = WR + 2.5 * (n2(x, z, 1, 0.12) - 0.5)
+            if dist > edge: continue
+            k = dist / edge
+            calm = math.hypot(x, z) < 7 or near_path(x, z, 2) or (abs(x) <= 4 and z < -22)
+            hgt = 0 if calm or k > 0.9 else round(3 * n2(x, z, 2) * min(1, (0.9 - k) * 5))
+            depth = round(4 + 14 * (1 - k ** 2) ** 0.6)
+            top[(x, z)] = hgt
+            b.fill(x, -depth, z, x, hgt - 3, z, "stone")
+            b.fill(x, hgt - 2, z, x, hgt - 1, z, "dirt")
+            g = n2(x, z, 3, 0.15)
+            surf = "podzol" if g > 0.82 else "moss_block" if g < 0.14 else "coarse_dirt" if 0.5 < g < 0.53 else "rooted_dirt" if 0.62 < g < 0.64 else "grass_block"
+            if near_path(x, z, 1.2) and not (abs(x) <= 2 and -29 <= z <= -25): surf = "dirt_path" if wr.random() < 0.7 else "coarse_dirt"
+            b.set(x, hgt, z, surf)
+    taken = set()                                   # columns with something on them
+    def free(x, z, r=0):
+        return all((x + a_, z + c_) in top and (x + a_, z + c_) not in taken for a_ in range(-r, r + 1) for c_ in range(-r, r + 1))
+    def mark(x, z, r=0):
+        for a_ in range(-r, r + 1):
+            for c_ in range(-r, r + 1): taken.add((x + a_, z + c_))
+    # the clearing: a ring of mossy standing stones round a campfire, mossy cobble paving
+    for (x, z) in list(top):
+        if math.hypot(x, z) <= 2.5: b.set(x, top[(x, z)], z, "mossy_cobblestone" if wr.random() < 0.5 else "cobblestone")
+    b.set(0, 1, 0, "campfire[lit=true]")
+    for i in range(7):
+        a_ = i / 7 * 2 * math.pi
+        x, z = round(5.5 * math.cos(a_)), round(5.5 * math.sin(a_))
+        if (x, z) in top:
+            hh = 2 + (i % 2)
+            b.fill(x, top[(x, z)] + 1, z, x, top[(x, z)] + hh, z, "mossy_stone_bricks" if i % 3 else "mossy_cobblestone")
+            b.set(x, top[(x, z)] + hh + 1, z, "moss_carpet")
+    for (x, z) in list(top):
+        if math.hypot(x, z) < 7: taken.add((x, z))
+    for (x, z) in list(top):
+        if near_path(x, z, 2) or (abs(x) <= 6 and z <= -22): taken.add((x, z))
+    # lanterns on posts along the path
+    for i, (px, pz) in enumerate(path[:-1]):
+        lx, lz = px + (2 if i % 2 else -2), pz
+        if (lx, lz) in top:
+            b.fill(lx, top[(lx, lz)] + 1, lz, lx, top[(lx, lz)] + 2, lz, "spruce_fence")
+            b.set(lx, top[(lx, lz)] + 3, lz, "lantern")
+    # trees
+    def leaf(x, y, z, L, chance=1.0):
+        if wr.random() < chance: b.c.append(f"fill ~{x} ~{y} ~{z} ~{x} ~{y} ~{z} minecraft:{L} replace minecraft:air")
+    def blob_leaves(x, y, z, r, L, holes=0.12):
+        for a_ in range(-r, r + 1):
+            for c_ in range(-r, r + 1):
+                if a_ * a_ + c_ * c_ <= r * r + 1 and wr.random() > holes: leaf(x + a_, y, z + c_, L)
+    def oak(x, z, base, log="oak_log", leaves="oak_leaves", vines=False):
+        h = wr.randint(5, 7)
+        L = f"{leaves}[persistent=true]"
+        for dy, r in ((h - 3, 2), (h - 2, 2), (h - 1, 1), (h, 1)): blob_leaves(x, base + dy, z, r, L, 0.15 if r == 2 else 0.05)
+        b.fill(x, base + 1, z, x, base + h - 1, z, log)
+        if vines:
+            for vx, vz, f in ((x - 3, z, "east"), (x + 3, z, "west"), (x, z - 3, "south"), (x, z + 3, "north")):
+                if wr.random() < 0.7: b.c.append(f"fill ~{vx} ~{base + h - 5} ~{vz} ~{vx} ~{base + h - 3} ~{vz} minecraft:vine[{f}=true] replace minecraft:air")
+    def birch(x, z, base):
+        h = wr.randint(7, 9)
+        L = "birch_leaves[persistent=true]"
+        for dy, r in ((h - 3, 1), (h - 2, 2), (h - 1, 1), (h, 1), (h + 1, 0)): blob_leaves(x, base + dy, z, r, L, 0.1)
+        b.fill(x, base + 1, z, x, base + h - 1, z, "birch_log")
+    def spruce(x, z, base):
+        h = wr.randint(10, 13)
+        L = "spruce_leaves[persistent=true]"
+        for dy in range(4, h + 1):
+            r = 2 if (h - dy) % 3 == 2 and dy < h - 1 else 1
+            if dy >= h - 1: r = 0 if dy == h else 1
+            blob_leaves(x, base + dy, z, r, L, 0.05)
+        leaf(x, base + h + 1, z, L)
+        b.fill(x, base + 1, z, x, base + h, z, "spruce_log")
+    def dark_oak(x, z, base):
+        h = wr.randint(6, 8)
+        L = "dark_oak_leaves[persistent=true]"
+        for dy, r in ((h - 2, 3), (h - 1, 3), (h, 2), (h + 1, 1)): blob_leaves(x, base + dy, z, r, L, 0.1)
+        for dy, r in ((h - 2, 3), (h - 1, 3), (h, 2), (h + 1, 1)): blob_leaves(x + 1, base + dy, z + 1, r, L, 0.25)
+        b.fill(x, base + 1, z, x + 1, base + h, z + 1, "dark_oak_log")
+        for rx, rz in ((-1, 0), (2, 1), (0, 2), (1, -1)):                 # root flares
+            if wr.random() < 0.5: b.set(x + rx, base + 1, z + rz, "dark_oak_log")
+        for _ in range(2):                                                # mushrooms in its shade
+            mx, mz = x + wr.choice((-2, 3)), z + wr.randint(-1, 2)
+            if (mx, mz) in top and (mx, mz) not in taken:
+                b.set(mx, top[(mx, mz)] + 1, mz, wr.choice(["red_mushroom", "brown_mushroom"])); taken.add((mx, mz))
+    cells = sorted(c_ for c_ in top if c_ not in taken and math.hypot(*c_) < WR - 3)
+    wr.shuffle(cells)
+    trees = []
+    for (x, z) in cells:
+        if any(math.hypot(x - tx, z - tz) < 3.6 for tx, tz in trees): continue
+        if not free(x, z) or not free(x + 1, z + 1): continue
+        trees.append((x, z))
     spots = []
-    for _ in range(400):
-        x, z = b.rnd.randint(-28, 28), b.rnd.randint(-28, 28)
-        if math.hypot(x, z) > 29 or (abs(x) <= 4 and z < -20): continue
-        if all(math.hypot(x - sx, z - sz) >= 5 for sx, sz in spots): spots.append((x, z))
-    kinds = [("oak_log", "oak_leaves"), ("birch_log", "birch_leaves"), ("dark_oak_log", "dark_oak_leaves"), ("cherry_log", "cherry_leaves")]
-    for i, (x, z) in enumerate(spots):
-        if i % 5 == 4: b.spruce(x, z, 7 + i % 3)
+    for i, (x, z) in enumerate(trees):
+        base = top[(x, z)]
+        kind = i % 10
+        if kind in (0, 5): dark_oak(x, z, base); mark(x, z, 1); mark(x + 1, z + 1, 1)
+        elif kind in (1, 6, 8): spruce(x, z, base); mark(x, z, 1)
+        elif kind in (2, 7): birch(x, z, base); mark(x, z)
+        elif kind == 9: oak(x, z, base, "cherry_log", "cherry_leaves"); mark(x, z)
+        else: oak(x, z, base, vines=True); mark(x, z)
+        spots.append((x, z))
+    # fallen mossy logs and boulders
+    placed = 0
+    for (x, z) in cells:
+        if placed >= 7: break
+        axis = wr.choice("xz"); ln = wr.randint(4, 6)
+        run = [(x + i, z) if axis == "x" else (x, z + i) for i in range(ln)]
+        if not all(c_ in top and c_ not in taken and top[c_] == top[(x, z)] for c_ in run): continue
+        log = wr.choice(["oak_log", "spruce_log", "birch_log", "dark_oak_log"])
+        for (ax, az) in run:
+            b.set(ax, top[(ax, az)] + 1, az, f"{log}[axis={axis}]"); taken.add((ax, az))
+            if wr.random() < 0.6: b.set(ax, top[(ax, az)] + 2, az, "moss_carpet")
+        placed += 1
+    placed = 0
+    for (x, z) in cells[::-1]:
+        if placed >= 9: break
+        if not free(x, z, 1): continue
+        t_ = top[(x, z)]
+        b.fill(x, t_ + 1, z, x + 1, t_ + 1, z + 1, "mossy_cobblestone")
+        b.set(x + wr.randint(0, 1), t_ + 2, z + wr.randint(0, 1), wr.choice(["mossy_cobblestone", "cobblestone"]))
+        mark(x, z, 1); placed += 1
+    # undergrowth
+    plants = (["short_grass"] * 8 + ["fern"] * 6 + ["tall_grass", "large_fern"] * 3 + ["lily_of_the_valley", "red_mushroom", "brown_mushroom",
+              "oxeye_daisy", "cornflower", "bush"] + ["leaf_bush"] * 4)
+    for (x, z), t_ in top.items():
+        if (x, z) in taken or wr.random() > 0.42: continue
+        p_ = wr.choice(plants)
+        if p_ in ("tall_grass", "large_fern"):
+            b.set(x, t_ + 1, z, f"{p_}[half=lower]"); b.set(x, t_ + 2, z, f"{p_}[half=upper]")
+        elif p_ == "leaf_bush":
+            b.set(x, t_ + 1, z, wr.choice(["oak_leaves[persistent=true]", "azalea_leaves[persistent=true]", "flowering_azalea_leaves[persistent=true]"]))
+        elif p_ == "bush":
+            b.set(x, t_ + 1, z, "azalea")
         else:
-            log, leaves = kinds[i % 4]
-            b.oak(x, z, 5 + i % 3, log, leaves)
+            b.set(x, t_ + 1, z, p_)
+        if wr.random() < 0.15 and t_ >= 0: b.set(x, t_ + 1, z, "moss_carpet") if p_ == "short_grass" else None
+    # the arrival spot
     b.fill(-2, 0, -29, 2, 0, -25, "moss_block")
-    wood_cmds = [f"execute positioned {WOODS[0]} {WOODS[1]} {WOODS[2]} run function {NS}:zones/woods_island",
+    wood_cmds = [f"kill @e[type=minecraft:text_display,tag=cs_zonel,x={WOODS[0] - 40},y={WOODS[1] - 20},z={WOODS[2] - 42},dx=80,dy=45,dz=84]"]
+    wood_cmds += [f"fill {WOODS[0] - WR - 3} {y} {WOODS[2] - WR - 3} {WOODS[0] + WR + 3} {y} {WOODS[2] + WR + 3} minecraft:air" for y in range(WOODS[1] - 20, WOODS[1] + 20)]
+    wood_cmds += [f"execute positioned {WOODS[0]} {WOODS[1]} {WOODS[2]} run function {NS}:zones/woods_island",
                  f"summon minecraft:text_display {WOODS[0] + 0.5} {WOODS[1] + 3} {WOODS[2] - 26.5} {{Tags:[\"{NS}\",\"cs_zonel\"],billboard:\"center\",text:"
                  + snbt({"text": "Whispering Woods", "color": "dark_green", "bold": True, "extra": [txt("\nLogs grow back · beware the spiders · /warp hub", "dark_gray", bold=False)]}) + "}"]
     wood_cmds += [f"fill {WOODS[0] - 3} {WOODS[1]} {WOODS[2] - 33} {WOODS[0] + 3} {WOODS[1]} {WOODS[2] - 29} minecraft:moss_block",
@@ -197,7 +338,8 @@ def build(NS, fn, js, txt, snbt, Build):
                   + snbt({"text": "Hub", "color": "gold", "bold": True, "extra": [txt("\nWalk through to go back", "gray", bold=False)]}) + "}"]
     fn("zones/woods_island", "\n".join(b.c))
     fn("zones/build_woods", "\n".join(wood_cmds))
-    woods_spawns = [(x, 1, z + 2) for x, z in spots[::3]][:16]
+    gspots = [c_ for c_ in cells if c_ not in taken and math.hypot(*c_) > 8]
+    woods_spawns = [(x, top[(x, z)] + 1, z) for x, z in gspots[:: max(1, len(gspots) // 16)]][:16]
     fn("zones/portals_v2", "\n".join(cmds[-5:] + wood_cmds[-5:]))
     fn("zones/build_all", "\n".join([
         "kill @e[type=minecraft:text_display,tag=cs_zonel]",
