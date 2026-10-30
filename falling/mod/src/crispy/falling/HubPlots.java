@@ -43,20 +43,20 @@ import java.util.*;
 import static crispy.falling.Ui.t;
 
 /**
- * Market District plots (laid out by district.py, listed in storage crispy_skyblock:eco cfg.hubplots): players buy one
- * from the Realtor, a plot's sign or /plots, for shops and houses. Ownership lives in storage crispy_skyblock:hubplots
+ * Hub plots (laid out by district.py in a ring round the hub's hills, listed in storage crispy_skyblock:eco
+ * cfg.hubplots): players buy one from the Realtor, a plot's sign or /plots, for shops and houses. Ownership lives in storage crispy_skyblock:hubplots
  * as p<n>: {owner (UUID), name, trust: [UUIDs], tnames: [names]}.
  * - The owner, players they trust and the owner's island co-op can build in the plot (16x16, 4 below the floor to 32
  *   above). Standing in it they're tagged cs_hpbuild and the datapack puts them in survival; elsewhere it's adventure.
  * - Nothing outside the plots can be broken or placed; chests, item frames and armor stands in a plot are the
- *   builders' own. TNT, fire and lava can't be used in the district.
+ *   builders' own. TNT, fire and lava can't be used in the hub.
  * - Abandoning a plot refunds cfg.hubplot_refund % and clears it back to grass (district/reset).
  */
 final class HubPlots {
     private HubPlots() {}
 
     static final Identifier STORE = Identifier.fromNamespaceAndPath(SkyblockMod.NS, "hubplots");
-    record Plot(int n, int x1, int z1, int x2, int z2, int y1, int y2, int sx, int sy, int sz) {
+    record Plot(int n, int x1, int z1, int x2, int z2, int y1, int y2, int sx, int sy, int sz, double tx, double ty, double tz, double tyaw) {
         boolean contains(BlockPos p) { return p.getX() >= x1 && p.getX() <= x2 && p.getZ() >= z1 && p.getZ() <= z2 && p.getY() >= y1 && p.getY() <= y2; }
         boolean isSign(BlockPos p) { return p.getX() == sx && p.getY() == sy && p.getZ() == sz; }
     }
@@ -72,7 +72,8 @@ final class HubPlots {
             for (int i = 0; i < l.size(); i++) {
                 CompoundTag c = l.getCompoundOrEmpty(i);
                 out.add(new Plot(c.getIntOr("n", 0), c.getIntOr("x1", 0), c.getIntOr("z1", 0), c.getIntOr("x2", 0), c.getIntOr("z2", 0),
-                        c.getIntOr("y1", 0), c.getIntOr("y2", 0), c.getIntOr("sx", 0), c.getIntOr("sy", 0), c.getIntOr("sz", 0)));
+                        c.getIntOr("y1", 0), c.getIntOr("y2", 0), c.getIntOr("sx", 0), c.getIntOr("sy", 0), c.getIntOr("sz", 0),
+                        c.getDoubleOr("tx", 0), c.getDoubleOr("ty", 101), c.getDoubleOr("tz", 0), c.getDoubleOr("tyaw", 0)));
             }
             plots = out;
             ListTag b = Economy.cfg(server).getListOrEmpty("district");
@@ -172,7 +173,7 @@ final class HubPlots {
             for (Plot pl : plots(server)) if (pl.isSign(pos)) { if (hand == InteractionHand.MAIN_HAND) open(p); return InteractionResult.SUCCESS; }
         if (staff(p)) return InteractionResult.PASS;
         ItemStack held = p.getItemInHand(hand);
-        if (banned(held)) { p.sendOverlayMessage(t("That's not allowed in the Market District.", ChatFormatting.RED)); return InteractionResult.FAIL; }
+        if (banned(held)) { p.sendOverlayMessage(t("That's not allowed in the hub.", ChatFormatting.RED)); return InteractionResult.FAIL; }
         Plot pl = at(server, pos);
         boolean mine = pl != null && canBuild(p, pl);
         if (held.getItem() instanceof BlockItem || held.getItem() instanceof BucketItem) {
@@ -202,7 +203,7 @@ final class HubPlots {
 
     static void open(ServerPlayer p) {
         MinecraftServer server = p.level().getServer();
-        Ui.open(p, t("Market District plots", ChatFormatting.DARK_GRAY), 6, m -> {
+        Ui.open(p, t("Hub plots", ChatFormatting.DARK_GRAY), 6, m -> {
             int mine = ownedBy(server, p.getUUID());
             String pend = confirm.getOrDefault(p.getUUID(), "");
             for (Plot pl : plots(server)) {
@@ -230,12 +231,12 @@ final class HubPlots {
                 }
                 m.put(slot, icon, (pl2, c) -> click(pl2, pl, c));
             }
-            m.put(4, Ui.item(Items.OAK_SIGN, t("Market District", ChatFormatting.GOLD, ChatFormatting.BOLD), List.of(
+            m.put(4, Ui.item(Items.OAK_SIGN, t("Hub plots", ChatFormatting.GOLD, ChatFormatting.BOLD), List.of(
                     t("Buy a plot for your shop or house.", ChatFormatting.GRAY),
                     t("You, players you trust and your island", ChatFormatting.GRAY), t("co-op can build there.", ChatFormatting.GRAY),
                     t("One plot each.", ChatFormatting.DARK_GRAY)), false), null);
             m.put(49, Ui.item(Items.GOLD_NUGGET, t("Purse: " + Economy.fmt(Economy.coins(server, p)) + " coins", ChatFormatting.GOLD), List.of(), false), null);
-            m.put(45, Ui.item(Items.LODESTONE, t("Go to the district", ChatFormatting.AQUA), List.of(), false), (pl2, c) -> warp(pl2));
+            m.put(45, Ui.item(Items.LODESTONE, t("Go to the Realtor", ChatFormatting.AQUA), List.of(), false), (pl2, c) -> warp(pl2));
             if (mine > 0) {
                 m.put(47, Ui.item(Items.PLAYER_HEAD, t("Trusted players", ChatFormatting.AQUA), List.of(
                         t("/plots trust <player>", ChatFormatting.GRAY), t("/plots untrust <player>", ChatFormatting.GRAY),
@@ -264,7 +265,7 @@ final class HubPlots {
         label(server, pl);
         p.playSound(SoundEvents.PLAYER_LEVELUP, 0.8f, 1.2f);
         Upgrades.run(server, "tellraw @a [{\"text\":\"🏠 \",\"color\":\"gold\"},{\"selector\":\"" + p.getScoreboardName()
-                + "\",\"color\":\"yellow\"},{\"text\":\" bought plot " + pl.n() + " in the Market District!\",\"color\":\"gold\"}]");
+                + "\",\"color\":\"yellow\"},{\"text\":\" bought plot " + pl.n() + " in the hub!\",\"color\":\"gold\"}]");
         p.closeContainer();
         visit(p, pl);
     }
@@ -289,7 +290,7 @@ final class HubPlots {
         if (pl == null) return;
         p.closeContainer();
         p.level().getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack().withSuppressedOutput().withPermission(LevelBasedPermissionSet.GAMEMASTER),
-                "function " + SkyblockMod.NS + ":district/tp {x:" + (pl.sx() + 0.5) + ",y:" + pl.sy() + ",z:" + (pl.sz() - 1.5) + ",yaw:0}");
+                "function " + SkyblockMod.NS + ":district/tp {x:" + pl.tx() + ",y:" + pl.ty() + ",z:" + pl.tz() + ",yaw:" + pl.tyaw() + "}");
     }
     static int warp(ServerPlayer p) {
         ListTag w = Economy.cfg(p.level().getServer()).getListOrEmpty("district_warp");

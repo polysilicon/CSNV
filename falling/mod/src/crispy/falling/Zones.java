@@ -135,7 +135,7 @@ final class Zones {
                     (pl, c) -> warp(pl, "hub"));
             m.put(12, Ui.item(Items.GRASS_BLOCK, t("Your island", ChatFormatting.GREEN, ChatFormatting.BOLD), List.of(t("Home", ChatFormatting.GRAY)), false),
                     (pl, c) -> warp(pl, "home"));
-            m.put(22, Ui.item(Items.OAK_SIGN, t("Market District", ChatFormatting.GOLD, ChatFormatting.BOLD), List.of(t("Plots for shops and houses · /plots", ChatFormatting.GRAY)), false),
+            m.put(22, Ui.item(Items.OAK_SIGN, t("Hub plots", ChatFormatting.GOLD, ChatFormatting.BOLD), List.of(t("Buy a plot for a shop or house · /plots", ChatFormatting.GRAY)), false),
                     (pl, c) -> warp(pl, "plots"));
             List<Zone> zs = zones(server);
             int[] slots = {14, 16};

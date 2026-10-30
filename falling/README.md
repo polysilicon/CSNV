@@ -152,21 +152,26 @@ and gives +2 hearts. Staff: `/pets grant <player> <pet>`.
   `crispy_skyblock:stash` (`ServerPlayerMixin` on `ServerPlayer.die`) and given back on respawn (or on join, after a
   restart). Nothing changes if keep_inventory is on.
 
-## Market District (2.9.0)
+## Hub plots (2.10.0)
 
-`district.py` builds a floating island south of the hub (x -45..45, z 50..146), joined to the hub's south path by a
-bridge, with 16 plots (16x16) along a lit avenue; `HubPlots.java` runs them. The Realtor NPC at the district's
-entrance, a plot's sign, or `/plots` opens the plots menu: buy a free plot (20,000 coins, click twice to confirm,
-one plot each), visit any plot, abandon yours (clears it, 50% back). `/plots trust|untrust <player>`, `/plots home`,
-`/warp plots`; staff: `/plots evict <n>` (for sale again, builds kept).
+The hub island is about twice as wide as before (radius ~92-100, hub area |x|,|z| <= 104), and 16 plots players can
+buy for shops and houses sit in a ring through its outer hills (centres 74 out), each on a levelled pad with its sign
+facing the plaza. A lantern-lit ring path (56 out) links them, with a spur to each plot and the four diagonal paths
+running out to it. `district.py` lays them out; `HubPlots.java` runs them. (2.9.0 put them on a separate Market
+District island south of the hub; the 2.10.0 hub rebuild clears it.)
+
+The Realtor NPC just south-west of the plaza, a plot's sign, or `/plots` opens the plots menu: buy a free plot
+(20,000 coins, click twice to confirm, one plot each), visit any plot (right-click a free one to look), abandon yours
+(clears it, 50% back). `/plots trust|untrust <player>`, `/plots home`, `/warp plots` (to the Realtor); staff:
+`/plots evict <n>` (for sale again, builds kept).
 
 - Ownership is in storage `crispy_skyblock:hubplots` (`p<n>`: owner UUID, name, trust, tnames).
 - The owner, trusted players and the owner's island co-op can build from 4 below the floor to 32 above. Standing in
-  the plot they're tagged `cs_hpbuild` and the datapack puts them in survival; the rest of the district is adventure
-  like the hub (and skips the island bounds check). Nothing outside a plot can be broken or placed; chests, item
-  frames and armor stands in a plot can only be used by its builders. TNT, fire and lava aren't allowed.
+  the plot they're tagged `cs_hpbuild` and the datapack puts them in survival; the rest of the hub stays adventure.
+  Nothing outside a plot can be broken or placed; chests, item frames and armor stands in a plot can only be used
+  by its builders. TNT, fire and lava aren't allowed anywhere in the hub.
 - Labels over each plot's sign (`cs_hpl_<n>`) show "For sale" or the owner, refreshed every 30 s.
-- Built once by `district/build` (scheduled from load while `#districtv cs_cfg` is unset).
+- The hub build is ~124k commands, so `hub` runs it in parts (`hub/p1`...) 2 ticks apart, then respawns the NPCs.
 
 ## Economy and minions (2.1.0)
 

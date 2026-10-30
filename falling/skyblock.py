@@ -407,8 +407,7 @@ import gear
 GEAR = gear.build(NS, fn, js, txt, [f"{NS}:minion_{k}" for k, *_r in MINIONS])
 import expansion   # pets, resource zones, warps (the mod does the Bazaar, upgrades, pets and zone regrowth)
 EXP = expansion.build(NS, fn, js, txt, snbt, Build)
-import district    # the Market District: plots players buy south of the hub (HubPlots.java runs them)
-DSEL = district.sel()
+import district    # hub plots: 16 plots players buy, in a ring round the hub's hills (HubPlots.java runs them)
 ECO.update(district.cfg())
 ECO.update(EXP["cfg"])
 
@@ -478,8 +477,7 @@ data modify storage {NS}:eco cfg set value {snbt(ECO)}
 execute unless score #hubv cs_cfg matches 2.. run function {NS}:hub
 execute if score #hubv cs_cfg matches 2 run function {NS}:hub_v3
 # hub v4 (new portals): rebuilt once the hub's entities have loaded, so the old labels are cleared first
-execute if score #hubv cs_cfg matches 2..4 run schedule function {NS}:hub_v4 160t replace
-execute unless score #districtv cs_cfg matches 2.. run schedule function {NS}:district/build 220t replace
+execute if score #hubv cs_cfg matches 2..5 run schedule function {NS}:hub_v4 160t replace
 # respawn the merchants once the hub's entities are loaded (at startup they load after this runs)
 schedule function {NS}:npcs 100t replace
 execute unless data storage {NS}:d plots run function {NS}:setup
@@ -504,7 +502,7 @@ def label(x, y, z, text, scale=1.5, yaw=0, bill="fixed", tag=None):
             "transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[%sf,%sf,%sf]}}"
             % (json.dumps(tags), bill, yaw, text, scale, scale, scale))
 Y = HUB_Y
-HUB_R = 50                       # the hub area (adventure mode, no island bounds) is |x|,|z| <= HUB_R
+HUB_R = district.HUB_R           # the hub area (adventure mode, no island bounds) is |x|,|z| <= HUB_R
 HUB_SPAWN = (0.5, Y + 1, 5.5)    # facing north, towards the island portal
 PORTAL_DZ = -14                  # every island's hub portal: 14 blocks north of the island centre, over the void
 HUB_PORTAL_Z = -18               # the hub's portal home, north of the plaza
@@ -527,19 +525,25 @@ def hub_build():
     the portal to your island to the north, a pond, trees, flowers and a rocky underside."""
     import math
     rnd = random.Random(42)
-    c = ["forceload add -64 -64 63 63", f"kill @e[type=minecraft:text_display,tag={NS},tag=!cs_district,x=-64,y=0,z=-64,dx=128,dy=320,dz=128]"]
-    c += [f"fill -{HUB_R} {y} -{HUB_R} {HUB_R} {y} {district.Z0 - 1} minecraft:air" for y in range(Y - 40, Y + 21)]   # stop short of the Market District
+    # the old Market District island (2.9.0) stood south of the hub, partly outside the new hub area: clear it while
+    # its chunks are still loaded, then load the whole hub
+    c = [f"kill @e[type=minecraft:text_display,tag=cs_district]"]
+    c += [f"fill -47 {y} {HUB_R + 1} 47 {y} 148 minecraft:air" for y in range(Y - 30, Y + 34)]
+    c += ["forceload remove -47 46 47 148", f"forceload add -{HUB_R} -{HUB_R} {HUB_R - 1} {HUB_R - 1}",
+          f"kill @e[type=minecraft:text_display,tag={NS},x=-{HUB_R},y=0,z=-{HUB_R},dx={2 * HUB_R},dy=320,dz={2 * HUB_R}]"]
+    for y in range(Y - 40, Y + 34):     # two halves: a fill can't cover the whole area at once
+        c += [f"fill -{HUB_R} {y} -{HUB_R} -1 {y} {HUB_R} minecraft:air", f"fill 0 {y} -{HUB_R} {HUB_R} {y} {HUB_R} minecraft:air"]
     top, edge = {}, {}
     pond = (-24, 16, 5.2)
     for x in range(-HUB_R + 2, HUB_R - 1):
         for z in range(-HUB_R + 2, HUB_R - 1):
             r = math.hypot(x, z)
-            lim = 37 + 9 * noise(x * 0.05 + 7, z * 0.05 + 3, 1)
+            lim = district.ISLAND + 8 * noise(x * 0.03 + 7, z * 0.03 + 3, 1)
             if r > lim: continue
             inner = max(0.0, min(1.0, (r - 16) / 7)) * max(0.0, min(1.0, (lim - r) / 5))
-            h = int(round(5 * noise(x * 0.07, z * 0.07, 2) * inner))
+            h = int(round(5 * noise(x * 0.07, z * 0.07, 2) * inner * district.flat(x, z)))   # level pads for the plots
             if math.hypot(x - pond[0], z - pond[1]) < pond[2] + 2: h = 0
-            depth = int(3 + 27 * (1 - r / lim) ** 0.9 + 5 * noise(x * 0.15, z * 0.15, 3))
+            depth = int(3 + 32 * (1 - r / lim) ** 0.9 + 5 * noise(x * 0.15, z * 0.15, 3))
             t = Y + h
             top[(x, z)] = t
             c.append(f"fill {x} {t - depth} {z} {x} {t - 4} {z} minecraft:stone")
@@ -549,7 +553,7 @@ def hub_build():
             c.append(f"setblock {x} {t - depth} {z} minecraft:{under}")
     def surf(x, z, block):
         if (x, z) in top: c.append(f"setblock {x} {top[(x, z)]} {z} minecraft:{block}")
-    used = set()
+    used = {(x, z) for (x, z) in top if district.in_plot(x, z, 1)}   # the plots and their corner posts
     # pond with a sandy shore
     for (x, z), t in top.items():
         d = math.hypot(x - pond[0], z - pond[1])
@@ -579,19 +583,16 @@ def hub_build():
                             surf(x + dx, z + dz, block); used.add((x + dx, z + dz))
     path([(0, -9), (0, HUB_PORTAL_Z + 1)], 1, "stone_bricks")
     path([(0, 9), (0, 17)], 1, "stone_bricks")
-    # to the Market District: off the plaza beside the Supplies stall, over the hills to the south edge, then a bridge
-    edge = max(z for (x, z) in top if abs(x) <= 1)
-    path([(5, 9), (6, 20), (3, 30), (0, edge - 2), (0, edge)], 1, "stone_bricks")
-    bz = edge + 1
-    c += [f"fill -2 {Y + 1} {bz} 2 {Y + 6} {district.Z0 - 1} minecraft:air",
-          f"fill -2 {Y - 1} {bz} 2 {Y - 1} {district.Z0 - 1} minecraft:stone_bricks",
-          f"fill -1 {Y} {bz} 1 {Y} {district.Z0 - 1} minecraft:polished_andesite",
-          f"fill -2 {Y} {bz} -2 {Y} {district.Z0 - 1} minecraft:stone_bricks",
-          f"fill 2 {Y} {bz} 2 {Y} {district.Z0 - 1} minecraft:stone_bricks",
-          f"fill -2 {Y + 1} {bz} -2 {Y + 1} {district.Z0 - 1} minecraft:stone_brick_wall",
-          f"fill 2 {Y + 1} {bz} 2 {Y + 1} {district.Z0 - 1} minecraft:stone_brick_wall",
-          f"fill -1 {Y - 2} {bz} 1 {Y - 2} {district.Z0 - 1} minecraft:stone_brick_slab[type=top]"]
-    c += [f"setblock {x} {Y + 2} {z} minecraft:lantern" for z in range(bz + 1, district.Z0, 4) for x in (-2, 2)]
+    # the plots: a ring path round the hills with a spur to the front of each plot
+    ring = [(round(district.ROAD * math.cos(2 * math.pi * k / 96)), round(district.ROAD * math.sin(2 * math.pi * k / 96))) for k in range(97)]
+    path(ring, 1, "dirt_path")
+    for p in district.PLOTS:
+        a = math.atan2((p["z1"] + p["z2"]) / 2, (p["x1"] + p["x2"]) / 2)
+        path([(round(district.ROAD * math.cos(a)), round(district.ROAD * math.sin(a))), (int(math.floor(p["tx"])), int(math.floor(p["tz"])))], 1, "dirt_path")
+        lx, lz = round((district.ROAD + 3) * math.cos(a + 0.09)), round((district.ROAD + 3) * math.sin(a + 0.09))
+        if (lx, lz) in top and (lx, lz) not in used:
+            c += [f"setblock {lx} {top[(lx, lz)] + 1} {lz} minecraft:oak_fence", f"setblock {lx} {top[(lx, lz)] + 2} {lz} minecraft:lantern[hanging=false]"]
+            used.add((lx, lz))
     for _k, px, pz, *_ in HUB_ZONE_PORTALS:
         sx = 1 if px > 0 else -1
         path([(7 * sx, -6), (px, pz + 4)], 1, "stone_bricks")
@@ -599,8 +600,8 @@ def hub_build():
             for dz in range(-6, 7): used.add((px + dx, pz + dz))
     for ang in (35, 145, 215, 325):
         a = math.radians(ang)
-        path([(round(10 * math.cos(a)), round(10 * math.sin(a))), (round(31 * math.cos(a)), round(31 * math.sin(a)))], 1)
-        for k in (16, 23, 30):
+        path([(round(10 * math.cos(a)), round(10 * math.sin(a))), (round(district.ROAD * math.cos(a)), round(district.ROAD * math.sin(a)))], 1)
+        for k in (16, 23, 30, 38, 46):
             lx, lz = round(k * math.cos(a)) + 2, round(k * math.sin(a))
             if (lx, lz) in top and (lx, lz) not in used:
                 t = top[(lx, lz)]
@@ -618,9 +619,9 @@ def hub_build():
     rnd.shuffle(keys)
     for (x, z) in keys:
         r = math.hypot(x, z)
-        if not (17 < r < 34) or (x, z) in used: continue
+        if not (17 < r < district.ISLAND - 4) or (x, z) in used or district.in_plot(x, z, 4): continue
         if any(math.hypot(x - a, z - b) < 7 for a, b in trees): continue
-        if len(trees) >= 26: break
+        if len(trees) >= 90: break
         trees.append((x, z))
     for i, (x, z) in enumerate(trees):
         t = top[(x, z)]
@@ -640,8 +641,8 @@ def hub_build():
         if (x, z) in used or math.hypot(x, z) < 11: continue
         if rnd.random() < 0.16: c.append(f"setblock {x} {t + 1} {z} minecraft:{rnd.choice(flowers)}")
     # no monsters: light blocks every 10 blocks (invisible, you walk through them)
-    for x in range(-40, 41, 10):
-        for z in range(-40, 41, 10):
+    for x in range(-HUB_R + 4, HUB_R - 3, 10):
+        for z in range(-HUB_R + 4, HUB_R - 3, 10):
             if (x, z) in top: c.append(f"setblock {x} {top[(x, z)] + 3} {z} minecraft:light[level=15]")
     # market stalls with the merchants
     for key, sx, sz, wool, prof in STALLS:
@@ -673,7 +674,8 @@ def hub_build():
           label(7.5, Y + 3.4, -14.5, snbt({"text": "Minions\n", "color": "aqua", "bold": True, "extra": [
               txt("Craft one: 8 of a resource around a wooden pickaxe.\nPlace it on your island; it gathers while you're offline.\nRight-click it to collect, upgrade (I to V) or pick it up.", "gray", bold=False)]}),
                 0.8, yaw=0)]
-    c += [f"setworldspawn 0 {Y + 1} 5", "scoreboard players set #hubv cs_cfg 5"]
+    c += district.features(txt, snbt, label, hsign)
+    c += [f"setworldspawn 0 {Y + 1} 5", "scoreboard players set #hubv cs_cfg 6"]
     return c
 
 def portal_blocks(x, y, z, platform=True):
@@ -757,9 +759,13 @@ HUB_ZONE_PORTALS = [("mines", -13, -14, "The Deep Mines", "gray", "Ores that gro
 # merchants stand in market stalls around the plaza; the mod opens the shop category named in their cs_shop_<key> tag
 STALLS = [("farming", 12, -5, "lime", "farmer"), ("mining", 12, 5, "light_gray", "toolsmith"), ("foraging", -12, -5, "brown", "fletcher"),
           ("combat", -12, 5, "red", "weaponsmith"), ("supplies", 0, 14, "orange", "mason")]
-fn("hub", "\n".join(hub_build()))
+_hub = hub_build()
+_parts = [_hub[i:i + 20000] for i in range(0, len(_hub), 20000)]
+for _i, _p in enumerate(_parts, 1):
+    fn(f"hub/p{_i}", "\n".join(_p + ([f"schedule function {NS}:hub/p{_i + 1} 2t"] if _i < len(_parts) else [f"function {NS}:npcs"])))
+fn("hub", f"function {NS}:hub/p1")
 # hub v3: the stall lanterns sat where the merchants' labels go
-fn("hub_v4", f"function {NS}:hub\nfunction {NS}:npcs")
+fn("hub_v4", f"function {NS}:hub")
 fn("hub_v3", "\n".join(f"setblock {sx} {Y + 3} {sz} minecraft:light[level=13]" for _k, sx, sz, _w, _p in STALLS) + "\nscoreboard players set #hubv cs_cfg 3")
 import math as _m
 npc_lines = [f"kill @e[type=minecraft:villager,tag=cs_npc]", f"kill @e[type=minecraft:text_display,tag=cs_npcl]"]
@@ -776,7 +782,7 @@ for key, sx, sz, wool, prof in STALLS:
     npc_lines.append(label(sx + 0.5, Y + 3.15, sz + 0.5, snbt({"text": who, "color": "gold", "bold": True,
                      "extra": [txt(f"\n{cat} · click to trade", "gray", bold=False)]}), 0.7, bill="center", tag="cs_npcl"))
 for (nx, nz, tag, prof, who, line) in ((6, -9, "cs_bazaar", "cartographer", "Bazaar", "trade with other players"),
-                                      (-6, -9, "cs_warps", "librarian", "Warps", "the Deep Mines, Whispering Woods")):
+                                      (-6, -9, "cs_warps", "librarian", "Warps", "the Deep Mines, Whispering Woods, plots")):
     yaw = round(_m.degrees(_m.atan2(nx, -nz)), 1)
     npc_lines.append(f"summon minecraft:villager {nx + 0.5} {Y+1} {nz + 0.5} " + snbt({
         "NoAI": True, "Invulnerable": True, "Silent": True, "PersistenceRequired": True, "Tags": [NS, "cs_npc", tag],
@@ -784,7 +790,7 @@ for (nx, nz, tag, prof, who, line) in ((6, -9, "cs_bazaar", "cartographer", "Baz
         + f",Rotation:[{yaw}f,0f]}}")
     npc_lines.append(label(nx + 0.5, Y + 3.15, nz + 0.5, snbt({"text": who, "color": "gold", "bold": True,
                      "extra": [txt(f"\n{line} · click", "gray", bold=False)]}), 0.7, bill="center", tag="cs_npcl"))
-npc_lines += district.build(NS, fn, txt, snbt, label, hsign)
+npc_lines += district.build(NS, fn, txt, snbt, label)
 fn("npcs", "\n".join(npc_lines))
 
 
@@ -796,13 +802,11 @@ execute as @a unless score @s cs_seen matches 1 run function {NS}:first_join
 execute as @e[type=minecraft:player,scores={{cs_die=1..}}] run function {NS}:p/respawned
 # hub = adventure, everywhere else = survival
 execute as @a[gamemode=survival,tag=!cs_hpbuild] at @s if dimension minecraft:overworld if entity @s[x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}] run gamemode adventure @s
-execute as @a[gamemode=survival,tag=!cs_hpbuild] at @s if dimension minecraft:overworld if entity @s[{DSEL}] run gamemode adventure @s
-execute as @a[gamemode=adventure] at @s unless entity @s[x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}] unless entity @s[{DSEL}] run gamemode survival @s
+execute as @a[gamemode=adventure] at @s unless entity @s[x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}] run gamemode survival @s
 # in a Market District plot they can build on (HubPlots.java tags them): survival
 execute as @a[gamemode=adventure,tag=cs_hpbuild] run gamemode survival @s
 execute as @a[gamemode=adventure] at @s unless dimension minecraft:overworld run gamemode survival @s
 execute as @e[type=minecraft:player,x=-{HUB_R},y={Y-110},z=-{HUB_R},dx={2*HUB_R},dy=64,dz={2*HUB_R}] run function {NS}:act/hub
-execute as @e[type=minecraft:player,x=-47,y={Y-110},z=47,dx=94,dy=64,dz=102] run function {NS}:act/hub
 scoreboard players add #t cs_tmp 1
 execute if score #t cs_tmp matches 10 run function {NS}:p/bounds_all
 execute if score #t cs_tmp matches 10 run function {NS}:p/nbounds_all
@@ -815,7 +819,6 @@ execute positioned 0 {Y} {HUB_PORTAL_Z} run function {NS}:portal/fx_island
 execute positioned -13 {Y} -14 run function {NS}:portal/fx_mines
 execute positioned 13 {Y} -14 run function {NS}:portal/fx_woods
 kill @e[type=#{NS}:hostile,x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}]
-kill @e[type=#{NS}:hostile,{DSEL}]
 execute as @e[tag=cs_boss] at @s run function {NS}:boss/tick
 function {NS}:gear/second
 function {NS}:zones/second
@@ -1410,7 +1413,7 @@ function {NS}:p/ctx
 function {NS}:p/respawned2 with storage {NS}:d cur
 """)
 fn("p/respawned2", f"$execute unless entity @s[x=$(x),y=-64,z=$(z),dx=$(sd),dy=400,dz=$(sd)] run function {NS}:p/home")
-fn("p/bounds_all", f"execute as @a[gamemode=survival,tag=!cs_staff] at @s if dimension minecraft:overworld unless entity @s[x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}] unless entity @s[{DSEL}] {EXP['in_zone']} run function {NS}:p/bounds")
+fn("p/bounds_all", f"execute as @a[gamemode=survival,tag=!cs_staff] at @s if dimension minecraft:overworld unless entity @s[x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}] {EXP['in_zone']} run function {NS}:p/bounds")
 fn("p/bounds", f"""
 execute unless score @s cs_plot matches 1.. run return run function {NS}:act/hub
 function {NS}:p/ctx

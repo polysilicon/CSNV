@@ -1,107 +1,100 @@
-"""The Market District (imported by skyblock.py): a floating island south of the hub, joined to it by a bridge, with 16
-plots players can buy for shops and houses. This file builds it (function district/build) and puts the plot layout
-into storage crispy_skyblock:eco cfg.hubplots, which the mod (HubPlots.java) reads: buying, the /plots menu, who may
-build where, and the plot labels.
+"""Hub plots (imported by skyblock.py): 16 plots players can buy for shops and houses, spread in a ring through the
+outer hills of the hub island. skyblock.py's hub_build levels a pad for each (flat() below), joins them with a ring
+path, and places what features() returns; the plot layout goes into storage crispy_skyblock:eco cfg.hubplots, which
+the mod (HubPlots.java) reads: buying, the /plots menu, who may build where, and the plot labels.
 
 Plots are 16x16 with a build height from 4 below the floor to 32 above. The owner, players they trust and their
-island co-op can build there (the mod switches them to survival inside it); everywhere else in the district is
-adventure mode like the hub.
+island co-op can build there (the mod switches them to survival inside it); the rest of the hub is adventure mode.
 """
+import math
 
 Y = 100
-X0, X1, Z0, Z1 = -45, 45, 50, 146          # the island's top surface
-PLOT = 16
-COLS = [(-39, -24), (-20, -5), (5, 20), (24, 39)]
-ROWS = [(62, 77), (82, 97), (102, 117), (122, 137)]
-DOWN, UP = 4, 32                           # build height below / above the floor
-PRICE, REFUND = 20_000, 50                 # coins; % back when abandoning
-BOX = (-47, Y - 45, 47, 94, 90, 102)       # the district's selector box (x, y, z, dx, dy, dz), bridge included
-PLAZA = (0.5, Y + 1, 55.5, 0)              # where /warp plots lands, facing south down the avenue
+HUB_R = 104                 # the hub's area (adventure mode, no island bounds): |x|, |z| <= HUB_R
+ISLAND = 92                 # the island's edge is about this far out (+ up to 8 of noise)
+RING = 74                   # plot centres sit on this circle
+ROAD = 56                   # the ring path that links them
+N, PLOT = 16, 16
+DOWN, UP = 4, 32            # build height below / above the floor
+PRICE, REFUND = 20_000, 50  # coins; % back when abandoning
+REALTOR = (-6, 9)           # the Realtor NPC, just south-west of the plaza
+WARP = (-5.5, Y + 1, 7.5, 0)
 
 
 def plots():
     out = []
-    for r, (z1, z2) in enumerate(ROWS):
-        for c, (x1, x2) in enumerate(COLS):
-            n = r * len(COLS) + c + 1
-            sx, sz = (x1 + x2) // 2, z1 - 1     # the sign: in the street in front of the plot's north edge
-            out.append({"n": n, "x1": x1, "z1": z1, "x2": x2, "z2": z2, "y1": Y - DOWN, "y2": Y + UP, "sx": sx, "sy": Y + 1, "sz": sz})
+    for i in range(N):
+        a = 2 * math.pi * (i + 0.5) / N - math.pi / 2          # plot 1 just east of north, then clockwise
+        cx, cz = round(RING * math.cos(a)), round(RING * math.sin(a))
+        x1, z1 = cx - PLOT // 2, cz - PLOT // 2
+        x2, z2 = x1 + PLOT - 1, z1 + PLOT - 1
+        mx, mz = (x1 + x2) // 2, (z1 + z2) // 2
+        # the front faces the plaza: the sign stands just outside it, you arrive 2 blocks further out facing the plot
+        if abs(cx) > abs(cz):
+            if cx > 0: sx, sz, rot, tx, tz, yaw = x1 - 1, mz, 4, x1 - 2.5, mz + 0.5, -90
+            else:      sx, sz, rot, tx, tz, yaw = x2 + 1, mz, 12, x2 + 3.5, mz + 0.5, 90
+        else:
+            if cz > 0: sx, sz, rot, tx, tz, yaw = mx, z1 - 1, 8, mx + 0.5, z1 - 2.5, 0
+            else:      sx, sz, rot, tx, tz, yaw = mx, z2 + 1, 0, mx + 0.5, z2 + 3.5, 180
+        out.append({"n": i + 1, "x1": x1, "z1": z1, "x2": x2, "z2": z2, "y1": Y - DOWN, "y2": Y + UP,
+                    "sx": sx, "sy": Y + 1, "sz": sz, "rot": rot, "tx": tx, "ty": Y + 1, "tz": tz, "tyaw": yaw})
+    for p in out:      # no two plots closer than 6 blocks
+        for q in out:
+            if p is not q:
+                gap = max(q["x1"] - p["x2"], p["x1"] - q["x2"], q["z1"] - p["z2"], p["z1"] - q["z2"])
+                assert gap >= 6, (p["n"], q["n"], gap)
     return out
 
 
-def sel(box=BOX):
-    x, y, z, dx, dy, dz = box
-    return f"x={x},y={y},z={z},dx={dx},dy={dy},dz={dz}"
+PLOTS = plots()
 
 
-def build(NS, fn, txt, snbt, label, hsign):
-    ps = plots()
-    c = [f"forceload add {X0 - 2} {Z0 - 4} {X1 + 2} {Z1 + 2}",
-         f"kill @e[type=minecraft:text_display,tag=cs_district,{sel()}]"]
-    # clear the space, then the island: grass on dirt, and a rocky underside that narrows as it goes down
-    c += [f"fill {X0 - 1} {y} {Z0} {X1 + 1} {y} {Z1 + 1} minecraft:air" for y in range(Y - 30, Y + UP + 2)]
-    c += [f"fill {X0} {Y} {Z0} {X1} {Y} {Z1} minecraft:grass_block",
-          f"fill {X0} {Y - 3} {Z0} {X1} {Y - 1} {Z1} minecraft:dirt"]
-    for d in range(4, 29):
-        k = int((d - 3) * 1.55)
-        if X0 + k >= X1 - k or Z0 + k >= Z1 - k: break
-        block = ["stone", "stone", "andesite", "stone", "tuff", "stone", "cobblestone"][d % 7]
-        c.append(f"fill {X0 + k} {Y - d} {Z0 + k} {X1 - k} {Y - d} {Z1 - k} minecraft:{block}")
-    for cx, cz in ((X0, Z0), (X1, Z0), (X0, Z1), (X1, Z1)):        # round the corners off
-        sx, sz = (1 if cx == X0 else -1), (1 if cz == Z0 else -1)
-        for i in range(3):
-            for j in range(3 - i):
-                c.append(f"fill {cx + sx * i} {Y - 3} {cz + sz * j} {cx + sx * i} {Y} {cz + sz * j} minecraft:air")
-    # streets: stone bricks everywhere but the plots, a polished avenue down the middle, a hedge round the edge
-    c += [f"fill {X0 + 2} {Y} {Z0 + 2} {X1 - 2} {Y} {Z1 - 3} minecraft:stone_bricks",
-          f"fill -4 {Y} {Z0} 4 {Y} {Z1 - 3} minecraft:polished_andesite",
-          f"fill 0 {Y} {Z0} 0 {Y} {Z1 - 3} minecraft:smooth_stone"]
-    c += [f"fill {X0} {Y + 1} {Z0 + 3} {X0} {Y + 1} {Z1 - 3} minecraft:oak_leaves[persistent=true]",
-          f"fill {X1} {Y + 1} {Z0 + 3} {X1} {Y + 1} {Z1 - 3} minecraft:oak_leaves[persistent=true]",
-          f"fill {X0 + 3} {Y + 1} {Z1} {X1 - 3} {Y + 1} {Z1} minecraft:oak_leaves[persistent=true]",
-          f"fill {X0 + 3} {Y + 1} {Z0} -6 {Y + 1} {Z0} minecraft:oak_leaves[persistent=true]",
-          f"fill 6 {Y + 1} {Z0} {X1 - 3} {Y + 1} {Z0} minecraft:oak_leaves[persistent=true]"]
-    # lamp posts down both sides of the avenue, and planters in its middle
-    for z in range(Z0 + 6, Z1 - 4, 10):
-        for x in (-4, 4):
-            c += [f"fill {x} {Y + 1} {z} {x} {Y + 3} {z} minecraft:stone_brick_wall", f"setblock {x} {Y + 4} {z} minecraft:lantern"]
-        if z > Z0 + 10:
-            c += [f"fill -1 {Y} {z + 4} 1 {Y} {z + 6} minecraft:moss_block", f"setblock 0 {Y + 1} {z + 5} minecraft:flowering_azalea",
-                  f"setblock -1 {Y + 1} {z + 4} minecraft:cornflower", f"setblock 1 {Y + 1} {z + 6} minecraft:poppy"]
-    # the plots: grass, a corner post with a lantern at each corner, and a sign with a label in front
-    for p in ps:
+def flat(x, z):
+    """How much of the hills to keep at (x, z): 0 on and next to a plot (a level pad), easing back up over 6 blocks."""
+    d = min(max(p["x1"] - x, x - p["x2"], p["z1"] - z, z - p["z2"]) for p in PLOTS)
+    return max(0.0, min(1.0, (d - 2) / 6))
+
+
+def in_plot(x, z, margin=0):
+    return any(p["x1"] - margin <= x <= p["x2"] + margin and p["z1"] - margin <= z <= p["z2"] + margin for p in PLOTS)
+
+
+def features(txt, snbt, label, hsign):
+    """Each plot: grass on dirt, a lantern post at each corner, a sign facing the plaza with a label over it."""
+    c = []
+    for p in PLOTS:
         x1, z1, x2, z2 = p["x1"], p["z1"], p["x2"], p["z2"]
-        c += [f"fill {x1} {Y} {z1} {x2} {Y} {z2} minecraft:grass_block",
-              f"fill {x1} {Y - DOWN} {z1} {x2} {Y - 1} {z2} minecraft:dirt"]
+        c += [f"fill {x1} {Y - DOWN} {z1} {x2} {Y - 1} {z2} minecraft:dirt",
+              f"fill {x1} {Y} {z1} {x2} {Y} {z2} minecraft:grass_block",
+              f"fill {x1} {Y + 1} {z1} {x2} {Y + 12} {z2} minecraft:air"]
         for cx, cz in ((x1 - 1, z1 - 1), (x2 + 1, z1 - 1), (x1 - 1, z2 + 1), (x2 + 1, z2 + 1)):
-            c += [f"setblock {cx} {Y + 1} {cz} minecraft:spruce_fence", f"setblock {cx} {Y + 2} {cz} minecraft:lantern"]
-        c.append(f"setblock {p['sx']} {Y + 1} {p['sz']} minecraft:oak_sign[rotation=8]"
-                 + hsign(["", f"Plot {p['n']}", "Right-click", ""], "black"))
-        c.append(label(p["sx"] + 0.5, Y + 2.6, p["sz"] + 0.5, snbt({"text": f"Plot {p['n']}", "color": "green", "bold": True,
-                       "extra": [txt(f"\nFor sale · {PRICE:,} coins", "gray", bold=False)]}), 0.8, bill="center", tag=f"cs_hpl_{p['n']}")
-                 .replace(f'"{NS}"', f'"{NS}","cs_district"', 1))
-    # the district's name over the plaza (the bridge from the hub is built by the hub, skyblock.py hub_build)
-    c.append(label(0.5, Y + 6, Z0 + 4.5, snbt({"text": "Market District", "color": "gold", "bold": True,
-                   "extra": [txt(f"\nBuy a plot for your shop or house · {PRICE:,} coins · /plots", "yellow", bold=False)]}), 1.6, bill="center")
-             .replace(f'"{NS}"', f'"{NS}","cs_district"', 1))
-    c += ["scoreboard players set #districtv cs_cfg 2"]
-    fn("district/build", "\n".join(c))
+            c += [f"setblock {cx} {Y} {cz} minecraft:stone_bricks", f"setblock {cx} {Y + 1} {cz} minecraft:spruce_fence",
+                  f"setblock {cx} {Y + 2} {cz} minecraft:lantern"]
+        c += [f"setblock {p['sx']} {Y} {p['sz']} minecraft:stone_bricks",
+              f"setblock {p['sx']} {Y + 1} {p['sz']} minecraft:oak_sign[rotation={p['rot']}]" + hsign(["", f"Plot {p['n']}", "Right-click", ""], "black"),
+              label(p["sx"] + 0.5, Y + 2.6, p["sz"] + 0.5, snbt({"text": f"Plot {p['n']}", "color": "green", "bold": True,
+                    "extra": [txt(f"\nFor sale · {PRICE:,} coins", "gray", bold=False)]}), 0.8, bill="center", tag=f"cs_hpl_{p['n']}")]
+    return c
+
+
+def build(NS, fn, txt, snbt, label):
+    """The reset and teleport functions, and the Realtor NPC (its lines go into the npcs function)."""
     fn("district/reset", "\n".join([
         f"$fill $(x1) {Y + 1} $(z1) $(x2) {Y + UP} $(z2) minecraft:air",
         f"$fill $(x1) {Y - DOWN} $(z1) $(x2) {Y - 1} $(z2) minecraft:dirt",
         f"$fill $(x1) {Y} $(z1) $(x2) {Y} $(z2) minecraft:grass_block",
         f"$kill @e[type=!minecraft:player,type=!minecraft:text_display,x=$(x1),y={Y - DOWN},z=$(z1),dx={PLOT - 1},dy={DOWN + UP},dz={PLOT - 1}]"]))
-    fn("district/tp", f"$execute in minecraft:overworld run tp @s $(x) $(y) $(z) $(yaw) 0")
-    npc = (f"summon minecraft:villager 0.5 {Y + 1} {Z0 + 7.5} " + snbt({
+    fn("district/tp", "$execute in minecraft:overworld run tp @s $(x) $(y) $(z) $(yaw) 0")
+    rx, rz = REALTOR
+    npc = (f"summon minecraft:villager {rx + 0.5} {Y + 1} {rz + 0.5} " + snbt({
         "NoAI": True, "Invulnerable": True, "Silent": True, "PersistenceRequired": True, "Tags": [NS, "cs_npc", "cs_realtor"],
         "VillagerData": {"profession": "minecraft:cartographer", "level": 5, "type": "minecraft:plains"}, "Offers": {"Recipes": []}})[:-1]
         + ",Rotation:[180f,0f]}")
-    npc_label = label(0.5, Y + 3.15, Z0 + 7.5, snbt({"text": "Realtor", "color": "gold", "bold": True,
-                      "extra": [txt("\nbuy and manage plots · click", "gray", bold=False)]}), 0.7, bill="center", tag="cs_npcl")
+    npc_label = label(rx + 0.5, Y + 3.15, rz + 0.5, snbt({"text": "Realtor", "color": "gold", "bold": True,
+                      "extra": [txt("\nplots for shops and houses · click", "gray", bold=False)]}), 0.7, bill="center", tag="cs_npcl")
     return [npc, npc_label]
 
 
 def cfg():
     """Settings the mod reads (storage crispy_skyblock:eco cfg)."""
-    return {"hubplots": plots(), "hubplot_price": PRICE, "hubplot_refund": REFUND,
-            "district": [BOX[0], BOX[1], BOX[2], BOX[0] + BOX[3], BOX[1] + BOX[4], BOX[2] + BOX[5]], "district_warp": list(PLAZA)}
+    return {"hubplots": PLOTS, "hubplot_price": PRICE, "hubplot_refund": REFUND,
+            "district": [-HUB_R, Y - 45, -HUB_R, HUB_R, Y + 45, HUB_R], "district_warp": list(WARP)}
