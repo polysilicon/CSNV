@@ -12,7 +12,7 @@ from above (mobs can't see through glass, so they don't fixate on the people wat
   about a block to match their size. Anything that ends up outside the arena is put back (micro/second).
 - Four basic kits of its own (MICRO_KITS), picked from the 🔬 Micro Outbreak NPC in the lobby. Others join during a
   10 s countdown or drop in at the next wave break. Dying sends you back to the lobby (normal size) to watch.
-- Waves of tiny zombies, husks, spiders, drowned, zombie villagers and vindicators; every 5th wave a Giant (a zombie
+- Waves of tiny zombies, husks, piglin brutes, drowned, zombie villagers and vindicators; every 5th wave a Giant (a zombie
   at scale 0.25, four times everyone's size). Mobs get +12% health and +6% damage per wave. Between waves (10 s)
   everyone is healed and archers get arrows. Best wave per player in mo.best, server record in #record mo.
 """
@@ -27,6 +27,7 @@ JUMP = -0.45                          # player jump strength: about a third of t
 # hold one with a short reach. Not quite 0.83 x scale: at this size the shove between entities that bump each other
 # doesn't shrink with them, so a strictly scaled reach never lands a hit
 REACH, GIANT_REACH = 0.2, 0.45
+KB_RESIST = 0.75                      # mobs: knockback resistance (a sword hit is a fixed distance, huge at this size)
 X1, X2, Z1, Z2 = -8, 8, 6, 10        # interior
 FLOOR = 97                            # floor blocks; players stand at FLOOR + 1
 SPAWN = (0.5, FLOOR + 1, 8.5)
@@ -50,8 +51,9 @@ MICRO_KITS = [
 RANDOM = 5
 MICRO_ATTRS = ("scale", "movement_speed", "jump_strength", "entity_interaction_range", "block_interaction_range")
 # min wave, roll <=, type, extra NBT
+# no spiders: they climb the walls straight up to the glass ceiling and stay there
 POOL = [(6, 12, "vindicator", ',equipment:{mainhand:{id:"minecraft:iron_axe",count:1}},drop_chances:{mainhand:0.0f}'),
-        (5, 24, "zombie_villager", ",IsBaby:0b"), (4, 38, "drowned", ",IsBaby:0b"), (3, 55, "spider", ""), (2, 72, "husk", ",IsBaby:0b")]
+        (5, 24, "zombie_villager", ",IsBaby:0b"), (4, 38, "drowned", ",IsBaby:0b"), (3, 55, "piglin_brute", ",IsImmuneToZombification:1b"), (2, 72, "husk", ",IsBaby:0b")]
 
 
 def build(b):
@@ -183,6 +185,8 @@ def build(b):
                         f'{{max_reach:{r_}f,min_reach:0.0f}}}}}}')
     fn("micro/scale", ["tag @s remove mo.new",
                        f"attribute @s minecraft:movement_speed modifier add {NS}:micro {MOB_SLOW} add_multiplied_base",
+                       # knockback is a fixed distance in blocks, so at this size a sword hit sent them across the room
+                       f"attribute @s minecraft:knockback_resistance modifier add {NS}:micro {KB_RESIST} add_value",
                        # reach to scale: a stick if the hand is empty, then the attack_range on whatever is held
                        "execute unless items entity @s weapon.mainhand * run item replace entity @s weapon.mainhand with minecraft:stick",
                        "data modify entity @s drop_chances.mainhand set value 0.0f",
