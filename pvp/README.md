@@ -1,6 +1,6 @@
 # Crispy PvP
 
-**Shown to players as "Multiverse"** (36 characters from your favourite shows and games · PvP · Duels · Outbreak; Haunted Night for Halloween 2026):
+**Shown to players as "Multiverse"** (36 characters from your favourite shows and games · PvP · Duels · Outbreak · Micro Outbreak; Haunted Night for Halloween 2026):
 the hub selector (DeluxeHub `menus/serverselector.yml` on the lobby), the welcome menu and stats (CrispyLobby
 `config.yml`), the tab list (`proxy/tab-config.yml`) and the spawn hologram here. Its Velocity server name is `multiverse`
 (was `pvp` until CrispyLobby 1.12.1). Internally it's still `pvp`: the `CrispyPvP01` instance, this folder, the `pvp:`
@@ -425,6 +425,33 @@ collect them. Maps built before this: `function pvp:admin/lock_containers` (with
 empties them in place.
 
 Kits, shop, mob pool, spawns and arena layouts are tables at the top of `build.py`.
+
+## Micro Outbreak (`micro.py`)
+Outbreak at 1/16 scale. The **🔬 Micro Outbreak** NPC (west of spawn, -6.5 101 5.5) opens its kit menu.
+- **The arena** is a sealed toy room right under the south half of the lobby (interior x -8..8, z 6..10, floor y 97,
+  two blocks of headroom). Its ceiling is the lobby floor, which is glass there, so everyone in the lobby watches
+  from above. Mobs can't see through glass, so they don't fixate on the people watching. `admin/build_micro` builds
+  it (also run by `admin/build_lobby`).
+- **Scale**: players and mobs are at scale 0.0625, the smallest there is. To them the room is about 270 x 80 blocks
+  with a 32-block ceiling; the floor-to-ceiling bookshelves are pillars you go round, the concrete "toy blocks" are
+  platforms.
+- **No clipping**: everything in and around the arena is a full cube (planks, concrete, bookshelves, hay bales,
+  sea lanterns, smooth stone walls, the glass), so there are no gaps or thin shapes a 1/16-size hitbox could slip
+  through. Micro players can't touch blocks (block reach 0) and their attack reach is cut to about a block
+  (`pvp:micro` modifiers, removed in `to_lobby`). Mobs or players that end up outside the room are put back each
+  second. The lobby's area (`LOBBY_BOX`) now starts at the floor (y 100), so a micro player jumping under the glass
+  never counts as being in the lobby.
+- **Kits** (its own, `MICRO_KITS`): Needle Knight (Sewing Needle, iron armor), Pea Shooter (Rubber Band Bow with
+  Infinity + Splinter), Bottlecap Tank (Staple Axe + Bottle Cap shield, heavy armor) and Crumb Medic (Toothpick,
+  3 healing splashes, Regeneration). Or a random one.
+- **Playing**: the first player to pick a kit starts a 10 s countdown (with a join button in lobby chat); others join
+  in it or drop in at the next wave break. Waves of tiny zombies, husks (wave 2+), spiders (3+), drowned (4+), zombie
+  villagers (5+) and vindicators (6+): 5 + 3 per wave (+3 per extra player, max 60, 15 alive at once), +12% health
+  and +6% damage per wave. Every 5th wave a **Giant** (a zombie at scale 0.25, four times everyone's size) with a boss
+  bar. Between waves (10 s) everyone is healed and gets food; archers get an arrow.
+- Dying sends you back to the lobby at normal size to watch the rest. The run ends when nobody is left. Best wave per
+  player in `mo.best`, the server record in `#record mo` (announced). Objectives `mo`, `mo.join` (trigger: kit 1-4,
+  5 random, 6 open the menu, 9 leave the queue), `mo.kit`.
 
 ## Haunted Night (Halloween 2026)
 A limited-time Outbreak variant, open until **2026-11-07** (UTC). The **🎃 Haunted Night** NPC (a mannequin dressed as

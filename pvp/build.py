@@ -10,6 +10,7 @@ Menus are chest screens opened with /pvpmenu (crispy-pvp-spawn mod) from storage
 import json
 import math
 import abilities, arena_map, arena_maps, outbreak_maps, os, random, shutil, sys, tower
+import micro
 
 NS = "pvp"
 PACK_FORMAT = [107, 0], [107, 1]
@@ -32,7 +33,7 @@ ENCHANTS = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)
 IMPLANT_KEYS = ["kiroshi", "subdermal", "titanium", "lungs", "gorilla", "mantis", "tendons", "lynx", "grip", "reflex", "biomon",
                 "heart", "sandy", "berserk", "launcher", "cyberskeleton", "neuro"]   # cyber:item/<key> loot tables (cyberskeleton: PvP test-only)
 VELOCITY_MAX, VELOCITY_CAP = 5, 20   # Velocity enchant: +20% arrow speed per level; levels above the cap (via /fe) count as the cap
-LOBBY_BOX = box(0, 0, LOBBY_R, LOBBY_Y - 1, 20)
+LOBBY_BOX = box(0, 0, LOBBY_R, LOBBY_Y, 20)   # from the floor up: Micro Outbreak's arena is just below it
 ARENA_BOX = box(ACX, ACZ, AR, AY - 1, 35)
 STANDS_BOX = box(ACX, ACZ, arena_map.EXTENT - 1, AY - 1, 40)   # the colosseum stands, for spectators (tag pvp.spec)
 # the arena rotation: the Colosseum (1) and the themed maps (arena_maps.py), each built at its own spot; every ROT_SECS
@@ -564,6 +565,8 @@ def build():
     wj("data/minecraft/tags/function/load.json", {"values": [f"{NS}:load"]})
     wj("data/minecraft/tags/function/tick.json", {"values": [f"{NS}:tick"]})
 
+    MICRO = micro.build(sys.modules[__name__])   # Micro Outbreak (micro.py)
+
     # ------------------------------------------------------------------ menus (opened by /pvpmenu)
     kit_lore = lambda k: k[5] + ["", "Click to pick"]
     def kit_icon(k, lore):   # character kits show their head
@@ -661,6 +664,7 @@ def build():
                          "you lead it, others join it from the Outbreak NPC,", "and you start the run when everyone's in"]), "cmd": ""},
                         {"slot": 22, "item": icon("ender_eye", "Random map", "light_purple", ["Let fate decide", "", "Click to pick your kit"]), "cmd": "trigger pve.join set 91"}]},
         **pve_menus(),
+        "micro": MICRO["menu"],
         "pve_hw": {"title": {"text": "🎃 Haunted Night: pick your killer", "color": "gold"}, "rows": 3, "fill": PANE, "items":
                    [{"slot": sl, "item": kit_icon(k, k[5] + ["", "Click to queue with this character"]), "cmd": f"trigger pve.join set {k[0]}"}
                     for sl, k in zip((11, 12, 13, 14, 15), HALLOWEEN_KITS)]
@@ -689,7 +693,7 @@ def build():
             "pvp.cur dummy", "pvp.mastery trigger", "pvp.mastered dummy", "pvp.kk dummy", "pvp.kd dummy",
             "pvp.elo dummy", "pvp.dwin dummy", "pvp.dloss dummy", "pvp.dfrom dummy", "pvp.dtm dummy", "pvp.dpit dummy",
             "pvp.duela trigger", "pvp.dueld trigger", "pvp.duelstats trigger", *[f"pvp.mx{k[0]} dummy" for k in ALL_KITS],
-            *[f"pvp.hw{c[0]} dummy" for c in HW_COSMETICS], "pvp.hwwins dummy",
+            *[f"pvp.hw{c[0]} dummy" for c in HW_COSMETICS], "pvp.hwwins dummy", *MICRO["objectives"],
             "pve dummy", "pve.join trigger", "pve.buy trigger", "pve.k totalKillCount", "pve.kit dummy", "pve.best dummy", "pve.arm dummy", "pve.gun dummy", "pve.map dummy", "pve.rv dummy", "pve.wb dummy"]],
         'scoreboard objectives add pvp.kills playerKillCount {"text":"⚔ Kills","color":"aqua","bold":true}',
         'scoreboard objectives add pve.pts dummy {"text":"☣ Points","color":"green","bold":true}',
@@ -711,12 +715,14 @@ def build():
         "execute unless score #record pve matches 0.. run scoreboard players set #record pve 0",
         *[f"data modify storage pvp:menus {k} set value {tj(v)}" for k, v in menus.items()],
         f"function {NS}:tower/load",
+        *MICRO["load"],
     ])
 
     fn("tick", [
         "scoreboard players enable @a pvp.kit", "scoreboard players enable @a pvp.spawn",
         f"function {NS}:ability/tick",
         f"function {NS}:tower/tick",
+        f"function {NS}:micro/tick",
         f"execute as @a[tag=!pvp.seen] run function {NS}:to_lobby",
         f"execute as @a[scores={{pvp.left=1..}}] run function {NS}:to_lobby",
         f"execute as @e[type=minecraft:player,scores={{pvp.dead=1..}}] run function {NS}:respawned",
@@ -738,6 +744,7 @@ def build():
     fn("second", [
         "scoreboard players set #t pvp 0",
         f"function {NS}:hw/gate",
+        f"function {NS}:micro/second",
         f"effect give @a[{LOBBY_BOX}] minecraft:resistance 3 4 true",
         f"effect give @a[{LOBBY_BOX}] minecraft:weakness 3 255 true",
         f"effect give @a[{LOBBY_BOX}] minecraft:saturation 3 0 true",
@@ -768,7 +775,7 @@ def build():
         "scoreboard players add @s pve.best 0",
         "execute if entity @s[tag=pve.in] if score #state pve matches 2..3 if score #wave pve > @s pve.best run scoreboard players operation @s pve.best = #wave pve",
         "clear @s", "effect clear @s", "function cyber:admin/reset", "gamemode adventure @s",
-        *PERK_RESET,
+        *PERK_RESET, *MICRO["reset"],
         "tag @s remove pve.in", "tag @s remove pve.down", "tag @s remove pve.q", "team leave @s", "tag @s remove pvp.spec",
         f"tp @s 0.5 {LOBBY_Y + 1} 0.5 180 0",
         "scoreboard players set @s pvp.left 0", "scoreboard players set @s pvp.ct 0",
@@ -783,6 +790,7 @@ def build():
     ])
     fn("respawned", [
         "scoreboard players set @s pvp.dead 0",
+        f"execute if entity @s[tag=mo.in] run return run function {NS}:micro/died",
         f"execute if entity @s[tag=pve.in] run return run function {NS}:pve/downed",
         f"execute if entity @s[tag=tw.in] run return run function {NS}:tower/died",
         *[f"execute if score @s pvp.cur matches {k[0]} run scoreboard players add #{k[1]} pvp.kd 1" for k in ALL_KITS],   # deaths per character
@@ -865,6 +873,7 @@ def build():
     npc_adv("npc", "pvp.npc", "kits")
     npc_adv("pvenpc", "pvp.pvenpc", f"function {NS}:pve/open_menu")
     npc_adv("shopnpc", "pvp.shopnpc", "pve_shop")
+    npc_adv("micronpc", "pvp.micronpc", f"function {NS}:micro/open")
 
     build_pve()
     build_halloween()
@@ -885,6 +894,7 @@ def build():
         *npc("pvp.npc", KIT_NPC, "⚔ PvP Arena ⚔", "aqua", "weaponsmith", "snow"),
         *npc("pvp.pvenpc", PVE_NPC, "☣ Outbreak ☣", "green", "cleric", "swamp"),
         *npc("pvp.towernpc", TOWER_NPC, "🗼 The Tower 🗼", "light_purple", "librarian", "taiga"),
+        *npc("pvp.micronpc", MICRO["npc"], "🔬 Micro Outbreak 🔬", "aqua", "cartographer", "plains", 230),
         f"function {NS}:admin/place_holo",
     ])
     fn("admin/place_holo", [   # the lobby board (on its own, so it can be redone without touching the NPCs)
@@ -942,7 +952,7 @@ def build():
     B = L + 1   # invisible walls so nobody falls off
     lobby += [f"fill {-B} {Y + 1} {-B} {B} {Y + 15} {-B} minecraft:barrier", f"fill {-B} {Y + 1} {B} {B} {Y + 15} {B} minecraft:barrier",
               f"fill {-B} {Y + 1} {-B} {-B} {Y + 15} {B} minecraft:barrier", f"fill {B} {Y + 1} {-B} {B} {Y + 15} {B} minecraft:barrier"]
-    fn("admin/build_lobby", lobby + [f"function {NS}:admin/build_portal", f"function {NS}:admin/place_npc"])
+    fn("admin/build_lobby", lobby + [f"function {NS}:admin/build_portal", f"function {NS}:admin/build_micro", f"function {NS}:admin/place_npc"])
     # the spectate gate on the east side, in the lobby's style: deepslate pillars and lintel, an amethyst keystone, a crying
     # obsidian back that glows like a portal, end rods; walking through it (tick: function spectate) takes you to the stands
     X, PY = SPEC_PORTAL[0], SPEC_PORTAL[1]
