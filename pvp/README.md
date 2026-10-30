@@ -466,7 +466,7 @@ Outbreak at 1/16 scale. The **🔬 Micro Outbreak** NPC (west of spawn, -6.5 101
   drowned (4+), zombie villagers (5+) and vindicators (6+); no spiders, since they climb straight up to the glass
   ceiling. Mobs have 75% knockback resistance (a sword's knockback is a fixed distance, huge at this size): 5 + 3 per wave (+3 per extra player, max 60, 15 alive at once), +12% health
   and +6% damage per wave. Every 5th wave a **Giant** (a zombie at scale 0.25, four times everyone's size) with a boss
-  bar. Between waves (10 s) everyone is healed and gets food; archers get an arrow.
+  bar. Between waves (10 s) everyone is healed and gets food.
 - Dying sends you back to the lobby at normal size to watch the rest. The run ends when nobody is left. Best wave per
   player in `mo.best`, the server record in `#record mo` (announced). Objectives `mo`, `mo.join` (trigger: soldier 1-8,
   20 random, 21 open the menu, 22 leave the queue, 23 the shop, 31-37 buy), `mo.kit`.
