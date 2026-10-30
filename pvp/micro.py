@@ -17,7 +17,14 @@ from above (mobs can't see through glass, so they don't fixate on the people wat
   everyone is healed and archers get arrows. Best wave per player in mo.best, server record in #record mo.
 """
 
-SCALE = 0.0625
+SCALE = 0.0625                        # players: the smallest scale there is
+MOB_SCALE = 0.085                     # mobs a bit bigger than the players (zombie height vs player height)
+GIANT_SCALE = 0.25
+SLOW = -0.5                           # movement speed x0.5 for players and mobs (full speed felt frantic at this size)
+JUMP = -0.45                          # player jump strength: about a third of the height (1-block toy blocks are obstacles)
+# Mob melee reach is a fixed 0.83 blocks unless the held item has an attack_range component (26.2), so micro mobs
+# hold one with the reach scaled to their size
+REACH, GIANT_REACH = round(0.83 * MOB_SCALE, 3), round(0.83 * GIANT_SCALE, 3)
 X1, X2, Z1, Z2 = -8, 8, 6, 10        # interior
 FLOOR = 97                            # floor blocks; players stand at FLOOR + 1
 SPAWN = (0.5, FLOOR + 1, 8.5)
@@ -39,6 +46,7 @@ MICRO_KITS = [
     (4, "crumb", "Crumb Medic", "light_purple", "splash_potion", ["Toothpick + 3 healing splashes · Regeneration", "Keeps everyone standing"]),
 ]
 RANDOM = 5
+MICRO_ATTRS = ("scale", "movement_speed", "jump_strength", "entity_interaction_range", "block_interaction_range")
 # min wave, roll <=, type, extra NBT
 POOL = [(6, 12, "vindicator", ',equipment:{mainhand:{id:"minecraft:iron_axe",count:1}},drop_chances:{mainhand:0.0f}'),
         (5, 24, "zombie_villager", ",IsBaby:0b"), (4, 38, "drowned", ",IsBaby:0b"), (3, 55, "spider", ""), (2, 72, "husk", ",IsBaby:0b")]
@@ -59,6 +67,8 @@ def build(b):
                   "effect give @s minecraft:regeneration infinite 0 true"] + armor("chainmail", 1),
     }
     micro_attrs = [f"attribute @s minecraft:scale modifier add {NS}:micro {SCALE - 1} add_value",
+                   f"attribute @s minecraft:movement_speed modifier add {NS}:micro {SLOW} add_multiplied_base",
+                   f"attribute @s minecraft:jump_strength modifier add {NS}:micro {JUMP} add_multiplied_base",
                    f"attribute @s minecraft:entity_interaction_range modifier add {NS}:micro -0.67 add_multiplied_base",
                    f"attribute @s minecraft:block_interaction_range modifier add {NS}:micro -1 add_multiplied_base"]
     for (kid, key, name, color, ic, lore) in MICRO_KITS:
@@ -109,7 +119,7 @@ def build(b):
                        f"tellraw @a[tag=mo.in] {tj({'text': '🔬 You shrink to the size of a crumb... Survive!', 'color': 'aqua'})}"])
     fn("micro/enter", [   # as a queued player: shrink, kit up, into the arena
         "tag @s remove mo.q", "tag @s add mo.in", "clear @s", "effect clear @s", "function cyber:admin/reset", "gamemode adventure @s",
-        *b.PERK_RESET, *[f"attribute @s minecraft:{a_} modifier remove {NS}:micro" for a_ in ("scale", "entity_interaction_range", "block_interaction_range")],
+        *b.PERK_RESET, *[f"attribute @s minecraft:{a_} modifier remove {NS}:micro" for a_ in MICRO_ATTRS],
         *micro_attrs, f"function {M}/give_kit", "effect give @s minecraft:instant_health 1 4 true",
         f"tp @s {SPAWN[0]} {SPAWN[1]} {SPAWN[2]} 90 0",
         "title @s title {\"text\":\"🔬 MICRO\",\"color\":\"aqua\",\"bold\":true}", "title @s subtitle {\"text\":\"Everything is huge now\",\"color\":\"gray\"}",
@@ -161,13 +171,21 @@ def build(b):
     choose += [f"function {M}/summon with storage pvp:micro m", "scoreboard players remove #tospawn mo 1"]
     fn("micro/spawn", choose)
     fn("micro/type", ["scoreboard players set #p mo 1", "$data modify storage pvp:micro m merge value {type:\"$(type)\",extra:'$(extra)'}"])
-    mob_attrs = f"{{id:\"minecraft:scale\",base:{SCALE}d}},{{id:\"minecraft:follow_range\",base:32d}}"
+    mob_attrs = f"{{id:\"minecraft:scale\",base:{MOB_SCALE}d}},{{id:\"minecraft:follow_range\",base:32d}}"
     fn("micro/summon", [
         f"$summon minecraft:$(type) $(x) {FLOOR + 1} $(z) {{Tags:[\"mo.mob\",\"mo.new\"],PersistenceRequired:1b,CanPickUpLoot:0b,"
         f"DeathLootTable:\"minecraft:empty\",attributes:[{mob_attrs}]$(extra)}}",
         f"execute as @e[tag=mo.new] run function {M}/scale with storage pvp:micro s",
         f"$particle minecraft:poof $(x) {FLOOR + 1.1} $(z) 0.1 0.05 0.1 0.01 8"])
+    reach = lambda r_: ('item modify entity @s weapon.mainhand {function:"minecraft:set_components",components:{"minecraft:attack_range":'
+                        f'{{max_reach:{r_}f,min_reach:0.0f}}}}}}')
     fn("micro/scale", ["tag @s remove mo.new",
+                       f"attribute @s minecraft:movement_speed modifier add {NS}:micro {SLOW} add_multiplied_base",
+                       # reach to scale: a stick if the hand is empty, then the attack_range on whatever is held
+                       "execute unless items entity @s weapon.mainhand * run item replace entity @s weapon.mainhand with minecraft:stick",
+                       "data modify entity @s drop_chances.mainhand set value 0.0f",
+                       "execute if entity @s[tag=mo.giant] run " + reach(GIANT_REACH),
+                       "execute unless entity @s[tag=mo.giant] run " + reach(REACH),
                        "$attribute @s minecraft:max_health modifier add pvp:micro_wave $(hm) add_multiplied_base",
                        "$attribute @s minecraft:attack_damage modifier add pvp:micro_wave $(dm) add_multiplied_base",
                        "execute store result entity @s Health float 1 run attribute @s minecraft:max_health get"])
@@ -175,7 +193,7 @@ def build(b):
     fn("micro/giant", [   # every 5th wave: a Giant, four times everyone's size
         f"summon minecraft:zombie {gx} {FLOOR + 1} {gz} {{Tags:[\"mo.mob\",\"mo.new\",\"mo.giant\"],PersistenceRequired:1b,CanPickUpLoot:0b,IsBaby:0b,"
         "DeathLootTable:\"minecraft:empty\",CustomName:{\"text\":\"Giant\",\"color\":\"dark_red\",\"bold\":true},CustomNameVisible:1b,"
-        "attributes:[{id:\"minecraft:scale\",base:0.25d},{id:\"minecraft:follow_range\",base:32d},{id:\"minecraft:max_health\",base:60d},"
+        f"attributes:[{{id:\"minecraft:scale\",base:{GIANT_SCALE}d}}," "{id:\"minecraft:follow_range\",base:32d},{id:\"minecraft:max_health\",base:60d},"
         "{id:\"minecraft:attack_damage\",base:7d},{id:\"minecraft:knockback_resistance\",base:0.8d}]}",
         f"execute as @e[tag=mo.new] run function {M}/scale with storage pvp:micro s",
         "execute store result bossbar pvp:mboss max run data get entity @n[tag=mo.giant] Health",
@@ -231,7 +249,7 @@ def build(b):
                  "execute unless score #record mo matches 0.. run scoreboard players set #record mo 0",
                  'bossbar add pvp:mboss {"text":"Giant","color":"dark_red"}', "bossbar set pvp:mboss color red", "bossbar set pvp:mboss visible false"],
         "reset": ["tag @s remove mo.in", "tag @s remove mo.q",
-                  *[f"attribute @s minecraft:{a_} modifier remove {NS}:micro" for a_ in ("scale", "entity_interaction_range", "block_interaction_range")]],
+                  *[f"attribute @s minecraft:{a_} modifier remove {NS}:micro" for a_ in MICRO_ATTRS]],
         "npc": (x, b.LOBBY_Y + 1, z),
         "menu": {"title": {"text": "🔬 Micro Outbreak: pick a kit", "color": "dark_aqua"}, "rows": 3, "fill": b.PANE, "items":
                  [{"slot": s, "item": b.icon(k[4], k[2], k[3], k[5] + ["", "Click to join"]), "cmd": f"trigger mo.join set {k[0]}"}
