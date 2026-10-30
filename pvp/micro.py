@@ -41,14 +41,25 @@ COVER = [(-5, 7, 1, "red_concrete"), (-5, 8, 1, "red_concrete"), (-4, 7, 1, "red
          (-1, 6, 1, "yellow_concrete"), (2, 10, 1, "lime_concrete"), (-2, 10, 1, "orange_concrete"),
          (-2, 8, 2, "bookshelf"), (2, 7, 2, "bookshelf"),             # floor-to-ceiling: you go round these
          (6, 7, 1, "hay_block"), (-6, 9, 1, "hay_block"), (0, 6, 1, "magenta_concrete"), (1, 10, 1, "light_blue_concrete")]
-# id, key, name, colour, icon, lore, item commands (built with build.py's item()/armor() in build())
-MICRO_KITS = [
-    (1, "needle", "Needle Knight", "gray", "iron_sword", ["Sewing Needle (Sharpness I) · iron armor", "A steady all-rounder"]),
-    (2, "peashooter", "Pea Shooter", "green", "bow", ["Rubber Band Bow (Power II, Infinity) + Splinter", "Picks them off from range"]),
-    (3, "bottlecap", "Bottlecap Tank", "aqua", "shield", ["Staple Axe + Bottle Cap shield · heavy armor", "Holds the line"]),
-    (4, "crumb", "Crumb Medic", "light_purple", "splash_potion", ["Toothpick + 3 healing splashes · Regeneration", "Keeps everyone standing"]),
-]
-RANDOM = 5
+# The concrete soldiers: everyone has the same loadout, the colour is just the look (heads: /heads "Concrete (colour)",
+# in heads.json as concrete_<key>). id, key, name, text colour, leather dye
+SOLDIERS = [(1, "red", "Red Soldier", "red", 11546150), (2, "blue", "Blue Soldier", "blue", 3949738),
+            (3, "lime", "Lime Soldier", "green", 8439583), (4, "yellow", "Yellow Soldier", "yellow", 16701501),
+            (5, "orange", "Orange Soldier", "gold", 16351261), (6, "purple", "Purple Soldier", "dark_purple", 8991416),
+            (7, "cyan", "Cyan Soldier", "dark_aqua", 1481884), (8, "pink", "Pink Soldier", "light_purple", 15961002)]
+RANDOM, MENU, LEAVE, SHOP = 20, 21, 22, 23   # mo.join values besides a soldier's id; upgrades are 31+
+KILL_PTS, WAVE_PTS = 10, 20                   # points per kill, and per wave number when a wave is cleared
+# Upgrades, bought with points during a run (lost when you die): code, key, name, icon, cost of each tier in order
+# (None = can be bought again and again, at ONE_OFF's price), lore
+UPGRADES = [(31, "sword", "Bayonet upgrade", "iron_sword", [50, 120, 250], "Stone > iron > diamond > netherite"),
+            (32, "armor", "Armor upgrade", "iron_chestplate", [40, 100, 220], "Leather > chainmail > iron > diamond"),
+            (33, "rifle", "Rifle upgrade", "bow", [30, 70, 150], "Power I > II > III"),
+            (34, "health", "Extra hearts", "golden_apple", [60, 120, 200], "+2 hearts per tier"),
+            (35, "speed", "Running shoes", "leather_boots", [80], "Move faster"),
+            (36, "arrows", "Arrows", "arrow", None, "+16 arrows"),
+            (37, "medkit", "Medkit", "glistering_melon_slice", None, "Heal 4 hearts now")]
+ONE_OFF = {"arrows": 15, "medkit": 25}
+TIER_OBJ = {"sword": "mo.sw", "armor": "mo.ar", "rifle": "mo.bw", "health": "mo.hp", "speed": "mo.sp"}
 MICRO_ATTRS = ("scale", "movement_speed", "jump_strength", "entity_interaction_range", "block_interaction_range")
 # min wave, roll <=, type, extra NBT
 # no spiders: they climb the walls straight up to the glass ceiling and stay there
@@ -60,43 +71,85 @@ def build(b):
     fn, tj, say, NS = b.fn, b.tj, b.say, b.NS
     M = f"{NS}:micro"
     item, armor = b.item, b.armor
-    kit_items = {
-        "needle": [f"give @s {item('iron_sword', 'Sewing Needle', 'gray', {'sharpness': 1})}"] + armor("iron", 1),
-        "peashooter": [f"give @s {item('bow', 'Rubber Band Bow', 'green', {'power': 2, 'infinity': 1})}", "give @s minecraft:arrow 1",
-                       f"give @s {item('stone_sword', 'Splinter', 'gold')}"] + armor("leather", 2, dye=5013401),
-        "bottlecap": [f"give @s {item('iron_axe', 'Staple Axe', 'aqua', {'sharpness': 1})}",
-                      f"item replace entity @s weapon.offhand with {item('shield', 'Bottle Cap', 'red')}"]
-                     + armor({"head": "iron", "chest": "diamond", "legs": "iron", "feet": "iron"}, 2),
-        "crumb": [f"give @s {item('stone_sword', 'Toothpick', 'yellow')}", b.potion("splash_potion", "strong_healing", 3),
-                  "effect give @s minecraft:regeneration infinite 0 true"] + armor("chainmail", 1),
-    }
     micro_attrs = [f"attribute @s minecraft:scale modifier add {NS}:micro {SCALE - 1} add_value",
                    f"attribute @s minecraft:movement_speed modifier add {NS}:micro {SLOW} add_multiplied_base",
                    f"attribute @s minecraft:jump_strength modifier add {NS}:micro {JUMP} add_multiplied_base",
                    f"attribute @s minecraft:entity_interaction_range modifier add {NS}:micro -0.67 add_multiplied_base",
                    f"attribute @s minecraft:block_interaction_range modifier add {NS}:micro -1 add_multiplied_base"]
-    for (kid, key, name, color, ic, lore) in MICRO_KITS:
-        fn(f"micro/kit/{key}", kit_items[key] + ["give @s minecraft:cooked_beef 8",
-            f"tellraw @s {tj([{'text': '🔬 Kit: ', 'color': 'gray'}, {'text': name, 'color': color, 'bold': True}])}"])
-    fn("micro/give_kit", [f"execute if score @s mo.kit matches {k[0]} run function {M}/kit/{k[1]}" for k in MICRO_KITS])
+    def leather(dye):
+        return [f"item replace entity @s armor.{sl} with minecraft:leather_{pc}[minecraft:dyed_color={dye},minecraft:unbreakable={{}}]"
+                for sl, pc in (("chest", "chestplate"), ("legs", "leggings"), ("feet", "boots"))]
+    for (sid, key, name, color, dye) in SOLDIERS:
+        head = (f'item replace entity @s armor.head with minecraft:player_head[minecraft:profile={{properties:[{{name:"textures",'
+                f'value:"{b.HEADS["concrete_" + key]}"}}]}},minecraft:custom_name={{"text":"{name}","color":"{color}","italic":false}}]')
+        fn(f"micro/kit/{key}", [f"give @s {item('stone_sword', 'Bayonet', 'gray')}", f"give @s {item('bow', 'Toy Rifle', color)}",
+                                "give @s minecraft:arrow 16", "give @s minecraft:cooked_beef 8", head, *leather(dye),
+                                f"tellraw @s {tj([{'text': '🔬 You are the ', 'color': 'gray'}, {'text': name, 'color': color, 'bold': True}])}"])
+    def head_icon(k):
+        it = b.icon("player_head", k[2], k[3], ["Bayonet · Toy Rifle + 16 arrows", "Leather armor in your colour", "", "Click to join"])
+        it["components"]["minecraft:profile"] = {"properties": [{"name": "textures", "value": b.HEADS["concrete_" + k[1]]}]}
+        return it
+    fn("micro/give_kit", [f"execute if score @s mo.kit matches {k[0]} run function {M}/kit/{k[1]}" for k in SOLDIERS])
+
+    # ------------------------------------------------------------------ points and upgrades
+    shop_btn = {"text": "[🛒 Upgrades]", "color": "gold", "bold": True, "click_event": {"action": "run_command", "command": f"/trigger mo.join set {SHOP}"},
+                "hover_event": {"action": "show_text", "value": "Spend your points on upgrades"}}
+    fn("micro/points", [f"scoreboard players operation #k mo = @s mo.k", f"scoreboard players operation #k mo *= #{KILL_PTS} mo",
+                        "scoreboard players operation @s mo.pts += #k mo", "scoreboard players set @s mo.k 0"])
+    def tier_apply(key, n):
+        mats = {1: "iron", 2: "diamond", 3: "netherite"}
+        if key == "sword": return ["clear @s #minecraft:swords", f"give @s {item(mats[n] + '_sword', 'Bayonet', 'gray')}"]
+        if key == "armor":
+            m = {1: "chainmail", 2: "iron", 3: "diamond"}[n]
+            return [f"item replace entity @s armor.{sl} with minecraft:{m}_{pc}[minecraft:unbreakable={{}}]"
+                    for sl, pc in (("chest", "chestplate"), ("legs", "leggings"), ("feet", "boots"))]
+        if key == "rifle": return ["clear @s minecraft:bow", f"give @s {item('bow', 'Toy Rifle', 'gold', {'power': n})}"]
+        if key == "health": return [f"attribute @s minecraft:max_health modifier remove {NS}:micro_hp",
+                                    f"attribute @s minecraft:max_health modifier add {NS}:micro_hp {4 * n} add_value", "effect give @s minecraft:instant_health 1 1 true"]
+        if key == "speed": return [f"attribute @s minecraft:movement_speed modifier add {NS}:micro_spd 0.2 add_multiplied_base"]
+    buy = [f"execute unless entity @s[tag=mo.in] run return run {say('@s', 'Upgrades are for players in a Micro Outbreak run.', 'red')}"]
+    for (code, key, name, ic, costs, lore) in UPGRADES:
+        buy.append(f"execute if score #j mo matches {code} run return run function {M}/up/{key}")
+        if costs is None:
+            c = ONE_OFF[key]
+            fn(f"micro/up/{key}", [f"execute if score @s mo.pts matches ..{c - 1} run return run {say('@s', f'{name} costs {c} points.', 'red')}",
+                                   f"scoreboard players remove @s mo.pts {c}",
+                                   "give @s minecraft:arrow 16" if key == "arrows" else "effect give @s minecraft:instant_health 1 1 true",
+                                   f"tellraw @s {tj([{'text': 'Bought ', 'color': 'green'}, {'text': name, 'color': 'gold'}, {'text': ' · ', 'color': 'dark_gray'}, {'score': {'name': '@s', 'objective': 'mo.pts'}, 'color': 'white'}, {'text': ' points left', 'color': 'gray'}])}",
+                                   "playsound minecraft:entity.villager.yes neutral @s ~ ~ ~ 0.6 1.4"])
+            continue
+        o = TIER_OBJ[key]
+        lines = [f"scoreboard players add @s {o} 0",
+                 f"execute if score @s {o} matches {len(costs)}.. run return run {say('@s', f'{name} is maxed out.', 'gold')}"]
+        for t, c in enumerate(costs):
+            lines.append(f"execute if score @s {o} matches {t} if score @s mo.pts matches ..{c - 1} run return run {say('@s', f'{name} (tier {t + 1}) costs {c} points.', 'red')}")
+        for t, c in enumerate(costs):
+            lines.append(f"execute if score @s {o} matches {t} run return run function {M}/up/{key}/{t + 1}")
+            fn(f"micro/up/{key}/{t + 1}", [f"scoreboard players remove @s mo.pts {c}", f"scoreboard players set @s {o} {t + 1}", *tier_apply(key, t + 1),
+                                           f"tellraw @s {tj([{'text': 'Upgraded: ', 'color': 'green'}, {'text': f'{name} {t + 1}/{len(costs)}', 'color': 'gold'}, {'text': ' · ', 'color': 'dark_gray'}, {'score': {'name': '@s', 'objective': 'mo.pts'}, 'color': 'white'}, {'text': ' points left', 'color': 'gray'}])}",
+                                           "playsound minecraft:block.anvil.use neutral @s ~ ~ ~ 0.5 1.6"])
+        fn(f"micro/up/{key}", lines)
+    fn("micro/buy", buy)
 
     # ------------------------------------------------------------------ joining (from the NPC's menu: /trigger mo.join)
-    join_btn = {"text": "[Click to join]", "color": "green", "bold": True, "click_event": {"action": "run_command", "command": "/trigger mo.join set 6"},
+    join_btn = {"text": "[Click to join]", "color": "green", "bold": True, "click_event": {"action": "run_command", "command": f"/trigger mo.join set {MENU}"},
                 "hover_event": {"action": "show_text", "value": "Pick a kit and join Micro Outbreak"}}
     fn("micro/open", [f"execute unless entity @s[{b.LOBBY_BOX}] run return 0", "pvpmenu micro"])
     fn("micro/join", [
         "scoreboard players operation #j mo = @s mo.join", "scoreboard players set @s mo.join 0",
-        "execute if score #j mo matches 6 run return run pvpmenu micro",
-        f"execute if score #j mo matches 9 run return run function {M}/leave_queue",
+        f"execute if score #j mo matches {MENU} run return run pvpmenu micro",
+        f"execute if score #j mo matches {LEAVE} run return run function {M}/leave_queue",
+        f"execute if score #j mo matches {SHOP} if entity @s[tag=mo.in] run return run pvpmenu micro_shop",
+        f"execute if score #j mo matches 31.. run return run function {M}/buy",
         f"execute unless entity @s[{b.LOBBY_BOX}] run return run {say('@s', 'Join Micro Outbreak from the lobby (/spawn).', 'red')}",
         f"execute if entity @s[tag=mo.in] run return run {say('@s', 'You are already in Micro Outbreak.', 'red')}",
         f"execute if entity @s[tag=pve.q] run return run {say('@s', 'Leave your Outbreak lobby first.', 'red')}",
         f"execute if entity @s[tag=tw.q] run return run {say('@s', 'Leave your Tower lobby first.', 'red')}",
-        f"execute if score #j mo matches {RANDOM} store result score #j mo run random value 1..{len(MICRO_KITS)}",
-        f"execute unless score #j mo matches 1..{len(MICRO_KITS)} run return 0",
+        f"execute if score #j mo matches {RANDOM} store result score #j mo run random value 1..{len(SOLDIERS)}",
+        f"execute unless score #j mo matches 1..{len(SOLDIERS)} run return 0",
         "scoreboard players operation @s mo.kit = #j mo",
         *[f"execute if score #j mo matches {k[0]} run tellraw @s {tj([{'text': '🔬 You picked ', 'color': 'gray'}, {'text': k[2], 'color': k[3], 'bold': True}])}"
-          for k in MICRO_KITS],
+          for k in SOLDIERS],
         "execute if entity @s[tag=mo.q] run return 0", "tag @s add mo.q",
         "playsound minecraft:block.note_block.pling player @s ~ ~ ~ 1 1.4",
         f"execute if score #state mo matches 0 run return run function {M}/countdown_start",
@@ -124,7 +177,10 @@ def build(b):
     fn("micro/enter", [   # as a queued player: shrink, kit up, into the arena
         "tag @s remove mo.q", "tag @s add mo.in", "clear @s", "effect clear @s", "function cyber:admin/reset", "gamemode adventure @s",
         *b.PERK_RESET, *[f"attribute @s minecraft:{a_} modifier remove {NS}:micro" for a_ in MICRO_ATTRS],
+        f"attribute @s minecraft:max_health modifier remove {NS}:micro_hp", f"attribute @s minecraft:movement_speed modifier remove {NS}:micro_spd",
         *micro_attrs, f"function {M}/give_kit", "effect give @s minecraft:instant_health 1 4 true",
+        "scoreboard players set @s mo.pts 0", "scoreboard players set @s mo.k 0", *[f"scoreboard players set @s {o} 0" for o in TIER_OBJ.values()],
+        f"tellraw @s {tj([{'text': f'🔬 {KILL_PTS} points per kill and a bonus every wave: ', 'color': 'gray'}, shop_btn])}",
         f"tp @s {SPAWN[0]} {SPAWN[1]} {SPAWN[2]} 90 0",
         "title @s title {\"text\":\"🔬 MICRO\",\"color\":\"aqua\",\"bold\":true}", "title @s subtitle {\"text\":\"Everything is huge now\",\"color\":\"gray\"}",
         "playsound minecraft:entity.puffer_fish.blow_out player @s ~ ~ ~ 1 1.6"])
@@ -138,7 +194,8 @@ def build(b):
     # ------------------------------------------------------------------ waves
     fn("micro/break_tick", [
         "scoreboard players remove #timer mo 1", "scoreboard players operation #s mo = #timer mo", "scoreboard players operation #s mo /= #20 mo",
-        "title @a[tag=mo.in] actionbar " + tj([{"text": "Next wave in ", "color": "gray"}, {"score": {"name": "#s", "objective": "mo"}, "color": "white"}, {"text": " s", "color": "gray"}]),
+        "title @a[tag=mo.in] actionbar " + tj([{"text": "Next wave in ", "color": "gray"}, {"score": {"name": "#s", "objective": "mo"}, "color": "white"}, {"text": " s · ", "color": "gray"},
+                                              {"score": {"name": "@s", "objective": "mo.pts"}, "color": "gold"}, {"text": " pts · /trigger mo.join set " + str(SHOP) + " for upgrades", "color": "gray"}]),
         f"execute if score #timer mo matches ..0 run function {M}/next_wave"])
     fn("micro/next_wave", [
         "scoreboard players add #wave mo 1", "execute store result score #np mo if entity @a[tag=mo.in]",
@@ -162,7 +219,8 @@ def build(b):
         "execute if score #st mo matches 10.. run scoreboard players set #st mo 0",
         "execute store result score #left mo if entity @e[tag=mo.mob]", "scoreboard players operation #left mo += #tospawn mo",
         "title @a[tag=mo.in] actionbar " + tj([{"text": "Wave ", "color": "aqua"}, {"score": {"name": "#wave", "objective": "mo"}, "color": "white"},
-                                              {"text": " · ", "color": "dark_gray"}, {"score": {"name": "#left", "objective": "mo"}, "color": "white"}, {"text": " left", "color": "aqua"}]),
+                                              {"text": " · ", "color": "dark_gray"}, {"score": {"name": "#left", "objective": "mo"}, "color": "white"}, {"text": " left · ", "color": "aqua"},
+                                              {"score": {"name": "@s", "objective": "mo.pts"}, "color": "gold"}, {"text": " pts", "color": "gray"}]),
         "execute if score #tospawn mo matches 0 if score #alive mo matches ..3 run effect give @e[tag=mo.mob] minecraft:glowing 2 0 true",
         f"execute if score #tospawn mo matches 0 unless entity @e[tag=mo.mob] run function {M}/wave_end"])
     choose = ["execute store result score #r mo run random value 1..100", "scoreboard players set #p mo 0"]
@@ -208,10 +266,13 @@ def build(b):
         "execute as @a[tag=mo.in] at @s run playsound minecraft:entity.ravager.roar player @s ~ ~ ~ 0.6 0.6"])
     fn("micro/wave_end", [
         "scoreboard players set #state mo 3", f"scoreboard players set #timer mo {BREAK}",
-        "effect give @a[tag=mo.in] minecraft:instant_health 1 4 true", f"give @a[tag=mo.in,scores={{mo.kit=2}}] minecraft:arrow 1",
+        "effect give @a[tag=mo.in] minecraft:instant_health 1 4 true", "give @a[tag=mo.in] minecraft:arrow 4",
+        "scoreboard players operation #b mo = #wave mo", f"scoreboard players operation #b mo *= #{WAVE_PTS} mo",
+        "scoreboard players operation @a[tag=mo.in] mo.pts += #b mo",
         "give @a[tag=mo.in] minecraft:cooked_beef 2",
         f"tellraw @a[tag=mo.in] {tj([{'text': '🔬 Wave ', 'color': 'aqua'}, {'score': {'name': '#wave', 'objective': 'mo'}, 'color': 'white'},
-                                     {'text': f' cleared! Healed up. Next wave in {BREAK // 20} s.', 'color': 'aqua'}])}",
+                                     {'text': ' cleared! +', 'color': 'aqua'}, {'score': {'name': '#b', 'objective': 'mo'}, 'color': 'gold'},
+                                     {'text': f' points, healed up. Next wave in {BREAK // 20} s. ', 'color': 'aqua'}, shop_btn])}",
         "execute as @a[tag=mo.in] at @s run playsound minecraft:ui.toast.challenge_complete player @s ~ ~ ~ 0.5 1.4",
         f"execute as @a[tag=mo.q] run function {M}/enter"])
     fn("micro/game_over", [
@@ -224,6 +285,7 @@ def build(b):
     # ------------------------------------------------------------------ ticking (called from pvp tick / second)
     fn("micro/tick", [
         "scoreboard players enable @a mo.join", f"execute as @a[scores={{mo.join=1..}}] at @s run function {M}/join",
+        f"execute as @a[tag=mo.in,scores={{mo.k=1..}}] run function {M}/points",
         f"execute if score #state mo matches 1 run function {M}/countdown_tick",
         f"execute if score #state mo matches 2 run function {M}/wave_tick",
         f"execute if score #state mo matches 3 run function {M}/break_tick"])
@@ -249,21 +311,26 @@ def build(b):
     fn("admin/build_micro", a)
     x, _, z = NPC_POS
     return {
-        "objectives": ["mo dummy", "mo.join trigger", "mo.kit dummy", "mo.best dummy"],
-        "load": ["scoreboard players set #3 mo 3", "scoreboard players set #5 mo 5", "scoreboard players set #20 mo 20",
+        "objectives": ["mo dummy", "mo.join trigger", "mo.kit dummy", "mo.best dummy", "mo.pts dummy", "mo.k totalKillCount", *[f"{o} dummy" for o in TIER_OBJ.values()]],
+        "load": ["scoreboard players set #3 mo 3", "scoreboard players set #5 mo 5", "scoreboard players set #20 mo 20", f"scoreboard players set #{KILL_PTS} mo {KILL_PTS}", f"scoreboard players set #{WAVE_PTS} mo {WAVE_PTS}",
                  "execute unless score #state mo matches 0.. run scoreboard players set #state mo 0",
                  "execute unless score #record mo matches 0.. run scoreboard players set #record mo 0",
                  'bossbar add pvp:mboss {"text":"Giant","color":"dark_red"}', "bossbar set pvp:mboss color red", "bossbar set pvp:mboss visible false"],
         "reset": ["tag @s remove mo.in", "tag @s remove mo.q",
-                  *[f"attribute @s minecraft:{a_} modifier remove {NS}:micro" for a_ in MICRO_ATTRS]],
+                  *[f"attribute @s minecraft:{a_} modifier remove {NS}:micro" for a_ in MICRO_ATTRS],
+                  f"attribute @s minecraft:max_health modifier remove {NS}:micro_hp", f"attribute @s minecraft:movement_speed modifier remove {NS}:micro_spd"],
         "npc": (x, b.LOBBY_Y + 1, z),
-        "menu": {"title": {"text": "🔬 Micro Outbreak: pick a kit", "color": "dark_aqua"}, "rows": 3, "fill": b.PANE, "items":
-                 [{"slot": s, "item": b.icon(k[4], k[2], k[3], k[5] + ["", "Click to join"]), "cmd": f"trigger mo.join set {k[0]}"}
-                  for s, k in zip((10, 11, 15, 16), MICRO_KITS)]
-                 + [{"slot": 13, "item": b.icon("spyglass", "Micro Outbreak", "aqua", [
-                     "Outbreak at 1/16 scale: you and the mobs", "are tiny, in a room under the lobby floor",
-                     "Everyone in the lobby watches through the glass", "", "Waves of tiny mobs, a Giant every 5th wave",
-                     "Healed between waves · die and you watch", "from the lobby"]), "cmd": ""},
-                    {"slot": 22, "item": b.icon("ender_eye", "🎲 Random kit", "light_purple", ["Let fate pick", "", "Click to join"]), "cmd": f"trigger mo.join set {RANDOM}"},
-                    {"slot": 18, "item": b.icon("barrier", "Leave the queue", "red", ["Stop waiting for Micro Outbreak"], False), "cmd": "trigger mo.join set 9"}]},
+        "menu": {"title": {"text": "🔬 Micro Outbreak: pick your soldier", "color": "dark_aqua"}, "rows": 4, "fill": b.PANE, "items":
+                 [{"slot": sl, "item": head_icon(k), "cmd": f"trigger mo.join set {k[0]}"} for sl, k in zip(range(10, 18), SOLDIERS)]
+                 + [{"slot": 4, "item": b.icon("spyglass", "Micro Outbreak", "aqua", [
+                     "Toy soldiers vs tiny mobs, in a room", "under the lobby floor (everyone watches through the glass)",
+                     "Every soldier has the same loadout:", "Bayonet, Toy Rifle + 16 arrows, leather armor", "",
+                     f"{KILL_PTS} points per kill + a bonus every wave", "Spend them on upgrades during the run",
+                     "A Giant every 5th wave · die and you watch from the lobby"]), "cmd": ""},
+                    {"slot": 31, "item": b.icon("ender_eye", "🎲 Random colour", "light_purple", ["Let fate pick", "", "Click to join"]), "cmd": f"trigger mo.join set {RANDOM}"},
+                    {"slot": 27, "item": b.icon("barrier", "Leave the queue", "red", ["Stop waiting for Micro Outbreak"], False), "cmd": f"trigger mo.join set {LEAVE}"}]},
+        "shop": {"title": {"text": "🛒 Micro Outbreak upgrades", "color": "gold"}, "rows": 3, "fill": b.PANE, "items":
+                 [{"slot": sl, "item": b.icon(ic, name, "gold", [lore, ""] + ([f"Tier {t + 1}: {c} points" for t, c in enumerate(costs)] if costs else [f"{ONE_OFF[key]} points each"])
+                                              + ["", "Lost when you die", "Click to buy"]), "cmd": f"trigger mo.join set {code}"}
+                  for sl, (code, key, name, ic, costs, lore) in zip((10, 11, 12, 13, 14, 15, 16), UPGRADES)]},
     }

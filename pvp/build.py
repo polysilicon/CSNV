@@ -665,6 +665,7 @@ def build():
                         {"slot": 22, "item": icon("ender_eye", "Random map", "light_purple", ["Let fate decide", "", "Click to pick your kit"]), "cmd": "trigger pve.join set 91"}]},
         **pve_menus(),
         "micro": MICRO["menu"],
+        "micro_shop": MICRO["shop"],
         "pve_hw": {"title": {"text": "🎃 Haunted Night: pick your killer", "color": "gold"}, "rows": 3, "fill": PANE, "items":
                    [{"slot": sl, "item": kit_icon(k, k[5] + ["", "Click to queue with this character"]), "cmd": f"trigger pve.join set {k[0]}"}
                     for sl, k in zip((11, 12, 13, 14, 15), HALLOWEEN_KITS)]

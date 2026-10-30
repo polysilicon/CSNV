@@ -445,9 +445,16 @@ Outbreak at 1/16 scale. The **🔬 Micro Outbreak** NPC (west of spawn, -6.5 101
   (`pvp:micro` modifiers, removed in `to_lobby`). Mobs or players that end up outside the room are put back each
   second. The lobby's area (`LOBBY_BOX`) now starts at the floor (y 100), so a micro player jumping under the glass
   never counts as being in the lobby.
-- **Kits** (its own, `MICRO_KITS`): Needle Knight (Sewing Needle, iron armor), Pea Shooter (Rubber Band Bow with
-  Infinity + Splinter), Bottlecap Tank (Staple Axe + Bottle Cap shield, heavy armor) and Crumb Medic (Toothpick,
-  3 healing splashes, Regeneration). Or a random one.
+- **Concrete soldiers** (`SOLDIERS`): toy army men in eight colours (red, blue, lime, yellow, orange, purple, cyan,
+  pink), each wearing that colour's solid concrete head (`/heads` "Concrete (colour)", in `heads.json` as
+  `concrete_<colour>`) and leather armor dyed to match. They all have the same loadout: Bayonet (stone sword), Toy
+  Rifle (bow) with 16 arrows, food. The menu also has a random colour.
+- **Points and upgrades**: 10 points per kill (`mo.k`) and 20 x the wave number for clearing a wave (`mo.pts`). The
+  shop (`[🛒 Upgrades]` in chat, or `/trigger mo.join set 23`) sells, in tiers you buy in order: Bayonet (iron 50,
+  diamond 120, netherite 250), Armor (chainmail 40, iron 100, diamond 220), Rifle (Power I 30, II 70, III 150), Extra
+  hearts (+2 hearts per tier: 60, 120, 200), Running shoes (faster, 80); and as often as you like: 16 arrows (15) and
+  a Medkit (heal 4 hearts, 25). Tiers are in `mo.sw/mo.ar/mo.bw/mo.hp/mo.sp`. Upgrades and points are lost when you
+  die. Everyone gets 4 arrows and food after each wave.
 - **Playing**: the first player to pick a kit starts a 10 s countdown (with a join button in lobby chat); others join
   in it or drop in at the next wave break. Waves of tiny zombies, husks (wave 2+), piglin brutes (3+, immune to zombification),
   drowned (4+), zombie villagers (5+) and vindicators (6+); no spiders, since they climb straight up to the glass
@@ -455,8 +462,8 @@ Outbreak at 1/16 scale. The **🔬 Micro Outbreak** NPC (west of spawn, -6.5 101
   and +6% damage per wave. Every 5th wave a **Giant** (a zombie at scale 0.25, four times everyone's size) with a boss
   bar. Between waves (10 s) everyone is healed and gets food; archers get an arrow.
 - Dying sends you back to the lobby at normal size to watch the rest. The run ends when nobody is left. Best wave per
-  player in `mo.best`, the server record in `#record mo` (announced). Objectives `mo`, `mo.join` (trigger: kit 1-4,
-  5 random, 6 open the menu, 9 leave the queue), `mo.kit`.
+  player in `mo.best`, the server record in `#record mo` (announced). Objectives `mo`, `mo.join` (trigger: soldier 1-8,
+  20 random, 21 open the menu, 22 leave the queue, 23 the shop, 31-37 buy), `mo.kit`.
 
 ## Haunted Night (Halloween 2026)
 A limited-time Outbreak variant, open until **2026-11-07** (UTC). The **🎃 Haunted Night** NPC (a mannequin dressed as
