@@ -678,7 +678,8 @@ def portal_blocks(x, y, z, platform=True):
 
 # ---- portal styles: a decorated frame across x around a 3x3 opening filled with a swirling portal (a block_display of
 # nether_portal: it looks like a portal but doesn't take you to the Nether; the mod does the teleporting). Run
-# positioned at the floor block under the opening's centre. Island portals keep within |dx|,|dz| <= 2 and y <= 5,
+# positioned at the floor block under the opening's centre (execute positioned centres whole x/z on the block,
+# so the display is offset by -0.5 to sit on the block grid). Island portals keep within |dx|,|dz| <= 2 and y <= 5,
 # the part the mod protects.
 def portal_style(theme):
     b = Build(0)
@@ -712,16 +713,16 @@ def portal_style(theme):
         b.fill(-2, 6, -1, 2, 6, 1, "azalea_leaves[persistent=true]")
         b.fill(-1, 7, 0, 1, 7, 0, "flowering_azalea_leaves[persistent=true]")
         for x in (-3, 3): b.set(x, 4, 0, "vine[up=true]")
-    b.c.append("summon minecraft:block_display ~-1 ~1 ~ {Tags:[\"%s\",\"cs_portalfx\"],block_state:{Name:\"minecraft:nether_portal\",Properties:{axis:\"x\"}},"
+    b.c.append("summon minecraft:block_display ~-1.5 ~1 ~-0.5 {Tags:[\"%s\",\"cs_portalfx\"],block_state:{Name:\"minecraft:nether_portal\",Properties:{axis:\"x\"}},"
                "brightness:{sky:15,block:15},transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],"
                "translation:[0f,0f,0f],scale:[3f,3f,1f]}}" % NS)
     return b.c
-PORTAL_FX = {"island": "minecraft:portal ~0.5 ~2.5 ~0.5 0.9 0.9 0.05 0.3 25",
-             "mines": "minecraft:small_flame ~0.5 ~2.5 ~0.5 0.9 0.9 0.1 0.01 6",
-             "woods": "minecraft:spore_blossom_air ~0.5 ~2.5 ~0.5 1.2 1.0 0.3 0 10"}
+PORTAL_FX = {"island": "minecraft:portal ~ ~2.5 ~ 0.9 0.9 0.05 0.3 25",
+             "mines": "minecraft:small_flame ~ ~2.5 ~ 0.9 0.9 0.1 0.01 6",
+             "woods": "minecraft:spore_blossom_air ~ ~2.5 ~ 1.2 1.0 0.3 0 10"}
 for _t in ("island", "mines", "woods"):
     fn(f"portal/style_{_t}", "\n".join(portal_style(_t)))
-    fn(f"portal/fx_{_t}", f"particle minecraft:portal ~0.5 ~2.5 ~0.5 0.9 0.9 0.05 0.3 15\nparticle {PORTAL_FX[_t]}")
+    fn(f"portal/fx_{_t}", f"particle minecraft:portal ~ ~2.5 ~ 0.9 0.9 0.05 0.3 15\nparticle {PORTAL_FX[_t]}")
 # the hub's portals to the resource zones, either side of the island portal (Portals.java knows these spots)
 HUB_ZONE_PORTALS = [("mines", -13, -14, "The Deep Mines", "gray", "Ores that grow back · Lv 2-25 mobs"),
                     ("woods", 13, -14, "Whispering Woods", "dark_green", "Logs that grow back · Lv 3-8 mobs")]
