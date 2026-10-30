@@ -448,15 +448,17 @@ Outbreak at 1/16 scale. The **🔬 Micro Outbreak** NPC (west of spawn, -6.5 101
 - **Concrete soldiers** (`SOLDIERS`): toy army men in eight colours (red, blue, lime, yellow, orange, purple, cyan,
   pink), each wearing that colour's solid concrete head (`/heads` "Concrete (colour)", in `heads.json` as
   `concrete_<colour>`) and leather armor dyed to match. They all have the same loadout: Bayonet (stone sword), Toy
-  Rifle (bow) with 16 arrows, food. The menu also has a random colour.
+  Rifle and food. The Toy Rifle is a hitscan gun like the characters' (`abilities.py` `toy_rifle`: right-click, 0.5 s,
+  4 damage, 17 blocks) on its own fine ray (`ability/mray`: 0.1-block steps, only Micro Outbreak mobs within 0.1 of
+  the line, stops at walls), since the normal ray's block-wide check is a beam 16 bodies wide at this scale. The menu also has a random colour.
 - **Points and upgrades**: 10 points per kill (`mo.k`) and 20 x the wave number for clearing a wave (`mo.pts`). Like
   Outbreak's Arsenal, the **🛒 Arsenal** (a little shopkeeper mannequin at 0.5 98 9.5, next to the spawn, with an
   interaction to right-click; placed by `admin/build_micro`) opens the upgrade menu (`/trigger mo.join set 23` works
   too). It sells, in tiers you buy in order: Bayonet (iron 50,
-  diamond 120, netherite 250), Armor (chainmail 40, iron 100, diamond 220), Rifle (Power I 30, II 70, III 150), Extra
-  hearts (+2 hearts per tier: 60, 120, 200), Running shoes (faster, 80); and as often as you like: 16 arrows (15) and
-  a Medkit (heal 4 hearts, 25). Tiers are in `mo.sw/mo.ar/mo.bw/mo.hp/mo.sp`. Upgrades and points are lost when you
-  die. Everyone gets 4 arrows and food after each wave.
+  diamond 120, netherite 250), Armor (chainmail 40, iron 100, diamond 220), Rifle (the gun tiers `pve.gun`, as Pack-a-Punch: +40% 30, +80% 70, +120% and slowing 150), Extra
+  hearts (+2 hearts per tier: 60, 120, 200), Running shoes (faster, 80); and as often as you like: a Medkit (heal 4 hearts,
+  25). Tiers are in `mo.sw/mo.ar/mo.bw/mo.hp/mo.sp`. Upgrades and points are lost when you
+  die. Everyone gets food after each wave.
 - **Sidebar**: micro players are on team `micro` (aqua), whose sidebar (`mo.side`, rebuilt every second) lists each
   soldier's points and kills this run (`mo.kc`), like Outbreak's.
 - **Playing**: the first player to pick a kit starts a 10 s countdown (with a join button in lobby chat); others join

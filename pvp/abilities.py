@@ -32,6 +32,7 @@ def cone(r, cmd): return f"execute anchored eyes positioned ^ ^ ^{r} as @e[dista
 def around(r, cmd): return f"execute as @e[distance=..{r},{TGT}] at @s run {cmd}"
 def ray(n): return [f"scoreboard players set #ray pvp {n}", f"function {NS}:ability/ray_start"]   # n half-blocks; hit gets pvp.hit
 def hit(cmd): return f"execute as @e[tag=pvp.hit] at @s run {cmd}"
+def mray(n): return [f"scoreboard players set #mray pvp {n}", f"function {NS}:ability/mray_start"]   # n tenth-blocks; Micro Outbreak mobs only
 PUSH = f"function {NS}:ability/push"          # as a target, at it: knocked away from the caster (and up)
 LAUNCH = "summon minecraft:wind_charge ~ ~0.1 ~ {Motion:[0.0d,-1.0d,0.0d]}"            # launches the caster up
 DASH = "execute rotated ~ 0 positioned ^ ^ ^-0.7 run summon minecraft:wind_charge ~ ~0.15 ~ {Motion:[0.0d,-1.0d,0.0d]}"
@@ -504,6 +505,15 @@ ABILITIES = {
         "effect give @s minecraft:speed 5 1", "effect give @s minecraft:strength 5 0",
         "particle minecraft:smoke ~ ~1 ~ 4 1 4 0.02 80",
         snd("block.beacon.deactivate", 1, 0.6), snd("block.note_block.chime", 0.6, 0.5), bar("POWER OUTAGE", "dark_gray")]),
+    # ---------------------------------------------------------------- Micro Outbreak (the concrete soldiers' gun)
+    # Hitscan like the other guns, but on its own fine ray (ability/mray: 0.1-block steps, only Micro Outbreak mobs):
+    # the normal ray checks a whole block around each half-block step, which at 1/16 scale is a beam 16 bodies wide.
+    # Its damage follows the gun tiers (pve.gun, set by the Rifle upgrade in Micro Outbreak's Arsenal).
+    "toy_rifle": ("Toy Rifle", "green", "breeze_rod", 0.5, ["Plastic, but it stings.", "Hitscan · 17 blocks · 4 damage"], [
+        *mray(170), *tiered(4, lambda d: hit(damage(d, "arrow"))),
+        "execute if score @s pve.gun matches 3.. run " + hit("effect give @s minecraft:slowness 1 1"),
+        hit("particle minecraft:damage_indicator ~ ~0.1 ~ 0.02 0.02 0.02 0.01 2"),
+        f"playsound minecraft:entity.firework_rocket.blast player @a[distance=..16] ~ ~ ~ 0.5 2"]),
 }
 
 
@@ -607,6 +617,15 @@ def build(fn, wj, lobby_box):
         "tag @a remove pvp.rf")])
     # raycast: half-block steps from the eyes, stops at the first target or a solid block
     fn("ability/ray_start", [f"execute anchored eyes positioned ^ ^ ^0.5 run function {NS}:ability/ray"])
+    # Micro Outbreak's fine ray: 0.1-block steps from the eyes, hits the first micro mob within 0.1 of the line (its
+    # feet are ~0.07 below its middle), stops at anything solid; a tracer every step
+    fn("ability/mray_start", [f"execute anchored eyes positioned ^ ^ ^0.1 run function {NS}:ability/mray"])
+    fn("ability/mray", [
+        "particle minecraft:crit ~ ~ ~ 0 0 0 0 1",
+        f"execute positioned ~ ~-0.07 ~ as @e[tag=mo.mob,distance=..0.1,limit=1,sort=nearest] run return run tag @s add pvp.hit",
+        "scoreboard players remove #mray pvp 1",
+        f"execute if score #mray pvp matches 1.. if block ~ ~ ~ #minecraft:replaceable positioned ^ ^ ^0.1 run function {NS}:ability/mray",
+    ])
     fn("ability/ray", [
         "execute if score #tr pvp matches 1 run particle minecraft:crit ~ ~ ~ 0 0 0 0 1",   # gun tracer
         f"execute positioned ~-0.5 ~-0.5 ~-0.5 as @e[dx=0,dy=0,dz=0,{TGT},limit=1,sort=nearest] run return run tag @s add pvp.hit",

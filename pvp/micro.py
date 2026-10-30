@@ -14,7 +14,7 @@ from above (mobs can't see through glass, so they don't fixate on the people wat
   10 s countdown or drop in at the next wave break. Dying sends you back to the lobby (normal size) to watch.
 - Waves of tiny zombies, husks, piglin brutes, drowned, zombie villagers and vindicators; every 5th wave a Giant (a zombie
   at scale 0.25, four times everyone's size). Mobs get +12% health and +6% damage per wave. Between waves (10 s)
-  everyone is healed and archers get arrows. Best wave per player in mo.best, server record in #record mo.
+  everyone is healed. Best wave per player in mo.best, server record in #record mo.
 """
 
 SCALE = 0.0625                        # players: the smallest scale there is
@@ -54,12 +54,11 @@ KILL_PTS, WAVE_PTS = 10, 20                   # points per kill, and per wave nu
 # (None = can be bought again and again, at ONE_OFF's price), lore
 UPGRADES = [(31, "sword", "Bayonet upgrade", "iron_sword", [50, 120, 250], "Stone > iron > diamond > netherite"),
             (32, "armor", "Armor upgrade", "iron_chestplate", [40, 100, 220], "Leather > chainmail > iron > diamond"),
-            (33, "rifle", "Rifle upgrade", "bow", [30, 70, 150], "Power I > II > III"),
+            (33, "rifle", "Rifle upgrade", "breeze_rod", [30, 70, 150], "+40% > +80% > +120% damage (III slows)"),
             (34, "health", "Extra hearts", "golden_apple", [60, 120, 200], "+2 hearts per tier"),
             (35, "speed", "Running shoes", "leather_boots", [80], "Move faster"),
-            (36, "arrows", "Arrows", "arrow", None, "+16 arrows"),
             (37, "medkit", "Medkit", "glistering_melon_slice", None, "Heal 4 hearts now")]
-ONE_OFF = {"arrows": 15, "medkit": 25}
+ONE_OFF = {"medkit": 25}
 TIER_OBJ = {"sword": "mo.sw", "armor": "mo.ar", "rifle": "mo.bw", "health": "mo.hp", "speed": "mo.sp"}
 MICRO_ATTRS = ("scale", "movement_speed", "jump_strength", "entity_interaction_range", "block_interaction_range")
 # min wave, roll <=, type, extra NBT
@@ -83,11 +82,11 @@ def build(b):
     for (sid, key, name, color, dye) in SOLDIERS:
         head = (f'item replace entity @s armor.head with minecraft:player_head[minecraft:profile={{properties:[{{name:"textures",'
                 f'value:"{b.HEADS["concrete_" + key]}"}}]}},minecraft:custom_name={{"text":"{name}","color":"{color}","italic":false}}]')
-        fn(f"micro/kit/{key}", [f"give @s {item('stone_sword', 'Bayonet', 'gray')}", f"give @s {item('bow', 'Toy Rifle', color)}",
-                                "give @s minecraft:arrow 16", "give @s minecraft:cooked_beef 8", head, *leather(dye),
+        fn(f"micro/kit/{key}", [f"give @s {item('stone_sword', 'Bayonet', 'gray')}", b.AB("toy_rifle"),
+                                "give @s minecraft:cooked_beef 8", head, *leather(dye),
                                 f"tellraw @s {tj([{'text': '🔬 You are the ', 'color': 'gray'}, {'text': name, 'color': color, 'bold': True}])}"])
     def head_icon(k):
-        it = b.icon("player_head", k[2], k[3], ["Bayonet · Toy Rifle + 16 arrows", "Leather armor in your colour", "", "Click to join"])
+        it = b.icon("player_head", k[2], k[3], ["Bayonet · Toy Rifle (hitscan)", "Leather armor in your colour", "", "Click to join"])
         it["components"]["minecraft:profile"] = {"properties": [{"name": "textures", "value": b.HEADS["concrete_" + k[1]]}]}
         return it
     fn("micro/give_kit", [f"execute if score @s mo.kit matches {k[0]} run function {M}/kit/{k[1]}" for k in SOLDIERS])
@@ -104,7 +103,7 @@ def build(b):
             m = {1: "chainmail", 2: "iron", 3: "diamond"}[n]
             return [f"item replace entity @s armor.{sl} with minecraft:{m}_{pc}[minecraft:unbreakable={{}}]"
                     for sl, pc in (("chest", "chestplate"), ("legs", "leggings"), ("feet", "boots"))]
-        if key == "rifle": return ["clear @s minecraft:bow", f"give @s {item('bow', 'Toy Rifle', 'gold', {'power': n})}"]
+        if key == "rifle": return [f"scoreboard players set @s pve.gun {n}"]   # the gun tiers, as Pack-a-Punch does in Outbreak
         if key == "health": return [f"attribute @s minecraft:max_health modifier remove {NS}:micro_hp",
                                     f"attribute @s minecraft:max_health modifier add {NS}:micro_hp {4 * n} add_value", "effect give @s minecraft:instant_health 1 1 true"]
         if key == "speed": return [f"attribute @s minecraft:movement_speed modifier add {NS}:micro_spd 0.2 add_multiplied_base"]
@@ -115,7 +114,7 @@ def build(b):
             c = ONE_OFF[key]
             fn(f"micro/up/{key}", [f"execute if score @s mo.pts matches ..{c - 1} run return run {say('@s', f'{name} costs {c} points.', 'red')}",
                                    f"scoreboard players remove @s mo.pts {c}",
-                                   "give @s minecraft:arrow 16" if key == "arrows" else "effect give @s minecraft:instant_health 1 1 true",
+                                   "effect give @s minecraft:instant_health 1 1 true",
                                    f"tellraw @s {tj([{'text': 'Bought ', 'color': 'green'}, {'text': name, 'color': 'gold'}, {'text': ' · ', 'color': 'dark_gray'}, {'score': {'name': '@s', 'objective': 'mo.pts'}, 'color': 'white'}, {'text': ' points left', 'color': 'gray'}])}",
                                    "playsound minecraft:entity.villager.yes neutral @s ~ ~ ~ 0.6 1.4"])
             continue
@@ -277,7 +276,7 @@ def build(b):
         "execute as @a[tag=mo.in] at @s run playsound minecraft:entity.ravager.roar player @s ~ ~ ~ 0.6 0.6"])
     fn("micro/wave_end", [
         "scoreboard players set #state mo 3", f"scoreboard players set #timer mo {BREAK}",
-        "effect give @a[tag=mo.in] minecraft:instant_health 1 4 true", "give @a[tag=mo.in] minecraft:arrow 4",
+        "effect give @a[tag=mo.in] minecraft:instant_health 1 4 true",
         "scoreboard players operation #b mo = #wave mo", f"scoreboard players operation #b mo *= #{WAVE_PTS} mo",
         "scoreboard players operation @a[tag=mo.in] mo.pts += #b mo",
         "give @a[tag=mo.in] minecraft:cooked_beef 2",
@@ -345,7 +344,7 @@ def build(b):
                  [{"slot": sl, "item": head_icon(k), "cmd": f"trigger mo.join set {k[0]}"} for sl, k in zip(range(10, 18), SOLDIERS)]
                  + [{"slot": 4, "item": b.icon("spyglass", "Micro Outbreak", "aqua", [
                      "Toy soldiers vs tiny mobs, in a room", "under the lobby floor (everyone watches through the glass)",
-                     "Every soldier has the same loadout:", "Bayonet, Toy Rifle + 16 arrows, leather armor", "",
+                     "Every soldier has the same loadout:", "Bayonet, Toy Rifle (hitscan), leather armor", "",
                      f"{KILL_PTS} points per kill + a bonus every wave", "Spend them on upgrades during the run",
                      "A Giant every 5th wave · die and you watch from the lobby"]), "cmd": ""},
                     {"slot": 31, "item": b.icon("ender_eye", "🎲 Random colour", "light_purple", ["Let fate pick", "", "Click to join"]), "cmd": f"trigger mo.join set {RANDOM}"},
