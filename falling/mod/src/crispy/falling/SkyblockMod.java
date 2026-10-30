@@ -44,6 +44,7 @@ public class SkyblockMod implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(Pets::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Zones::onTick);
         ServerTickEvents.END_SERVER_TICK.register(ZoneRules::onTick);
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register(ZoneRules::onEntityLoad);
         ServerTickEvents.END_SERVER_TICK.register(HubPlots::onTick);
         net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents.AFTER_RESPAWN.register((oldP, newP, alive) -> ZoneRules.restore(newP));
         net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((h, sender, server) -> { ZoneRules.restore(h.player); Guide.onJoin(h.player); });

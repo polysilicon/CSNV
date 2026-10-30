@@ -148,6 +148,9 @@ and gives +2 hearts. Staff: `/pets grant <player> <pet>`.
   shows `[Lv N] Mob ||||||||-- hp/max`, coloured by level and remaining health. Kills pay 2 coins per level (and
   Combat XP, which already scales with max health).
 - Zone mobs don't burn in daylight (`MobMixin` on `Mob.isSunBurnTick`).
+- Only those levelled zone mobs (tag `cs_zone_mob`) live in a zone (2.12.0): any other mob that appears there (natural
+  spawns, zombie reinforcements, ...) is removed straight away (`ServerEntityEvents.ENTITY_LOAD`, plus a sweep every
+  5 ticks while players are there). Tamed pets that follow a player in are left alone.
 - Items that drop in a zone (mined blocks, mob loot; not items a player threw) are marked gathered (custom_data
   `cs_gathered` and a lore line). The mark comes off when you leave the zone.
 - Dying in a zone drops only gathered items. The rest of the inventory and your XP are put aside in storage

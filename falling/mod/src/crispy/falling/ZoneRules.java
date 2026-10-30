@@ -54,8 +54,23 @@ public final class ZoneRules {
     static AABB box(Zones.Zone z) { return new AABB(z.x1(), z.y1(), z.z1(), z.x2() + 1, z.y2() + 1, z.z2() + 1); }
 
     // ------------------------------------------------------------------ every tick
+    private static final List<Mob> outsiders = new ArrayList<>();
+
+    /** Only the zone's own levelled mobs live in a zone: anything else (natural spawns, zombie reinforcements, ...)
+     *  is removed as soon as it appears. Tamed pets that followed a player in are left alone. */
+    static boolean outsider(net.minecraft.world.entity.Entity e) {
+        return e instanceof Mob m && !isZoneMob(m) && !(m instanceof net.minecraft.world.entity.TamableAnimal ta && ta.isTame())
+                && !m.isPassenger() && Zones.at(m.level(), m.blockPosition()) != null;
+    }
+    /** ServerEntityEvents.ENTITY_LOAD: queue it (removing an entity while it's being added isn't safe). */
+    static void onEntityLoad(net.minecraft.world.entity.Entity e, ServerLevel level) {
+        if (level.dimension() == net.minecraft.world.level.Level.OVERWORLD && outsider(e)) outsiders.add((Mob) e);
+    }
+
     static void onTick(MinecraftServer server) {
         tick++;
+        for (Mob m : outsiders) if (!m.isRemoved()) m.discard();
+        outsiders.clear();
         ServerLevel ow = server.overworld();
         for (Zones.Zone z : Zones.zones(server)) {
             AABB box = box(z);
@@ -65,8 +80,10 @@ public final class ZoneRules {
             // mark fresh drops (block drops can't be picked up for 10 ticks, so every tick is in time)
             for (ItemEntity ie : ow.getEntitiesOfClass(ItemEntity.class, box, ie -> !(ie.getOwner() instanceof Player) && !gathered(ie.getItem())))
                 ie.setItem(mark(ie.getItem().copy()));
-            if (tick % 5 == 0)
+            if (tick % 5 == 0) {
                 for (Mob m : ow.getEntitiesOfClass(Mob.class, box, ZoneRules::isZoneMob)) levelUp(m, z);
+                for (Mob m : ow.getEntitiesOfClass(Mob.class, box, ZoneRules::outsider)) m.discard();   // anything that slipped in
+            }
         }
         if (tick % 20 == 0)   // out of every zone: drop the gathered marks
             for (ServerPlayer p : server.getPlayerList().getPlayers()) if (Zones.at(p.level(), p.blockPosition()) == null) unmarkAll(p);
