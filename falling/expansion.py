@@ -265,8 +265,8 @@ def build(NS, fn, js, txt, snbt, Build):
         for dy, r in ((h - 2, 3), (h - 1, 3), (h, 2), (h + 1, 1)): blob_leaves(x, base + dy, z, r, L, 0.1)
         for dy, r in ((h - 2, 3), (h - 1, 3), (h, 2), (h + 1, 1)): blob_leaves(x + 1, base + dy, z + 1, r, L, 0.25)
         b.fill(x, base + 1, z, x + 1, base + h, z + 1, "dark_oak_log")
-        for rx, rz in ((-1, 0), (2, 1), (0, 2), (1, -1)):                 # root flares
-            if wr.random() < 0.5: b.set(x + rx, base + 1, z + rz, "dark_oak_log")
+        for rx, rz in ((-1, 0), (2, 1), (0, 2), (1, -1)):                 # root flares, on their own column's ground
+            if wr.random() < 0.5 and (x + rx, z + rz) in top: b.set(x + rx, top[(x + rx, z + rz)] + 1, z + rz, "dark_oak_log")
         for _ in range(2):                                                # mushrooms in its shade
             mx, mz = x + wr.choice((-2, 3)), z + wr.randint(-1, 2)
             if (mx, mz) in top and (mx, mz) not in taken:
@@ -282,7 +282,8 @@ def build(NS, fn, js, txt, snbt, Build):
     for i, (x, z) in enumerate(trees):
         base = top[(x, z)]
         kind = i % 10
-        if kind in (0, 5): dark_oak(x, z, base); mark(x, z, 1); mark(x + 1, z + 1, 1)
+        if kind in (0, 5):   # 2x2 trunk: stand it on the lowest of its four columns so no corner hangs in the air
+            dark_oak(x, z, min(top[(x + a_, z + c_)] for a_ in (0, 1) for c_ in (0, 1))); mark(x, z, 1); mark(x + 1, z + 1, 1)
         elif kind in (1, 6, 8): spruce(x, z, base); mark(x, z, 1)
         elif kind in (2, 7): birch(x, z, base); mark(x, z)
         elif kind == 9: oak(x, z, base, "cherry_log", "cherry_leaves"); mark(x, z)
@@ -305,7 +306,8 @@ def build(NS, fn, js, txt, snbt, Build):
         if placed >= 9: break
         if not free(x, z, 1): continue
         t_ = top[(x, z)]
-        b.fill(x, t_ + 1, z, x + 1, t_ + 1, z + 1, "mossy_cobblestone")
+        for a_ in (0, 1):
+            for c_ in (0, 1): b.fill(x + a_, top[(x + a_, z + c_)] + 1, z + c_, x + a_, t_ + 1, z + c_, "mossy_cobblestone")
         b.set(x + wr.randint(0, 1), t_ + 2, z + wr.randint(0, 1), wr.choice(["mossy_cobblestone", "cobblestone"]))
         mark(x, z, 1); placed += 1
     # undergrowth
