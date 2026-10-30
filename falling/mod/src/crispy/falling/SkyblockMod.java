@@ -40,7 +40,9 @@ public class SkyblockMod implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(Minions::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Sidebar::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Portals::onTick);
+        ServerTickEvents.END_SERVER_TICK.register(Skills::onTick);
         PlayerBlockBreakEvents.BEFORE.register(Portals::canBreak);
+        PlayerBlockBreakEvents.AFTER.register(Skills::onBreak);
         UseBlockCallback.EVENT.register(Realms::onUseBlock);
         UseBlockCallback.EVENT.register(Minions::onUseBlock);
         UseItemCallback.EVENT.register(Gear::onUseItem);
@@ -60,6 +62,7 @@ public class SkyblockMod implements ModInitializer {
                     .executes(c -> invite(c.getSource(), EntityArgument.getPlayer(c, "player")))));
             d.register(Commands.literal("challenges")
                     .executes(c -> menu(c.getSource(), "challenges")));
+            d.register(Commands.literal("skills").executes(c -> Skills.command(c.getSource())));
             d.register(Commands.literal("gear")
                     .executes(c -> menu(c.getSource(), "gear")));
             register(d, "island");
@@ -75,6 +78,7 @@ public class SkyblockMod implements ModInitializer {
                 .then(Commands.literal("choose").executes(c -> choose(c.getSource())))
                 .then(Commands.literal("challenges").executes(c -> menu(c.getSource(), "challenges")))
                 .then(Commands.literal("gear").executes(c -> menu(c.getSource(), "gear")))
+                .then(Commands.literal("skills").executes(c -> Skills.command(c.getSource())))
                 .then(Commands.literal("level").executes(c -> IslandLevels.command(c.getSource())))
                 .then(Commands.literal("top").executes(c -> IslandLevels.top(c.getSource())))
                 // run by the datapack after a new island, so an island left empty drops off the board right away

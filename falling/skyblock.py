@@ -453,6 +453,11 @@ scoreboard objectives add cs_nage dummy
 scoreboard objectives add cs_npend dummy
 scoreboard objectives add cs_lvl dummy
 scoreboard objectives add cs_coins dummy
+scoreboard objectives add sk_farm dummy
+scoreboard objectives add sk_mine dummy
+scoreboard objectives add sk_forage dummy
+scoreboard objectives add sk_combat dummy
+scoreboard objectives add sk_fish dummy
 {CH_OBJS}
 function {NS}:boss/objectives
 scoreboard players set #8 cs_tmp 8
@@ -1396,6 +1401,7 @@ js(f"data/{NS}/dialog/menu.json", {
         btn({"text": "Go to my island", "color": "green"}, "trigger cs_act set 1", "Pick your starter island the first time"),
         btn({"text": "Challenges", "color": "gold"}, "island challenges", "Hand in items for rewards"),
         btn({"text": "Armor & Weapons", "color": "aqua"}, "gear", "Craftable sets and weapons, with their recipes"),
+        btn({"text": "Skills", "color": "gold"}, "skills", "Farming, Mining, Foraging, Combat, Fishing: levels and perks"),
         btn({"text": "Island level"}, "island level", "Score the blocks on your island"),
         btn({"text": "Top islands"}, "island top"),
         btn({"text": "Invite a player…"}, dialog=f"{NS}:invite", tip="Type their username (or use /invite <name>)"),

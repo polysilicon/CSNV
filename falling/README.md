@@ -9,7 +9,7 @@ Skyblock on `Falling01` (Fabric 26.2, Velocity name `skyblock`, was `falling`). 
   already in `world/datapacks`.
 - `mod/` is the `crispy_skyblock` server mod (`crispy-skyblock-2.0.0.jar`, build with
   `mod/build.sh <lib-dir> <javac>`, same lib dir as `pvp/spawnmod` plus Fabric API's `fabric-events-interaction-v0`
-  unpacked into `fa/META-INF/jars/`). Now `crispy-skyblock-2.4.0.jar`. Since 2.3.0 it has a Mixin
+  unpacked into `fa/META-INF/jars/`). Now `crispy-skyblock-2.5.0.jar`. Since 2.3.0 it has a Mixin
   (`EndPortalBlock.getPortalDestination`), so `build.sh` takes Sponge Mixin's jar as a third argument.
 
 ## How it plays
@@ -76,6 +76,26 @@ Skyblock on `Falling01` (Fabric 26.2, Velocity name `skyblock`, was `falling`). 
   Top Islands board in the hub (the text display tagged `cs_top`). `/island top` lists the top 10. Islands nobody belongs to any more are left off, and the board refreshes when someone starts a new island.
 - **Menu.** Esc → Island Menu (a dialog): go home, challenges, level, top, invite, accept, info, hub, how to play, start
   a new island (wipes inventory, ender chest and XP; then the island picker opens; once per 10 min).
+
+## Skills (2.5.0)
+
+`Skills.java`. Five skills earn XP into scoreboard objectives (`sk_farm`, `sk_mine`, `sk_forage`, `sk_combat`,
+`sk_fish`); level L needs 100 x L^2 XP in total, up to 25. Each level-up pays 100 x L coins.
+
+| Skill | XP from | Perk per level |
+|---|---|---|
+| Farming | fully grown crops 2, nether wart / cocoa 3, melon / pumpkin 4, sugar cane / cactus 1 | +2% chance of double drops |
+| Mining | ores 4-30 (diamond 25, emerald 30, ancient debris 50), stone / cobble / netherrack 1, end stone 2, obsidian 5 | +2% chance of double ore drops |
+| Foraging | logs 5 | +2% chance of double logs |
+| Combat | hostile mobs: half their max health; bosses (`cs_boss`) 300 | +1% damage (attribute modifier `crispy_skyblock:skill_combat`) |
+| Fishing | 30 per catch (the `fish_caught` stat, checked every second) | +0.2 Luck (`crispy_skyblock:skill_fishing`), better catches |
+
+- Blocks a player placed give no XP and no double drops (`BlockItemMixin` remembers placed positions in memory, up to
+  200,000 per dimension), so placing and breaking can't farm it; cobblestone from a generator still counts. Crops and
+  minions don't count as placed blocks; only fully grown crops give XP.
+- Kills are caught by `LivingEntityMixin` (on `LivingEntity.die`), crediting the killer or whoever last hurt the mob.
+- `/skills` (`/island skills`, or Island Menu > Skills) shows each skill's level, progress bar and perk. The sidebar
+  shows the skill average. XP shows on the action bar as you earn it.
 
 ## Economy and minions (2.1.0)
 

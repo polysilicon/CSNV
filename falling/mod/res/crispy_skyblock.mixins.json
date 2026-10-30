@@ -3,6 +3,6 @@
   "minVersion": "0.8",
   "package": "crispy.falling.mixin",
   "compatibilityLevel": "JAVA_21",
-  "server": ["EndPortalMixin"],
+  "server": ["EndPortalMixin", "BlockItemMixin", "LivingEntityMixin"],
   "injectors": { "defaultRequire": 1 }
 }

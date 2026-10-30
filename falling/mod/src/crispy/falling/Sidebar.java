@@ -65,6 +65,7 @@ public final class Sidebar {
             l.add(Component.literal("Minions: ").withStyle(ChatFormatting.WHITE)
                     .append(Component.literal(Minions.count(server, plot) + "/" + Minions.limit(server, plot)).withStyle(ChatFormatting.GREEN)));
         } else l.add(Component.literal("No island yet").withStyle(ChatFormatting.GRAY));
+        l.add(Component.literal("Skill avg: ").withStyle(ChatFormatting.WHITE).append(Component.literal(Skills.average(server, p)).withStyle(ChatFormatting.GOLD)));
         l.add(Component.literal("   "));
         l.add(Component.literal("crispyanarchy.net").withStyle(ChatFormatting.YELLOW));
         return l;
