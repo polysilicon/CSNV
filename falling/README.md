@@ -136,7 +136,7 @@ and gives +2 hearts. Staff: `/pets grant <player> <pet>`.
 - Portals (2.8.0): the hub has a portal to each zone either side of the island portal (Mines at -13 -14, Woods at
   13 -14), and each zone has a portal back to the hub behind its arrival platform. Every portal (hub, zones and each
   island's hub portal) now has a themed frame (`portal/style_island|mines|woods`) around a swirling portal surface
-  (a `block_display` of nether_portal, tag `cs_portalfx`; it doesn't lead to the Nether) and themed particles
+  (a `block_display`, tag `cs_portalfx`: nether_portal on island portals, which doesn't lead to the Nether; a thin pane of orange or lime stained glass on the Mines and Woods portals) and themed particles
   (`portal/fx_*`). Walking through is handled by `Portals.FIXED` in the mod. Existing island portals are restyled
   the next time a member is on the island (`plots[id].portal` 1b -> 2b); the hub rebuilds once (`hub_v4`).
 

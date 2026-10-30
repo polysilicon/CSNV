@@ -713,16 +713,26 @@ def portal_style(theme):
         b.fill(-2, 6, -1, 2, 6, 1, "azalea_leaves[persistent=true]")
         b.fill(-1, 7, 0, 1, 7, 0, "flowering_azalea_leaves[persistent=true]")
         for x in (-3, 3): b.set(x, 4, 0, "vine[up=true]")
-    b.c.append("summon minecraft:block_display ~-1.5 ~1 ~-0.5 {Tags:[\"%s\",\"cs_portalfx\"],block_state:{Name:\"minecraft:nether_portal\",Properties:{axis:\"x\"}},"
+    # the surface: the island swirl is nether_portal (purple only); the zones get a thin, fully lit pane of stained
+    # glass in their colour, and portal/fx_* adds swirling particles of the same colour
+    if theme == "island":
+        state, tr, sc = '{Name:"minecraft:nether_portal",Properties:{axis:"x"}}', "0f,0f,0f", "3f,3f,1f"
+    else:
+        state, tr, sc = '{Name:"minecraft:%s_stained_glass"}' % ("orange" if theme == "mines" else "lime"), "0f,0f,0.4375f", "3f,3f,0.125f"
+    b.c.append("summon minecraft:block_display ~-1.5 ~1 ~-0.5 {Tags:[\"%s\",\"cs_portalfx\"],block_state:%s,"
                "brightness:{sky:15,block:15},transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],"
-               "translation:[0f,0f,0f],scale:[3f,3f,1f]}}" % NS)
+               "translation:[%s],scale:[%s]}}" % (NS, state, tr, sc))
     return b.c
-PORTAL_FX = {"island": "minecraft:portal ~ ~2.5 ~ 0.9 0.9 0.05 0.3 25",
-             "mines": "minecraft:small_flame ~ ~2.5 ~ 0.9 0.9 0.1 0.01 6",
-             "woods": "minecraft:spore_blossom_air ~ ~2.5 ~ 1.2 1.0 0.3 0 10"}
+PORTAL_FX = {"island": ["minecraft:portal ~ ~2.5 ~ 0.9 0.9 0.05 0.3 40"],
+             "mines": ["minecraft:dust{color:[1.0,0.55,0.1],scale:1.4} ~ ~2.5 ~ 0.9 0.9 0.05 0 30",
+                       "minecraft:dust{color:[1.0,0.3,0.0],scale:0.9} ~ ~2.5 ~ 0.9 0.9 0.05 0 20",
+                       "minecraft:small_flame ~ ~2.5 ~ 0.9 0.9 0.1 0.01 6"],
+             "woods": ["minecraft:dust{color:[0.35,1.0,0.3],scale:1.4} ~ ~2.5 ~ 0.9 0.9 0.05 0 30",
+                       "minecraft:dust{color:[0.1,0.7,0.2],scale:0.9} ~ ~2.5 ~ 0.9 0.9 0.05 0 20",
+                       "minecraft:happy_villager ~ ~2.5 ~ 0.9 0.9 0.1 0 5"]}
 for _t in ("island", "mines", "woods"):
     fn(f"portal/style_{_t}", "\n".join(portal_style(_t)))
-    fn(f"portal/fx_{_t}", f"particle minecraft:portal ~ ~2.5 ~ 0.9 0.9 0.05 0.3 15\nparticle {PORTAL_FX[_t]}")
+    fn(f"portal/fx_{_t}", "\n".join(f"particle {x}" for x in PORTAL_FX[_t]))
 # the hub's portals to the resource zones, either side of the island portal (Portals.java knows these spots)
 HUB_ZONE_PORTALS = [("mines", -13, -14, "The Deep Mines", "gray", "Ores that grow back · Lv 2-25 mobs"),
                     ("woods", 13, -14, "Whispering Woods", "dark_green", "Logs that grow back · Lv 3-8 mobs")]
