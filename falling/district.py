@@ -39,7 +39,7 @@ def build(NS, fn, txt, snbt, label, hsign):
     c = [f"forceload add {X0 - 2} {Z0 - 4} {X1 + 2} {Z1 + 2}",
          f"kill @e[type=minecraft:text_display,tag=cs_district,{sel()}]"]
     # clear the space, then the island: grass on dirt, and a rocky underside that narrows as it goes down
-    c += [f"fill {X0 - 1} {y} {Z0 - 1} {X1 + 1} {y} {Z1 + 1} minecraft:air" for y in range(Y - 30, Y + UP + 2)]
+    c += [f"fill {X0 - 1} {y} {Z0} {X1 + 1} {y} {Z1 + 1} minecraft:air" for y in range(Y - 30, Y + UP + 2)]
     c += [f"fill {X0} {Y} {Z0} {X1} {Y} {Z1} minecraft:grass_block",
           f"fill {X0} {Y - 3} {Z0} {X1} {Y - 1} {Z1} minecraft:dirt"]
     for d in range(4, 29):
@@ -80,17 +80,11 @@ def build(NS, fn, txt, snbt, label, hsign):
         c.append(label(p["sx"] + 0.5, Y + 2.6, p["sz"] + 0.5, snbt({"text": f"Plot {p['n']}", "color": "green", "bold": True,
                        "extra": [txt(f"\nFor sale · {PRICE:,} coins", "gray", bold=False)]}), 0.8, bill="center", tag=f"cs_hpl_{p['n']}")
                  .replace(f'"{NS}"', f'"{NS}","cs_district"', 1))
-    # the bridge from the hub's south path, and the district's name over the plaza
-    c += [f"fill -2 {Y + 1} 18 2 {Y + 6} {Z0 + 1} minecraft:air",
-          f"fill -1 {Y - 1} 18 1 {Y - 1} {Z0 + 1} minecraft:stone_bricks",
-          f"fill -1 {Y} 18 1 {Y} {Z0 + 1} minecraft:polished_andesite",
-          f"fill -2 {Y} 34 -2 {Y + 1} {Z0 - 1} minecraft:stone_brick_wall",
-          f"fill 2 {Y} 34 2 {Y + 1} {Z0 - 1} minecraft:stone_brick_wall"]
-    c += [f"setblock {x} {Y + 2} {z} minecraft:lantern" for z in range(36, Z0, 6) for x in (-2, 2)]
+    # the district's name over the plaza (the bridge from the hub is built by the hub, skyblock.py hub_build)
     c.append(label(0.5, Y + 6, Z0 + 4.5, snbt({"text": "Market District", "color": "gold", "bold": True,
                    "extra": [txt(f"\nBuy a plot for your shop or house · {PRICE:,} coins · /plots", "yellow", bold=False)]}), 1.6, bill="center")
              .replace(f'"{NS}"', f'"{NS}","cs_district"', 1))
-    c += ["scoreboard players set #districtv cs_cfg 1"]
+    c += ["scoreboard players set #districtv cs_cfg 2"]
     fn("district/build", "\n".join(c))
     fn("district/reset", "\n".join([
         f"$fill $(x1) {Y + 1} $(z1) $(x2) {Y + UP} $(z2) minecraft:air",

@@ -478,8 +478,8 @@ data modify storage {NS}:eco cfg set value {snbt(ECO)}
 execute unless score #hubv cs_cfg matches 2.. run function {NS}:hub
 execute if score #hubv cs_cfg matches 2 run function {NS}:hub_v3
 # hub v4 (new portals): rebuilt once the hub's entities have loaded, so the old labels are cleared first
-execute if score #hubv cs_cfg matches 2..3 run schedule function {NS}:hub_v4 160t replace
-execute unless score #districtv cs_cfg matches 1.. run schedule function {NS}:district/build 220t replace
+execute if score #hubv cs_cfg matches 2..4 run schedule function {NS}:hub_v4 160t replace
+execute unless score #districtv cs_cfg matches 2.. run schedule function {NS}:district/build 220t replace
 # respawn the merchants once the hub's entities are loaded (at startup they load after this runs)
 schedule function {NS}:npcs 100t replace
 execute unless data storage {NS}:d plots run function {NS}:setup
@@ -528,7 +528,7 @@ def hub_build():
     import math
     rnd = random.Random(42)
     c = ["forceload add -64 -64 63 63", f"kill @e[type=minecraft:text_display,tag={NS},tag=!cs_district,x=-64,y=0,z=-64,dx=128,dy=320,dz=128]"]
-    c += [f"fill -{HUB_R} {y} -{HUB_R} {HUB_R} {y} {HUB_R} minecraft:air" for y in range(Y - 40, Y + 21)]
+    c += [f"fill -{HUB_R} {y} -{HUB_R} {HUB_R} {y} {district.Z0 - 1} minecraft:air" for y in range(Y - 40, Y + 21)]   # stop short of the Market District
     top, edge = {}, {}
     pond = (-24, 16, 5.2)
     for x in range(-HUB_R + 2, HUB_R - 1):
@@ -579,6 +579,19 @@ def hub_build():
                             surf(x + dx, z + dz, block); used.add((x + dx, z + dz))
     path([(0, -9), (0, HUB_PORTAL_Z + 1)], 1, "stone_bricks")
     path([(0, 9), (0, 17)], 1, "stone_bricks")
+    # to the Market District: off the plaza beside the Supplies stall, over the hills to the south edge, then a bridge
+    edge = max(z for (x, z) in top if abs(x) <= 1)
+    path([(5, 9), (6, 20), (3, 30), (0, edge - 2), (0, edge)], 1, "stone_bricks")
+    bz = edge + 1
+    c += [f"fill -2 {Y + 1} {bz} 2 {Y + 6} {district.Z0 - 1} minecraft:air",
+          f"fill -2 {Y - 1} {bz} 2 {Y - 1} {district.Z0 - 1} minecraft:stone_bricks",
+          f"fill -1 {Y} {bz} 1 {Y} {district.Z0 - 1} minecraft:polished_andesite",
+          f"fill -2 {Y} {bz} -2 {Y} {district.Z0 - 1} minecraft:stone_bricks",
+          f"fill 2 {Y} {bz} 2 {Y} {district.Z0 - 1} minecraft:stone_bricks",
+          f"fill -2 {Y + 1} {bz} -2 {Y + 1} {district.Z0 - 1} minecraft:stone_brick_wall",
+          f"fill 2 {Y + 1} {bz} 2 {Y + 1} {district.Z0 - 1} minecraft:stone_brick_wall",
+          f"fill -1 {Y - 2} {bz} 1 {Y - 2} {district.Z0 - 1} minecraft:stone_brick_slab[type=top]"]
+    c += [f"setblock {x} {Y + 2} {z} minecraft:lantern" for z in range(bz + 1, district.Z0, 4) for x in (-2, 2)]
     for _k, px, pz, *_ in HUB_ZONE_PORTALS:
         sx = 1 if px > 0 else -1
         path([(7 * sx, -6), (px, pz + 4)], 1, "stone_bricks")
@@ -660,7 +673,7 @@ def hub_build():
           label(7.5, Y + 3.4, -14.5, snbt({"text": "Minions\n", "color": "aqua", "bold": True, "extra": [
               txt("Craft one: 8 of a resource around a wooden pickaxe.\nPlace it on your island; it gathers while you're offline.\nRight-click it to collect, upgrade (I to V) or pick it up.", "gray", bold=False)]}),
                 0.8, yaw=0)]
-    c += [f"setworldspawn 0 {Y + 1} 5", "scoreboard players set #hubv cs_cfg 4"]
+    c += [f"setworldspawn 0 {Y + 1} 5", "scoreboard players set #hubv cs_cfg 5"]
     return c
 
 def portal_blocks(x, y, z, platform=True):
