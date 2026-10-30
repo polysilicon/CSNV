@@ -754,7 +754,7 @@ def build():
         f"function {NS}:arena/second",
         f"execute as @a[tag=pvp.spec,tag=!pvp.instands] run function {NS}:to_lobby",
         # anyone (in adventure) outside the lobby and both arenas goes back to the lobby
-        f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[tag=pvp.inarena] {" ".join(f"unless entity @s[{b}]" for b in PVE_BOXES.values())} unless entity @s[tag=pvp.admin,{ROOM_BOX}] unless entity @s[tag=pvp.instands] unless entity @s[tag=pvp.duel] unless entity @s[{TOWER_BOX}] run function {NS}:to_lobby",
+        f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[tag=pvp.inarena] {" ".join(f"unless entity @s[{b}]" for b in PVE_BOXES.values())} unless entity @s[tag=pvp.admin,{ROOM_BOX}] unless entity @s[tag=pvp.instands] unless entity @s[tag=pvp.duel] unless entity @s[{TOWER_BOX}] unless entity @s[tag=mo.in] run function {NS}:to_lobby",   # mo.in: Micro Outbreak (micro/second keeps them in its room)
         f"function {NS}:pve/second",
         f"function {NS}:ability/second",
         f"execute as @a[{LOBBY_BOX},tag=!pvp.spec] unless items entity @s container.* minecraft:flint unless items entity @s weapon.offhand minecraft:flint run item replace entity @s hotbar.8 with {DUEL_ITEM}",
