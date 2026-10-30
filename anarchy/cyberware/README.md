@@ -17,6 +17,9 @@ every other villager out of the world each second. That also means `crispy:marke
 re-run the place commands after a reinstall.
 
 ## How it works
+- On Anarchy the `crispy-anarchy` mod (`anarchy/mod`) shows the Ripperdoc as a chest menu; without it, the dialog
+  opens. Either way buying runs `cyber:doc/buy`, which checks you're near the Ripperdoc and takes the price (a failed
+  payment returns 0: before the fix, `return run tellraw` returned 1, so people could buy without paying).
 - **Ripperdoc** (right-click): buy implants with diamonds or netherite, buy Neuroblockers, or remove an implant
   (free; the item goes back to your inventory). You can only buy within 8 blocks of the Ripperdoc.
 - **Installing**: hold right-click with an implant for 2.5 s. Implants are recognised by their icon, because creative-mode

@@ -498,6 +498,7 @@ scoreboard objectives add ce.bl dummy
 {tool_objs}
 scoreboard players set #100 ce 100
 scoreboard players set #20 ce 20
+function {NS}:enchanter/shop_data
 """)
 w("data/minecraft/tags/function/load.json", {"values": [f"{NS}:load"]})
 w("data/minecraft/tags/function/tick.json", {"values": [f"{NS}:tick"]})
@@ -797,7 +798,9 @@ scoreboard players operation #T ce /= #k ce
 fn("enchanter/pay", f"""
 # #price ce = cost in points; returns 1 when paid
 function {NS}:enchanter/xp_total
-execute if score #T ce < #price ce run return run tellraw @s [{{"text":"You need ","color":"red"}},{{"score":{{"name":"#price","objective":"ce"}},"color":"gold"}},{{"text":" XP (you have ","color":"red"}},{{"score":{{"name":"#T","objective":"ce"}},"color":"gold"}},{{"text":").","color":"red"}}]
+# (not `return run tellraw`: that returns tellraw's 1, which counted as paid and let people buy without the XP)
+execute if score #T ce < #price ce run tellraw @s [{{"text":"You need ","color":"red"}},{{"score":{{"name":"#price","objective":"ce"}},"color":"gold"}},{{"text":" XP (you have ","color":"red"}},{{"score":{{"name":"#T","objective":"ce"}},"color":"gold"}},{{"text":").","color":"red"}}]
+execute if score #T ce < #price ce run return 0
 scoreboard players operation #T ce -= #price ce
 xp set @s 0 levels
 xp set @s 0 points
@@ -806,7 +809,8 @@ function {NS}:enchanter/xp_set with storage {NS}:tmp
 return 1
 """)
 fn("enchanter/xp_set", "$xp add @s $(xp) points")
-buy = [f"scoreboard players operation #b ce = @s ce.buy", "scoreboard players set @s ce.buy 0"]
+buy = [f"scoreboard players operation #b ce = @s ce.buy", "scoreboard players set @s ce.buy 0",
+       'execute unless entity @e[type=minecraft:villager,tag=ce.enchanter,distance=..8] run return run tellraw @s {"text":"Visit the Enchanter in the market (/trigger market).","color":"red"}']
 for i, g in enumerate(TIERS, start=1):
     buy.append(f"execute if score #b ce matches {i} run scoreboard players set #price ce {GROUPS[g][1]}")
     buy.append(f"execute if score #b ce matches {i} if function {NS}:enchanter/pay run function {NS}:enchanter/got/{g.lower()}")
@@ -817,6 +821,10 @@ tellraw @s [{{"text":"✦ You bought a ","color":"gray"}},{{"text":"{g.title()}"
 """)
 buy.append(f"execute if score #b ce matches 50 run function {NS}:enchanter/heroic")
 fn("enchanter/buy", "\n".join(buy))
+# what the Enchanter sells, for the chest menu the crispy-anarchy mod shows (storage crispy_enchants:shop)
+_shop = [{"id": i, "name": g.title(), "color": GROUPS[g][0], "price": GROUPS[g][1], "count": len(books[g])} for i, g in enumerate(TIERS, start=1)]
+fn("enchanter/shop_data", f"data modify storage {NS}:shop tiers set value {json.dumps(_shop)}\n"
+   f"data modify storage {NS}:shop heroic set value {{id:50,price:{GROUPS['HEROIC'][1]}}}")
 # heroic upgrade of the held item
 h = ["scoreboard players set #did ce 0"]
 for n, lv, base, need, disp in heroic:

@@ -167,6 +167,13 @@ def build():
         *[l for n, c in enumerate(GHOST_COLORS, 1) for l in (
             f"team add cy.g{n}", f"team modify cy.g{n} color {c}", f"team modify cy.g{n} collisionRule never",
             f"team modify cy.g{n} nametagVisibility never")],
+        # what the Ripperdoc sells, for the chest menu the crispy-anarchy mod shows (storage cyber:shop)
+        "data modify storage cyber:shop items set value " + json.dumps(
+            [{"id": i[0], "key": i[1], "name": i[2], "color": i[3], "slot": i[4], "slotname": SLOTS[i[4]], "cap": i[5],
+              "item": i[6][0], "n": i[6][1], "icon": i[7], "lore": i[8]} for i in IMPLANTS if i[0] not in TEST_IDS]
+            + [{"id": 15, "key": NEURO[0], "name": NEURO[1], "color": "dark_purple", "slot": 0, "slotname": "", "cap": 0,
+                "item": NEURO[2][0], "n": NEURO[2][1], "icon": NEURO[3], "lore": [f"No cyberpsychosis for {NEURO[4] // 60} minutes."]}], ensure_ascii=False),
+        "data modify storage cyber:shop slots set value " + json.dumps([{"slot": k, "name": v} for k, v in SLOTS.items()]),
         "kill @e[tag=cy.ghost]", "kill @e[tag=cy.ganchor]",
         "execute as @e[type=minecraft:item_display,tag=cy.rroot] on passengers run kill @s", "kill @e[tag=cy.rroot]", "kill @e[tag=cy.rig]"])   # old display frame
 
@@ -312,8 +319,10 @@ def build():
         item, n = price
         fn(f"pay/{key}", [
             f"execute store result score #have cy run clear @s minecraft:{item} 0",
-            f"execute if score #have cy matches ..{n - 1} run return run tellraw @s [{{\"text\":\"You need {price_text(price)} \",\"color\":\"red\"}},"
+            # (not `return run tellraw`: that returns tellraw's 1, which counted as paid and gave the item for free)
+            f"execute if score #have cy matches ..{n - 1} run tellraw @s [{{\"text\":\"You need {price_text(price)} \",\"color\":\"red\"}},"
             f"{{\"text\":\"(you have \",\"color\":\"gray\"}},{{\"score\":{{\"name\":\"#have\",\"objective\":\"cy\"}},\"color\":\"gray\"}},{{\"text\":\").\",\"color\":\"gray\"}}]",
+            f"execute if score #have cy matches ..{n - 1} run return 0",
             f"clear @s minecraft:{item} {n}",
             "return 1",
         ])

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "crispy_anarchy",
+  "version": "1.0.0",
+  "name": "Crispy Anarchy (market shop menus)",
+  "description": "Chest-menu shops for the Ripperdoc (crispy_cyberware) and the Enchanter (crispy_enchants) in the CrispyAnarchy market.",
+  "environment": "server",
+  "entrypoints": { "main": ["crispy.anarchy.AnarchyMod"] },
+  "depends": {
+    "fabricloader": ">=0.19.0",
+    "minecraft": "26.2",
+    "fabric-events-interaction-v0": "*"
+  }
+}
