@@ -1,0 +1,26 @@
+{
+ "pig": {
+  "name": "Pig",
+  "value": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOGRiZDg0OGJjMzg5MWFjMzI5OTVjNTdmMjcxZjIzN2ExODEwYmNmNWJjNWZlNmFhYzkxNTlmNWIxZDIzOSJ9fX0="
+ },
+ "silverfish": {
+  "name": "Silverfish",
+  "value": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYTI4ZTEwNjA5Yzc0NDlmYzdhYmM4MzJiMzBjYWE0YTBjZDlkZTZmMjU4NjA5N2M5NmMxYzhjNmU1Yzk1MDhmNyJ9fX0="
+ },
+ "fox": {
+  "name": "Fox",
+  "value": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTZkYjdkNTA3Mzg5YTE0YmJlYzM5ZGU2OTIyMTY1YjMyZDQzNjU3YmNiNmFhZjRiNTE4MjgyNWIyMmI0In19fQ=="
+ },
+ "wolf": {
+  "name": "Wolf",
+  "value": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjliNmU3MWRjOTBhZmJhZTE3ZTkxNjk1ZTcxMDlhOTlhNjkwN2I1YzMzYTM1MWQxZGI1ZGNkZWE1OGRiMCJ9fX0="
+ },
+ "squid": {
+  "name": "Squid",
+  "value": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMDE0MzNiZTI0MjM2NmFmMTI2ZGE0MzRiODczNWRmMWViNWIzY2IyY2VkZTM5MTQ1OTc0ZTljNDgzNjA3YmFjIn19fQ=="
+ },
+ "phoenix": {
+  "name": "Phoenix",
+  "value": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjNhYWY3YjFhNzc4OTQ5Njk2Y2I5OWQ0ZjA0YWQxYWE1MThjZWVlMjU2YzcyZTVlZDY1YmZhNWMyZDg4ZDllIn19fQ=="
+ }
+}

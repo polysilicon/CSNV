@@ -41,8 +41,14 @@ public class SkyblockMod implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(Sidebar::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Portals::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Skills::onTick);
+        ServerTickEvents.END_SERVER_TICK.register(Pets::onTick);
+        ServerTickEvents.END_SERVER_TICK.register(Zones::onTick);
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPING.register(Zones::restoreAll);
         PlayerBlockBreakEvents.BEFORE.register(Portals::canBreak);
+        PlayerBlockBreakEvents.BEFORE.register(Zones::canBreak);
         PlayerBlockBreakEvents.AFTER.register(Skills::onBreak);
+        PlayerBlockBreakEvents.AFTER.register(Zones::onBreak);
+        UseBlockCallback.EVENT.register(Zones::onUseBlock);
         UseBlockCallback.EVENT.register(Realms::onUseBlock);
         UseBlockCallback.EVENT.register(Minions::onUseBlock);
         UseItemCallback.EVENT.register(Gear::onUseItem);
@@ -50,14 +56,20 @@ public class SkyblockMod implements ModInitializer {
             // merchants: villagers tagged cs_npc + cs_shop_<category> open that shop instead of trading
             if (entity.entityTags().contains("cs_npc")) {
                 if (hand == InteractionHand.MAIN_HAND && player instanceof ServerPlayer p)
-                    for (String t : entity.entityTags())
+                    for (String t : entity.entityTags()) {
                         if (t.startsWith("cs_shop_")) Shop.open(p.level().getServer(), p, t.substring(8));
+                        else if (t.equals("cs_bazaar")) Bazaar.open(p);
+                        else if (t.equals("cs_warps")) Zones.openWarps(p);
+                    }
                 return InteractionResult.SUCCESS;
             }
             return Minions.onUseEntity(player, world, hand, entity);
         });
         CommandRegistrationCallback.EVENT.register((d, ctx, sel) -> {
             Economy.register(d);
+            Bazaar.register(d);
+            Pets.register(d);
+            Zones.register(d);
             d.register(Commands.literal("invite").then(Commands.argument("player", EntityArgument.player())
                     .executes(c -> invite(c.getSource(), EntityArgument.getPlayer(c, "player")))));
             d.register(Commands.literal("challenges")
@@ -79,6 +91,8 @@ public class SkyblockMod implements ModInitializer {
                 .then(Commands.literal("challenges").executes(c -> menu(c.getSource(), "challenges")))
                 .then(Commands.literal("gear").executes(c -> menu(c.getSource(), "gear")))
                 .then(Commands.literal("skills").executes(c -> Skills.command(c.getSource())))
+                .then(Commands.literal("upgrades").executes(c -> Upgrades.open(c.getSource())))
+                .then(Commands.literal("pets").executes(c -> { Pets.open(c.getSource().getPlayerOrException()); return 1; }))
                 .then(Commands.literal("level").executes(c -> IslandLevels.command(c.getSource())))
                 .then(Commands.literal("top").executes(c -> IslandLevels.top(c.getSource())))
                 // run by the datapack after a new island, so an island left empty drops off the board right away
@@ -106,6 +120,11 @@ public class SkyblockMod implements ModInitializer {
     static int invite(CommandSourceStack s, ServerPlayer target) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer me = s.getPlayerOrException();
         if (me == target) { s.sendFailure(Component.literal("You can't invite yourself.")); return 0; }
+        int island = plot(s.getServer(), me);
+        if (island > 0 && Upgrades.members(s.getServer(), island) >= Upgrades.coopCap(s.getServer(), island)) {
+            s.sendFailure(Component.literal("Your island is full (" + Upgrades.coopCap(s.getServer(), island) + " members). Buy more co-op slots in /island upgrades."));
+            return 0;
+        }
         String name = target.getGameProfile().name().replace("\\", "").replace("\"", "");
         return run(s, "function " + NS + ":act/invite_player {name:\"" + name + "\"}");
     }

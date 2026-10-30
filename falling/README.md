@@ -97,6 +97,43 @@ Skyblock on `Falling01` (Fabric 26.2, Velocity name `skyblock`, was `falling`). 
 - `/skills` (`/island skills`, or Island Menu > Skills) shows each skill's level, progress bar and perk. The sidebar
   shows the skill average. XP shows on the action bar as you earn it.
 
+## Bazaar, island upgrades, pets and resource zones (2.6.0)
+
+Menus are built by `Ui.java` (chest GUIs that refill after each click).
+
+**Bazaar** (`Bazaar.java`; `/bazaar`, `/bz`, the Bazaar NPC in the hub, Island Menu > Bazaar). A player market for
+the merchant goods, stored in `<world>/crispy_bazaar.json`. Place a sell offer (items held in escrow) or a buy order
+(coins held in escrow) at your own price; new orders match the best price on the other side straight away. Sellers
+pay 1% tax. Sales to offline players are paid into their `cs_coins` by name. Up to 20 open orders each; claim or
+cancel them under "My orders". Amount and price are entered in a dialog.
+
+**Island upgrades** (`Upgrades.java`; `/island upgrades`). Any member can buy them; tiers live on `plots[id]`
+(`us`, `um`, `uc`, `ug`).
+
+| Upgrade | Tiers | Cost |
+|---|---|---|
+| Size | 128 > 160 > 192 > 256 square | 25k / 75k / 200k |
+| Minion slots | +2 per tier | 10k / 30k / 90k |
+| Co-op slots | 4 > 6 > 8 members | 15k / 50k |
+| Ore generator | lava + water cobblestone sometimes comes out as ore (`LiquidBlockMixin`); tier 3 adds diamond and emerald | 5k / 25k / 75k |
+
+Size moves the plot's corners and `sd` (size - 1, used by the datapack's bounds checks in place of the old fixed
+size), forceloads the new ground and paints it with the island's biome.
+
+**Pets** (`Pets.java`; `/pets`, `/island pets`). Bought in the pets menu, stored in `crispy_skyblock:pets` by UUID.
+The active pet floats beside you as an `item_display` head. Each pet boosts one skill's XP by 10% + 1% per pet level
+(level = sqrt(xp / 40), max 30; it levels from the XP it boosts) and gives a small stat (`crispy_skyblock:pet`).
+Pig (Farming, 2.5k), Silverfish (Mining, 5k), Fox (Foraging, 5k), Wolf (Combat, 8k), Squid (Fishing, 5k). The Phoenix
+can't be bought: each island member has a 3% chance of one per End boss kill; it boosts every skill at half rate
+and gives +2 hearts. Staff: `/pets grant <player> <pet>`.
+
+**Resource zones** (`expansion.py` builds them, `Zones.java` runs them; `/warp hub|home|mines|woods`, the Warps NPC).
+- The Deep Mines (-260, 90, -360): a terraced quarry, richer ores further down. Ores and stone regrow after 45 s.
+- Whispering Woods (260, 100, -360): a forest island. Logs regrow after 30 s.
+- Only the zone's resource blocks can be broken; a mined block is bedrock until it grows back (all are restored when
+  the server stops). Nothing can be placed. Hostile mobs spawn while players are there (8 + 2 per player).
+- Build or rebuild them with `function crispy_skyblock:zones/build_all`.
+
 ## Economy and minions (2.1.0)
 
 Hypixel-style, vanilla only. Prices, shop categories, minion types and tiers are defined in `skyblock.py` (`SHOP`,
@@ -165,6 +202,6 @@ in `#crispy_skyblock:gear_targets` (never players, villagers or pets) and never 
 
 ## Mod commands
 
-`/island` (alias `/is`) opens the Island Menu; `/island choose|challenges|gear|level|top`; `/gear`; `/invite <player>` (also
+`/island` (alias `/is`) opens the Island Menu; `/island choose|challenges|gear|level|top`; `/gear`; `/skills`; `/bazaar` (`/bz`); `/pets`; `/warp`; `/island upgrades|pets|skills`; `/invite <player>` (also
 `/island invite <player>`). Menus are chest GUIs defined by the datapack in storage `crispy_skyblock:menus` (set on
 every load); an entry with `done:"<objective>"` shows its `item_done` once the viewer's score there is 1 or more.

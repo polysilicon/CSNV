@@ -106,6 +106,7 @@ public final class Skills {
 
     static void gain(ServerPlayer p, Skill s, int amount) {
         if (amount <= 0) return;
+        amount = Pets.onSkillXp(p, s, amount);   // the active pet's boost (and the pet learns from it)
         MinecraftServer server = p.level().getServer();
         Objective o = objective(server, s);
         if (o == null) return;

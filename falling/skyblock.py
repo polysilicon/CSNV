@@ -405,6 +405,9 @@ for k, n, h, t, c, d, r in MINIONS:
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import gear
 GEAR = gear.build(NS, fn, js, txt, [f"{NS}:minion_{k}" for k, *_r in MINIONS])
+import expansion   # pets, resource zones, warps (the mod does the Bazaar, upgrades, pets and zone regrowth)
+EXP = expansion.build(NS, fn, js, txt, snbt, Build)
+ECO.update(EXP["cfg"])
 
 # ======================================================================= menus (read by the crispy_skyblock mod)
 GRID_SLOTS = [10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43]
@@ -676,6 +679,15 @@ for key, sx, sz, wool, prof in STALLS:
     # one two-line label instead of the villager's own name tag
     npc_lines.append(label(sx + 0.5, Y + 3.15, sz + 0.5, snbt({"text": who, "color": "gold", "bold": True,
                      "extra": [txt(f"\n{cat} · click to trade", "gray", bold=False)]}), 0.7, bill="center", tag="cs_npcl"))
+for (nx, nz, tag, prof, who, line) in ((6, -9, "cs_bazaar", "cartographer", "Bazaar", "trade with other players"),
+                                      (-6, -9, "cs_warps", "librarian", "Warps", "the Deep Mines, Whispering Woods")):
+    yaw = round(_m.degrees(_m.atan2(nx, -nz)), 1)
+    npc_lines.append(f"summon minecraft:villager {nx + 0.5} {Y+1} {nz + 0.5} " + snbt({
+        "NoAI": True, "Invulnerable": True, "Silent": True, "PersistenceRequired": True, "Tags": [NS, "cs_npc", tag],
+        "VillagerData": {"profession": f"minecraft:{prof}", "level": 5, "type": "minecraft:plains"}, "Offers": {"Recipes": []}})[:-1]
+        + f",Rotation:[{yaw}f,0f]}}")
+    npc_lines.append(label(nx + 0.5, Y + 3.15, nz + 0.5, snbt({"text": who, "color": "gold", "bold": True,
+                     "extra": [txt(f"\n{line} · click", "gray", bold=False)]}), 0.7, bill="center", tag="cs_npcl"))
 fn("npcs", "\n".join(npc_lines))
 
 
@@ -702,6 +714,7 @@ particle minecraft:portal 0.5 {Y+2.5} {HUB_PORTAL_Z+0.5} 0.9 0.9 0.05 0.3 30 for
 kill @e[type=#{NS}:hostile,x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}]
 execute as @e[tag=cs_boss] at @s run function {NS}:boss/tick
 function {NS}:gear/second
+function {NS}:zones/second
 scoreboard players remove @a[scores={{cs_cd=1..}}] cs_cd 1
 scoreboard players reset * cs_on
 scoreboard players reset * cs_non
@@ -726,6 +739,7 @@ fn("loop/one", f"""
 $execute if score #p$(i) cs_npend matches 1 run function {NS}:plot/npend_i {{i:$(i)}}
 $execute unless score #p$(i) cs_on matches 1.. unless score #p$(i) cs_was matches 1.. run return 0
 $data modify storage {NS}:d cur set from storage {NS}:d plots[$(i)]
+execute unless data storage {NS}:d cur.sd run data modify storage {NS}:d cur.sd set value {SIZE - 1}
 function {NS}:plot/tick with storage {NS}:d cur
 """)
 
@@ -754,9 +768,9 @@ $execute if score #p$(id) cs_bce matches 1.. run scoreboard players remove #p$(i
 $execute if score #p$(id) cs_bcn matches 1.. run scoreboard players remove #p$(id) cs_bcn 1
 $execute positioned $(cx) {ISLAND_Y} $(cz) run particle minecraft:portal ~0.5 ~2.5 ~{PORTAL_DZ + 0.5} 0.9 0.9 0.05 0.3 25
 # hostile cap: mobs already here stay; brand-new spawns over the cap are sent into the void
-$execute store result score #h cs_tmp if entity @e[type=#{NS}:hostile,x=$(x),y=-64,z=$(z),dx={SIZE-1},dy=400,dz={SIZE-1}]
-$execute if score #h cs_tmp matches {HOSTILE_CAP+1}.. as @e[type=#{NS}:hostile,tag=!cs_old,x=$(x),y=-64,z=$(z),dx={SIZE-1},dy=400,dz={SIZE-1}] run function {NS}:mob_cull
-$tag @e[type=#{NS}:hostile,tag=!cs_old,x=$(x),y=-64,z=$(z),dx={SIZE-1},dy=400,dz={SIZE-1}] add cs_old
+$execute store result score #h cs_tmp if entity @e[type=#{NS}:hostile,x=$(x),y=-64,z=$(z),dx=$(sd),dy=400,dz=$(sd)]
+$execute if score #h cs_tmp matches {HOSTILE_CAP+1}.. as @e[type=#{NS}:hostile,tag=!cs_old,x=$(x),y=-64,z=$(z),dx=$(sd),dy=400,dz=$(sd)] run function {NS}:mob_cull
+$tag @e[type=#{NS}:hostile,tag=!cs_old,x=$(x),y=-64,z=$(z),dx=$(sd),dy=400,dz=$(sd)] add cs_old
 """)
 fn("mob_cull", f"""
 execute if score #h cs_tmp matches ..{HOSTILE_CAP} run return 0
@@ -1037,6 +1051,7 @@ $bossbar remove {NS}:$(r)$(id)
 {names}
 $scoreboard players add @a[scores={{cs_plot=$(id)}}] cs_coins $(c)
 $tellraw @a[scores={{cs_plot=$(id)}}] [{{text:"+$(c) coins ",color:"gold",bold:1b}},{{text:"for everyone on the island. The next boss waits at the altar after a {BOSS_COOLDOWN // 60}-minute recharge.",color:"gray",bold:0b}}]
+$function {NS}:boss/phoenix_$(r) {{id:$(id)}}
 $scoreboard players add #p$(id) cs_bk$(r) 1
 $scoreboard players add #p$(id) cs_bi$(r) 1
 $scoreboard players operation #p$(id) cs_bi$(r) %= #4 cs_tmp
@@ -1271,7 +1286,7 @@ fn("p/ctx", f"""
 execute store result storage {NS}:d q.i int 1 run scoreboard players get @s cs_plot
 function {NS}:p/ctx2 with storage {NS}:d q
 """)
-fn("p/ctx2", f"$data modify storage {NS}:d cur set from storage {NS}:d plots[$(i)]")
+fn("p/ctx2", f"$data modify storage {NS}:d cur set from storage {NS}:d plots[$(i)]\nexecute unless data storage {NS}:d cur.sd run data modify storage {NS}:d cur.sd set value {SIZE - 1}")
 fn("p/home", f"""
 function {NS}:p/ctx
 function {NS}:p/home2 with storage {NS}:d cur
@@ -1290,15 +1305,15 @@ execute unless score @s cs_plot matches 1.. run return 0
 function {NS}:p/ctx
 function {NS}:p/respawned2 with storage {NS}:d cur
 """)
-fn("p/respawned2", f"$execute unless entity @s[x=$(x),y=-64,z=$(z),dx={SIZE-1},dy=400,dz={SIZE-1}] run function {NS}:p/home")
-fn("p/bounds_all", f"execute as @a[gamemode=survival,tag=!cs_staff] at @s if dimension minecraft:overworld unless entity @s[x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}] run function {NS}:p/bounds")
+fn("p/respawned2", f"$execute unless entity @s[x=$(x),y=-64,z=$(z),dx=$(sd),dy=400,dz=$(sd)] run function {NS}:p/home")
+fn("p/bounds_all", f"execute as @a[gamemode=survival,tag=!cs_staff] at @s if dimension minecraft:overworld unless entity @s[x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}] {EXP['in_zone']} run function {NS}:p/bounds")
 fn("p/bounds", f"""
 execute unless score @s cs_plot matches 1.. run return run function {NS}:act/hub
 function {NS}:p/ctx
 function {NS}:p/bounds2 with storage {NS}:d cur
 """)
 fn("p/bounds2", f"""
-$execute if entity @s[x=$(x),y=-128,z=$(z),dx={SIZE-1},dy=500,dz={SIZE-1}] run return 0
+$execute if entity @s[x=$(x),y=-128,z=$(z),dx=$(sd),dy=500,dz=$(sd)] run return 0
 function {NS}:p/home
 tellraw @s {{text:"That's the edge of your island's space.",color:"red"}}
 """)
@@ -1311,7 +1326,7 @@ function {NS}:p/ctx
 function {NS}:p/ebounds2 with storage {NS}:d cur
 """)
 fn("p/ebounds2", f"""
-$execute if entity @s[x=$(x),y=-128,z=$(z),dx={SIZE-1},dy=500,dz={SIZE-1}] run return 0
+$execute if entity @s[x=$(x),y=-128,z=$(z),dx=$(sd),dy=500,dz=$(sd)] run return 0
 $execute in {NS}:end positioned $(cx) {END_Y + 1} $(cz) run tp @s ~0.5 ~ ~6.5
 tellraw @s {{text:"That's the edge of your island's End.",color:"red"}}
 """)
@@ -1402,6 +1417,10 @@ js(f"data/{NS}/dialog/menu.json", {
         btn({"text": "Challenges", "color": "gold"}, "island challenges", "Hand in items for rewards"),
         btn({"text": "Armor & Weapons", "color": "aqua"}, "gear", "Craftable sets and weapons, with their recipes"),
         btn({"text": "Skills", "color": "gold"}, "skills", "Farming, Mining, Foraging, Combat, Fishing: levels and perks"),
+        btn({"text": "Island upgrades", "color": "green"}, "island upgrades", "Bigger island, more minions, co-op slots, ore generator"),
+        btn({"text": "Pets", "color": "light_purple"}, "pets", "Your pets: pick one to follow you and boost a skill"),
+        btn({"text": "Bazaar", "color": "gold"}, "bazaar", "Buy and sell with other players"),
+        btn({"text": "Warps", "color": "aqua"}, "warp", "Hub, home, the Deep Mines, Whispering Woods"),
         btn({"text": "Island level"}, "island level", "Score the blocks on your island"),
         btn({"text": "Top islands"}, "island top"),
         btn({"text": "Invite a player…"}, dialog=f"{NS}:invite", tip="Type their username (or use /invite <name>)"),

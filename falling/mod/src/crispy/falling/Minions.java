@@ -80,7 +80,8 @@ public final class Minions {
             var info = server.getScoreboard().getPlayerScoreInfo(Economy.holder("#p" + plot), obj);
             if (info != null) lvl = info.value();
         }
-        return Math.min(l.getIntOr("max", 15), l.getIntOr("base", 5) + lvl / Math.max(1, l.getIntOr("per_levels", 20)));
+        int bonus = 2 * Upgrades.tier(server, plot, "um");   // island upgrade: +2 slots per tier
+        return Math.min(l.getIntOr("max", 15) + bonus, l.getIntOr("base", 5) + lvl / Math.max(1, l.getIntOr("per_levels", 20)) + bonus);
     }
     static int count(MinecraftServer server, int plot) {
         CompoundTag list = all(server);
