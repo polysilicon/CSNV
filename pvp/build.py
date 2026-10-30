@@ -886,7 +886,7 @@ def build():
     # one big leaderboard on the south side of the lobby (top 3 of every category); the mod (Leaderboards.java) fills
     # in the text every 5 s
     lb = ["kill @e[tag=pvp.lb]",
-          f"summon minecraft:text_display 0.5 {LOBBY_Y + 1.6} {LOBBY_R - 2.5} {{Tags:[\"pvp.lb\",\"pvp.lb.all\"],billboard:\"center\","
+          f"summon minecraft:text_display 0.5 {LOBBY_Y + 4.5} {LOBBY_R - 1.5} {{Tags:[\"pvp.lb\",\"pvp.lb.all\"],billboard:\"center\","
           "background:-2144728518,line_width:400,transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],"
           "translation:[0f,0f,0f],scale:[1.3f,1.3f,1.3f]},text:{\"text\":\"Loading leaderboards...\",\"color\":\"gray\"}}"]
     fn("admin/place_leaderboard", lb)

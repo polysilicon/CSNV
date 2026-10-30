@@ -450,7 +450,7 @@ Outbreak at 1/16 scale. The **🔬 Micro Outbreak** NPC (west of spawn, -6.5 101
   `concrete_<colour>`) and leather armor dyed to match. They all have the same loadout: Bayonet (stone sword), Toy
   Rifle (bow) with 16 arrows, food. The menu also has a random colour.
 - **Points and upgrades**: 10 points per kill (`mo.k`) and 20 x the wave number for clearing a wave (`mo.pts`). Like
-  Outbreak's Arsenal, the **🛒 Toy Shop** (a little shopkeeper mannequin at 0.5 98 9.5, next to the spawn, with an
+  Outbreak's Arsenal, the **🛒 Arsenal** (a little shopkeeper mannequin at 0.5 98 9.5, next to the spawn, with an
   interaction to right-click; placed by `admin/build_micro`) opens the upgrade menu (`/trigger mo.join set 23` works
   too). It sells, in tiers you buy in order: Bayonet (iron 50,
   diamond 120, netherite 250), Armor (chainmail 40, iron 100, diamond 220), Rifle (Power I 30, II 70, III 150), Extra

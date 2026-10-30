@@ -33,7 +33,7 @@ FLOOR = 97                            # floor blocks; players stand at FLOOR + 1
 SPAWN = (0.5, FLOOR + 1, 8.5)
 MOB_SPAWNS = [(-7.5, 6.5), (7.5, 6.5), (-7.5, 9.5), (7.5, 9.5)]
 NPC_POS = (-6.5, None, 5.5)           # y filled in from the lobby
-SHOP_POS = (0.5, FLOOR + 1, 9.5)      # the Toy Shop: right-click it for upgrades (like Outbreak's Arsenal), next to the spawn
+SHOP_POS = (0.5, FLOOR + 1, 9.5)      # the Arsenal: right-click it for upgrades (like Outbreak's Arsenal), next to the spawn
 BOX = f"x={X1 - 1},y={FLOOR - 1},z={Z1 - 1},dx={X2 - X1 + 2},dy=4,dz={Z2 - Z1 + 2}"
 COUNTDOWN, BREAK, ALIVE_MAX = 200, 200, 15
 # cover: (x, z, height, block) - full cubes only; never on the spawns or the mob corners
@@ -93,7 +93,7 @@ def build(b):
     fn("micro/give_kit", [f"execute if score @s mo.kit matches {k[0]} run function {M}/kit/{k[1]}" for k in SOLDIERS])
 
     # ------------------------------------------------------------------ points and upgrades
-    shop_btn = {"text": "right-click the 🛒 Toy Shop by the spawn for upgrades", "color": "gold"}
+    shop_btn = {"text": "right-click the 🛒 Arsenal by the spawn for upgrades", "color": "gold"}
     fn("micro/points", ["scoreboard players operation @s mo.kc += @s mo.k",
                         f"scoreboard players operation #k mo = @s mo.k", f"scoreboard players operation #k mo *= #{KILL_PTS} mo",
                         "scoreboard players operation @s mo.pts += #k mo", "scoreboard players set @s mo.k 0"])
@@ -131,7 +131,7 @@ def build(b):
                                            "playsound minecraft:block.anvil.use neutral @s ~ ~ ~ 0.5 1.6"])
         fn(f"micro/up/{key}", lines)
     fn("micro/buy", buy)
-    fn("micro/shop_open", [f"execute unless entity @s[tag=mo.in] run return run {say('@s', 'The Toy Shop only serves soldiers in a Micro Outbreak run.', 'red')}",
+    fn("micro/shop_open", [f"execute unless entity @s[tag=mo.in] run return run {say('@s', 'The Arsenal only serves soldiers in a Micro Outbreak run.', 'red')}",
                            "pvpmenu micro_shop", "playsound minecraft:block.chest.open player @s ~ ~ ~ 0.6 1.6"])
     b.npc_adv("microshop", "pvp.microshop", f"function {M}/shop_open")
     # the sidebar on the right (team micro only, like Outbreak's): each soldier's points and kills this run
@@ -206,7 +206,7 @@ def build(b):
     fn("micro/break_tick", [
         "scoreboard players remove #timer mo 1", "scoreboard players operation #s mo = #timer mo", "scoreboard players operation #s mo /= #20 mo",
         "title @a[tag=mo.in] actionbar " + tj([{"text": "Next wave in ", "color": "gray"}, {"score": {"name": "#s", "objective": "mo"}, "color": "white"}, {"text": " s · ", "color": "gray"},
-                                              {"score": {"name": "@s", "objective": "mo.pts"}, "color": "gold"}, {"text": " pts · 🛒 Toy Shop by the spawn", "color": "gray"}]),
+                                              {"score": {"name": "@s", "objective": "mo.pts"}, "color": "gold"}, {"text": " pts · 🛒 Arsenal by the spawn", "color": "gray"}]),
         f"execute if score #timer mo matches ..0 run function {M}/next_wave"])
     fn("micro/next_wave", [
         "scoreboard players add #wave mo 1", "execute store result score #np mo if entity @a[tag=mo.in]",
@@ -323,7 +323,7 @@ def build(b):
     sx, sy, sz = SHOP_POS
     a += ["kill @e[tag=pvp.microshop]",
           f"summon minecraft:mannequin {sx} {sy} {sz} {{Tags:[\"pvp.microshop\"],Rotation:[0f,0f],Invulnerable:1b,Silent:1b,immovable:1b,"
-          "hide_description:1b,CustomNameVisible:1b,CustomName:{\"text\":\"🛒 Toy Shop\",\"color\":\"gold\",\"bold\":true},"
+          "hide_description:1b,CustomNameVisible:1b,CustomName:{\"text\":\"🛒 Arsenal\",\"color\":\"gold\",\"bold\":true},"
           "attributes:[{id:\"minecraft:scale\",base:0.15d}],equipment:{chest:{id:\"minecraft:leather_chestplate\",count:1,components:{\"minecraft:dyed_color\":16351261}}}}",
           f"summon minecraft:interaction {sx} {sy} {sz} {{Tags:[\"pvp.microshop\"],width:0.3f,height:0.4f,response:1b}}"]
     fn("admin/build_micro", a)
