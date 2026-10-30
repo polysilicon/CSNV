@@ -174,6 +174,18 @@ The Realtor NPC just south-west of the plaza, a plot's sign, or `/plots` opens t
 - Labels over each plot's sign (`cs_hpl_<n>`) show "For sale" or the owner, refreshed every 30 s.
 - The hub build is ~124k commands, so `hub` runs it in parts (`hub/p1`...) 2 ticks apart, then respawns the NPCs.
 
+## Skyblock Guide (2.11.0)
+
+`Guide.java`. Every player gets a Skyblock Guide (a knowledge book with `custom_data {cs_guide:1b}`) the first time
+they join after 2.11.0 (player tag `cs_guide`); `/guide book` gives a new one if they've lost theirs. Right-clicking it,
+`/guide`, or Island Menu > Skyblock Guide opens a chest menu with:
+
+- Topics, each a page of notes: Getting started, Islands & portals, Minions, Merchants & Bazaar, Skills, Pets,
+  Gear & bosses, Resource zones, Hub plots, Commands (the text is in `Guide.TOPICS`).
+- Recipes: every `crispy_skyblock` recipe (minions, and gear under `gear/`), click one to see it in a 3x3 grid.
+- Progression: the `crispy_skyblock` advancements in tree order, done or not, with island level, skill average and coins.
+- Shortcuts to /skills, challenges, island upgrades, /pets, /gear, the Bazaar and /warp.
+
 ## Economy and minions (2.1.0)
 
 Hypixel-style, vanilla only. Prices, shop categories, minion types and tiers are defined in `skyblock.py` (`SHOP`,
@@ -242,6 +254,6 @@ in `#crispy_skyblock:gear_targets` (never players, villagers or pets) and never 
 
 ## Mod commands
 
-`/island` (alias `/is`) opens the Island Menu; `/island choose|challenges|gear|level|top`; `/gear`; `/skills`; `/bazaar` (`/bz`); `/pets`; `/warp`; `/plots`; `/island upgrades|pets|skills`; `/invite <player>` (also
+`/island` (alias `/is`) opens the Island Menu; `/island choose|challenges|gear|level|top`; `/gear`; `/skills`; `/bazaar` (`/bz`); `/pets`; `/warp`; `/plots`; `/guide`; `/island upgrades|pets|skills`; `/invite <player>` (also
 `/island invite <player>`). Menus are chest GUIs defined by the datapack in storage `crispy_skyblock:menus` (set on
 every load); an entry with `done:"<objective>"` shows its `item_done` once the viewer's score there is 1 or more.

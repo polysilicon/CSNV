@@ -46,7 +46,7 @@ public class SkyblockMod implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(ZoneRules::onTick);
         ServerTickEvents.END_SERVER_TICK.register(HubPlots::onTick);
         net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents.AFTER_RESPAWN.register((oldP, newP, alive) -> ZoneRules.restore(newP));
-        net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((h, sender, server) -> ZoneRules.restore(h.player));
+        net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((h, sender, server) -> { ZoneRules.restore(h.player); Guide.onJoin(h.player); });
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPING.register(Zones::restoreAll);
         PlayerBlockBreakEvents.BEFORE.register(Portals::canBreak);
         PlayerBlockBreakEvents.BEFORE.register(Zones::canBreak);
@@ -57,6 +57,7 @@ public class SkyblockMod implements ModInitializer {
         UseBlockCallback.EVENT.register(Zones::onUseBlock);
         UseBlockCallback.EVENT.register(Realms::onUseBlock);
         UseBlockCallback.EVENT.register(Minions::onUseBlock);
+        UseItemCallback.EVENT.register(Guide::onUseItem);
         UseItemCallback.EVENT.register(Gear::onUseItem);
         UseEntityCallback.EVENT.register((player, world, hand, entity, hit) -> {
             // merchants: villagers tagged cs_npc + cs_shop_<category> open that shop instead of trading
@@ -81,6 +82,7 @@ public class SkyblockMod implements ModInitializer {
             Pets.register(d);
             Zones.register(d);
             HubPlots.register(d);
+            Guide.register(d);
             d.register(Commands.literal("invite").then(Commands.argument("player", EntityArgument.player())
                     .executes(c -> invite(c.getSource(), EntityArgument.getPlayer(c, "player")))));
             d.register(Commands.literal("challenges")
