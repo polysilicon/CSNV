@@ -143,7 +143,7 @@ final class Zones {
                 Zone z = zs.get(i);
                 boolean mines = z.key().equals("mines");
                 m.put(slots[i], Ui.item(mines ? Items.IRON_PICKAXE : Items.IRON_AXE, t(z.name(), mines ? ChatFormatting.GRAY : ChatFormatting.DARK_GREEN, ChatFormatting.BOLD),
-                        List.of(t(mines ? "A deep quarry: ores grow back, richer further down" : "A forest whose logs grow back", ChatFormatting.GRAY),
+                        List.of(t(mines ? "A cave system: ores grow back, richer deeper down" : "A forest whose logs grow back", ChatFormatting.GRAY),
                                 t("Hostile mobs roam here", ChatFormatting.RED), t("You can't build here", ChatFormatting.DARK_GRAY)), false),
                         (pl, c) -> warp(pl, z.key()));
             }

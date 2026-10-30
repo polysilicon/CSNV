@@ -51,39 +51,113 @@ def build(NS, fn, js, txt, snbt, Build):
     }
     box = lambda z: f"x={z[2][0] - z[3]},y={z[4][0]},z={z[2][2] - z[3]},dx={2 * z[3]},dy={z[4][1] - z[4][0]},dz={2 * z[3]}"
 
-    # ---- the Deep Mines: a floating rock island with a terraced pit; ores get richer deeper down
+    # ---- the Deep Mines: a solid floating rock island riddled with caves. A cave mouth by the arrival platform leads down
+    # winding tunnels through four chambers to the deepest one ~26 blocks down; side tunnels branch off, two sinkholes
+    # let daylight in, and ores line the cave walls, richer the deeper you go.
     rnd = random.Random(77)
     cx, cy, cz = MINES
-    R, DEPTH, PIT, FLOOR = 36, 32, 27, 22        # island radius and depth; pit rim radius; pit depth
+    R, DEPTH = 36, 32                              # island radius; how far its underside hangs below the top (y 90)
+    def h3(x, y, z, seed):                          # a smooth 3D value noise in [0, 1)
+        def hv(i, j, k): return (math.sin(i * 127.1 + j * 311.7 + k * 74.7 + seed * 19.3) * 43758.5453) % 1.0
+        ix, iy, iz = math.floor(x), math.floor(y), math.floor(z)
+        fx, fy, fz = x - ix, y - iy, z - iz
+        fx, fy, fz = fx * fx * (3 - 2 * fx), fy * fy * (3 - 2 * fy), fz * fz * (3 - 2 * fz)
+        def lerp(a_, b_, t_): return a_ + (b_ - a_) * t_
+        c00 = lerp(hv(ix, iy, iz), hv(ix + 1, iy, iz), fx); c10 = lerp(hv(ix, iy + 1, iz), hv(ix + 1, iy + 1, iz), fx)
+        c01 = lerp(hv(ix, iy, iz + 1), hv(ix + 1, iy, iz + 1), fx); c11 = lerp(hv(ix, iy + 1, iz + 1), hv(ix + 1, iy + 1, iz + 1), fx)
+        return lerp(lerp(c00, c10, fy), lerp(c01, c11, fy), fz)
+    # the island: a rough rocky top with a few mounds (kept flat round the arrival platform), a rounded underside
     solid = {}
-    for d in range(DEPTH + 1):
-        rr = R * (1 - d / (DEPTH + 1.2)) ** 0.75
-        for x in range(-R, R + 1):
-            for z in range(-R, R + 1):
-                dist = math.hypot(x, z)
-                if dist > rr + rnd.random() * 0.8: continue
-                pit = PIT - d if d <= FLOOR else -1        # a funnel: one block narrower per level = walkable terraces
-                if dist <= pit: continue
-                base = "deepslate" if d >= 14 else rnd.choices(["stone", "andesite", "tuff", "diorite", "granite"], [10, 2, 2, 1, 1])[0]
-                solid[(x, -d, z)] = base
+    for x in range(-R - 2, R + 3):
+        for z in range(-R - 2, R + 3):
+            dist = math.hypot(x, z)
+            edge = R + 3 * (h3(x * 0.08, 0, z * 0.08, 1) - 0.5)
+            if dist > edge: continue
+            k = dist / edge
+            bottom = max(-DEPTH - 1, -round(DEPTH * (1 - k ** 2) ** 0.55 + 3 * h3(x * 0.15, 5, z * 0.15, 2)))   # stays inside the zone (y 56+)
+            mound = 0 if math.hypot(x, z + 30) < 9 or k > 0.85 else round(4 * max(0.0, h3(x * 0.09, 9, z * 0.09, 3) - 0.45) / 0.55)
+            for y in range(bottom, mound + 1):
+                solid[(x, y, z)] = True
+    # the caves: tunnels from waypoint to waypoint, wiggling, carved as squashed spheres; chambers are big spheres
+    air = set()
+    def carve(px, py, pz, r, ry=None):
+        ry = ry or r * 0.8
+        for x in range(math.floor(px - r), math.ceil(px + r) + 1):
+            for y in range(math.floor(py - ry), math.ceil(py + ry) + 1):
+                for z in range(math.floor(pz - r), math.ceil(pz + r) + 1):
+                    if ((x - px) / r) ** 2 + ((y - py) / ry) ** 2 + ((z - pz) / r) ** 2 <= 1 and (x, y, z) in solid: air.add((x, y, z))
+    def tunnel(a_, b_, r0=2.2, wiggle=6):
+        n = max(1, int(math.dist(a_, b_)))
+        ox, oz = rnd.uniform(-wiggle, wiggle), rnd.uniform(-wiggle, wiggle)
+        for i in range(n + 1):
+            t_ = i / n
+            bend = math.sin(t_ * math.pi)
+            px = a_[0] + (b_[0] - a_[0]) * t_ + ox * bend
+            py = a_[1] + (b_[1] - a_[1]) * t_
+            pz = a_[2] + (b_[2] - a_[2]) * t_ + oz * bend
+            carve(px, py, pz, r0 + 0.8 * h3(px * 0.2, py * 0.2, pz * 0.2, 4))
+    mouth = (0, -1, -24)
+    chambers = [(-8, -7, -10, 6.5), (12, -13, 2, 7), (-6, -19, 14, 6.5), (6, -25, -4, 7.5)]   # x, y, z, radius
+    tunnel((0, 1, -27), mouth, 2.4, 0)                                   # the cave mouth, open to the sky
+    prev = mouth
+    for (hx, hy, hz, hr) in chambers:
+        tunnel(prev, (hx, hy + 1, hz), 2.4)
+        carve(hx, hy + hr * 0.45, hz, hr, hr * 0.6)
+        prev = (hx, hy + 1, hz)
+    for (hx, hy, hz, hr) in chambers:                                   # side tunnels that wander off and end
+        for _ in range(2):
+            a_ = rnd.uniform(0, 2 * math.pi)
+            end = (hx + 16 * math.cos(a_), hy + rnd.uniform(-4, 3), hz + 16 * math.sin(a_))
+            if math.hypot(end[0], end[2]) < R - 8 and end[1] > -DEPTH + 7: tunnel((hx, hy + 1, hz), end, 1.8, 4)
+    tunnel((-8, -6, -10), (12, -12, 2), 1.9, 5)                         # loops between chambers
+    tunnel((-6, -18, 14), (6, -24, -4), 1.9, 5)
+    for sx_, sz_, deep in ((14, -6, -12), (-14, 10, -18)):              # sinkholes from the surface
+        for y in range(4, deep - 1, -1): carve(sx_ + 1.5 * math.sin(y * 0.4), y, sz_, 2.3)
+    for v in air: solid.pop(v, None)
+    # rock: stone with patches of andesite, tuff, diorite and granite near the top, deepslate lower down; ores on
+    # the cave walls (and a few hidden in the rock), richer deeper; gravel on some cave floors
     def ore_for(d):
-        if d < 6: return rnd.choices(["coal_ore", "iron_ore", "copper_ore"], [50, 30, 20])[0]
-        if d < 14: return rnd.choices(["iron_ore", "coal_ore", "gold_ore", "lapis_ore", "redstone_ore"], [35, 20, 15, 15, 15])[0]
+        if d < 8: return rnd.choices(["coal_ore", "iron_ore", "copper_ore"], [50, 30, 20])[0]
+        if d < 16: return rnd.choices(["iron_ore", "coal_ore", "gold_ore", "lapis_ore", "redstone_ore"], [35, 20, 15, 15, 15])[0]
         return "deepslate_" + rnd.choices(["iron_ore", "gold_ore", "lapis_ore", "redstone_ore", "diamond_ore", "emerald_ore"], [25, 20, 15, 20, 15, 5])[0]
-    for (x, y, z), b in list(solid.items()):
-        exposed = any((x + dx, y + dy, z + dz) not in solid for dx, dy, dz in ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)))
-        if exposed and math.hypot(x, z) < PIT + 2 and rnd.random() < 0.13: solid[(x, y, z)] = ore_for(-y)
-    cmds = [f"fill {cx - R - 1} {cy - DEPTH - 1} {cz - R - 1} {cx + R + 1} {cy + 12} {cz + R + 1} minecraft:air"]
+    NB = ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1))
+    block = {}
+    for (x, y, z) in solid:
+        d = -y
+        if d >= 16 + round(3 * h3(x * 0.1, 0, z * 0.1, 6)): base = "deepslate"
+        else:
+            n = h3(x * 0.12, y * 0.12, z * 0.12, 5)
+            base = "andesite" if n < 0.22 else "tuff" if n > 0.8 else "diorite" if 0.48 < n < 0.52 else "granite" if 0.6 < n < 0.64 else "stone"
+        cave_wall = any((x + a_, y + b_, z + c_) in air for a_, b_, c_ in NB)
+        if y >= 0 and (x, y + 1, z) not in solid and (x, y + 1, z) not in air:
+            base = "gravel" if h3(x * 0.2, 0, z * 0.2, 7) > 0.75 else "cobblestone" if h3(x * 0.2, 1, z * 0.2, 8) > 0.7 else "stone"
+        elif cave_wall and rnd.random() < 0.16: base = ore_for(d)
+        elif cave_wall and (x, y + 1, z) in air and rnd.random() < 0.06 and d > 2: base = "gravel"
+        elif rnd.random() < 0.025: base = ore_for(d)
+        block[(x, y, z)] = base
+    # lanterns on some cave floors (they can't be mined), and the mob spawn spots: cave floors, spread out by depth
+    floors = sorted(v for v in air if (v[0], v[1] - 1, v[2]) in block and (v[0], v[1] + 1, v[2]) in air and v[1] < -2)
+    lanterns, spawns = [], []
+    for v in rnd.sample(floors, len(floors)):
+        if all(math.dist(v, l_) > 9 for l_ in lanterns) and len(lanterns) < 40: lanterns.append(v)
+    for band in ((-8, -2), (-14, -8), (-20, -14), (-30, -20)):
+        cand = [v for v in floors if band[0] <= v[1] < band[1] and v not in lanterns]
+        for v in rnd.sample(cand, len(cand)):
+            if all(math.dist(v, s_) > 6 for s_ in spawns) and sum(1 for s_ in spawns if band[0] <= s_[1] < band[1]) < 4: spawns.append(v)
+    cmds = [f"kill @e[type=minecraft:text_display,tag=cs_zonel,x={cx - R - 6},y={cy - DEPTH - 6},z={cz - R - 6},dx={2 * R + 12},dy={DEPTH + 30},dz={2 * R + 12}]"]
+    cmds += [f"fill {cx - R - 4} {y} {cz - R - 4} {cx + R + 4} {y} {cz + R + 4} minecraft:air" for y in range(cy - DEPTH - 6, cy + 14)]
     rows = {}
-    for (x, y, z), b in solid.items(): rows.setdefault((y, z), []).append((x, b))
+    for (x, y, z), b_ in block.items(): rows.setdefault((y, z), []).append((x, b_))
     for (y, z), xs in rows.items():   # run-length fills along x
         xs.sort()
         start, prev, blk = xs[0][0], xs[0][0], xs[0][1]
-        for x, b in xs[1:] + [(None, None)]:
-            if x is not None and x == prev + 1 and b == blk: prev = x; continue
+        for x, b_ in xs[1:] + [(None, None)]:
+            if x is not None and x == prev + 1 and b_ == blk: prev = x; continue
             cmds.append(f"fill {cx + start} {cy + y} {cz + z} {cx + prev} {cy + y} {cz + z} minecraft:{blk}" if start != prev
                         else f"setblock {cx + start} {cy + y} {cz + z} minecraft:{blk}")
-            if x is not None: start, prev, blk = x, x, b
+            if x is not None: start, prev, blk = x, x, b_
+    cmds += [f"setblock {cx + x} {cy + y} {cz + z} minecraft:lantern" for x, y, z in lanterns]
+    mine_spawns = [(x, y, z) for x, y, z in spawns]
     wx, wy, wz = cx, cy, cz - 30   # the arrival platform on the rim
     cmds += [f"fill {wx - 2} {wy} {wz - 2} {wx + 2} {wy} {wz + 2} minecraft:polished_andesite",
              f"summon minecraft:text_display {wx + 0.5} {wy + 3} {wz + 0.5} {{Tags:[\"{NS}\",\"cs_zonel\"],billboard:\"center\",text:"
@@ -95,7 +169,6 @@ def build(NS, fn, js, txt, snbt, Build):
              f"execute positioned {wx} {wy} {wz - 3} run function {NS}:portal/style_mines",
              f"summon minecraft:text_display {wx + 0.5} {wy + 7.2} {wz - 2.5} {{Tags:[\"{NS}\",\"cs_zonel\"],billboard:\"center\",text:"
              + snbt({"text": "Hub", "color": "gold", "bold": True, "extra": [txt("\nWalk through to go back", "gray", bold=False)]}) + "}"]
-    mine_spawns = [(round((PIT - d - 1) * math.cos(a)), -d + 1, round((PIT - d - 1) * math.sin(a))) for d in (4, 9, 14, 19) for a in (0.4, 2.0, 3.6, 5.2)]
     fn("zones/build_mines", "\n".join(cmds))
 
     # ---- Whispering Woods: a grassy island thick with trees
@@ -149,7 +222,7 @@ def build(NS, fn, js, txt, snbt, Build):
                 "execute store result score #r cs_tmp run random value 1..3", "execute unless score #r cs_tmp matches 1 run return 0",
                 f"execute store result score #r cs_tmp run random value 1..{len(spawns)}"]
         for i, (sx, sy, sz) in enumerate(spawns, 1):
-            roll.append(f"execute if score #r cs_tmp matches {i} positioned {c[0] + sx}.5 {c[1] + sy} {c[2] + sz}.5 run function {NS}:zones/{key}/mob")
+            roll.append(f"execute if score #r cs_tmp matches {i} positioned {c[0] + sx + 0.5} {c[1] + sy} {c[2] + sz + 0.5} run function {NS}:zones/{key}/mob")
         fn(f"zones/{key}/tick", "\n".join(roll))
         mob = [f"execute store result score #m cs_tmp run random value 1..{len(mobs)}"]
         for i, m in enumerate(mobs, 1):

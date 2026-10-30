@@ -128,7 +128,9 @@ can't be bought: each island member has a 3% chance of one per End boss kill; it
 and gives +2 hearts. Staff: `/pets grant <player> <pet>`.
 
 **Resource zones** (`expansion.py` builds them, `Zones.java` runs them; `/warp hub|home|mines|woods`, the Warps NPC).
-- The Deep Mines (-260, 90, -360): a terraced quarry, richer ores further down. Ores and stone regrow after 45 s.
+- The Deep Mines (-260, 90, -360): a rock island riddled with caves: a cave mouth by the arrival platform leads
+  down tunnels through four chambers (to ~26 blocks deep), with side tunnels, two sinkholes and lanterns; ores line
+  the cave walls, richer deeper. Ores and stone regrow after 45 s.
 - Whispering Woods (260, 100, -360): a forest island. Logs regrow after 30 s.
 - Only the zone's resource blocks can be broken; a mined block is bedrock until it grows back (all are restored when
   the server stops). Nothing can be placed. Hostile mobs spawn while players are there (8 + 2 per player).
