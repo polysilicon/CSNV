@@ -33,6 +33,7 @@ FLOOR = 97                            # floor blocks; players stand at FLOOR + 1
 SPAWN = (0.5, FLOOR + 1, 8.5)
 MOB_SPAWNS = [(-7.5, 6.5), (7.5, 6.5), (-7.5, 9.5), (7.5, 9.5)]
 NPC_POS = (-6.5, None, 5.5)           # y filled in from the lobby
+SHOP_POS = (0.5, FLOOR + 1, 9.5)      # the Toy Shop: right-click it for upgrades (like Outbreak's Arsenal), next to the spawn
 BOX = f"x={X1 - 1},y={FLOOR - 1},z={Z1 - 1},dx={X2 - X1 + 2},dy=4,dz={Z2 - Z1 + 2}"
 COUNTDOWN, BREAK, ALIVE_MAX = 200, 200, 15
 # cover: (x, z, height, block) - full cubes only; never on the spawns or the mob corners
@@ -92,9 +93,9 @@ def build(b):
     fn("micro/give_kit", [f"execute if score @s mo.kit matches {k[0]} run function {M}/kit/{k[1]}" for k in SOLDIERS])
 
     # ------------------------------------------------------------------ points and upgrades
-    shop_btn = {"text": "[🛒 Upgrades]", "color": "gold", "bold": True, "click_event": {"action": "run_command", "command": f"/trigger mo.join set {SHOP}"},
-                "hover_event": {"action": "show_text", "value": "Spend your points on upgrades"}}
-    fn("micro/points", [f"scoreboard players operation #k mo = @s mo.k", f"scoreboard players operation #k mo *= #{KILL_PTS} mo",
+    shop_btn = {"text": "right-click the 🛒 Toy Shop by the spawn for upgrades", "color": "gold"}
+    fn("micro/points", ["scoreboard players operation @s mo.kc += @s mo.k",
+                        f"scoreboard players operation #k mo = @s mo.k", f"scoreboard players operation #k mo *= #{KILL_PTS} mo",
                         "scoreboard players operation @s mo.pts += #k mo", "scoreboard players set @s mo.k 0"])
     def tier_apply(key, n):
         mats = {1: "iron", 2: "diamond", 3: "netherite"}
@@ -130,6 +131,16 @@ def build(b):
                                            "playsound minecraft:block.anvil.use neutral @s ~ ~ ~ 0.5 1.6"])
         fn(f"micro/up/{key}", lines)
     fn("micro/buy", buy)
+    fn("micro/shop_open", [f"execute unless entity @s[tag=mo.in] run return run {say('@s', 'The Toy Shop only serves soldiers in a Micro Outbreak run.', 'red')}",
+                           "pvpmenu micro_shop", "playsound minecraft:block.chest.open player @s ~ ~ ~ 0.6 1.6"])
+    b.npc_adv("microshop", "pvp.microshop", f"function {M}/shop_open")
+    # the sidebar on the right (team micro only, like Outbreak's): each soldier's points and kills this run
+    fn("micro/side", ["scoreboard players operation @s mo.side = @s mo.pts",
+                      "execute store result storage pvp:micro side.p int 1 run scoreboard players get @s mo.pts",
+                      "scoreboard players add @s mo.kc 0", "execute store result storage pvp:micro side.k int 1 run scoreboard players get @s mo.kc",
+                      f"function {M}/side_fmt with storage pvp:micro side"])
+    fn("micro/side_fmt", ['$scoreboard players display numberformat @s mo.side fixed [{"text":"$(p)","color":"gold"},{"text":" pts · ","color":"gray"},'
+                          '{"text":"$(k)","color":"red"},{"text":" kills","color":"gray"}]'])
 
     # ------------------------------------------------------------------ joining (from the NPC's menu: /trigger mo.join)
     join_btn = {"text": "[Click to join]", "color": "green", "bold": True, "click_event": {"action": "run_command", "command": f"/trigger mo.join set {MENU}"},
@@ -179,7 +190,7 @@ def build(b):
         *b.PERK_RESET, *[f"attribute @s minecraft:{a_} modifier remove {NS}:micro" for a_ in MICRO_ATTRS],
         f"attribute @s minecraft:max_health modifier remove {NS}:micro_hp", f"attribute @s minecraft:movement_speed modifier remove {NS}:micro_spd",
         *micro_attrs, f"function {M}/give_kit", "effect give @s minecraft:instant_health 1 4 true",
-        "scoreboard players set @s mo.pts 0", "scoreboard players set @s mo.k 0", *[f"scoreboard players set @s {o} 0" for o in TIER_OBJ.values()],
+        "scoreboard players set @s mo.pts 0", "scoreboard players set @s mo.k 0", "scoreboard players set @s mo.kc 0", "team join micro @s", *[f"scoreboard players set @s {o} 0" for o in TIER_OBJ.values()],
         f"tellraw @s {tj([{'text': f'🔬 {KILL_PTS} points per kill and a bonus every wave: ', 'color': 'gray'}, shop_btn])}",
         f"tp @s {SPAWN[0]} {SPAWN[1]} {SPAWN[2]} 90 0",
         "title @s title {\"text\":\"🔬 MICRO\",\"color\":\"aqua\",\"bold\":true}", "title @s subtitle {\"text\":\"Everything is huge now\",\"color\":\"gray\"}",
@@ -195,7 +206,7 @@ def build(b):
     fn("micro/break_tick", [
         "scoreboard players remove #timer mo 1", "scoreboard players operation #s mo = #timer mo", "scoreboard players operation #s mo /= #20 mo",
         "title @a[tag=mo.in] actionbar " + tj([{"text": "Next wave in ", "color": "gray"}, {"score": {"name": "#s", "objective": "mo"}, "color": "white"}, {"text": " s · ", "color": "gray"},
-                                              {"score": {"name": "@s", "objective": "mo.pts"}, "color": "gold"}, {"text": " pts · /trigger mo.join set " + str(SHOP) + " for upgrades", "color": "gray"}]),
+                                              {"score": {"name": "@s", "objective": "mo.pts"}, "color": "gold"}, {"text": " pts · 🛒 Toy Shop by the spawn", "color": "gray"}]),
         f"execute if score #timer mo matches ..0 run function {M}/next_wave"])
     fn("micro/next_wave", [
         "scoreboard players add #wave mo 1", "execute store result score #np mo if entity @a[tag=mo.in]",
@@ -290,6 +301,7 @@ def build(b):
         f"execute if score #state mo matches 2 run function {M}/wave_tick",
         f"execute if score #state mo matches 3 run function {M}/break_tick"])
     fn("micro/second", [
+        "scoreboard players reset * mo.side", f"execute as @a[tag=mo.in] run function {M}/side",
         f"execute if score #state mo matches 2..3 unless entity @a[tag=mo.in] run function {M}/game_over",
         "execute unless score #state mo matches 2 run kill @e[tag=mo.mob]",
         # nothing stays outside the arena: mobs go back to a corner, players back to the spawn
@@ -308,13 +320,22 @@ def build(b):
          f"fill {X1} {b.LOBBY_Y} {Z1} {X2} {b.LOBBY_Y} {Z2} minecraft:glass"]                     # the lobby floor above
     for (x, z, h, blk) in COVER:
         a.append(f"fill {x} {Y + 1} {z} {x} {Y + h} {z} minecraft:{blk}")
+    sx, sy, sz = SHOP_POS
+    a += ["kill @e[tag=pvp.microshop]",
+          f"summon minecraft:mannequin {sx} {sy} {sz} {{Tags:[\"pvp.microshop\"],Rotation:[0f,0f],Invulnerable:1b,Silent:1b,immovable:1b,"
+          "hide_description:1b,CustomNameVisible:1b,CustomName:{\"text\":\"🛒 Toy Shop\",\"color\":\"gold\",\"bold\":true},"
+          "attributes:[{id:\"minecraft:scale\",base:0.15d}],equipment:{chest:{id:\"minecraft:leather_chestplate\",count:1,components:{\"minecraft:dyed_color\":16351261}}}}",
+          f"summon minecraft:interaction {sx} {sy} {sz} {{Tags:[\"pvp.microshop\"],width:0.3f,height:0.4f,response:1b}}"]
     fn("admin/build_micro", a)
     x, _, z = NPC_POS
     return {
-        "objectives": ["mo dummy", "mo.join trigger", "mo.kit dummy", "mo.best dummy", "mo.pts dummy", "mo.k totalKillCount", *[f"{o} dummy" for o in TIER_OBJ.values()]],
+        "objectives": ["mo dummy", "mo.join trigger", "mo.kit dummy", "mo.best dummy", "mo.pts dummy", "mo.k totalKillCount", "mo.kc dummy", *[f"{o} dummy" for o in TIER_OBJ.values()]],
         "load": ["scoreboard players set #3 mo 3", "scoreboard players set #5 mo 5", "scoreboard players set #20 mo 20", f"scoreboard players set #{KILL_PTS} mo {KILL_PTS}", f"scoreboard players set #{WAVE_PTS} mo {WAVE_PTS}",
                  "execute unless score #state mo matches 0.. run scoreboard players set #state mo 0",
                  "execute unless score #record mo matches 0.. run scoreboard players set #record mo 0",
+                 'scoreboard objectives add mo.side dummy {"text":"🔬 Micro Outbreak","color":"aqua","bold":true}',
+                 "team add micro", "team modify micro color aqua", "team modify micro friendlyFire false", "team modify micro seeFriendlyInvisibles true",
+                 "scoreboard objectives setdisplay sidebar.team.aqua mo.side",
                  'bossbar add pvp:mboss {"text":"Giant","color":"dark_red"}', "bossbar set pvp:mboss color red", "bossbar set pvp:mboss visible false"],
         "reset": ["tag @s remove mo.in", "tag @s remove mo.q",
                   *[f"attribute @s minecraft:{a_} modifier remove {NS}:micro" for a_ in MICRO_ATTRS],
