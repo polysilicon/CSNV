@@ -477,7 +477,7 @@ data modify storage {NS}:eco cfg set value {snbt(ECO)}
 execute unless score #hubv cs_cfg matches 2.. run function {NS}:hub
 execute if score #hubv cs_cfg matches 2 run function {NS}:hub_v3
 # hub v4 (new portals): rebuilt once the hub's entities have loaded, so the old labels are cleared first
-execute if score #hubv cs_cfg matches 2..5 run schedule function {NS}:hub_v4 160t replace
+execute if score #hubv cs_cfg matches 2..6 run schedule function {NS}:hub_v4 160t replace
 # respawn the merchants once the hub's entities are loaded (at startup they load after this runs)
 schedule function {NS}:npcs 100t replace
 execute unless data storage {NS}:d plots run function {NS}:setup
@@ -534,15 +534,21 @@ def hub_build():
     for y in range(Y - 40, Y + 34):     # two halves: a fill can't cover the whole area at once
         c += [f"fill -{HUB_R} {y} -{HUB_R} -1 {y} {HUB_R} minecraft:air", f"fill 0 {y} -{HUB_R} {HUB_R} {y} {HUB_R} minecraft:air"]
     top, edge = {}, {}
-    pond = (-24, 16, 5.2)
+    pond = (-33, 0, 6.5)      # the fishing pond, out in the western hills between two of the diagonal paths
+    def hills(x, z, lim):
+        inner = max(0.0, min(1.0, (math.hypot(x, z) - 16) / 7)) * max(0.0, min(1.0, (lim - math.hypot(x, z)) / 5))
+        return 5 * noise(x * 0.07, z * 0.07, 2) * inner * district.flat(x, z)   # level pads for the plots
+    # the pond sits at the hills' own height round it (not dug down to the plaza's level), the ground easing to meet it
+    rim = [hills(pond[0] + (pond[2] + 2) * math.cos(k / 8 * math.pi), pond[1] + (pond[2] + 2) * math.sin(k / 8 * math.pi), 999) for k in range(16)]
+    pond_h = round(sum(rim) / len(rim))
     for x in range(-HUB_R + 2, HUB_R - 1):
         for z in range(-HUB_R + 2, HUB_R - 1):
             r = math.hypot(x, z)
             lim = district.ISLAND + 8 * noise(x * 0.03 + 7, z * 0.03 + 3, 1)
             if r > lim: continue
-            inner = max(0.0, min(1.0, (r - 16) / 7)) * max(0.0, min(1.0, (lim - r) / 5))
-            h = int(round(5 * noise(x * 0.07, z * 0.07, 2) * inner * district.flat(x, z)))   # level pads for the plots
-            if math.hypot(x - pond[0], z - pond[1]) < pond[2] + 2: h = 0
+            hv = hills(x, z, lim)
+            blend = max(0.0, min(1.0, (math.hypot(x - pond[0], z - pond[1]) - pond[2] - 1.5) / 4))
+            h = int(round(pond_h + (hv - pond_h) * blend))
             depth = int(3 + 32 * (1 - r / lim) ** 0.9 + 5 * noise(x * 0.15, z * 0.15, 3))
             t = Y + h
             top[(x, z)] = t
@@ -558,14 +564,27 @@ def hub_build():
     for (x, z), t in top.items():
         d = math.hypot(x - pond[0], z - pond[1])
         if d <= pond[2]:
-            c += [f"setblock {x} {t} {z} minecraft:water", f"setblock {x} {t - 1} {z} minecraft:water", f"setblock {x} {t - 2} {z} minecraft:sand"]
+            c += [f"setblock {x} {t} {z} minecraft:water", f"setblock {x} {t - 1} {z} minecraft:water", f"setblock {x} {t - 2} {z} minecraft:water",
+                  f"setblock {x} {t - 3} {z} minecraft:sand"]
             used.add((x, z))
         elif d <= pond[2] + 1.3:
             surf(x, z, "sand"); used.add((x, z))
-    for _ in range(5):
+    for _ in range(6):
         a = rnd.random() * 6.28; rr = rnd.random() * (pond[2] - 1)
         px, pz = int(pond[0] + rr * math.cos(a)), int(pond[1] + rr * math.sin(a))
-        if (px, pz) in top: c.append(f"setblock {px} {top[(px, pz)] + 1} {pz} minecraft:lily_pad")
+        if (px, pz) in top and px < pond[0]: c.append(f"setblock {px} {top[(px, pz)] + 1} {pz} minecraft:lily_pad")
+    # a little dock out from the plaza side, with a lantern and a sign
+    pw, pt = pond[0], Y + pond_h
+    dx0 = round(pw + pond[2] + 1)
+    c += [f"fill {round(pw) + 1} {pt} {pond[1] - 1} {dx0} {pt} {pond[1] + 1} minecraft:spruce_planks",
+          f"setblock {round(pw) + 1} {pt + 1} {pond[1] - 1} minecraft:spruce_fence", f"setblock {round(pw) + 1} {pt + 2} {pond[1] - 1} minecraft:lantern",
+          f"setblock {round(pw) + 1} {pt + 1} {pond[1] + 1} minecraft:spruce_fence",
+          f"fill {round(pw) + 1} {pt - 1} {pond[1] - 1} {round(pw) + 1} {pt - 3} {pond[1] - 1} minecraft:spruce_log",
+          f"fill {round(pw) + 1} {pt - 1} {pond[1] + 1} {round(pw) + 1} {pt - 3} {pond[1] + 1} minecraft:spruce_log",
+          label(dx0 + 0.5, pt + 2.4, pond[1] + 0.5, snbt({"text": "Fishing Pond", "color": "aqua", "bold": True,
+                "extra": [txt("\nCast a line · Fishing skill XP", "gray", bold=False)]}), 0.8, bill="center")]
+    for x in range(round(pw) + 1, dx0 + 1):
+        for z in range(pond[1] - 1, pond[1] + 2): used.add((x, z))
     # plaza: polished andesite with a stone brick ring
     for (x, z) in top:
         r = math.hypot(x, z)
@@ -675,7 +694,7 @@ def hub_build():
               txt("Craft one: 8 of a resource around a wooden pickaxe.\nPlace it on your island; it gathers while you're offline.\nRight-click it to collect, upgrade (I to V) or pick it up.", "gray", bold=False)]}),
                 0.8, yaw=0)]
     c += district.features(txt, snbt, label, hsign)
-    c += [f"setworldspawn 0 {Y + 1} 5", "scoreboard players set #hubv cs_cfg 6"]
+    c += [f"setworldspawn 0 {Y + 1} 5", "scoreboard players set #hubv cs_cfg 7"]
     return c
 
 def portal_blocks(x, y, z, platform=True):
