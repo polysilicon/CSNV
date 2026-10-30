@@ -134,6 +134,18 @@ and gives +2 hearts. Staff: `/pets grant <player> <pet>`.
   the server stops). Nothing can be placed. Hostile mobs spawn while players are there (8 + 2 per player).
 - Build or rebuild them with `function crispy_skyblock:zones/build_all`.
 
+**Zone RPG rules** (2.7.0, `ZoneRules.java`):
+- Zone mobs get a level when they spawn: in the Deep Mines 2 + one per block below the rim (about Lv 2 at the top,
+  Lv 25 on the floor, +/-2); in the Whispering Woods Lv 3-8. Each level adds 15% health and 6% damage. The name tag
+  shows `[Lv N] Mob ||||||||-- hp/max`, coloured by level and remaining health. Kills pay 2 coins per level (and
+  Combat XP, which already scales with max health).
+- Zone mobs don't burn in daylight (`MobMixin` on `Mob.isSunBurnTick`).
+- Items that drop in a zone (mined blocks, mob loot; not items a player threw) are marked gathered (custom_data
+  `cs_gathered` and a lore line). The mark comes off when you leave the zone.
+- Dying in a zone drops only gathered items. The rest of the inventory and your XP are put aside in storage
+  `crispy_skyblock:stash` (`ServerPlayerMixin` on `ServerPlayer.die`) and given back on respawn (or on join, after a
+  restart). Nothing changes if keep_inventory is on.
+
 ## Economy and minions (2.1.0)
 
 Hypixel-style, vanilla only. Prices, shop categories, minion types and tiers are defined in `skyblock.py` (`SHOP`,
