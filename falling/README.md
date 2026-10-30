@@ -152,6 +152,22 @@ and gives +2 hearts. Staff: `/pets grant <player> <pet>`.
   `crispy_skyblock:stash` (`ServerPlayerMixin` on `ServerPlayer.die`) and given back on respawn (or on join, after a
   restart). Nothing changes if keep_inventory is on.
 
+## Market District (2.9.0)
+
+`district.py` builds a floating island south of the hub (x -45..45, z 50..146), joined to the hub's south path by a
+bridge, with 16 plots (16x16) along a lit avenue; `HubPlots.java` runs them. The Realtor NPC at the district's
+entrance, a plot's sign, or `/plots` opens the plots menu: buy a free plot (20,000 coins, click twice to confirm,
+one plot each), visit any plot, abandon yours (clears it, 50% back). `/plots trust|untrust <player>`, `/plots home`,
+`/warp plots`; staff: `/plots evict <n>` (for sale again, builds kept).
+
+- Ownership is in storage `crispy_skyblock:hubplots` (`p<n>`: owner UUID, name, trust, tnames).
+- The owner, trusted players and the owner's island co-op can build from 4 below the floor to 32 above. Standing in
+  the plot they're tagged `cs_hpbuild` and the datapack puts them in survival; the rest of the district is adventure
+  like the hub (and skips the island bounds check). Nothing outside a plot can be broken or placed; chests, item
+  frames and armor stands in a plot can only be used by its builders. TNT, fire and lava aren't allowed.
+- Labels over each plot's sign (`cs_hpl_<n>`) show "For sale" or the owner, refreshed every 30 s.
+- Built once by `district/build` (scheduled from load while `#districtv cs_cfg` is unset).
+
 ## Economy and minions (2.1.0)
 
 Hypixel-style, vanilla only. Prices, shop categories, minion types and tiers are defined in `skyblock.py` (`SHOP`,
@@ -220,6 +236,6 @@ in `#crispy_skyblock:gear_targets` (never players, villagers or pets) and never 
 
 ## Mod commands
 
-`/island` (alias `/is`) opens the Island Menu; `/island choose|challenges|gear|level|top`; `/gear`; `/skills`; `/bazaar` (`/bz`); `/pets`; `/warp`; `/island upgrades|pets|skills`; `/invite <player>` (also
+`/island` (alias `/is`) opens the Island Menu; `/island choose|challenges|gear|level|top`; `/gear`; `/skills`; `/bazaar` (`/bz`); `/pets`; `/warp`; `/plots`; `/island upgrades|pets|skills`; `/invite <player>` (also
 `/island invite <player>`). Menus are chest GUIs defined by the datapack in storage `crispy_skyblock:menus` (set on
 every load); an entry with `done:"<objective>"` shows its `item_done` once the viewer's score there is 1 or more.

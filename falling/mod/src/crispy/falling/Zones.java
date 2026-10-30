@@ -135,6 +135,8 @@ final class Zones {
                     (pl, c) -> warp(pl, "hub"));
             m.put(12, Ui.item(Items.GRASS_BLOCK, t("Your island", ChatFormatting.GREEN, ChatFormatting.BOLD), List.of(t("Home", ChatFormatting.GRAY)), false),
                     (pl, c) -> warp(pl, "home"));
+            m.put(22, Ui.item(Items.OAK_SIGN, t("Market District", ChatFormatting.GOLD, ChatFormatting.BOLD), List.of(t("Plots for shops and houses · /plots", ChatFormatting.GRAY)), false),
+                    (pl, c) -> warp(pl, "plots"));
             List<Zone> zs = zones(server);
             int[] slots = {14, 16};
             for (int i = 0; i < zs.size() && i < slots.length; i++) {
@@ -154,13 +156,15 @@ final class Zones {
         String cmd = switch (where) {
             case "hub" -> "function crispy_skyblock:act/hub";
             case "home" -> "function crispy_skyblock:act/home";
+            case "plots", "district" -> { HubPlots.warp(p); yield ""; }
             default -> {
                 Zone z = zones(server).stream().filter(x -> x.key().equals(where)).findFirst().orElse(null);
                 if (z == null || z.warp().length < 4) yield null;
                 yield "function crispy_skyblock:zones/tp {x:" + z.warp()[0] + ",y:" + z.warp()[1] + ",z:" + z.warp()[2] + ",yaw:" + z.warp()[3] + "}";
             }
         };
-        if (cmd == null) { p.sendSystemMessage(t("No warp called " + where + ". Try hub, home, mines or woods.", ChatFormatting.RED)); return 0; }
+        if (cmd != null && cmd.isEmpty()) return 1;
+        if (cmd == null) { p.sendSystemMessage(t("No warp called " + where + ". Try hub, home, plots, mines or woods.", ChatFormatting.RED)); return 0; }
         server.getCommands().performPrefixedCommand(p.createCommandSourceStack().withSuppressedOutput().withPermission(LevelBasedPermissionSet.GAMEMASTER), cmd);
         return 1;
     }
@@ -168,7 +172,7 @@ final class Zones {
     static void register(CommandDispatcher<CommandSourceStack> d) {
         d.register(Commands.literal("warp").executes(c -> { openWarps(c.getSource().getPlayerOrException()); return 1; })
                 .then(Commands.argument("where", StringArgumentType.word())
-                        .suggests((c, b) -> { for (String s : new String[]{"hub", "home", "mines", "woods"}) b.suggest(s); return b.buildFuture(); })
+                        .suggests((c, b) -> { for (String s : new String[]{"hub", "home", "plots", "mines", "woods"}) b.suggest(s); return b.buildFuture(); })
                         .executes(c -> warp(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "where")))));
     }
 }

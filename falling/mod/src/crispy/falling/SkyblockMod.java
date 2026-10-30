@@ -44,13 +44,16 @@ public class SkyblockMod implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(Pets::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Zones::onTick);
         ServerTickEvents.END_SERVER_TICK.register(ZoneRules::onTick);
+        ServerTickEvents.END_SERVER_TICK.register(HubPlots::onTick);
         net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents.AFTER_RESPAWN.register((oldP, newP, alive) -> ZoneRules.restore(newP));
         net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((h, sender, server) -> ZoneRules.restore(h.player));
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPING.register(Zones::restoreAll);
         PlayerBlockBreakEvents.BEFORE.register(Portals::canBreak);
         PlayerBlockBreakEvents.BEFORE.register(Zones::canBreak);
+        PlayerBlockBreakEvents.BEFORE.register(HubPlots::canBreak);
         PlayerBlockBreakEvents.AFTER.register(Skills::onBreak);
         PlayerBlockBreakEvents.AFTER.register(Zones::onBreak);
+        UseBlockCallback.EVENT.register(HubPlots::onUseBlock);
         UseBlockCallback.EVENT.register(Zones::onUseBlock);
         UseBlockCallback.EVENT.register(Realms::onUseBlock);
         UseBlockCallback.EVENT.register(Minions::onUseBlock);
@@ -63,16 +66,21 @@ public class SkyblockMod implements ModInitializer {
                         if (t.startsWith("cs_shop_")) Shop.open(p.level().getServer(), p, t.substring(8));
                         else if (t.equals("cs_bazaar")) Bazaar.open(p);
                         else if (t.equals("cs_warps")) Zones.openWarps(p);
+                        else if (t.equals("cs_realtor")) HubPlots.open(p);
                     }
                 return InteractionResult.SUCCESS;
             }
+            InteractionResult hp = HubPlots.onEntity(player, world, entity);
+            if (hp != InteractionResult.PASS) return hp;
             return Minions.onUseEntity(player, world, hand, entity);
         });
+        net.fabricmc.fabric.api.event.player.AttackEntityCallback.EVENT.register((player, world, hand, entity, hit) -> HubPlots.onEntity(player, world, entity));
         CommandRegistrationCallback.EVENT.register((d, ctx, sel) -> {
             Economy.register(d);
             Bazaar.register(d);
             Pets.register(d);
             Zones.register(d);
+            HubPlots.register(d);
             d.register(Commands.literal("invite").then(Commands.argument("player", EntityArgument.player())
                     .executes(c -> invite(c.getSource(), EntityArgument.getPlayer(c, "player")))));
             d.register(Commands.literal("challenges")

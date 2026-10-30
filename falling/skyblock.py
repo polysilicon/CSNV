@@ -407,6 +407,9 @@ import gear
 GEAR = gear.build(NS, fn, js, txt, [f"{NS}:minion_{k}" for k, *_r in MINIONS])
 import expansion   # pets, resource zones, warps (the mod does the Bazaar, upgrades, pets and zone regrowth)
 EXP = expansion.build(NS, fn, js, txt, snbt, Build)
+import district    # the Market District: plots players buy south of the hub (HubPlots.java runs them)
+DSEL = district.sel()
+ECO.update(district.cfg())
 ECO.update(EXP["cfg"])
 
 # ======================================================================= menus (read by the crispy_skyblock mod)
@@ -476,6 +479,7 @@ execute unless score #hubv cs_cfg matches 2.. run function {NS}:hub
 execute if score #hubv cs_cfg matches 2 run function {NS}:hub_v3
 # hub v4 (new portals): rebuilt once the hub's entities have loaded, so the old labels are cleared first
 execute if score #hubv cs_cfg matches 2..3 run schedule function {NS}:hub_v4 160t replace
+execute unless score #districtv cs_cfg matches 1.. run schedule function {NS}:district/build 220t replace
 # respawn the merchants once the hub's entities are loaded (at startup they load after this runs)
 schedule function {NS}:npcs 100t replace
 execute unless data storage {NS}:d plots run function {NS}:setup
@@ -523,7 +527,7 @@ def hub_build():
     the portal to your island to the north, a pond, trees, flowers and a rocky underside."""
     import math
     rnd = random.Random(42)
-    c = ["forceload add -64 -64 63 63", f"kill @e[type=minecraft:text_display,tag={NS},x=-64,y=0,z=-64,dx=128,dy=320,dz=128]"]
+    c = ["forceload add -64 -64 63 63", f"kill @e[type=minecraft:text_display,tag={NS},tag=!cs_district,x=-64,y=0,z=-64,dx=128,dy=320,dz=128]"]
     c += [f"fill -{HUB_R} {y} -{HUB_R} {HUB_R} {y} {HUB_R} minecraft:air" for y in range(Y - 40, Y + 21)]
     top, edge = {}, {}
     pond = (-24, 16, 5.2)
@@ -767,6 +771,7 @@ for (nx, nz, tag, prof, who, line) in ((6, -9, "cs_bazaar", "cartographer", "Baz
         + f",Rotation:[{yaw}f,0f]}}")
     npc_lines.append(label(nx + 0.5, Y + 3.15, nz + 0.5, snbt({"text": who, "color": "gold", "bold": True,
                      "extra": [txt(f"\n{line} · click", "gray", bold=False)]}), 0.7, bill="center", tag="cs_npcl"))
+npc_lines += district.build(NS, fn, txt, snbt, label, hsign)
 fn("npcs", "\n".join(npc_lines))
 
 
@@ -777,10 +782,14 @@ execute as @a[scores={{cs_act=1..}}] at @s run function {NS}:act/dispatch
 execute as @a unless score @s cs_seen matches 1 run function {NS}:first_join
 execute as @e[type=minecraft:player,scores={{cs_die=1..}}] run function {NS}:p/respawned
 # hub = adventure, everywhere else = survival
-execute as @a[gamemode=survival] at @s if dimension minecraft:overworld if entity @s[x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}] run gamemode adventure @s
-execute as @a[gamemode=adventure] at @s unless entity @s[x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}] run gamemode survival @s
+execute as @a[gamemode=survival,tag=!cs_hpbuild] at @s if dimension minecraft:overworld if entity @s[x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}] run gamemode adventure @s
+execute as @a[gamemode=survival,tag=!cs_hpbuild] at @s if dimension minecraft:overworld if entity @s[{DSEL}] run gamemode adventure @s
+execute as @a[gamemode=adventure] at @s unless entity @s[x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}] unless entity @s[{DSEL}] run gamemode survival @s
+# in a Market District plot they can build on (HubPlots.java tags them): survival
+execute as @a[gamemode=adventure,tag=cs_hpbuild] run gamemode survival @s
 execute as @a[gamemode=adventure] at @s unless dimension minecraft:overworld run gamemode survival @s
 execute as @e[type=minecraft:player,x=-{HUB_R},y={Y-110},z=-{HUB_R},dx={2*HUB_R},dy=64,dz={2*HUB_R}] run function {NS}:act/hub
+execute as @e[type=minecraft:player,x=-47,y={Y-110},z=47,dx=94,dy=64,dz=102] run function {NS}:act/hub
 scoreboard players add #t cs_tmp 1
 execute if score #t cs_tmp matches 10 run function {NS}:p/bounds_all
 execute if score #t cs_tmp matches 10 run function {NS}:p/nbounds_all
@@ -793,6 +802,7 @@ execute positioned 0 {Y} {HUB_PORTAL_Z} run function {NS}:portal/fx_island
 execute positioned -13 {Y} -14 run function {NS}:portal/fx_mines
 execute positioned 13 {Y} -14 run function {NS}:portal/fx_woods
 kill @e[type=#{NS}:hostile,x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}]
+kill @e[type=#{NS}:hostile,{DSEL}]
 execute as @e[tag=cs_boss] at @s run function {NS}:boss/tick
 function {NS}:gear/second
 function {NS}:zones/second
@@ -1387,7 +1397,7 @@ function {NS}:p/ctx
 function {NS}:p/respawned2 with storage {NS}:d cur
 """)
 fn("p/respawned2", f"$execute unless entity @s[x=$(x),y=-64,z=$(z),dx=$(sd),dy=400,dz=$(sd)] run function {NS}:p/home")
-fn("p/bounds_all", f"execute as @a[gamemode=survival,tag=!cs_staff] at @s if dimension minecraft:overworld unless entity @s[x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}] {EXP['in_zone']} run function {NS}:p/bounds")
+fn("p/bounds_all", f"execute as @a[gamemode=survival,tag=!cs_staff] at @s if dimension minecraft:overworld unless entity @s[x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}] unless entity @s[{DSEL}] {EXP['in_zone']} run function {NS}:p/bounds")
 fn("p/bounds", f"""
 execute unless score @s cs_plot matches 1.. run return run function {NS}:act/hub
 function {NS}:p/ctx
