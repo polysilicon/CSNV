@@ -477,7 +477,7 @@ data modify storage {NS}:eco cfg set value {snbt(ECO)}
 execute unless score #hubv cs_cfg matches 2.. run function {NS}:hub
 execute if score #hubv cs_cfg matches 2 run function {NS}:hub_v3
 # hub v4 (new portals): rebuilt once the hub's entities have loaded, so the old labels are cleared first
-execute if score #hubv cs_cfg matches 2..6 run schedule function {NS}:hub_v4 160t replace
+execute if score #hubv cs_cfg matches 2..7 run schedule function {NS}:hub_v4 160t replace
 # respawn the merchants once the hub's entities are loaded (at startup they load after this runs)
 schedule function {NS}:npcs 100t replace
 execute unless data storage {NS}:d plots run function {NS}:setup
@@ -534,7 +534,7 @@ def hub_build():
     for y in range(Y - 40, Y + 34):     # two halves: a fill can't cover the whole area at once
         c += [f"fill -{HUB_R} {y} -{HUB_R} -1 {y} {HUB_R} minecraft:air", f"fill 0 {y} -{HUB_R} {HUB_R} {y} {HUB_R} minecraft:air"]
     top, edge = {}, {}
-    pond = (-33, 0, 6.5)      # the fishing pond, out in the western hills between two of the diagonal paths
+    pond = (-36, 0, 11.5)     # the fishing pond, out in the western hills between two of the diagonal paths
     def hills(x, z, lim):
         inner = max(0.0, min(1.0, (math.hypot(x, z) - 16) / 7)) * max(0.0, min(1.0, (lim - math.hypot(x, z)) / 5))
         return 5 * noise(x * 0.07, z * 0.07, 2) * inner * district.flat(x, z)   # level pads for the plots
@@ -569,21 +569,21 @@ def hub_build():
             used.add((x, z))
         elif d <= pond[2] + 1.3:
             surf(x, z, "sand"); used.add((x, z))
-    for _ in range(6):
+    for _ in range(14):
         a = rnd.random() * 6.28; rr = rnd.random() * (pond[2] - 1)
         px, pz = int(pond[0] + rr * math.cos(a)), int(pond[1] + rr * math.sin(a))
         if (px, pz) in top and px < pond[0]: c.append(f"setblock {px} {top[(px, pz)] + 1} {pz} minecraft:lily_pad")
     # a little dock out from the plaza side, with a lantern and a sign
-    pw, pt = pond[0], Y + pond_h
-    dx0 = round(pw + pond[2] + 1)
-    c += [f"fill {round(pw) + 1} {pt} {pond[1] - 1} {dx0} {pt} {pond[1] + 1} minecraft:spruce_planks",
-          f"setblock {round(pw) + 1} {pt + 1} {pond[1] - 1} minecraft:spruce_fence", f"setblock {round(pw) + 1} {pt + 2} {pond[1] - 1} minecraft:lantern",
-          f"setblock {round(pw) + 1} {pt + 1} {pond[1] + 1} minecraft:spruce_fence",
-          f"fill {round(pw) + 1} {pt - 1} {pond[1] - 1} {round(pw) + 1} {pt - 3} {pond[1] - 1} minecraft:spruce_log",
-          f"fill {round(pw) + 1} {pt - 1} {pond[1] + 1} {round(pw) + 1} {pt - 3} {pond[1] + 1} minecraft:spruce_log",
+    pw, pt = round(pond[0] + pond[2]) - 7, Y + pond_h     # the dock: 7 blocks out from the east shore
+    dx0 = round(pond[0] + pond[2] + 1)
+    c += [f"fill {pw + 1} {pt} {pond[1] - 1} {dx0} {pt} {pond[1] + 1} minecraft:spruce_planks",
+          f"setblock {pw + 1} {pt + 1} {pond[1] - 1} minecraft:spruce_fence", f"setblock {pw + 1} {pt + 2} {pond[1] - 1} minecraft:lantern",
+          f"setblock {pw + 1} {pt + 1} {pond[1] + 1} minecraft:spruce_fence",
+          f"fill {pw + 1} {pt - 1} {pond[1] - 1} {pw + 1} {pt - 3} {pond[1] - 1} minecraft:spruce_log",
+          f"fill {pw + 1} {pt - 1} {pond[1] + 1} {pw + 1} {pt - 3} {pond[1] + 1} minecraft:spruce_log",
           label(dx0 + 0.5, pt + 2.4, pond[1] + 0.5, snbt({"text": "Fishing Pond", "color": "aqua", "bold": True,
                 "extra": [txt("\nCast a line · Fishing skill XP", "gray", bold=False)]}), 0.8, bill="center")]
-    for x in range(round(pw) + 1, dx0 + 1):
+    for x in range(pw + 1, dx0 + 1):
         for z in range(pond[1] - 1, pond[1] + 2): used.add((x, z))
     # plaza: polished andesite with a stone brick ring
     for (x, z) in top:
@@ -694,7 +694,7 @@ def hub_build():
               txt("Craft one: 8 of a resource around a wooden pickaxe.\nPlace it on your island; it gathers while you're offline.\nRight-click it to collect, upgrade (I to V) or pick it up.", "gray", bold=False)]}),
                 0.8, yaw=0)]
     c += district.features(txt, snbt, label, hsign)
-    c += [f"setworldspawn 0 {Y + 1} 5", "scoreboard players set #hubv cs_cfg 7"]
+    c += [f"setworldspawn 0 {Y + 1} 5", "scoreboard players set #hubv cs_cfg 8"]
     return c
 
 def portal_blocks(x, y, z, platform=True):

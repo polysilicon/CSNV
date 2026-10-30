@@ -155,7 +155,7 @@ and gives +2 hearts. Staff: `/pets grant <player> <pet>`.
 ## Hub plots (2.10.0)
 
 The hub island is about twice as wide as before (radius ~92-100, hub area |x|,|z| <= 104; the fishing pond with its
-dock is out in the western hills at -33 0, level with the ground round it), and 16 plots players can
+dock is out in the western hills at -36 0 (radius 11.5), level with the ground round it), and 16 plots players can
 buy for shops and houses sit in a ring through its outer hills (centres 74 out), each on a levelled pad with its sign
 facing the plaza. A lantern-lit ring path (56 out) links them, with a spur to each plot and the four diagonal paths
 running out to it. `district.py` lays them out; `HubPlots.java` runs them. (2.9.0 put them on a separate Market
