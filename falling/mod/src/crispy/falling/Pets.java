@@ -127,6 +127,8 @@ final class Pets {
 
     static void onTick(MinecraftServer server) {
         tick++;
+        for (Entity e : strays) if (!e.isRemoved() && stray(e)) e.discard();
+        strays.clear();
         if (!cleaned) { cleaned = true; Upgrades.run(server, "kill @e[type=minecraft:item_display,tag=cs_pet]"); }   // leftovers from before a restart
         Set<UUID> online = new HashSet<>();
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
@@ -146,12 +148,28 @@ final class Pets {
             e.setYRot(p.getYRot());
             if (tick % 100 == 0) applyStats(p);
         }
+        if (tick % 40 == 0) sweep(server);
         shown.entrySet().removeIf(en -> {
             if (online.contains(en.getKey())) return false;
             for (ServerLevel l : server.getAllLevels()) { Entity e = l.getEntity(en.getValue()); if (e != null) e.discard(); }
             return true;
         });
     }
+
+    /** Any pet display that isn't the one following its player (left behind by a death, a teleport, a restart...). */
+    static boolean stray(Entity e) {
+        return e instanceof Display.ItemDisplay && e.entityTags().contains("cs_pet") && !shown.containsValue(e.getUUID());
+    }
+    static void sweep(MinecraftServer server) {
+        for (ServerLevel l : server.getAllLevels()) {
+            List<Entity> gone = new ArrayList<>();
+            for (Entity e : l.getAllEntities()) if (stray(e)) gone.add(e);
+            gone.forEach(Entity::discard);
+        }
+    }
+    private static final List<Entity> strays = new ArrayList<>();
+    /** ServerEntityEvents.ENTITY_LOAD: an old pet saved in a chunk comes back when the chunk loads; queue it. */
+    static void onEntityLoad(Entity e, ServerLevel level) { if (stray(e)) strays.add(e); }
 
     static Entity display(MinecraftServer server, ServerPlayer p) {
         UUID id = shown.get(p.getUUID());
