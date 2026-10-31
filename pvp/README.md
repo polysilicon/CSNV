@@ -471,6 +471,30 @@ Outbreak at 1/16 scale. The **🔬 Micro Outbreak** NPC (west of spawn, -6.5 101
   player in `mo.best`, the server record in `#record mo` (announced). Objectives `mo`, `mo.join` (trigger: soldier 1-8,
   20 random, 21 open the menu, 22 leave the queue, 23 the shop, 31-37 buy), `mo.kit`.
 
+## Crispy Games (`games.py`)
+
+A last-player-standing elimination show in six rounds. Queue at the 🦑 Crispy Games NPC in the lobby (east side,
+7.5 101 -1.5); a match starts 30 s after the first player joins (with one player it's a practice run, no win).
+Everyone wears the same green tracksuit and gets a random player number; no kits or abilities. Eliminated players
+watch the rest as spectators. Arenas are in a strip at x 1000 on the superflat ground; build them once with
+`function pvp:admin/build_games` (the match force-loads them while it runs).
+
+| # | Round | Arena | How you go out |
+|---|---|---|---|
+| 1 | Red Light, Green Light | z 100: sand field, painted sky walls, the Watcher (a giant iron golem) | moving (walk/sprint/sneak/jump stats) after a 0.5 s grace on red, or not over the line in 90 s |
+| 2 | Glass Bridge | z 240: 12 steps of two glass panes high over a dark pit, one fake per step (markers `cg.fake`) | falling, or not across in 2 min |
+| 3 | Hide and Seek | z 400: a 41x41 house of 16 rooms with furniture | hiders: killed; seekers (a third, at least 1): no kill in 3 min. Skipped with < 3 players. Hiders glow for the last 30 s |
+| 4 | Honeycomb | z 560: 32 glass booths, each with a 7x7 wall (shape in yellow concrete, the rest orange terracotta) | breaking a yellow block, or not clearing all orange in 90 s. Shapes: circle, triangle, star, umbrella. The Needle has +3 block reach |
+| 5 | Marbles | z 650: 16 pair booths, a 2x2 pit 10 blocks out | scoring fewer marbles in the pit than your partner (10 snowballs each; a tie is a coin flip; an odd one out goes through) |
+| 6 | The Final | z 800: walled stone arena with pillars | dying. Same kit for all (iron sword, bow, chainmail top); everyone withers after 2 min |
+
+- A round never knocks everyone out: if it would, nobody from that round is eliminated (`cg.lost` revived).
+- The winner gets `cg.wins` and a server-wide announcement. Leaving (/spawn, disconnecting) forfeits.
+- Teams: `cg` (no friendly fire, no collisions, so nobody gets shoved on red light), `cg.seek` / `cg.hide` in Hide
+  and Seek (they can only hit each other), no team in the Final.
+- State: `#state cg` (0 idle, 1 countdown, 2 match, 3 finished), `#round cg`, `#phase cg` (0 intro, 1 play, 2 round over),
+  boss bar `pvp:cg`. Tags `cg.q` (queued), `cg.all` (in the match), `cg.in` (still playing), `cg.spec` (out, watching).
+
 ## Haunted Night (Halloween 2026)
 A limited-time Outbreak variant, open until **2026-11-07** (UTC). The **🎃 Haunted Night** NPC (a mannequin dressed as
 Michael Myers, with jack o'lanterns, at 6.5 101 5.5 in the lobby; `admin/place_hw` / `admin/remove_hw`) opens it.

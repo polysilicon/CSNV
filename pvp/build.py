@@ -11,6 +11,7 @@ import json
 import math
 import abilities, arena_map, arena_maps, outbreak_maps, os, random, shutil, sys, tower
 import micro
+import games   # Crispy Games (games.py)
 
 NS = "pvp"
 PACK_FORMAT = [107, 0], [107, 1]
@@ -566,6 +567,7 @@ def build():
     wj("data/minecraft/tags/function/tick.json", {"values": [f"{NS}:tick"]})
 
     MICRO = micro.build(sys.modules[__name__])   # Micro Outbreak (micro.py)
+    GAMES = games.build(sys.modules[__name__])   # Crispy Games (games.py)
 
     # ------------------------------------------------------------------ menus (opened by /pvpmenu)
     kit_lore = lambda k: k[5] + ["", "Click to pick"]
@@ -666,6 +668,7 @@ def build():
         **pve_menus(),
         "micro": MICRO["menu"],
         "micro_shop": MICRO["shop"],
+        "games": GAMES["menu"],
         "pve_hw": {"title": {"text": "🎃 Haunted Night: pick your killer", "color": "gold"}, "rows": 3, "fill": PANE, "items":
                    [{"slot": sl, "item": kit_icon(k, k[5] + ["", "Click to queue with this character"]), "cmd": f"trigger pve.join set {k[0]}"}
                     for sl, k in zip((11, 12, 13, 14, 15), HALLOWEEN_KITS)]
@@ -694,7 +697,7 @@ def build():
             "pvp.cur dummy", "pvp.mastery trigger", "pvp.mastered dummy", "pvp.kk dummy", "pvp.kd dummy",
             "pvp.elo dummy", "pvp.dwin dummy", "pvp.dloss dummy", "pvp.dfrom dummy", "pvp.dtm dummy", "pvp.dpit dummy",
             "pvp.duela trigger", "pvp.dueld trigger", "pvp.duelstats trigger", *[f"pvp.mx{k[0]} dummy" for k in ALL_KITS],
-            *[f"pvp.hw{c[0]} dummy" for c in HW_COSMETICS], "pvp.hwwins dummy", *MICRO["objectives"],
+            *[f"pvp.hw{c[0]} dummy" for c in HW_COSMETICS], "pvp.hwwins dummy", *MICRO["objectives"], *GAMES["objectives"],
             "pve dummy", "pve.join trigger", "pve.buy trigger", "pve.k totalKillCount", "pve.kit dummy", "pve.best dummy", "pve.arm dummy", "pve.gun dummy", "pve.map dummy", "pve.rv dummy", "pve.wb dummy"]],
         'scoreboard objectives add pvp.kills playerKillCount {"text":"⚔ Kills","color":"aqua","bold":true}',
         'scoreboard objectives add pve.pts dummy {"text":"☣ Points","color":"green","bold":true}',
@@ -716,7 +719,7 @@ def build():
         "execute unless score #record pve matches 0.. run scoreboard players set #record pve 0",
         *[f"data modify storage pvp:menus {k} set value {tj(v)}" for k, v in menus.items()],
         f"function {NS}:tower/load",
-        *MICRO["load"],
+        *MICRO["load"], *GAMES["load"],
     ])
 
     fn("tick", [
@@ -724,6 +727,7 @@ def build():
         f"function {NS}:ability/tick",
         f"function {NS}:tower/tick",
         f"function {NS}:micro/tick",
+        f"function {NS}:games/tick",
         f"execute as @a[tag=!pvp.seen] run function {NS}:to_lobby",
         f"execute as @a[scores={{pvp.left=1..}}] run function {NS}:to_lobby",
         f"execute as @e[type=minecraft:player,scores={{pvp.dead=1..}}] run function {NS}:respawned",
@@ -746,6 +750,7 @@ def build():
         "scoreboard players set #t pvp 0",
         f"function {NS}:hw/gate",
         f"function {NS}:micro/second",
+        f"function {NS}:games/second",
         f"effect give @a[{LOBBY_BOX}] minecraft:resistance 3 4 true",
         f"effect give @a[{LOBBY_BOX}] minecraft:weakness 3 255 true",
         f"effect give @a[{LOBBY_BOX}] minecraft:saturation 3 0 true",
@@ -755,7 +760,7 @@ def build():
         f"function {NS}:arena/second",
         f"execute as @a[tag=pvp.spec,tag=!pvp.instands] run function {NS}:to_lobby",
         # anyone (in adventure) outside the lobby and both arenas goes back to the lobby
-        f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[tag=pvp.inarena] {" ".join(f"unless entity @s[{b}]" for b in PVE_BOXES.values())} unless entity @s[tag=pvp.admin,{ROOM_BOX}] unless entity @s[tag=pvp.instands] unless entity @s[tag=pvp.duel] unless entity @s[{TOWER_BOX}] unless entity @s[tag=mo.in] run function {NS}:to_lobby",   # mo.in: Micro Outbreak (micro/second keeps them in its room)
+        f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[tag=pvp.inarena] {" ".join(f"unless entity @s[{b}]" for b in PVE_BOXES.values())} unless entity @s[tag=pvp.admin,{ROOM_BOX}] unless entity @s[tag=pvp.instands] unless entity @s[tag=pvp.duel] unless entity @s[{TOWER_BOX}] unless entity @s[tag=mo.in] {GAMES["keep"]} run function {NS}:to_lobby",   # mo.in: Micro Outbreak; cg.all: Crispy Games (micro/second keeps them in its room)
         f"function {NS}:pve/second",
         f"function {NS}:ability/second",
         f"execute as @a[{LOBBY_BOX},tag=!pvp.spec] unless items entity @s container.* minecraft:flint unless items entity @s weapon.offhand minecraft:flint run item replace entity @s hotbar.8 with {DUEL_ITEM}",
@@ -776,7 +781,7 @@ def build():
         "scoreboard players add @s pve.best 0",
         "execute if entity @s[tag=pve.in] if score #state pve matches 2..3 if score #wave pve > @s pve.best run scoreboard players operation @s pve.best = #wave pve",
         "clear @s", "effect clear @s", "function cyber:admin/reset", "gamemode adventure @s",
-        *PERK_RESET, *MICRO["reset"],
+        *PERK_RESET, *MICRO["reset"], *GAMES["reset"],
         "tag @s remove pve.in", "tag @s remove pve.down", "tag @s remove pve.q", "team leave @s", "tag @s remove pvp.spec",
         f"tp @s 0.5 {LOBBY_Y + 1} 0.5 180 0",
         "scoreboard players set @s pvp.left 0", "scoreboard players set @s pvp.ct 0",
@@ -791,6 +796,7 @@ def build():
     ])
     fn("respawned", [
         "scoreboard players set @s pvp.dead 0",
+        GAMES["died"],
         f"execute if entity @s[tag=mo.in] run return run function {NS}:micro/died",
         f"execute if entity @s[tag=pve.in] run return run function {NS}:pve/downed",
         f"execute if entity @s[tag=tw.in] run return run function {NS}:tower/died",
@@ -875,6 +881,7 @@ def build():
     npc_adv("pvenpc", "pvp.pvenpc", f"function {NS}:pve/open_menu")
     npc_adv("shopnpc", "pvp.shopnpc", "pve_shop")
     npc_adv("micronpc", "pvp.micronpc", f"function {NS}:micro/open")
+    npc_adv("gamesnpc", "pvp.gamesnpc", f"function {NS}:games/open")
 
     build_pve()
     build_halloween()
@@ -896,6 +903,7 @@ def build():
         *npc("pvp.pvenpc", PVE_NPC, "☣ Outbreak ☣", "green", "cleric", "swamp"),
         *npc("pvp.towernpc", TOWER_NPC, "🗼 The Tower 🗼", "light_purple", "librarian", "taiga"),
         *npc("pvp.micronpc", MICRO["npc"], "🔬 Micro Outbreak 🔬", "aqua", "cartographer", "plains", 230),
+        *npc("pvp.gamesnpc", GAMES["npc"], "🦑 Crispy Games 🦑", "light_purple", "nitwit", "plains", 90),
         f"function {NS}:admin/place_holo",
     ])
     fn("admin/place_holo", [   # the lobby board (on its own, so it can be redone without touching the NPCs)
