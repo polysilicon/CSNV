@@ -19,10 +19,10 @@ f = lambda path, size: ImageFont.truetype(path, max(8, round(size * S)))
 PINK, CYAN, YELLOW, WHITE, GREY = (255, 60, 200), (40, 230, 255), (255, 220, 60), (245, 245, 255), (150, 160, 190)
 SLIDES = [  # (headline, sub-line, headline colour)
     ("NO RULES · NO CLAIMS", "one huge map, untouched since 2020", PINK),
-    ("2013 FACTIONS", "cannons · obsidian walls · raids · mcMMO", YELLOW),
+    ("SKYBLOCK, NO PAY-TO-WIN", "skills · pets · bazaar · minions · RPG mines", (120, 255, 120)),
+    ("MULTIVERSE: 36 CHARACTERS", "kit PvP · ranked duels · zombie waves", (255, 150, 60)),
     ("CYBERWARE + 190 ENCHANTS", "install a Sandevistan. risk cyberpsychosis.", CYAN),
-    ("ZOMBIES WAVES + KIT PVP", "squad up · Juggernog · boss waves", (120, 255, 120)),
-    ("BALATRO IN THE LOBBY", "a poker roguelike inside Minecraft", (255, 150, 60)),
+    ("2013 FACTIONS", "cannons · obsidian walls · raids · mcMMO", YELLOW),
     ("crispyanarchy.net:13134", "JAVA + BEDROCK · JOIN NOW", WHITE),
 ]
 FPS_MS, PER_SLIDE = 90, 14                     # 14 frames x 90 ms, plus a held last frame per slide
