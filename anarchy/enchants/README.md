@@ -18,6 +18,11 @@ On Anarchy the `crispy-anarchy` mod (`anarchy/mod`) shows it as a chest menu (ti
 written by `enchanter/shop_data` on load); elsewhere the dialog opens.
 
 ## Migration of old AE items
+
+> **Paused on Anarchy and Skyblock** (`scoreboard players set #mig ce -2000000000`; the counter only goes up by 1 a
+> second). The job runs every 2 s for every player and each check (`if data entity @s ...`) serialises the whole
+> player: 68 per player, plus 194 per item with custom data. On Skyblock, where zone loot carries custom data, that
+> caused 300-550 ms tick spikes in the Deep Mines; Skyblock never had AE items. Set `#mig ce 0` to run it again.
 Every 2 seconds `migrate/all` checks every player's inventory, armour and ender chest. Items carrying AE's
 `ae_enchantment;<name>` custom_data keys get the matching native enchantments, AE's lore lines stripped, and their
 custom_data cleared.
