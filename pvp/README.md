@@ -473,7 +473,8 @@ Outbreak at 1/16 scale. The **🔬 Micro Outbreak** NPC (west of spawn, -6.5 101
 
 ## Crispy Games (`games.py`)
 
-A last-player-standing elimination show in six rounds. Queue at the 🦑 Crispy Games NPC in the lobby (east side,
+A last-player-standing elimination show in six rounds. **Hidden for now:** the NPC isn't placed (`games.SHOW_NPC`) and joining
+is closed unless `#open cg` is 1 (`scoreboard players set #open cg 1`, then `/trigger cg.join set 1` from the lobby to test). Queue at the 🦑 Crispy Games NPC in the lobby (east side,
 7.5 101 -1.5); a match starts 30 s after the first player joins (with one player it's a practice run, no win).
 Everyone wears the same green tracksuit and gets a random player number; no kits or abilities. Eliminated players
 watch the rest as spectators. Arenas are in a strip at x 1000 on the superflat ground; build them once with

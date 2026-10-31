@@ -44,6 +44,7 @@ SHAPES = {"circle": ["..XXX..", ".XXXXX.", "XXXXXXX", "XXXXXXX", "XXXXXXX", ".XX
           "umbrella": ["..XXX..", ".XXXXX.", "XXXXXXX", "...X...", "...X...", ".X.X...", "..X...."]}
 SUIT = 2063450                               # tracksuit green
 NPC_POS = (7.5, None, -1.5)
+SHOW_NPC = False                             # hidden for now; joining is also closed unless #open cg is 1 (staff can test)
 
 
 import math
@@ -86,6 +87,7 @@ def build(b):
     fn("games/join", [
         "scoreboard players operation #j cg = @s cg.join", "scoreboard players set @s cg.join 0",
         f"execute if score #j cg matches 2 run return run function {G}/leave_queue",
+        f"execute unless score #open cg matches 1 run return run {say('@s', 'Crispy Games is closed for now.', 'red')}",
         f"execute unless entity @s[{b.LOBBY_BOX}] run return run {say('@s', 'Join Crispy Games from the lobby (/spawn).', 'red')}",
         f"execute if score #state cg matches 2..3 run return run {say('@s', 'A Crispy Games match is running. Wait for the next one!', 'red')}",
         f"execute if entity @s[tag=mo.q] run return run {say('@s', 'Leave the Micro Outbreak queue first.', 'red')}",

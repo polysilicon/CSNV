@@ -903,7 +903,8 @@ def build():
         *npc("pvp.pvenpc", PVE_NPC, "☣ Outbreak ☣", "green", "cleric", "swamp"),
         *npc("pvp.towernpc", TOWER_NPC, "🗼 The Tower 🗼", "light_purple", "librarian", "taiga"),
         *npc("pvp.micronpc", MICRO["npc"], "🔬 Micro Outbreak 🔬", "aqua", "cartographer", "plains", 230),
-        *npc("pvp.gamesnpc", GAMES["npc"], "🦑 Crispy Games 🦑", "light_purple", "nitwit", "plains", 90),
+        # Crispy Games' NPC is hidden for now (set games.SHOW_NPC = True to bring it back)
+        *(npc("pvp.gamesnpc", GAMES["npc"], "🦑 Crispy Games 🦑", "light_purple", "nitwit", "plains", 90) if games.SHOW_NPC else ["kill @e[tag=pvp.gamesnpc]"]),
         f"function {NS}:admin/place_holo",
     ])
     fn("admin/place_holo", [   # the lobby board (on its own, so it can be redone without touching the NPCs)
