@@ -60,8 +60,11 @@ public final class IslandLevels {
         return 1;
     }
 
-    /** Points for the blocks in island `id`'s plot, or -1 if it has no plot record. */
-    static long points(MinecraftServer server, int id) {
+    /** Points for the blocks in island `id`'s plot, or -1 if it has no plot record. With loadedOnly, -2 if any of
+     *  its chunks isn't loaded (rather than loading them all from disk on the main thread: that froze the server for
+     *  seconds every 5 minutes while the owner was away from their island). */
+    static long points(MinecraftServer server, int id) { return points(server, id, false); }
+    static long points(MinecraftServer server, int id, boolean loadedOnly) {
         ListTag plots = server.getCommandStorage().get(DATA).getListOrEmpty("plots");
         if (id <= 0 || id >= plots.size()) return -1;
         CompoundTag p = plots.getCompoundOrEmpty(id);
@@ -71,25 +74,24 @@ public final class IslandLevels {
         long total = 0;
         for (int cx = x >> 4; cx <= x1 >> 4; cx++)
             for (int cz = z >> 4; cz <= z1 >> 4; cz++) {
-                LevelChunk chunk = level.getChunk(cx, cz);
+                LevelChunk chunk = loadedOnly ? level.getChunkSource().getChunkNow(cx, cz) : level.getChunk(cx, cz);
+                if (chunk == null) return -2;
+                long[] sum = {0};
                 for (LevelChunkSection sec : chunk.getSections()) {
                     if (sec.hasOnlyAir()) continue;
-                    for (int by = 0; by < 16; by++)
-                        for (int bz = 0; bz < 16; bz++)
-                            for (int bx = 0; bx < 16; bx++) {
-                                BlockState st = sec.getBlockState(bx, by, bz);
-                                if (st.isAir()) continue;
-                                total += cache.computeIfAbsent(st.getBlock(), IslandLevels::value);
-                            }
+                    // count by palette entry (block type x how many), not block by block
+                    sec.getStates().count((st, n) -> { if (!st.isAir()) sum[0] += (long) n * cache.computeIfAbsent(st.getBlock(), IslandLevels::value); });
                 }
+                total += sum[0];
             }
         return total;
     }
 
     /** Recount island `id`, store the result everywhere it's shown; returns the level (or -1). */
-    static int update(MinecraftServer server, int id) {
-        long pts = points(server, id);
-        if (pts < 0) return -1;
+    static int update(MinecraftServer server, int id) { return update(server, id, false); }
+    static int update(MinecraftServer server, int id, boolean loadedOnly) {
+        long pts = points(server, id, loadedOnly);
+        if (pts < 0) return (int) pts;
         int lvl = (int) Math.min(Integer.MAX_VALUE, pts / POINTS_PER_LEVEL);
         Objective lvlObj = server.getScoreboard().getObjective("cs_lvl");
         if (lvlObj != null) {
@@ -196,7 +198,8 @@ public final class IslandLevels {
                 "execute in minecraft:overworld run data modify entity @e[type=minecraft:text_display,tag=cs_top] text set value " + json);
     }
 
-    /** Every 5 minutes: recount the islands of everyone online in the overworld. */
+    /** Every 5 minutes: recount the islands of everyone online in the overworld (only ones whose chunks are loaded,
+     *  i.e. a member is on it; the rest wait for the next round or /island level). */
     static void onTick(MinecraftServer server) {
         if (++tick % AUTO_TICKS != 0) return;
         Set<Integer> ids = new TreeSet<>();
@@ -204,7 +207,7 @@ public final class IslandLevels {
             int id = SkyblockMod.plot(server, p);
             if (id > 0 && p.level() == server.overworld()) ids.add(id);
         }
-        for (int id : ids) update(server, id);
+        for (int id : ids) update(server, id, true);
     }
 
     private static String esc(String s) { return s.replace("\\", "\\\\").replace("\"", "\\\""); }

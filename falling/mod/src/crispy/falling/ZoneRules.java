@@ -110,7 +110,8 @@ public final class ZoneRules {
             m.setHealth(m.getMaxHealth());
             m.setCustomNameVisible(true);
         }
-        m.setCustomName(nameplate(m, lv));
+        Component name = nameplate(m, lv);
+        if (!name.equals(m.getCustomName())) m.setCustomName(name);   // only resend it when the health changed
     }
 
     static Component nameplate(Mob m, int lv) {

@@ -31,7 +31,7 @@ LOGS = ["oak_log", "birch_log", "spruce_log", "dark_oak_log", "cherry_log"]
 ZONES = [
     # key, name, centre, box half-size (x/z), y range, minable blocks, seconds to regrow, mobs, warp (x, y, z, yaw)
     ("mines", "The Deep Mines", MINES, 40, (MINES[1] - 34, MINES[1] + 12), STONES + ORES + [f"deepslate_{o}" for o in ORES if o != "emerald_ore"] + ["deepslate_emerald_ore"],
-     45, ["zombie", "skeleton", "cave_spider", "silverfish", "husk"], (MINES[0] + 0.5, MINES[1] + 1, MINES[2] - 30.5, 0)),
+     45, ["zombie", "skeleton", "silverfish", "husk"], (MINES[0] + 0.5, MINES[1] + 1, MINES[2] - 30.5, 0)),
     ("woods", "Whispering Woods", WOODS, 38, (WOODS[1] - 16, WOODS[1] + 20), LOGS,
      30, ["spider", "zombie", "witch", "skeleton"], (WOODS[0] + 0.5, WOODS[1] + 1, WOODS[2] - 27.5, 0)),
 ]
