@@ -164,6 +164,10 @@ final class Pets {
         CompoundTag k = kind(server, key);
         if (k == null) return null;
         String tag = "cs_pet_" + key, own = "cs_pet_of_" + p.getStringUUID();
+        // just after a teleport the player's chunk may not be entity-ticking yet: a display summoned there can't be
+        // found again straight away, so a new one was summoned every tick (a pile of pets at the arrival spot). Wait.
+        if (!((ServerLevel) p.level()).isPositionEntityTicking(p.blockPosition())) return null;
+        Upgrades.run(server, "kill @e[type=minecraft:item_display,tag=" + own + "]");   // any stray copies of this player's pet
         String cmd = "summon minecraft:item_display " + p.getX() + " " + (p.getY() + 1.6) + " " + p.getZ()
                 + " {Tags:[\"cs_pet\",\"" + tag + "\",\"" + own + "\"],teleport_duration:2,billboard:\"vertical\","
                 + "transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[0.5f,0.5f,0.5f]},"

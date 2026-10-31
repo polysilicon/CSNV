@@ -5,5 +5,5 @@ CP=$(find "$L" -name "*.jar" | tr '\n' ':')$MIX
 rm -rf "$D/out" && mkdir -p "$D/out"
 "$JAVAC" --release 25 -proc:none -cp "$CP" -d "$D/out" $(find "$D/src" -name "*.java")
 cp "$D"/res/*.json "$D/out/"
-(cd "$D/out" && jar cf "$D/crispy-skyblock-2.12.1.jar" .)
-echo "built $D/crispy-skyblock-2.12.1.jar"
+(cd "$D/out" && jar cf "$D/crispy-skyblock-2.12.2.jar" .)
+echo "built $D/crispy-skyblock-2.12.2.jar"
