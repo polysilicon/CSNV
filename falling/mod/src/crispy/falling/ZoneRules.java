@@ -47,6 +47,7 @@ public final class ZoneRules {
     static final Identifier DMG = Identifier.fromNamespaceAndPath("crispy_skyblock", "zone_level_damage");
     static final Identifier STASH = Identifier.fromNamespaceAndPath("crispy_skyblock", "stash");
     static final String MARK = "cs_gathered";
+    static final double HP_PER_LV = 0.12, DMG_PER_LV = 0.04;   // +12% health and +4% damage per level
     private static long tick;
 
     public static boolean isZoneMob(net.minecraft.world.entity.Entity e) { return e.entityTags().contains("cs_zone_mob"); }
@@ -100,13 +101,13 @@ public final class ZoneRules {
         if (lv == 0) {
             int roll = m.getRandom().nextInt(5) - 2;
             lv = z.key().equals("mines")
-                    ? 2 + (z.y2() - 12 - m.getBlockY()) + roll          // the rim is 12 below the box top: deeper = harder
+                    ? 2 + (int) Math.round(0.75 * (z.y2() - 12 - m.getBlockY())) + roll   // the rim is 12 below the box top: deeper = harder
                     : 3 + m.getRandom().nextInt(6);
             lv = Math.max(1, Math.min(30, lv));
             m.addTag("cs_lv_" + lv);
             AttributeInstance hp = m.getAttribute(Attributes.MAX_HEALTH), dmg = m.getAttribute(Attributes.ATTACK_DAMAGE);
-            if (hp != null) { hp.removeModifier(HP); hp.addPermanentModifier(new AttributeModifier(HP, 0.15 * lv, AttributeModifier.Operation.ADD_MULTIPLIED_BASE)); }
-            if (dmg != null) { dmg.removeModifier(DMG); dmg.addPermanentModifier(new AttributeModifier(DMG, 0.06 * lv, AttributeModifier.Operation.ADD_MULTIPLIED_BASE)); }
+            if (hp != null) { hp.removeModifier(HP); hp.addPermanentModifier(new AttributeModifier(HP, HP_PER_LV * lv, AttributeModifier.Operation.ADD_MULTIPLIED_BASE)); }
+            if (dmg != null) { dmg.removeModifier(DMG); dmg.addPermanentModifier(new AttributeModifier(DMG, DMG_PER_LV * lv, AttributeModifier.Operation.ADD_MULTIPLIED_BASE)); }
             m.setHealth(m.getMaxHealth());
             m.setCustomNameVisible(true);
         }

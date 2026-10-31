@@ -146,8 +146,9 @@ and gives +2 hearts. Staff: `/pets grant <player> <pet>`.
   the next time a member is on the island (`plots[id].portal` 1b -> 2b); the hub rebuilds once (`hub_v4`).
 
 **Zone RPG rules** (2.7.0, `ZoneRules.java`):
-- Zone mobs get a level when they spawn: in the Deep Mines 2 + one per block below the rim (about Lv 2 at the top,
-  Lv 25 on the floor, +/-2); in the Whispering Woods Lv 3-8. Each level adds 15% health and 6% damage. The name tag
+- Zone mobs get a level when they spawn: in the Deep Mines 2 + 0.75 per block below the rim (about Lv 2 at the top,
+  Lv 20-24 in the deepest caves, +/-2); in the Whispering Woods Lv 3-8. Each level adds 12% health and 4% damage
+  (`ZoneRules.HP_PER_LV` / `DMG_PER_LV`; it was 1 level per block, 15% and 6% before 2.12.3). The name tag
   shows `[Lv N] Mob ||||||||-- hp/max`, coloured by level and remaining health. Kills pay 2 coins per level (and
   Combat XP, which already scales with max health).
 - Zone mobs don't burn in daylight (`MobMixin` on `Mob.isSunBurnTick`).
