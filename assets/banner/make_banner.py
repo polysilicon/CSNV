@@ -22,7 +22,7 @@ SLIDES = [  # (headline, sub-line, headline colour)
     ("SKYBLOCK, NO PAY-TO-WIN", "skills · pets · bazaar · minions · RPG mines", (120, 255, 120)),
     ("MULTIVERSE: 36 CHARACTERS", "kit PvP · ranked duels · zombie waves", (255, 150, 60)),
     ("CYBERWARE + 190 ENCHANTS", "install a Sandevistan. risk cyberpsychosis.", CYAN),
-    ("2013 FACTIONS", "cannons · obsidian walls · raids · mcMMO", YELLOW),
+    ("6 YEARS OF ANARCHY", "find old bases · raid · build your legacy", YELLOW),
     ("crispyanarchy.net:13134", "JAVA + BEDROCK · JOIN NOW", WHITE),
 ]
 FPS_MS, PER_SLIDE = 90, 14                     # 14 frames x 90 ms, plus a held last frame per slide
