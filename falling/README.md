@@ -135,7 +135,8 @@ and gives +2 hearts. Staff: `/pets grant <player> <pet>`.
   vine-hung oaks and a few cherries; ferns, bushes, mushrooms and flowers underneath; mossy fallen logs and boulders;
   a lantern-lit path from the arrival spot to a clearing with a stone circle round a campfire. Logs regrow after 30 s.
 - Only the zone's resource blocks can be broken; a mined block is bedrock until it grows back (all are restored when
-  the server stops). Nothing can be placed. Hostile mobs spawn while players are there (8 + 2 per player).
+  the server stops). Nothing can be placed. Hostile mobs spawn while players are there (8 + 2 per player), about one every 8 s in the Mines and every 3 s
+  in the Woods (`SPAWN_EVERY` in `expansion.py`).
 - Build or rebuild them with `function crispy_skyblock:zones/build_all`.
 - Portals (2.8.0): the hub has a portal to each zone either side of the island portal (Mines at -13 -14, Woods at
   13 -14), and each zone has a portal back to the hub behind its arrival platform. Every portal (hub, zones and each

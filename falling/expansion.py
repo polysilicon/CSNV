@@ -36,6 +36,7 @@ ZONES = [
      30, ["spider", "zombie", "witch", "skeleton"], (WOODS[0] + 0.5, WOODS[1] + 1, WOODS[2] - 27.5, 0)),
 ]
 ZONE_CAP = 8          # mobs per zone at once (+2 per player there)
+SPAWN_EVERY = {"mines": 8, "woods": 3}   # a new mob about every N seconds per zone (a 1-in-N roll each second) until the cap
 
 
 def build(NS, fn, js, txt, snbt, Build):
@@ -363,7 +364,7 @@ def build(NS, fn, js, txt, snbt, Build):
                 f"execute store result score #pl cs_tmp if entity @a[{box(z)}]",
                 f"scoreboard players operation #pl cs_tmp *= #2c cs_tmp", f"scoreboard players add #pl cs_tmp {ZONE_CAP}",
                 "execute if score #n cs_tmp >= #pl cs_tmp run return 0",
-                "execute store result score #r cs_tmp run random value 1..3", "execute unless score #r cs_tmp matches 1 run return 0",
+                f"execute store result score #r cs_tmp run random value 1..{SPAWN_EVERY.get(key, 3)}", "execute unless score #r cs_tmp matches 1 run return 0",
                 f"execute store result score #r cs_tmp run random value 1..{len(spawns)}"]
         for i, (sx, sy, sz) in enumerate(spawns, 1):
             roll.append(f"execute if score #r cs_tmp matches {i} positioned {c[0] + sx + 0.5} {c[1] + sy} {c[2] + sz + 0.5} run function {NS}:zones/{key}/mob")
