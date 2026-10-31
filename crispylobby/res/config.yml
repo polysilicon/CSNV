@@ -359,7 +359,7 @@ welcome:
     falling:
       name: "&b&lSkyblock"
       icon: OAK_SAPLING
-      lore: ["&7Pick a themed starter island and grow", "&7it: challenges, island levels and the", "&7odd supply crate from the sky."]
+      lore: ["&f7 themed starter islands to grow", "&bSkills &8· &6Bazaar &8· &dPets &8· &aMinions", "&7Raid regenerating mines and forests", "&7and buy a hub plot for your shop."]
     Vanilla:
       name: "&a&lVanilla"
       icon: GRASS_BLOCK
