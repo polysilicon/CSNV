@@ -89,7 +89,7 @@ MAP_LORE = {
 POWERUP_CHANCE = 4       # % of kills that drop a power-up
 POWERUP_SECS = 30        # Insta-Kill / Double Points length
 POWERUPS = [  # key, item, name, colour
-    ("ammo", "spectral_arrow", "MAX AMMO", "aqua"), ("insta", "wither_skeleton_skull", "INSTA-KILL", "red"),
+    ("wind", "totem_of_undying", "SECOND WIND", "green"), ("insta", "wither_skeleton_skull", "INSTA-KILL", "red"),
     ("double", "experience_bottle", "DOUBLE POINTS", "yellow"), ("nuke", "tnt", "NUKE", "gold")]
 
 # PvP spawn points: offset from the centre, yaw facing the centre
@@ -655,7 +655,7 @@ def build():
                    {"slot": 45, "item": icon("filled_map", "Back to maps", "yellow", ["Pick a different map"], False), "cmd": "pvpmenu pve_maps"},
                    {"slot": 49, "item": icon("zombie_head", "How Outbreak works", "green", [
                        f"{len(NORMAL_MAPS)} maps, each with its own mobs", "Endless waves; every 5th wave brings a boss", "100 points per kill + a bonus each wave",
-                       "Kills can drop power-ups: Max Ammo, Insta-Kill,", "Double Points, Nuke",
+                       "Kills can drop power-ups: Second Wind, Insta-Kill,", "Double Points, Nuke",
                        f"{BREAK_TICKS // 20} s break between waves to re-buy gear",
                        "Spend points at the Arsenal in the arena", "or buy guns off the walls (right-click)", "Pack-a-Punch weapons (4 tiers), upgrade armor, buy perks", "Your best wave adds starting points", "Go down and you're back next wave", "Game over when the whole team is down"]), "cmd": ""}]},
         "pve_maps": {"title": {"text": "☣ Outbreak: pick a map", "color": "dark_green"}, "rows": 3, "fill": PANE, "items":
@@ -1785,14 +1785,18 @@ def build_pve():
                     f"components:{{\"minecraft:custom_data\":{{pvp_pu:\"{k}\"}},\"minecraft:custom_name\":{tj({'text': name, 'color': col, 'bold': True})}}}}}}}")
     fn("pve/pu/drop", drop + ["playsound minecraft:block.amethyst_block.chime player @a[tag=pve.in] ~ ~ ~ 1 1.5"])
     effects = {
-        "ammo": ["give @a[tag=pve.in,tag=!pve.down] minecraft:arrow 64"],
+        # revive everyone who's down (back at the spawn, like the next break), then heal the whole team
+        "wind": [f"execute as @a[tag=pve.in,tag=pve.down] run function {P}/revive", "kill @e[type=minecraft:armor_stand,tag=pve.body]",
+                 "effect give @a[tag=pve.in,tag=!pve.down] minecraft:instant_health 1 4 true",
+                 "effect give @a[tag=pve.in,tag=!pve.down] minecraft:absorption 30 1 true",
+                 "execute as @a[tag=pve.in] at @s run particle minecraft:totem_of_undying ~ ~1 ~ 0.4 0.8 0.4 0.3 30"],
         "insta": [f"effect give @a[tag=pve.in,tag=!pve.down] minecraft:strength {POWERUP_SECS} 19 true"],
         "double": [f"scoreboard players set #dp pve {POWERUP_SECS + 1}"],
         "nuke": ["kill @e[tag=pve.mob,tag=!pve.boss]", "scoreboard players add @a[tag=pve.in,tag=!pve.down] pve.pts 400",
                  "execute as @a[tag=pve.in] at @s run playsound minecraft:entity.generic.explode player @s ~ ~ ~ 1 0.6",
                  "execute as @a[tag=pve.in] at @s run particle minecraft:explosion_emitter ~ ~2 ~ 3 1 3 0 3"],
     }
-    subs = {"ammo": "Arrows for everyone", "insta": f"{POWERUP_SECS} s of one-hit kills", "double": f"{POWERUP_SECS} s of double points",
+    subs = {"wind": "Downed teammates revived · everyone healed", "insta": f"{POWERUP_SECS} s of one-hit kills", "double": f"{POWERUP_SECS} s of double points",
             "nuke": "Every mob wiped out · +400 points"}
     for (k, it, name, col) in POWERUPS:
         fn(f"pve/pu/{k}", [f"clear @s *[minecraft:custom_data~{{pvp_pu:\"{k}\"}}]", *effects[k],

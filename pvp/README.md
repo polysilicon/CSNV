@@ -376,7 +376,7 @@ Everyone starts as a **random character**.
   - The last 4 mobs, and every mob in a wave that runs over 3 minutes, glow.
 - **Break**: 20 s between waves. Downed players come back at the start of the break, so they can re-buy at the Arsenal.
 - **Power-ups**: 4% of kills drop a glowing power-up in front of the killer. It lasts 30 s and any survivor can pick it up.
-  - **Max Ammo**: 64 arrows each.
+  - **Second Wind**: every downed player is revived (back at the spawn) and everyone is fully healed, with 30 s of Absorption II.
   - **Insta-Kill**: 30 s of Strength XX.
   - **Double Points**: 30 s of double kill points.
   - **Nuke**: kills every mob except the boss, +400 points each.
