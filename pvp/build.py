@@ -537,16 +537,16 @@ def icon(id_, name, color, lore, glint=True):
 PANE = {"id": "minecraft:black_stained_glass_pane", "count": 1, "components": {"minecraft:tooltip_display": {"hide_tooltip": True}}}
 
 
-def npc(tag, pos, name, color, prof, skin, yaw=0, mannequin=False):
+def npc(tag, pos, name, color, skin, yaw=0, hand=None, off=None, chest=None):
+    """A lobby NPC: a mannequin wearing a kit character's skin (like the Haunted Night one), plus the click box.
+    Mobs ignore mannequins, and they don't trade, so a click always reaches the interaction box."""
     x, y, z = pos
-    if mannequin:   # mobs ignore mannequins (they'd mob a villager)
-        body = (f"summon minecraft:mannequin {x} {y} {z} {{Tags:[\"{tag}\"],Rotation:[{yaw}f,0f],Invulnerable:1b,Silent:1b,immovable:1b,"
-                f"hide_description:1b,CustomNameVisible:1b,CustomName:{tj({'text': name, 'color': color, 'bold': True})},"
-                "equipment:{chest:{id:\"minecraft:netherite_chestplate\",count:1},mainhand:{id:\"minecraft:crossbow\",count:1}}}")
-    else:
-        body = (f"summon minecraft:villager {x} {y} {z} {{Tags:[\"{tag}\"],Rotation:[{yaw}f,0f],NoAI:1b,Invulnerable:1b,Silent:1b,PersistenceRequired:1b,"
-                f"CustomNameVisible:1b,CustomName:{tj({'text': name, 'color': color, 'bold': True})},"
-                f"VillagerData:{{profession:\"minecraft:{prof}\",level:5,type:\"minecraft:{skin}\"}},Offers:{{Recipes:[]}}}}")
+    eq = {k: v for k, v in (("mainhand", hand), ("offhand", off), ("chest", chest)) if v}
+    eqs = ",".join(f"{k}:{{id:\"minecraft:{v}\",count:1}}" for k, v in eq.items())
+    body = (f"summon minecraft:mannequin {x} {y} {z} {{Tags:[\"{tag}\"],Rotation:[{yaw}f,0f],Invulnerable:1b,Silent:1b,immovable:1b,"
+            f"hide_description:1b,profile:{{properties:[{{name:\"textures\",value:\"{HEADS[skin]}\"}}]}},"
+            f"CustomNameVisible:1b,CustomName:{tj({'text': name, 'color': color, 'bold': True})}"
+            + (f",equipment:{{{eqs}}}" if eqs else "") + "}")
     return [f"kill @e[tag={tag}]", body, f"summon minecraft:interaction {x} {y} {z} {{Tags:[\"{tag}\"],width:1.2f,height:2.2f,response:1b}}"]
 
 
@@ -899,12 +899,12 @@ def build():
     fn("admin/place_leaderboard", lb)
     fn("admin/place_npc", [
         f"function {NS}:admin/place_leaderboard",
-        *npc("pvp.npc", KIT_NPC, "⚔ PvP Arena ⚔", "aqua", "weaponsmith", "snow"),
-        *npc("pvp.pvenpc", PVE_NPC, "☣ Outbreak ☣", "green", "cleric", "swamp"),
-        *npc("pvp.towernpc", TOWER_NPC, "🗼 The Tower 🗼", "light_purple", "librarian", "taiga"),
-        *npc("pvp.micronpc", MICRO["npc"], "🔬 Micro Outbreak 🔬", "aqua", "cartographer", "plains", 230),
+        *npc("pvp.npc", KIT_NPC, "⚔ PvP Arena ⚔", "aqua", "spartan", hand="iron_sword", off="shield"),
+        *npc("pvp.pvenpc", PVE_NPC, "☣ Outbreak ☣", "green", "doom", hand="crossbow"),
+        *npc("pvp.towernpc", TOWER_NPC, "🗼 The Tower 🗼", "light_purple", "link", hand="bow"),
+        *npc("pvp.micronpc", MICRO["npc"], "🔬 Micro Outbreak 🔬", "aqua", "walter", 230, hand="potion"),
         # Crispy Games' NPC is hidden for now (set games.SHOW_NPC = True to bring it back)
-        *(npc("pvp.gamesnpc", GAMES["npc"], "🦑 Crispy Games 🦑", "light_purple", "nitwit", "plains", 90) if games.SHOW_NPC else ["kill @e[tag=pvp.gamesnpc]"]),
+        *(npc("pvp.gamesnpc", GAMES["npc"], "🦑 Crispy Games 🦑", "light_purple", "red", 90) if games.SHOW_NPC else ["kill @e[tag=pvp.gamesnpc]"]),
         f"function {NS}:admin/place_holo",
     ])
     fn("admin/place_holo", [   # the lobby board (on its own, so it can be redone without touching the NPCs)
@@ -1919,6 +1919,7 @@ def build_pve():
     for m in OUTBREAK_MAPS:
         fn(f"admin/build_pve_{m[1]}", build_pve_map(m))
     fn("admin/build_pve", [f"function {NS}:admin/build_pve_{m[1]}" for m in OUTBREAK_MAPS])
+    fn("admin/place_arsenal", [c for m in OUTBREAK_MAPS for c in arsenal(m[5])])   # just the Arsenal NPCs, no map rebuild
 
 def build_halloween():
     """Haunted Night (Halloween): Outbreak map 6 played with the horror characters, 10 waves, The Scarecrow at wave 5
@@ -2088,10 +2089,14 @@ def build_pve_map(m):
     a += [f"fill {PCX - 1} {AY + 1} {cz - 1} {PCX + 1} {AY + 1} {cz + 1} minecraft:{plat}",   # Arsenal platform
           f"setblock {PCX} {AY + 1} {cz} minecraft:lodestone"]
     a += [f"kill @e[tag=pvp.wallbuy,{PVE_BOXES[i]}]"] + wallbuys(g, cz, key)
+    return a + arsenal(cz)
+
+
+def arsenal(cz):
+    """One Outbreak map's Arsenal NPC (only that map's, so the others are left alone)."""
     sx, sy, _ = SHOP_NPC
-    body = npc("pvp.shopnpc", (sx, sy, cz + 0.5), "☣ Arsenal ☣", "green", "", "", 180, mannequin=True)
-    a += [f"kill @e[tag=pvp.shopnpc,x={sx},y={sy},z={cz + 0.5},distance=..4]"] + body[1:]   # only this map's Arsenal
-    return a
+    body = npc("pvp.shopnpc", (sx, sy, cz + 0.5), "☣ Arsenal ☣", "green", "sniper", 180, hand="crossbow", chest="netherite_chestplate")
+    return [f"kill @e[tag=pvp.shopnpc,x={sx},y={sy},z={cz + 0.5},distance=..4]"] + body[1:]
 
 if __name__ == "__main__":
     OUT = os.path.join(sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "dist"), "crispy_pvp")
