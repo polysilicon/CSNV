@@ -118,7 +118,6 @@ MAP_POINTS = {"orbital": outbreak_maps.ORBITAL_POINTS}
 def map_points(key): return MAP_POINTS.get(key, MOB_POINTS)
 # the ground players and mobs stand on (Core Defense's surface is higher, so there's room to dig trenches)
 def ground(key): return core.SURF if key == "core" else AY
-assert core.SURF == AY + 12 and core.MOB_POINTS == MOB_POINTS
 # where downed players float (spectating): high over open maps, inside the hub under the Orbital Station's roof
 DOWNED_Y = {"orbital": outbreak_maps.ORBITAL_DOWNED_Y}
 def downed_y(key): return DOWNED_Y.get(key, 12)
@@ -1650,7 +1649,8 @@ def build_pve():
     pts_spawn = ["execute store result score #r pve run random value 1..%d" % len(PVE_SPAWNS)]
     for (i, key, _, _, _, mz, _) in OUTBREAK_MAPS:
         for n, (dx, dz, yaw) in enumerate(PVE_SPAWNS, 1):
-            pts_spawn.append(f"execute if score #map pve matches {i} if score #r pve matches {n} run tp @s {PCX + dx + 0.5} {ground(key) + 1} {mz + dz + 0.5} {yaw} 0")
+            pts_spawn.append(f"execute if score #map pve matches {i} if score #r pve matches {n} run " +
+                             (CORE["tp_spawn"](PCX + dx + 0.5, mz + dz + 0.5, yaw) if key == "core" else f"tp @s {PCX + dx + 0.5} {ground(key) + 1} {mz + dz + 0.5} {yaw} 0"))
     fn("pve/tp_spawn", pts_spawn)
     fn("pve/enter", [   # as a queued player: into the run with their kit and 500 points
         "tag @s remove pve.q", "tag @s add pve.in", "team join pve @s",
@@ -1747,7 +1747,7 @@ def build_pve():
         assert len(map_points(key)) == len(MOB_POINTS)
         for n, (dx, dz) in enumerate(map_points(key), 1):
             choose.append(f"execute if score #map pve matches {i} if score #r pve matches {n} run data modify storage pvp:pve m merge value {{x:{PCX + dx + 0.5},y:{ground(key) + 1},z:{mz + dz + 0.5}}}")
-    choose += [f"function {P}/summon with storage pvp:pve m", "scoreboard players remove #tospawn pve 1"]
+    choose += [CORE["spawn_y"], f"function {P}/summon with storage pvp:pve m", "scoreboard players remove #tospawn pve 1"]
     fn("pve/spawn_mob", choose)
     fn("pve/type", ["scoreboard players set #p pve 1", "$data modify storage pvp:pve m merge value {type:\"$(type)\",extra:'$(extra)'}"])
     fn("pve/summon", [
@@ -1765,7 +1765,7 @@ def build_pve():
     fn("pve/boss", [
         f"execute if score #map pve matches {HW_MAP} run return run function {NS}:hw/boss",
         'bossbar set pvp:boss name {"text":"Abomination","color":"dark_red"}', "bossbar set pvp:boss color red",
-        f"function {P}/boss_summon with storage pvp:pve map",
+        CORE["boss_y"], f"function {P}/boss_summon with storage pvp:pve map",
         f"execute as @e[tag=pve.new] run function {P}/scale with storage pvp:pve s",
         "execute store result bossbar pvp:boss max run data get entity @n[tag=pve.boss] Health",
         "bossbar set pvp:boss players @a[tag=pve.in]", "bossbar set pvp:boss visible true",
@@ -1877,8 +1877,8 @@ def build_pve():
         "{\"text\":\" assembled the \",\"color\":\"light_purple\"},{\"text\":\"ANNIHILATOR\",\"color\":\"light_purple\",\"bold\":true},{\"text\":\"!\",\"color\":\"light_purple\"}]"])
     fn("pve/game_over", [
         "scoreboard players set #state pve 0", "kill @e[type=minecraft:armor_stand,tag=pve.body]", "kill @e[tag=pve.mob]", "kill @e[type=minecraft:item,tag=pve.pu]", "scoreboard players set #dp pve 0",
-        *CORE["game_over"],   # rebuilt while the map is still loaded
         *[f"forceload remove {PCX - PR - 1} {z - PR - 1} {PCX + PR + 1} {z + PR + 1}" for (_, _, _, _, _, z, _) in OUTBREAK_MAPS],
+        *CORE["game_over"],   # after the forceloads go: the reset loads the map again until it's rebuilt
         "bossbar set pvp:boss visible false",
         "execute unless score #hwwon pve matches 1 run tellraw @a[tag=pve.in] [{\"text\":\"☣ Outbreak over. You reached wave \",\"color\":\"red\"},{\"score\":{\"name\":\"#wave\",\"objective\":\"pve\"},\"color\":\"white\",\"bold\":true},{\"text\":\".\",\"color\":\"red\"}]",
         "scoreboard players add @a[tag=pve.in] pve.best 0",   # unset scores never compare, so a first run would never count

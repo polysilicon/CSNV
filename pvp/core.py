@@ -1,9 +1,9 @@
 """Core Defense (imported by build.py): an Outbreak map (id CORE_ID) where the team guards a core instead of just surviving.
 
-- A beacon (the core) sits on a clearing in a natural patch of world: grass hills, a pond, oak, birch and spruce trees,
-  and dirt, stone and deepslate with ore veins down to bedrock (about 14 blocks deep, for trenches). The border is
-  black concrete with a barrier shell behind it and barrier above; Mining Fatigue V right by it and patching during a
-  run keep it whole. Players play in survival: they can mine, chop, craft, dig trenches and build walls around it. Everyone starts with stone tools,
+- A beacon (the core) sits on a small clearing in real terrain: a 65 x 65 slice of a normally generated world (the
+  pvp:wild dimension) cloned in on every reset, with BELOW blocks of real underground under the core for trenches.
+  The border is black concrete up to WALL_TOP (about 32 above the core) with barrier above it to the build limit and a
+  barrier shell behind it; Mining Fatigue V right by it and patching during a run keep it whole. Players play in survival: they can mine, chop, craft, dig trenches and build walls around it. Everyone starts with stone tools,
   planks, cobblestone, a crafting table, a furnace and torches on top of their kit; the Arsenal (just south of the core)
   works as on the other maps.
 - Mobs head for the core: they're tagged pve.seek and the PvP mod (spawnmod CoreSeek) walks any of them that isn't
@@ -19,7 +19,6 @@
   (keep_inventory is on). When the core is destroyed the run is over.
 - The map is rebuilt (pve/core_reset) when a run starts and when it ends, so every run starts on a fresh meadow.
 """
-import math
 import random
 
 CORE_ID = 7
@@ -30,18 +29,18 @@ RESPAWN_S = 5
 DIG = 6                 # checks (every 10 ticks) to break a block: 3 s
 DIG_HARD = 10           # stone-type blocks (#minecraft:mineable/pickaxe): 5 s
 CORE_REACH = 2.8        # mobs this close to the core's centre damage it
-BOTTOM = -64            # the world's floor: bedrock (unbreakable), so trenches go down to BOTTOM + 1
-DEEP_TOP = -59          # deepslate up to here, stone above
-SURF = -49              # the ground (build.AY + 12): about 14 blocks of dirt and stone to dig trenches in
-WALL_H = 6              # black concrete wall height above the ground
+BOTTOM = -64            # the world's floor: bedrock (unbreakable)
+# The terrain is real: a slice of a normally generated world (dimension pvp:wild, the world's seed) centred on
+# (SRC_X, SRC_Z) is cloned in on every reset. The slice is SLICE_H high and starts BELOW blocks under the ground at its
+# centre, so the core's ground lands on SURF and there are BELOW blocks of real underground (stone, caves, ore) to dig.
+WILD = "pvp:wild"
+SRC_X, SRC_Z = 0, 0     # picked by probing pvp:wild (see README)
+SLICE_H = 46
+BELOW = 19
+SURF = BOTTOM + 1 + BELOW   # -44: the ground under the core
+WALL_TOP = BOTTOM + SLICE_H + 6   # black concrete up to here (-12, about 32 above the core); barrier above, to the build limit
 BOX_Y0 = BOTTOM - 1     # the map's selector box (build.PVE_BOXES uses it too)
-BOX_DY = SURF + 32 - BOX_Y0
-POND, POND_R = (-17, 13), 4.5
-# the mob windows (build.MOB_POINTS), kept flat
-MOB_POINTS = [(30, 0), (-30, 0), (0, 30), (0, -30), (30, 16), (30, -16), (-30, 16), (-30, -16), (16, 30), (-16, 30), (16, -30), (-16, -30)]
-# ore, veins, y range (deepslate_ variants in deepslate)
-ORES = [("coal_ore", 70, -58, -52), ("iron_ore", 45, -64, -53), ("copper_ore", 28, -58, -53), ("gold_ore", 10, -64, -57),
-        ("redstone_ore", 12, -64, -58), ("lapis_ore", 8, -64, -55), ("diamond_ore", 4, -64, -60), ("emerald_ore", 2, -60, -53)]
+BOX_DY = WALL_TOP + 20 - BOX_Y0
 SEEK_RANGE = 20         # core mobs only go after players this close (follow range); otherwise they head for the core
 B_EXTRA = ',CustomName:{text:"Builder",color:"gold"},equipment:{mainhand:{id:"minecraft:cobblestone",count:1}},drop_chances:{mainhand:0.0f}'
 K_EXTRA = ',CustomName:{text:"Breaker",color:"red"},equipment:{mainhand:{id:"minecraft:iron_axe",count:1}},drop_chances:{mainhand:0.0f}'
@@ -54,166 +53,38 @@ LORE = ["Guard the core in a patch of wild world", "Mine, chop, craft, dig trenc
         "Respawn while the core stands", "Mobs: zombies, husks, Builders, Breakers"]
 
 
-def terrain(PR):
-    """Ground height offsets from SURF for x, z in -PR..PR: gentle hills, flat at the core and the mob windows, a pond.
-    Returns (heights, sand, water): {(x, z): dh}, {(x, z)} with a sand top, {(x, z): water surface y offset}."""
-    rng = random.Random(CORE_ID * 31)
-    waves = [(rng.uniform(-0.22, 0.22), rng.uniform(-0.22, 0.22), rng.uniform(0, 6.3), a) for a in (1.6, 1.2, 0.8, 0.5)]
-    def smooth(d, r0, r1):   # 0 inside r0, 1 outside r1
-        t = min(1.0, max(0.0, (d - r0) / (r1 - r0)))
-        return t * t * (3 - 2 * t)
-    flat = [(0, 0, 8, 15)] + [(dx, dz, 3, 7) for dx, dz in MOB_POINTS] + [(POND[0], POND[1], 6, 9)]
-    h, sand, water = {}, set(), {}
-    for x in range(-PR, PR + 1):
-        for z in range(-PR, PR + 1):
-            v = 1.2 + sum(a * math.sin(fx * x + fz * z + ph) for fx, fz, ph, a in waves)
-            w = min(smooth(math.hypot(x - fx, z - fz), r0, r1) for fx, fz, r0, r1 in flat)
-            dh = round(max(-2.0, min(5.0, v)) * w)
-            d = math.hypot(x - POND[0], z - POND[1])   # the pond: a bowl 1-3 deep, water one below the grass
-            if d < POND_R:
-                dh = -3 if d < POND_R - 2 else -2
-                water[(x, z)] = -1
-            if d < POND_R + 1.5:
-                sand.add((x, z))
-            h[(x, z)] = dh
-    return h, sand, water
-
-
 def map_cmds(b, cz):
-    """(Re)build the Core Defense map: a natural patch of world (hills, a pond, trees, stone and ore down to bedrock)
-    inside unbreakable black concrete walls, the core on a flat clearing in the middle, the Arsenal by it."""
+    """admin/build_pve_core: (re)build the map. The work is in pve/core_reset (it has to wait for chunks to load)."""
+    return [f"function {b.NS}:pve/core_reset"]
+
+
+def post_cmds(b, cz):
+    """After the terrain is cloned in: the bedrock floor, the walls, a clearing with the core on its pad, the Arsenal."""
     PCX, PR = b.PCX, b.PR
     x1, x2, z1, z2 = PCX - PR, PCX + PR, cz - PR, cz + PR
     W1, W2, Z1, Z2 = x1 - 1, x2 + 1, z1 - 1, z2 + 1
     box = b.box(PCX, cz, PR, BOX_Y0, BOX_DY)
-    S = SURF
-    a = [f"kill @e[type=minecraft:item,{box}]", f"kill @e[tag=pve.anchor,{box}]"]   # (pve.anchor: an older version's villager)
-    # layers: bedrock, deepslate, stone, dirt, grass; air above (fills stay under 32768 blocks)
-    a.append(f"fill {x1} {BOTTOM} {z1} {x2} {BOTTOM} {z2} minecraft:bedrock")
-    layers = [(BOTTOM + 1, DEEP_TOP, "deepslate"), (DEEP_TOP + 1, S - 4, "stone"), (S - 3, S - 1, "dirt"), (S, S, "grass_block"),
-              (S + 1, S + 30, "air")]
-    for y0, y1, blk in layers:
-        for k in range(y0, y1 + 1, 7):
-            a.append(f"fill {x1} {k} {z1} {x2} {min(k + 6, y1)} {z2} minecraft:{blk}")
-    # walls: black concrete from bedrock up to 6 above the ground, barrier above it and a barrier shell all round
-    # (so even a broken wall block leads nowhere), barrier ceiling; Mining Fatigue near the wall (core_sec) and the
-    # wall is patched during a run
+    S, top = SURF, BOTTOM + SLICE_H
+    a = [f"kill @e[type=minecraft:item,{box}]", f"kill @e[tag=pve.anchor,{box}]",
+         f"fill {x1} {BOTTOM} {z1} {x2} {BOTTOM} {z2} minecraft:bedrock"]
+    a += [f"fill {x1} {k} {z1} {x2} {min(k + 6, WALL_TOP + 8)} {z2} minecraft:air" for k in range(top, WALL_TOP + 9, 7)]   # above the slice
+    # walls: black concrete from bedrock to WALL_TOP, barrier above it to the build limit, and a barrier shell all round
+    # (so even a broken wall block leads nowhere); Mining Fatigue near the wall and patching during a run (core_sec)
     for (a1, b1, a2, b2) in ((W1, Z1, W2, Z1), (W1, Z2, W2, Z2), (W1, Z1, W1, Z2), (W2, Z1, W2, Z2)):
-        a += [f"fill {a1} {BOTTOM} {b1} {a2} {S + WALL_H} {b2} minecraft:black_concrete",
-              f"fill {a1} {S + WALL_H + 1} {b1} {a2} {S + 30} {b2} minecraft:barrier"]
+        a += [f"fill {a1} {BOTTOM} {b1} {a2} {WALL_TOP} {b2} minecraft:black_concrete",
+              f"fill {a1} {WALL_TOP + 1} {b1} {a2} 319 {b2} minecraft:barrier"]
     for (a1, b1, a2, b2) in ((W1 - 1, Z1 - 1, W2 + 1, Z1 - 1), (W1 - 1, Z2 + 1, W2 + 1, Z2 + 1), (W1 - 1, Z1 - 1, W1 - 1, Z2 + 1), (W2 + 1, Z1 - 1, W2 + 1, Z2 + 1)):
-        a.append(f"fill {a1} {BOTTOM} {b1} {a2} {S + 31} {b2} minecraft:barrier")
-    a.append(f"fill {W1 - 1} {S + 31} {Z1 - 1} {W2 + 1} {S + 31} {Z2 + 1} minecraft:barrier")
-
-    rng = random.Random(CORE_ID)
-    # underground: patches of granite, diorite, andesite, tuff, gravel and dirt, then ore veins
-    for _ in range(55):
-        x, z, y = rng.randint(x1 + 1, x2 - 1), rng.randint(z1 + 1, z2 - 1), rng.randint(BOTTOM + 1, S - 5)
-        r = rng.randint(1, 2)
-        blk = rng.choice(["granite", "diorite", "andesite", "tuff", "gravel", "dirt"])
-        host = "deepslate" if y <= DEEP_TOP else "stone"
-        a.append(f"fill {max(x - r, x1)} {max(y - r + 1, BOTTOM + 1)} {max(z - r, z1)} {min(x + r, x2)} {y} {min(z + r, z2)} minecraft:{blk} replace minecraft:{host}")
-    for ore, n, ylo, yhi in ORES:
-        for _ in range(n):
-            x, z, y = rng.randint(x1, x2), rng.randint(z1, z2), rng.randint(max(ylo, BOTTOM + 1), min(yhi, S - 4))
-            dx, dz, dy = rng.randint(0, 1), rng.randint(0, 1), rng.randint(0, 1)
-            for host, name in (("stone", ore), ("deepslate", "deepslate_" + ore)):
-                a.append(f"fill {x} {y} {z} {min(x + dx, x2)} {y + dy} {min(z + dz, z2)} minecraft:{name} replace minecraft:{host}")
-
-    # the surface: runs of equal height along x, one or two fills each
-    h, sand, water = terrain(PR)
-    for z in range(-PR, PR + 1):
-        x = -PR
-        while x <= PR:
-            dh, top = h[(x, z)], ("sand" if (x, z) in sand else "grass_block")
-            e = x
-            while e + 1 <= PR and h[(e + 1, z)] == dh and (("sand" if (e + 1, z) in sand else "grass_block") == top):
-                e += 1
-            X1, X2, Z = PCX + x, PCX + e, cz + z
-            if dh > 0:
-                a.append(f"fill {X1} {S} {Z} {X2} {S + dh - 1} {Z} minecraft:dirt")
-            elif dh < 0:
-                a.append(f"fill {X1} {S + dh + 1} {Z} {X2} {S} {Z} minecraft:air")
-            if dh != 0 or top != "grass_block":
-                a.append(f"fill {X1} {S + dh} {Z} {X2} {S + dh} {Z} minecraft:{top}")
-            x = e + 1
-    for (x, z), wy in water.items():
-        a.append(f"fill {PCX + x} {S + h[(x, z)] + 1} {cz + z} {PCX + x} {S + wy} {cz + z} minecraft:water")
-    top = lambda x, z: S + h[(x, z)]   # the ground block's y
-
-    taken = [(0, 0, 9), (POND[0], POND[1], POND_R + 2)] + [(dx, dz, 4) for dx, dz in MOB_POINTS]
-    def free(x, z, r):
-        if abs(x) > PR - 2 - r or abs(z) > PR - 2 - r:
-            return False
-        return all((x - tx) ** 2 + (z - tz) ** 2 > (r + tr) ** 2 for tx, tz, tr in taken)
-    def spot(r, tries=300):
-        for _ in range(tries):
-            x, z = rng.randint(-PR + 2, PR - 2), rng.randint(-PR + 2, PR - 2)
-            if free(x, z, r):
-                taken.append((x, z, r))
-                return x, z
-        return None
-    # trees: oak and birch (a round crown, corners trimmed at random), spruce (a cone)
-    for n in range(26):
-        p = spot(2)
-        if not p:
-            continue
-        x, z, g = PCX + p[0], cz + p[1], top(*p)
-        wood = rng.choice(["oak", "oak", "oak", "birch", "birch", "spruce"])
-        leaves = f"minecraft:{wood}_leaves[persistent=true]"
-        if wood == "spruce":
-            th = rng.randint(6, 8)
-            for k, r in enumerate([2, 1, 2, 1, 1, 0]):
-                y = g + th - 5 + k
-                a.append(f"fill {x - r} {y} {z - r} {x + r} {y} {z + r} {leaves}")
-                if r == 2:
-                    a += [f"setblock {x + sx * 2} {y} {z + sz * 2} minecraft:air" for sx in (-1, 1) for sz in (-1, 1)]
-            a.append(f"setblock {x} {g + th + 1} {z} {leaves}")
-        else:
-            th = rng.randint(4, 6) + (1 if wood == "birch" else 0)
-            yt = g + th
-            a += [f"fill {x - 2} {yt - 2} {z - 2} {x + 2} {yt - 1} {z + 2} {leaves}",
-                  f"fill {x - 1} {yt} {z - 1} {x + 1} {yt + 1} {z + 1} {leaves}"]
-            a += [f"setblock {x + sx * 2} {yt - 1} {z + sz * 2} minecraft:air" for sx in (-1, 1) for sz in (-1, 1) if rng.random() < 0.7]
-            a += [f"setblock {x + sx} {yt + 1} {z + sz} minecraft:air" for sx in (-1, 1) for sz in (-1, 1)]
-        a.append(f"fill {x} {g + 1} {z} {x} {g + th} {z} minecraft:{wood}_log")
-    # bushes and mossy boulders
-    for n in range(10):
-        p = spot(1)
-        if p:
-            x, z, g = PCX + p[0], cz + p[1], top(*p)
-            a += [f"setblock {x} {g + 1} {z} minecraft:oak_leaves[persistent=true]", f"setblock {x + rng.choice((-1, 1))} {g + 1} {z} minecraft:oak_leaves[persistent=true] keep"]
-    for n in range(6):
-        p = spot(2)
-        if p:
-            x, z, g = PCX + p[0], cz + p[1], top(*p)
-            r = rng.randint(1, 2)
-            a += [f"fill {x - r} {g + 1} {z - r + 1} {x + r} {g + 1} {z + r - 1} minecraft:{rng.choice(['mossy_cobblestone', 'cobblestone', 'andesite'])}",
-                  f"fill {x - r + 1} {g + 2} {z - r + 1} {x + r - 1} {g + 2} {z + r - 1} minecraft:mossy_cobblestone",
-                  f"setblock {x} {g + 1} {z} minecraft:{rng.choice(['coal_ore', 'iron_ore', 'copper_ore'])}"]
-    # sugar cane at the pond's edge, pumpkins, then grass, ferns and flowers
-    for (x, z) in sorted(sand):
-        if (x, z) not in water and any((x + ox, z + oz) in water for ox, oz in ((1, 0), (-1, 0), (0, 1), (0, -1))) and rng.random() < 0.3:
-            a.append(f"fill {PCX + x} {top(x, z) + 1} {cz + z} {PCX + x} {top(x, z) + rng.randint(1, 3)} {cz + z} minecraft:sugar_cane")
-    for n in range(4):
-        p = spot(0)
-        if p:
-            a.append(f"setblock {PCX + p[0]} {top(*p) + 1} {cz + p[1]} minecraft:pumpkin keep")
-    plants = ["short_grass"] * 8 + ["fern"] * 2 + ["dandelion", "poppy", "cornflower", "oxeye_daisy", "azure_bluet"]
-    for n in range(420):
-        x, z = rng.randint(-PR, PR), rng.randint(-PR, PR)
-        if (x, z) not in sand and x * x + z * z > 9:
-            a.append(f"setblock {PCX + x} {top(x, z) + 1} {cz + z} minecraft:{rng.choice(plants)} keep")
-    # mob windows: worn ground where they come in
-    for dx, dz in MOB_POINTS:
-        a.append(f"fill {PCX + dx - 1} {S} {cz + dz - 1} {PCX + dx + 1} {S} {cz + dz + 1} minecraft:coarse_dirt")
-    # the core on an old mossy stone pad
-    a += [f"fill {PCX - 1} {S} {cz - 1} {PCX + 1} {S} {cz + 1} minecraft:mossy_stone_bricks",
+        a.append(f"fill {a1} {BOTTOM} {b1} {a2} 319 {b2} minecraft:barrier")
+    # a clearing round the core (no trees where players spawn), the core on an old mossy stone pad
+    for t in ("#minecraft:logs", "#minecraft:leaves"):
+        a.append(f"fill {PCX - 7} {S + 1} {cz - 7} {PCX + 7} {WALL_TOP} {cz + 7} minecraft:air replace {t}")
+    a += [f"fill {PCX - 1} {S + 1} {cz - 1} {PCX + 1} {S + 3} {cz + 1} minecraft:air",
+          f"fill {PCX - 1} {S} {cz - 1} {PCX + 1} {S} {cz + 1} minecraft:mossy_stone_bricks",
           f"setblock {PCX} {S} {cz} minecraft:chiseled_stone_bricks", f"setblock {PCX} {S + 1} {cz} minecraft:beacon"]
     a += [f"setblock {PCX + ox} {S} {cz + oz} minecraft:cracked_stone_bricks" for ox, oz in ((1, 1), (-1, -1))]
-    # the Arsenal, south of the core, facing it
-    body = b.npc("pvp.shopnpc", (PCX + 0.5, S + 1, cz + 6.5), "☣ Arsenal ☣", "green", "sniper", 180, hand="crossbow", chest="netherite_chestplate")
-    a += [f"kill @e[tag=pvp.shopnpc,{box}]"] + body[1:]
+    # the Arsenal, south of the core, facing it, on the ground there
+    body = b.npc("pvp.shopnpc", ("~", "~", "~"), "☣ Arsenal ☣", "green", "sniper", 180, hand="crossbow", chest="netherite_chestplate")
+    a += [f"kill @e[tag=pvp.shopnpc,{box}]"] + [f"execute positioned {PCX + 0.5} 0 {cz + 6.5} positioned over motion_blocking_no_leaves run {c}" for c in body[1:]]
     return a
 
 
@@ -236,7 +107,43 @@ def build(b):
     wj(f"data/{NS}/tags/block/core_wallgap.json", {"values": ["#minecraft:air", "minecraft:water"]})
     wj(f"data/{NS}/predicate/half.json", {"condition": "minecraft:random_chance", "chance": 0.5})
 
-    fn("pve/core_reset", [f"function {NS}:admin/build_pve_core"])
+    wj(f"data/{NS}/dimension/wild.json", {"type": "minecraft:overworld", "generator": {
+        "type": "minecraft:noise", "settings": "minecraft:overworld",
+        "biome_source": {"type": "minecraft:multi_noise", "preset": "minecraft:overworld"}}})
+    src = f"{SRC_X - PR} {{}} {SRC_Z - PR} {SRC_X + PR} {{}} {SRC_Z + PR}"
+    fn("pve/core_reset", [   # load the source and the map, then clone once they're in
+        f"execute in {WILD} run forceload add {SRC_X - PR - 1} {SRC_Z - PR - 1} {SRC_X + PR + 1} {SRC_Z + PR + 1}",
+        f"forceload add {W1 - 1} {Z1 - 1} {W2 + 1} {Z2 + 1}",
+        f"schedule function {P}/core_paste 20t replace",
+    ])
+    paste = [   # the ground at the source's centre (#sy, the first air above it) sets the slice
+        "scoreboard players set #sy pve -999",
+        f"execute in {WILD} positioned {SRC_X} 0 {SRC_Z} positioned over motion_blocking_no_leaves run summon minecraft:marker ~ ~ ~ {{Tags:[\"pve.probe\"]}}",
+        f"execute in {WILD} store result score #sy pve run data get entity @e[type=minecraft:marker,tag=pve.probe,limit=1] Pos[1]",
+        f"execute in {WILD} run kill @e[type=minecraft:marker,tag=pve.probe]",
+        f"execute unless score #sy pve matches -60..300 run tellraw @a[tag=pvp.tester] " + tj({"text": f"Core Defense: couldn't read the terrain in {WILD}.", "color": "red"}),
+        f"execute unless score #sy pve matches -60..300 run return run function {P}/core_unload",
+        f"scoreboard players remove #sy pve {BELOW + 1}",
+    ]
+    for k in range(0, SLICE_H, 7):
+        n = min(6, SLICE_H - 1 - k)
+        paste += [f"execute store result storage pvp:core c.a{k} int 1 run scoreboard players get #sy pve", f"scoreboard players add #sy pve {n}",
+                  f"execute store result storage pvp:core c.b{k} int 1 run scoreboard players get #sy pve", "scoreboard players add #sy pve 1"]
+    paste += [f"function {P}/core_clone with storage pvp:core c", *post_cmds(b, CORE_Z),
+              f"execute if score #state pve matches 2..3 as @a[tag=pve.in,tag=!pve.cw] run function {P}/tp_spawn",
+              f"function {P}/core_unload"]
+    fn("pve/core_paste", paste)
+    fn("pve/core_unload", [f"execute in {WILD} run forceload remove {SRC_X - PR - 1} {SRC_Z - PR - 1} {SRC_X + PR + 1} {SRC_Z + PR + 1}",
+                           f"execute if score #state pve matches 0 run forceload remove {W1 - 1} {Z1 - 1} {W2 + 1} {Z2 + 1}"])
+    fn("pve/core_clone", [f"$clone from {WILD} " + src.format(f"$(a{k})", f"$(b{k})") + f" to minecraft:overworld {PCX - PR} {BOTTOM + 1 + k} {CORE_Z - PR}"
+                          for k in range(0, SLICE_H, 7)])
+    # mobs and the boss come in on the ground at their spot (the terrain isn't flat)
+    fn("pve/core_spawny", ["$execute positioned $(x) 0 $(z) positioned over motion_blocking_no_leaves run summon minecraft:marker ~ ~ ~ {Tags:[\"pve.probe\"]}",
+                           "execute store result storage pvp:pve m.y int 1 run data get entity @e[type=minecraft:marker,tag=pve.probe,limit=1] Pos[1]",
+                           "kill @e[type=minecraft:marker,tag=pve.probe]"])
+    fn("pve/core_bossy", [f"execute positioned {PCX + 0.5} 0 {CORE_Z + 18.5} positioned over motion_blocking_no_leaves run summon minecraft:marker ~ ~ ~ {{Tags:[\"pve.probe\"]}}",
+                          "execute store result storage pvp:pve map.by int 1 run data get entity @e[type=minecraft:marker,tag=pve.probe,limit=1] Pos[1]",
+                          "kill @e[type=minecraft:marker,tag=pve.probe]"])
     fn("pve/core_start", [
         f"scoreboard players set #core pve {CORE_HP}", "tag @a remove pve.cw",
         f"scoreboard players set #corex pve {PCX}", f"scoreboard players set #corey pve {SURF + 1}", f"scoreboard players set #corez pve {CORE_Z}",
@@ -333,7 +240,7 @@ def build(b):
         *[f"effect give @a[tag=pve.in,{sel}] minecraft:mining_fatigue 2 4 true" for sel in (
             f"x={W1},y={BOX_Y0},z={Z1},dx=2,dy={BOX_DY},dz={Z2 - Z1}", f"x={W2 - 2},y={BOX_Y0},z={Z1},dx=2,dy={BOX_DY},dz={Z2 - Z1}",
             f"x={W1},y={BOX_Y0},z={Z1},dx={W2 - W1},dy={BOX_DY},dz=2", f"x={W1},y={BOX_Y0},z={Z2 - 2},dx={W2 - W1},dy={BOX_DY},dz=2")],
-        *[f"fill {a1} {BOTTOM} {b1} {a2} {SURF + WALL_H} {b2} minecraft:black_concrete replace #{NS}:core_wallgap"
+        *[f"fill {a1} {BOTTOM} {b1} {a2} {WALL_TOP} {b2} minecraft:black_concrete replace #{NS}:core_wallgap"
           for (a1, b1, a2, b2) in ((W1, Z1, W2, Z1), (W1, Z2, W2, Z2), (W1, Z1, W1, Z2), (W2, Z1, W2, Z2))],
         f"execute if score #core pve matches ..0 run function {P}/core_lost",
     ])
@@ -388,6 +295,9 @@ def build(b):
         "enter": f"execute {on} run function {P}/core_enter",
         "died": f"execute {on} run return run function {P}/core_died",
         "wave_end": f"execute {on} run function {P}/core_heal",
+        "spawn_y": f"execute {on} run function {P}/core_spawny with storage pvp:pve m",
+        "boss_y": f"execute {on} run function {P}/core_bossy",
+        "tp_spawn": lambda x, z, yaw: f"execute positioned {x} 0 {z} positioned over motion_blocking_no_leaves run tp @s ~ ~ ~ {yaw} 0",
         "game_over": [f"execute {on} run function {P}/core_reset", "bossbar set pvp:core visible false", "tag @a remove pve.cw"],
         "reset": ["tag @s remove pve.cw"],
         "box": box,
