@@ -76,7 +76,7 @@ OUTBREAK_MAPS = [
     (core.CORE_ID, "core", "Core Defense", "aqua", "beacon", core.CORE_Z, core.POOL),
 ]
 NORMAL_MAPS = OUTBREAK_MAPS[:5]   # the Outbreak NPC's maps (and Random); Core Defense has its own slot in the menu
-PVE_BOXES = {m[0]: box(PCX, m[5], PR, AY - 1, 35) for m in OUTBREAK_MAPS}
+PVE_BOXES = {m[0]: box(PCX, m[5], PR, core.BOX_Y0, core.BOX_DY) if m[1] == "core" else box(PCX, m[5], PR, AY - 1, 35) for m in OUTBREAK_MAPS}
 PVE_BOX = PVE_BOXES[1]
 BREAK_TICKS = 400        # break between waves
 PVE_LOBBY_IDLE = 300     # s an Outbreak lobby may stay open without being started before it closes (downed players are back at its start, so they can re-buy)
@@ -116,6 +116,9 @@ MOB_POINTS = [(30, 0), (-30, 0), (0, 30), (0, -30), (30, 16), (30, -16), (-30, 1
 # a map that isn't a square courtyard has its own mob points (the same number): the Orbital Station's are on its ring
 MAP_POINTS = {"orbital": outbreak_maps.ORBITAL_POINTS}
 def map_points(key): return MAP_POINTS.get(key, MOB_POINTS)
+# the ground players and mobs stand on (Core Defense's surface is higher, so there's room to dig trenches)
+def ground(key): return core.SURF if key == "core" else AY
+assert core.SURF == AY + 12 and core.MOB_POINTS == MOB_POINTS
 # where downed players float (spectating): high over open maps, inside the hub under the Orbital Station's roof
 DOWNED_Y = {"orbital": outbreak_maps.ORBITAL_DOWNED_Y}
 def downed_y(key): return DOWNED_Y.get(key, 12)
@@ -1481,7 +1484,7 @@ def build_pve():
         *[f"kill @e[type=minecraft:experience_orb,{b}]" for b in PVE_BOXES.values()],
         # mobs that leave the map (Ghosts are vexes and fly through blocks, under the floor or into the next map) are
         # put back at a mob window, so a wave can't stall on a mob nobody can reach
-        *[f"execute if score #map pve matches {i} as @e[tag=pve.mob] unless entity @s[{b}] run tp @s {PCX + map_points(key)[0][0] + 0.5} {AY + 1} {z + map_points(key)[0][1] + 0.5}"
+        *[f"execute if score #map pve matches {i} as @e[tag=pve.mob] unless entity @s[{b}] run tp @s {PCX + map_points(key)[0][0] + 0.5} {ground(key) + 1} {z + map_points(key)[0][1] + 0.5}"
           for (i, key, _, _, _, z, _), b in zip(OUTBREAK_MAPS, PVE_BOXES.values())],
         # spiders that climb the walls get pulled back down
         *[f"execute as @e[tag=pve.mob,x={PCX - PR - 1},y={AY + 8},z={z - PR - 1},dx={2 * PR + 2},dy=30,dz={2 * PR + 2}] at @s run tp @s {PCX + 0.5} {AY + 1} {z + 0.5}"
@@ -1633,8 +1636,8 @@ def build_pve():
     fn("pve/start", [
         "tag @a remove pve.lead",
         f"execute unless score #map pve matches 1..{len(OUTBREAK_MAPS)} run scoreboard players set #map pve 1",
-        *[f"execute if score #map pve matches {i} run data modify storage pvp:pve map set value {{bz:{z + 18.5}d}}"
-          for (i, _, _, _, _, z, _) in OUTBREAK_MAPS],
+        *[f"execute if score #map pve matches {i} run data modify storage pvp:pve map set value {{bz:{z + 18.5}d,by:{ground(key) + 1}}}"
+          for (i, key, _, _, _, z, _) in OUTBREAK_MAPS],
         "scoreboard players set #wave pve 0", "kill @e[tag=pve.mob]", "kill @e[type=minecraft:item,tag=pve.pu]",
         # keep the map loaded for the run, so mobs can always be cleared when it ends
         *[f"execute if score #map pve matches {i} run forceload add {PCX - PR - 1} {z - PR - 1} {PCX + PR + 1} {z + PR + 1}"
@@ -1645,9 +1648,9 @@ def build_pve():
         "tellraw @a[tag=pve.in] {\"text\":\"☣ The Outbreak has begun. Survive as long as you can.\",\"color\":\"green\"}",
     ])
     pts_spawn = ["execute store result score #r pve run random value 1..%d" % len(PVE_SPAWNS)]
-    for (i, _, _, _, _, mz, _) in OUTBREAK_MAPS:
+    for (i, key, _, _, _, mz, _) in OUTBREAK_MAPS:
         for n, (dx, dz, yaw) in enumerate(PVE_SPAWNS, 1):
-            pts_spawn.append(f"execute if score #map pve matches {i} if score #r pve matches {n} run tp @s {PCX + dx + 0.5} {AY + 1} {mz + dz + 0.5} {yaw} 0")
+            pts_spawn.append(f"execute if score #map pve matches {i} if score #r pve matches {n} run tp @s {PCX + dx + 0.5} {ground(key) + 1} {mz + dz + 0.5} {yaw} 0")
     fn("pve/tp_spawn", pts_spawn)
     fn("pve/enter", [   # as a queued player: into the run with their kit and 500 points
         "tag @s remove pve.q", "tag @s add pve.in", "team join pve @s",
@@ -1743,7 +1746,7 @@ def build_pve():
     for (i, key, _, _, _, mz, _) in OUTBREAK_MAPS:
         assert len(map_points(key)) == len(MOB_POINTS)
         for n, (dx, dz) in enumerate(map_points(key), 1):
-            choose.append(f"execute if score #map pve matches {i} if score #r pve matches {n} run data modify storage pvp:pve m merge value {{x:{PCX + dx + 0.5},y:{AY + 1},z:{mz + dz + 0.5}}}")
+            choose.append(f"execute if score #map pve matches {i} if score #r pve matches {n} run data modify storage pvp:pve m merge value {{x:{PCX + dx + 0.5},y:{ground(key) + 1},z:{mz + dz + 0.5}}}")
     choose += [f"function {P}/summon with storage pvp:pve m", "scoreboard players remove #tospawn pve 1"]
     fn("pve/spawn_mob", choose)
     fn("pve/type", ["scoreboard players set #p pve 1", "$data modify storage pvp:pve m merge value {type:\"$(type)\",extra:'$(extra)'}"])
@@ -1770,7 +1773,7 @@ def build_pve():
         "execute as @a[tag=pve.in] at @s run playsound minecraft:entity.wither.spawn player @s ~ ~ ~ 0.5 0.8",
     ])
     fn("pve/boss_summon", [
-        f"$summon minecraft:zombie {PCX + 0.5} {AY + 1} $(bz) {{Tags:[\"pve.mob\",\"pve.boss\",\"pve.new\"],PersistenceRequired:1b,CanPickUpLoot:0b,"
+        "$summon minecraft:zombie " + f"{PCX + 0.5} $(by) $(bz) {{Tags:[\"pve.mob\",\"pve.boss\",\"pve.new\"],PersistenceRequired:1b,CanPickUpLoot:0b,"
         "DeathLootTable:\"minecraft:empty\",IsBaby:0b,CustomName:{\"text\":\"Abomination\",\"color\":\"dark_red\",\"bold\":true},CustomNameVisible:1b,"
         "attributes:[{id:\"minecraft:follow_range\",base:64d},{id:\"minecraft:scale\",base:2.0d},{id:\"minecraft:max_health\",base:150d},"
         "{id:\"minecraft:attack_damage\",base:9d},{id:\"minecraft:knockback_resistance\",base:0.8d},{id:\"minecraft:movement_speed\",base:0.26d}]}",

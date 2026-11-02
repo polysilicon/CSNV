@@ -427,15 +427,23 @@ empties them in place.
 Kits, shop, mob pool, spawns and arena layouts are tables at the top of `build.py`.
 
 ## Core Defense (`core.py`)
-An Outbreak map (id 7, centre 0, -60, 900) picked from the bottom-right slot of the Outbreak map menu (not part of
+An Outbreak map (id 7, centre 0, -48, 900) picked from the bottom-right slot of the Outbreak map menu (not part of
 Random). Waves, points, power-ups, the Arsenal, bosses and drop-ins work as on the other maps; what changes:
-- **Guard the core**: a beacon in the middle of an open meadow (trees, rock outcrops with coal, iron and copper ore).
+- **The map**: a natural patch of world, rebuilt by `core.map_cmds`. Grass hills (a fixed heightmap, flat at the
+  core, the mob windows and the pond), a sandy pond with sugar cane, oak, birch and spruce trees, bushes, mossy
+  boulders, flowers. Under it are 3 blocks of dirt, then stone with granite, diorite, andesite, tuff, gravel and dirt
+  patches, then deepslate, down to the world's bedrock at y -64. Ore veins run through it all (coal, iron, copper, gold,
+  redstone, lapis, a few diamonds and emeralds). The ground is at y -49 (`core.SURF`), so there are about 14 blocks to
+  dig trenches in. The core stands on an old mossy stone pad in a flat clearing.
+- **The border**: black concrete from bedrock to 6 above the ground, with barrier above it, a barrier shell behind it
+  and a barrier ceiling. During a run, players right next to the wall get Mining Fatigue V (the concrete can't really
+  be broken), and any gap in the wall is filled back in every second.
+- **Guard the core**: a beacon on the pad.
   It has 100 HP (boss bar "⚡ Core") and gets +20 back after every wave. Every mob within ~2.5 blocks of it takes 1 HP
   a second (the Abomination 5). At 0 the core blows up and the run is over. A player who breaks the core gets it
   put straight back.
 - **Survival building**: players are in survival here. Everyone gets stone tools, 32 planks, 32 cobblestone, a
-  crafting table, a furnace and 8 torches on top of their kit. Block drops stay on the ground. The outer wall and the
-  floor's bottom layer are bedrock, so nobody digs out.
+  crafting table, a furnace and 8 torches on top of their kit. Block drops stay on the ground.
 - **Respawning**: dying isn't "down" here. While the core stands you watch from above it for 5 s, then you're back
   at a spawn with your inventory (keep_inventory).
 - **Mobs head for the core**: they're tagged `pve.seek`, and the server mod (`CoreSeek`, spawnmod 1.5.1+) walks any
@@ -445,7 +453,9 @@ Random). Waves, points, power-ups, the Arsenal, bosses and drop-ins work as on t
 - **Mobs dig**: a mob that isn't getting any closer to the core than it already has been (pushing at a wall, or sliding along it),
   with a block between it and the core, chews through it,
   head height first and then feet, leaving a 2-high tunnel. That takes 3 s per block, 5 s for stone-type blocks, and
-  half that for Breakers. The Abomination clears a 3-wide, 4-high hole at a time.
+  half that for Breakers. The Abomination clears a 3-wide, 4-high hole at a time. A mob stuck below the core (in a
+  trench) digs a staircase up towards it: head height and the block above it ahead, leaving the block at its feet as a
+  step, and the block over its own head if that's what stops it jumping.
 - **Builders build**: they bridge drops 2+ deep on the way to the core and pillar up (cobblestone) under a player
   standing 3+ blocks above them nearby.
 - The map is rebuilt (`pve/core_reset` → `admin/build_pve_core`) when a run starts and when it ends.
