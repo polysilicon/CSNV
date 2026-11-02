@@ -434,8 +434,8 @@ Random). Waves, points, power-ups, the Arsenal, bosses and drop-ins work as on t
   the chunks are loaded) clones a 65 x 65, 46-high slice of it into the map. The slice is centred on
   `core.SRC_X, SRC_Z` (-216, 72: a forest with hills from 62 to 71 and no water or lava), and starts 19 blocks under
   the ground at its centre. That puts the core's ground at y -44 (`core.SURF`) with 19 blocks of real underground
-  (dirt, stone, caves, ore) below it for trenches; the world's bedrock is at -64. Trees within 7 blocks of the core are
-  cleared, and the core stands on an old mossy stone pad.
+  (dirt, stone, caves, ore) below it for trenches; the world's bedrock is at -64. Trees within 8 blocks of the core are
+  cleared (from 12 below the core's ground up, since the land round it can be lower), and the core stands on an old mossy stone pad.
   Players, mobs, the boss and the Arsenal spawn on the ground at their spot (heightmap `motion_blocking_no_leaves`).
   To pick another spot: `execute in pvp:wild run forceload add <x-35> <z-35> <x+35> <z+35>`, wait for it to generate,
   `function pvp:admin/wildprobe {x:<x>,z:<z>}`, then `data get storage pvp:probe h`. That gives the ground height

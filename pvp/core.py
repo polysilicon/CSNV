@@ -105,9 +105,10 @@ def post_cmds(b, cz):
               f"fill {a1} {WALL_TOP + 1} {b1} {a2} 319 {b2} minecraft:barrier"]
     for (a1, b1, a2, b2) in ((W1 - 1, Z1 - 1, W2 + 1, Z1 - 1), (W1 - 1, Z2 + 1, W2 + 1, Z2 + 1), (W1 - 1, Z1 - 1, W1 - 1, Z2 + 1), (W2 + 1, Z1 - 1, W2 + 1, Z2 + 1)):
         a.append(f"fill {a1} {BOTTOM} {b1} {a2} 319 {b2} minecraft:barrier")
-    # a clearing round the core (no trees where players spawn), the core on an old mossy stone pad
+    # a clearing round the core (no trees where players spawn), from well below the core's ground, since the land
+    # around it can be lower; then the core on an old mossy stone pad
     for t in ("#minecraft:logs", "#minecraft:leaves"):
-        a.append(f"fill {PCX - 7} {S + 1} {cz - 7} {PCX + 7} {WALL_TOP} {cz + 7} minecraft:air replace {t}")
+        a.append(f"fill {PCX - 8} {S - 12} {cz - 8} {PCX + 8} {WALL_TOP} {cz + 8} minecraft:air replace {t}")
     a += [f"fill {PCX - 1} {S + 1} {cz - 1} {PCX + 1} {S + 3} {cz + 1} minecraft:air",
           f"fill {PCX - 1} {S} {cz - 1} {PCX + 1} {S} {cz + 1} minecraft:mossy_stone_bricks",
           f"setblock {PCX} {S} {cz} minecraft:chiseled_stone_bricks", f"setblock {PCX} {S + 1} {cz} minecraft:beacon"]
