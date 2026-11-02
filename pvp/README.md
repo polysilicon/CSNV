@@ -452,6 +452,7 @@ Random). Waves, points, power-ups, the Arsenal, bosses and drop-ins work as on t
   put straight back.
 - **Survival building**: players are in survival here. Everyone gets stone tools, 32 planks, 32 cobblestone, a
   crafting table, a furnace and 8 torches on top of their kit. Block drops stay on the ground.
+- **Timing**: 90 s before wave 1 to build defences, then 30 s between waves (the other maps: 5 s and 20 s).
 - **Respawning**: dying isn't "down" here. While the core stands you watch from above it for 5 s, then you're back
   at a spawn with your inventory (keep_inventory).
 - **Mobs head for the core**: they're tagged `pve.seek`, and the server mod (`CoreSeek`, spawnmod 1.5.1+) walks any

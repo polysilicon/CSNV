@@ -26,6 +26,8 @@ CORE_Z = 900
 CORE_HP = 100
 CORE_HEAL = 20          # core HP back after each wave
 RESPAWN_S = 5
+FIRST_BREAK_S = 90      # before wave 1: time to build defences
+BREAK_S = 30            # between waves
 DIG = 6                 # checks (every 10 ticks) to break a block: 3 s
 DIG_HARD = 10           # stone-type blocks (#minecraft:mineable/pickaxe): 5 s
 CORE_REACH = 2.8        # mobs this close to the core's centre damage it
@@ -175,7 +177,7 @@ def build(b):
     fn("pve/core_enter", [   # as a player entering the run: survival, plus building gear
         "gamemode survival @s", *[f"give @s minecraft:{it}" for it in START_ITEMS],
         "tellraw @s " + tj([{"text": "⚡ Core Defense: ", "color": "aqua", "bold": True},
-                            {"text": "keep the beacon in the middle alive. Mine, chop, craft and build walls; the mobs dig through "
+                            {"text": f"keep the beacon in the middle alive. You have {FIRST_BREAK_S} s before the first wave and {BREAK_S} s between waves. Mine, chop, craft and build walls; the mobs dig through "
                                      "and build up, and you respawn as long as the core stands. The Arsenal is out in the south-east corner.",
                              "color": "gray", "bold": False}]),
     ])
@@ -316,6 +318,8 @@ def build(b):
         "enter": f"execute {on} run function {P}/core_enter",
         "died": f"execute {on} run return run function {P}/core_died",
         "wave_end": f"execute {on} run function {P}/core_heal",
+        "first_break": f"execute {on} run scoreboard players set #timer pve {FIRST_BREAK_S * 20}",
+        "break": f"execute {on} run scoreboard players set #timer pve {BREAK_S * 20}",
         "spawn_y": f"execute {on} run function {P}/core_spawny with storage pvp:pve m",
         "boss_y": f"execute {on} run function {P}/core_bossy",
         "tp_spawn": lambda x, z, yaw: f"execute positioned {x} 0 {z} positioned over motion_blocking_no_leaves run tp @s ~ ~ ~ {yaw} 0",

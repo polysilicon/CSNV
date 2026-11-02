@@ -1642,7 +1642,7 @@ def build_pve():
         *[f"execute if score #map pve matches {i} run forceload add {PCX - PR - 1} {z - PR - 1} {PCX + PR + 1} {z + PR + 1}"
           for (i, _, _, _, _, z, _) in OUTBREAK_MAPS],
         "scoreboard players set #dp pve 0", "scoreboard players set #insta pve 0", CORE["start"],
-        "scoreboard players set #state pve 3", "scoreboard players set #timer pve 100",
+        "scoreboard players set #state pve 3", "scoreboard players set #timer pve 100", CORE["first_break"],
         f"execute as @a[tag=pve.q] run function {P}/enter",
         "tellraw @a[tag=pve.in] {\"text\":\"☣ The Outbreak has begun. Survive as long as you can.\",\"color\":\"green\"}",
     ])
@@ -1705,7 +1705,8 @@ def build_pve():
         f"execute if score #tospawn pve matches 0 unless entity @e[tag=pve.mob] run function {P}/wave_end",
     ])
     fn("pve/wave_end", [
-        "scoreboard players set #state pve 3", f"scoreboard players set #timer pve {BREAK_TICKS}",
+        "scoreboard players set #state pve 3", f"scoreboard players set #timer pve {BREAK_TICKS}", CORE["break"],
+        "scoreboard players operation #bs pve = #timer pve", "scoreboard players operation #bs pve /= #20 pve",
         f"execute as @a[tag=pve.down] run function {P}/revive",   # back now, so they can re-buy during the break
         "kill @e[type=minecraft:armor_stand,tag=pve.body]", CORE["wave_end"],
         f"execute if score #map pve matches {HW_MAP} if score #wave pve matches {HW_WAVES}.. run return run function {NS}:hw/victory",
@@ -1716,7 +1717,7 @@ def build_pve():
         "scoreboard players operation #b pve = #wave pve", "scoreboard players operation #b pve *= #100 pve",
         "scoreboard players operation @a[tag=pve.in,tag=!pve.down] pve.pts += #b pve",
         "tellraw @a[tag=pve.in] [{\"text\":\"☣ Wave \",\"color\":\"green\"},{\"score\":{\"name\":\"#wave\",\"objective\":\"pve\"},\"color\":\"white\"},"
-        "{\"text\":\" cleared! +\",\"color\":\"green\"},{\"score\":{\"name\":\"#b\",\"objective\":\"pve\"},\"color\":\"gold\"},{\"text\":\" points. Next wave in " + str(BREAK_TICKS // 20) + " s.\",\"color\":\"green\"}]",
+        "{\"text\":\" cleared! +\",\"color\":\"green\"},{\"score\":{\"name\":\"#b\",\"objective\":\"pve\"},\"color\":\"gold\"},{\"text\":\" points. Next wave in \",\"color\":\"green\"},{\"score\":{\"name\":\"#bs\",\"objective\":\"pve\"},\"color\":\"green\"},{\"text\":\" s.\",\"color\":\"green\"}]",
         "execute as @a[tag=pve.in] at @s run playsound minecraft:ui.toast.challenge_complete player @s ~ ~ ~ 0.6 1",
         f"give @a[tag=pve.in,tag=!pve.down] minecraft:cooked_beef {WAVE_FOOD}",
         f"execute as @a[tag=pve.q] run function {P}/enter",
