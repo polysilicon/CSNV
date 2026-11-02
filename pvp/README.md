@@ -442,7 +442,8 @@ Random). Waves, points, power-ups, the Arsenal, bosses and drop-ins work as on t
   of them that isn't after a player to the core (`#corex/#corey/#corez pve`). Their follow range is cut to 20, so only
   players close by pull them off. The roster is melee only: zombies, husks, zombie villagers, Builders (zombies holding
   cobblestone), Breakers (vindicators from wave 4, zombies from wave 6, holding an iron axe).
-- **Mobs dig**: a mob that hasn't moved for half a second, with a block between it and the core, chews through it,
+- **Mobs dig**: a mob that isn't getting any closer to the core than it already has been (pushing at a wall, or sliding along it),
+  with a block between it and the core, chews through it,
   head height first and then feet, leaving a 2-high tunnel. That takes 3 s per block, 5 s for stone-type blocks, and
   half that for Breakers. The Abomination clears a 3-wide, 4-high hole at a time.
 - **Builders build**: they bridge drops 2+ deep on the way to the core and pillar up (cobblestone) under a player

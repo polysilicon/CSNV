@@ -152,17 +152,22 @@ def build(b):
         f"execute unless entity @s[tag=pve.seek] run function {P}/core_seek",
         f"execute positioned {cx} {cy} {cz} if entity @s[distance=..{CORE_REACH}] run return 0",
         f"execute if items entity @s weapon.mainhand minecraft:cobblestone if predicate {NS}:half run function {P}/core_build",
-        # only a mob that's stuck digs (moved less than ~0.3 blocks since the last check)
-        "scoreboard players operation #ox pve = @s pve.cx", "scoreboard players operation #oz pve = @s pve.cz",
-        "execute store result score @s pve.cx run data get entity @s Pos[0] 10",
-        "execute store result score @s pve.cz run data get entity @s Pos[2] 10",
-        "scoreboard players operation #ox pve -= @s pve.cx", "scoreboard players operation #oz pve -= @s pve.cz",
-        "scoreboard players operation #ox pve *= #ox pve", "scoreboard players operation #oz pve *= #oz pve",
-        "scoreboard players operation #ox pve += #oz pve",
-        "execute if score #ox pve matches 10.. run return run scoreboard players set @s pve.dig 0",
+        # only a mob that's stuck digs: one that hasn't beaten its closest approach to the core (pve.cd, squared distance
+        # in tenths of a block) by more than 1/20 (about 0.1 blocks at 4 away, 0.6 at 25). Jittering or sliding along a
+        # wall it can't pass doesn't count as progress.
+        f"execute store result score #dx pve run data get entity @s Pos[0] 10", f"scoreboard players remove #dx pve {round(cx * 10)}",
+        f"execute store result score #dz pve run data get entity @s Pos[2] 10", f"scoreboard players remove #dz pve {round(cz * 10)}",
+        "scoreboard players operation #dx pve *= #dx pve", "scoreboard players operation #dz pve *= #dz pve",
+        "scoreboard players operation #dx pve += #dz pve",
+        "scoreboard players add @s pve.cd 0",
+        "execute if score @s pve.cd matches 0 run scoreboard players operation @s pve.cd = #dx pve",
+        "scoreboard players operation #t pve = @s pve.cd", "scoreboard players operation #t2 pve = @s pve.cd",
+        "scoreboard players operation #t2 pve /= #20 pve", "scoreboard players operation #t pve -= #t2 pve",
+        "execute if score #dx pve < #t pve run scoreboard players operation @s pve.cd = #dx pve",
+        "execute if score #dx pve < #t pve run return run scoreboard players set @s pve.dig 0",
         f"execute if entity @s[tag=pve.boss] run return run function {P}/core_bossdig",
-        f"execute facing {cx} ~ {cz} positioned ^ ^1 ^0.8 unless block ~ ~ ~ #{NS}:core_pass run return run function {P}/core_dig",
-        f"execute facing {cx} ~ {cz} positioned ^ ^ ^0.8 unless block ~ ~ ~ #{NS}:core_pass run return run function {P}/core_dig",
+        f"execute facing {cx} ~ {cz} positioned ^ ^1 ^1.0 unless block ~ ~ ~ #{NS}:core_pass run return run function {P}/core_dig",
+        f"execute facing {cx} ~ {cz} positioned ^ ^ ^1.0 unless block ~ ~ ~ #{NS}:core_pass run return run function {P}/core_dig",
         "scoreboard players set @s pve.dig 0",
     ])
     fn("pve/core_seek", ["tag @s add pve.seek", f"attribute @s minecraft:follow_range base set {SEEK_RANGE}"])
@@ -178,14 +183,14 @@ def build(b):
     boss_cells = [(x, y) for y in range(4) for x in (-1, 0, 1)]
     fn("pve/core_bossdig", [   # the Abomination (scale 2) needs a 3-wide, 4-high hole
         "scoreboard players add @s pve.dig 1",
-        f"execute facing {cx} ~ {cz} positioned ^ ^1 ^1.2 run particle minecraft:crit ~ ~ ~ 0.8 0.8 0.8 0.1 8",
+        f"execute facing {cx} ~ {cz} positioned ^ ^1 ^1.6 run particle minecraft:crit ~ ~ ~ 0.8 0.8 0.8 0.1 8",
         f"execute if score @s pve.dig matches ..{DIG - 1} run return 0",
-        *[f"execute facing {cx} ~ {cz} positioned ^{x} ^{y} ^1.2 unless block ~ ~ ~ #{NS}:core_pass run setblock ~ ~ ~ minecraft:air destroy"
+        *[f"execute facing {cx} ~ {cz} positioned ^{x} ^{y} ^1.6 unless block ~ ~ ~ #{NS}:core_pass run setblock ~ ~ ~ minecraft:air destroy"
           for x, y in boss_cells],
         "scoreboard players set @s pve.dig 0",
     ])
     fn("pve/core_build", [   # a Builder: bridge a drop (2+ deep) towards the core; pillar up under a player standing high nearby
-        f"execute unless block ~ ~-0.5 ~ #minecraft:air facing {cx} ~ {cz} positioned ^ ^-1 ^0.8 if block ~ ~ ~ #minecraft:air if block ~ ~-1 ~ #minecraft:air "
+        f"execute unless block ~ ~-0.5 ~ #minecraft:air facing {cx} ~ {cz} positioned ^ ^-1 ^1.0 if block ~ ~ ~ #minecraft:air if block ~ ~-1 ~ #minecraft:air "
         "run setblock ~ ~ ~ minecraft:cobblestone",
         f"execute unless block ~ ~-0.5 ~ #minecraft:air if block ~ ~2 ~ #minecraft:air positioned ~-3 ~3 ~-3 "
         f"if entity @a[tag=pve.in,gamemode=survival,dx=6,dy=16,dz=6] positioned ~3 ~-3 ~3 run function {P}/core_pillar",
@@ -251,7 +256,7 @@ def build(b):
     ])
 
     return {
-        "objectives": ["pve.dig dummy", "pve.cx dummy", "pve.cz dummy", "pve.rt dummy"],
+        "objectives": ["pve.dig dummy", "pve.cd dummy", "pve.rt dummy"],
         "load": ['bossbar add pvp:core {"text":"⚡ Core","color":"aqua"}', "bossbar set pvp:core visible false"],
         "tick": f"execute {on} if score #state pve matches 2 run function {P}/core_tick",
         "second": f"execute {on} if score #state pve matches 2..3 run function {P}/core_sec",
