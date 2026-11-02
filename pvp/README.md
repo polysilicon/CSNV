@@ -426,6 +426,29 @@ empties them in place.
 
 Kits, shop, mob pool, spawns and arena layouts are tables at the top of `build.py`.
 
+## Core Defense (`core.py`)
+An Outbreak map (id 7, centre 0, -60, 900) picked from the bottom-right slot of the Outbreak map menu (not part of
+Random). Waves, points, power-ups, the Arsenal, bosses and drop-ins work as on the other maps; what changes:
+- **Guard the core**: a beacon in the middle of an open meadow (trees, rock outcrops with coal, iron and copper ore).
+  It has 100 HP (boss bar "⚡ Core") and gets +20 back after every wave. Every mob within ~2.5 blocks of it takes 1 HP
+  a second (the Abomination 5). At 0 the core blows up and the run is over. A player who breaks the core gets it
+  put straight back.
+- **Survival building**: players are in survival here. Everyone gets stone tools, 32 planks, 32 cobblestone, a
+  crafting table, a furnace and 8 torches on top of their kit. Block drops stay on the ground. The outer wall and the
+  floor's bottom layer are bedrock, so nobody digs out.
+- **Respawning**: dying isn't "down" here. While the core stands you watch from above it for 5 s, then you're back
+  at a spawn with your inventory (keep_inventory).
+- **Mobs head for the core**: they're tagged `pve.seek`, and the server mod (`CoreSeek`, spawnmod 1.5.1+) walks any
+  of them that isn't after a player to the core (`#corex/#corey/#corez pve`). Their follow range is cut to 20, so only
+  players close by pull them off. The roster is melee only: zombies, husks, zombie villagers, Builders (zombies holding
+  cobblestone), Breakers (vindicators from wave 4, zombies from wave 6, holding an iron axe).
+- **Mobs dig**: a mob that hasn't moved for half a second, with a block between it and the core, chews through it,
+  head height first and then feet, leaving a 2-high tunnel. That takes 3 s per block, 5 s for stone-type blocks, and
+  half that for Breakers. The Abomination clears a 3-wide, 4-high hole at a time.
+- **Builders build**: they bridge drops 2+ deep on the way to the core and pillar up (cobblestone) under a player
+  standing 3+ blocks above them nearby.
+- The map is rebuilt (`pve/core_reset` → `admin/build_pve_core`) when a run starts and when it ends.
+
 ## Micro Outbreak (`micro.py`)
 Outbreak at 1/16 scale. The **🔬 Micro Outbreak** NPC (west of spawn, -6.5 101 5.5) opens its kit menu.
 - **The arena** is a sealed toy room right under the south half of the lobby (interior x -8..8, z 6..10, floor y 97,
@@ -694,7 +717,8 @@ from `/function cyber:admin/give`. Then run:
   `custom_kits` field adds the admin-made kits.
   Since 1.4.5, item names, lore and the title are resolved for the viewer when the menu opens, so they can hold
   live parts (`selector`, `score`, `nbt` from storage): the lobby menus show the leader, the players and the map.
-- `/pvpkit`, which manages admin-made kits (see above). The datapack uses `pvpkit give <id>` to hand one out. Minecraft 26.x is unobfuscated, so it compiles straight against the server jar with
+- `/pvpkit`, which manages admin-made kits (see above). The datapack uses `pvpkit give <id>` to hand one out.
+- `CoreSeek` (1.5.1): walks Core Defense mobs (tag `pve.seek`) to the core when they aren't after a player. Minecraft 26.x is unobfuscated, so it compiles straight against the server jar with
 Java 25:
 ```
 spawnmod/build.sh <lib-dir> <path-to-javac-25>   # lib-dir: server-26.2.jar (from the official bundler), brigadier,

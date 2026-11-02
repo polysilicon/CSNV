@@ -12,6 +12,7 @@ import math
 import abilities, arena_map, arena_maps, outbreak_maps, os, random, shutil, sys, tower
 import micro
 import games   # Crispy Games (games.py)
+import core    # Core Defense, an Outbreak map (core.py)
 
 NS = "pvp"
 PACK_FORMAT = [107, 0], [107, 1]
@@ -71,13 +72,16 @@ OUTBREAK_MAPS = [
       (6, 88, "wither_skeleton", ',CustomName:{text:"Reaper",color:"dark_gray"},equipment:{mainhand:{id:"minecraft:stone_hoe",count:1}},drop_chances:{mainhand:0.0f}'),
       (7, 94, "creeper", ',CustomName:{text:"Jack-o-Creeper",color:"gold"}'),
       (1, 100, "zombie", ',CustomName:{text:"Pumpkinhead",color:"gold"},equipment:{head:{id:"minecraft:carved_pumpkin",count:1}},drop_chances:{head:0.0f}')]),
+    # Core Defense (core.py): guard the beacon in the middle; survival building, mobs dig and build; its own roster
+    (core.CORE_ID, "core", "Core Defense", "aqua", "beacon", core.CORE_Z, core.POOL),
 ]
-NORMAL_MAPS = OUTBREAK_MAPS[:5]   # the Outbreak NPC's maps (and Random)
+NORMAL_MAPS = OUTBREAK_MAPS[:5]   # the Outbreak NPC's maps (and Random); Core Defense has its own slot in the menu
 PVE_BOXES = {m[0]: box(PCX, m[5], PR, AY - 1, 35) for m in OUTBREAK_MAPS}
 PVE_BOX = PVE_BOXES[1]
 BREAK_TICKS = 400        # break between waves
 PVE_LOBBY_IDLE = 300     # s an Outbreak lobby may stay open without being started before it closes (downed players are back at its start, so they can re-buy)
 MAP_LORE = {
+    "core": core.LORE,
     "ruins": ["Overgrown temple courtyard", "Broken colonnade, fallen columns", "Mobs: the classic horde"],
     "mine": ["Abandoned toxic mine", "Rock outcrops, mine-cart loop", "Sludge puddles slow you down", "Extra: cave spiders, silverfish"],
     "neon": ["Night-time crossroads", "Tower, noodle bar, car park, arcade", "Extra: pillagers, vindicators"],
@@ -568,6 +572,8 @@ def build():
 
     MICRO = micro.build(sys.modules[__name__])   # Micro Outbreak (micro.py)
     GAMES = games.build(sys.modules[__name__])   # Crispy Games (games.py)
+    global CORE
+    CORE = core.build(sys.modules[__name__])   # Core Defense (core.py)
 
     # ------------------------------------------------------------------ menus (opened by /pvpmenu)
     kit_lore = lambda k: k[5] + ["", "Click to pick"]
@@ -664,7 +670,8 @@ def build():
                      + [{"slot": 4, "item": icon("zombie_head", "Outbreak (PvE)", "green", [
                          "Fight endless waves of mobs, solo or as a team", "Pick a map, then your kit, to open a lobby:",
                          "you lead it, others join it from the Outbreak NPC,", "and you start the run when everyone's in"]), "cmd": ""},
-                        {"slot": 22, "item": icon("ender_eye", "Random map", "light_purple", ["Let fate decide", "", "Click to pick your kit"]), "cmd": "trigger pve.join set 91"}]},
+                        {"slot": 22, "item": icon("ender_eye", "Random map", "light_purple", ["Let fate decide", "", "Click to pick your kit"]), "cmd": "trigger pve.join set 91"},
+                        {"slot": 24, "item": icon("beacon", "Core Defense", "aqua", core.LORE + ["", "Click to pick your kit"], True), "cmd": f"trigger pve.join set {80 + core.CORE_ID}"}]},
         **pve_menus(),
         "micro": MICRO["menu"],
         "micro_shop": MICRO["shop"],
@@ -697,7 +704,7 @@ def build():
             "pvp.cur dummy", "pvp.mastery trigger", "pvp.mastered dummy", "pvp.kk dummy", "pvp.kd dummy",
             "pvp.elo dummy", "pvp.dwin dummy", "pvp.dloss dummy", "pvp.dfrom dummy", "pvp.dtm dummy", "pvp.dpit dummy",
             "pvp.duela trigger", "pvp.dueld trigger", "pvp.duelstats trigger", *[f"pvp.mx{k[0]} dummy" for k in ALL_KITS],
-            *[f"pvp.hw{c[0]} dummy" for c in HW_COSMETICS], "pvp.hwwins dummy", *MICRO["objectives"], *GAMES["objectives"],
+            *[f"pvp.hw{c[0]} dummy" for c in HW_COSMETICS], "pvp.hwwins dummy", *MICRO["objectives"], *GAMES["objectives"], *CORE["objectives"],
             "pve dummy", "pve.join trigger", "pve.buy trigger", "pve.k totalKillCount", "pve.kit dummy", "pve.best dummy", "pve.arm dummy", "pve.gun dummy", "pve.map dummy", "pve.rv dummy", "pve.wb dummy"]],
         'scoreboard objectives add pvp.kills playerKillCount {"text":"⚔ Kills","color":"aqua","bold":true}',
         'scoreboard objectives add pve.pts dummy {"text":"☣ Points","color":"green","bold":true}',
@@ -710,7 +717,7 @@ def build():
         # the Outbreak sidebar: only players in the current run (rebuilt every second by pve/side), points and kills
         'scoreboard objectives add pve.side dummy {"text":"☣ Outbreak","color":"green","bold":true}', "scoreboard objectives add pve.kc dummy",
         "scoreboard objectives setdisplay sidebar.team.green pve.side",
-        'bossbar add pvp:boss {"text":"Abomination","color":"dark_red"}', "bossbar set pvp:boss color red", "bossbar set pvp:boss visible false",
+        'bossbar add pvp:boss {"text":"Abomination","color":"dark_red"}', "bossbar set pvp:boss color red", "bossbar set pvp:boss visible false", *CORE["load"],
         *[f"gamerule {k} {v}" for k, v in rules.items()],
         f"function {NS}:ability/migrate",
         "time set 18000", "weather clear", f"setworldspawn 0 {LOBBY_Y + 1} 0", "scoreboard players set #t pvp 0",
@@ -781,7 +788,7 @@ def build():
         "scoreboard players add @s pve.best 0",
         "execute if entity @s[tag=pve.in] if score #state pve matches 2..3 if score #wave pve > @s pve.best run scoreboard players operation @s pve.best = #wave pve",
         "clear @s", "effect clear @s", "function cyber:admin/reset", "gamemode adventure @s",
-        *PERK_RESET, *MICRO["reset"], *GAMES["reset"],
+        *PERK_RESET, *MICRO["reset"], *GAMES["reset"], *CORE["reset"],
         "tag @s remove pve.in", "tag @s remove pve.down", "tag @s remove pve.q", "team leave @s", "tag @s remove pvp.spec",
         f"tp @s 0.5 {LOBBY_Y + 1} 0.5 180 0",
         "scoreboard players set @s pvp.left 0", "scoreboard players set @s pvp.ct 0",
@@ -1229,7 +1236,9 @@ def build_duels():
     # lock (and empty) the containers of maps built before containers were locked, without rebuilding them
     lk = outbreak_maps.locks(arena_map.colosseum(SPAWNS), ACX, AY, ACZ, clear=True)
     for (px, pz) in DUEL_PITS: lk += outbreak_maps.locks(g, px, AY, pz, clear=True)
-    for m in OUTBREAK_MAPS: lk += outbreak_maps.locks(outbreak_maps.MAPS[m[1]](map_points(m[1]), PVE_SPAWNS), PCX, AY, m[5], clear=True)
+    for m in OUTBREAK_MAPS:
+        if m[0] == core.CORE_ID: continue   # no layout: players build their own (and may use their own chests)
+        lk += outbreak_maps.locks(outbreak_maps.MAPS[m[1]](map_points(m[1]), PVE_SPAWNS), PCX, AY, m[5], clear=True)
     for (i, key, *_), m in zip(ARENA_MAPS[1:], arena_maps.MAPS):
         lk += outbreak_maps.locks(m[5](), MAP_AT[i][0], AY, MAP_AT[i][1], clear=True)
     fn("admin/lock_containers", lk)
@@ -1453,6 +1462,7 @@ def build_pve():
         f"execute if score #state pve matches 2 run function {P}/wave_tick",
         f"execute as @e[type=minecraft:armor_stand,tag=pve.body] at @s run function {P}/revive_tick",
         f"execute if score #state pve matches 3 run function {P}/break_tick",
+        CORE["tick"],
     ])
     fn("pve/second", [
         f"execute if score #state pve matches 1 run function {P}/lobby_sec",
@@ -1467,7 +1477,7 @@ def build_pve():
         *[f"execute if score #map pve matches {i} as @a[tag=pve.down] unless entity @s[{b}] run tp @s {PCX + 0.5} {AY + downed_y(key)} {z + 0.5}"
           for (i, key, _, _, _, z, _), b in zip(OUTBREAK_MAPS, PVE_BOXES.values())],
         # items players throw stay (they despawn normally after 5 minutes); anything else (mob leftovers) is cleared
-        *[f"execute as @e[type=minecraft:item,{b},tag=!pve.pu] unless data entity @s Thrower run kill @s" for b in PVE_BOXES.values()],
+        *[f"execute as @e[type=minecraft:item,{b},tag=!pve.pu] unless data entity @s Thrower run kill @s" for i, b in PVE_BOXES.items() if i != core.CORE_ID],   # Core Defense: block drops stay
         *[f"kill @e[type=minecraft:experience_orb,{b}]" for b in PVE_BOXES.values()],
         # mobs that leave the map (Ghosts are vexes and fly through blocks, under the floor or into the next map) are
         # put back at a mob window, so a wave can't stall on a mob nobody can reach
@@ -1475,8 +1485,9 @@ def build_pve():
           for (i, key, _, _, _, z, _), b in zip(OUTBREAK_MAPS, PVE_BOXES.values())],
         # spiders that climb the walls get pulled back down
         *[f"execute as @e[tag=pve.mob,x={PCX - PR - 1},y={AY + 8},z={z - PR - 1},dx={2 * PR + 2},dy=30,dz={2 * PR + 2}] at @s run tp @s {PCX + 0.5} {AY + 1} {z + 0.5}"
-          for (_, _, _, _, _, z, _) in OUTBREAK_MAPS],
+          for (i, _, _, _, _, z, _) in OUTBREAK_MAPS if i != core.CORE_ID],   # Core Defense: Builders pillar up on purpose
         *smoke_puffs(),
+        CORE["second"],
         # mobs only belong to a running wave; this also catches ones that come back when a chunk reloads
         "execute unless score #state pve matches 2 run kill @e[tag=pve.mob]",
         "execute if score #dp pve matches 1.. run scoreboard players remove #dp pve 1",
@@ -1628,7 +1639,7 @@ def build_pve():
         # keep the map loaded for the run, so mobs can always be cleared when it ends
         *[f"execute if score #map pve matches {i} run forceload add {PCX - PR - 1} {z - PR - 1} {PCX + PR + 1} {z + PR + 1}"
           for (i, _, _, _, _, z, _) in OUTBREAK_MAPS],
-        "scoreboard players set #dp pve 0", "scoreboard players set #insta pve 0",
+        "scoreboard players set #dp pve 0", "scoreboard players set #insta pve 0", CORE["start"],
         "scoreboard players set #state pve 3", "scoreboard players set #timer pve 100",
         f"execute as @a[tag=pve.q] run function {P}/enter",
         "tellraw @a[tag=pve.in] {\"text\":\"☣ The Outbreak has begun. Survive as long as you can.\",\"color\":\"green\"}",
@@ -1649,7 +1660,7 @@ def build_pve():
         "clear @s", "effect clear @s", "function cyber:admin/reset", "gamemode adventure @s",
         f"execute if score #map pve matches {HW_MAP} unless score @s pve.kit matches {min(HW_IDS)}..{max(HW_IDS)} run function {NS}:hw/fix_kit",
         f"execute unless score #map pve matches {HW_MAP} if score @s pve.kit matches {min(HW_IDS)}..{max(HW_IDS)} run function {NS}:hw/unfix_kit",
-        f"function {NS}:kit/give_pve", f"function {P}/tp_spawn",
+        f"function {NS}:kit/give_pve", f"function {P}/tp_spawn", CORE["enter"],
         f"execute if score #map pve matches {HW_MAP} run return run function {NS}:hw/enter_title",
         "title @s title {\"text\":\"☣ OUTBREAK\",\"color\":\"dark_green\",\"bold\":true}",
         "playsound minecraft:entity.zombie_villager.converted player @s ~ ~ ~ 1 0.7",
@@ -1693,7 +1704,7 @@ def build_pve():
     fn("pve/wave_end", [
         "scoreboard players set #state pve 3", f"scoreboard players set #timer pve {BREAK_TICKS}",
         f"execute as @a[tag=pve.down] run function {P}/revive",   # back now, so they can re-buy during the break
-        "kill @e[type=minecraft:armor_stand,tag=pve.body]",
+        "kill @e[type=minecraft:armor_stand,tag=pve.body]", CORE["wave_end"],
         f"execute if score #map pve matches {HW_MAP} if score #wave pve matches {HW_WAVES}.. run return run function {NS}:hw/victory",
         "scoreboard players operation #m pve = #wave pve", "scoreboard players operation #m pve %= #5 pve",
         f"execute if score #m pve matches 0 run give @a[tag=pve.in,tag=!pve.down] {CELL}",
@@ -1806,6 +1817,7 @@ def build_pve():
 
     # going down / coming back
     fn("pve/downed", [
+        CORE["died"],
         "tag @s add pve.down", f"function {P}/body", "gamemode spectator @s", *PERK_RESET,
         *[f"execute if score #map pve matches {i} run tp @s {PCX + 0.5} {AY + downed_y(key)} {z + 0.5}" for (i, key, _, _, _, z, _) in OUTBREAK_MAPS],
         "title @s title {\"text\":\"DOWN\",\"color\":\"dark_red\",\"bold\":true}",
@@ -1862,6 +1874,7 @@ def build_pve():
         "{\"text\":\" assembled the \",\"color\":\"light_purple\"},{\"text\":\"ANNIHILATOR\",\"color\":\"light_purple\",\"bold\":true},{\"text\":\"!\",\"color\":\"light_purple\"}]"])
     fn("pve/game_over", [
         "scoreboard players set #state pve 0", "kill @e[type=minecraft:armor_stand,tag=pve.body]", "kill @e[tag=pve.mob]", "kill @e[type=minecraft:item,tag=pve.pu]", "scoreboard players set #dp pve 0",
+        *CORE["game_over"],   # rebuilt while the map is still loaded
         *[f"forceload remove {PCX - PR - 1} {z - PR - 1} {PCX + PR + 1} {z + PR + 1}" for (_, _, _, _, _, z, _) in OUTBREAK_MAPS],
         "bossbar set pvp:boss visible false",
         "execute unless score #hwwon pve matches 1 run tellraw @a[tag=pve.in] [{\"text\":\"☣ Outbreak over. You reached wave \",\"color\":\"red\"},{\"score\":{\"name\":\"#wave\",\"objective\":\"pve\"},\"color\":\"white\",\"bold\":true},{\"text\":\".\",\"color\":\"red\"}]",
@@ -1923,7 +1936,7 @@ def build_pve():
     for m in OUTBREAK_MAPS:
         fn(f"admin/build_pve_{m[1]}", build_pve_map(m))
     fn("admin/build_pve", [f"function {NS}:admin/build_pve_{m[1]}" for m in OUTBREAK_MAPS])
-    fn("admin/place_arsenal", [c for m in OUTBREAK_MAPS for c in arsenal(m[5])])   # just the Arsenal NPCs, no map rebuild
+    fn("admin/place_arsenal", [c for m in OUTBREAK_MAPS if m[0] != core.CORE_ID for c in arsenal(m[5])])   # Core Defense's is placed with its map   # just the Arsenal NPCs, no map rebuild
 
 def build_halloween():
     """Haunted Night (Halloween): Outbreak map 6 played with the horror characters, 10 waves, The Scarecrow at wave 5
@@ -2082,6 +2095,8 @@ def wallbuys(g, cz, key):
 def build_pve_map(m):
     """Clear the map, put up the outer wall (with barrier above) and draw the layout from outbreak_maps.py."""
     i, key, name, color, _, cz, _ = m
+    if key == "core":
+        return core.map_cmds(sys.modules[__name__], cz)
     wall, plat = PVE_THEMES[key]
     g = outbreak_maps.MAPS[key](map_points(key), PVE_SPAWNS)
     outbreak_maps.check(g, name)

@@ -18,12 +18,14 @@ import net.minecraft.network.chat.Component;
  * Lobby leaderboards are refreshed by Leaderboards (top kills, best streak, best Outbreak wave).
  * /pvpkit create|delete|list (ops) manages admin-made kits; "pvpkit give <id>" is used by the datapack (see PvpKits).
  * /forceenchant (/fe, ops) puts any enchantment at any level on the held item (see ForceEnchant).
+ * Outbreak's Core Defense mobs (tag pve.seek) walk to the core when they aren't after a player (see CoreSeek).
  */
 public class SpawnCommand implements ModInitializer {
     @Override
     public void onInitialize() {
         ServerTickEvents.END_SERVER_TICK.register(Leaderboards::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Events::onTick);
+        ServerTickEvents.END_SERVER_TICK.register(CoreSeek::onTick);
         CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> {
             ForceEnchant.register(dispatcher, context);
             for (String name : new String[]{"spawn", "lobby"}) {
