@@ -444,8 +444,8 @@ Random). Waves, points, power-ups, the Arsenal, bosses and drop-ins work as on t
 - **The border**: black concrete from bedrock to y -12 (about 32 above the core), with barrier above it to the build
   limit and a barrier shell behind it. During a run, players right next to the wall get Mining Fatigue V (the concrete
   can't really be broken), and any gap in the wall is filled back in every second.
-- **The Arsenal** is out in the south-east, 22 blocks east and south of the core, between two mob windows, so it isn't
-  in the way of defences. Here it opens a **Base Defense** page (`core.CORE_SHOP`, `pve.buy` 41..53), with a button
+- **The Arsenal** is south-east of the core, 10 blocks east and 10 south (about 14 away), facing it: close enough to
+  run to between waves, outside the spawn clearing. Here it opens a **Base Defense** page (`core.CORE_SHOP`, `pve.buy` 41..53), with a button
   through to the usual weapons, perks and armor:
   - planks 150, cobblestone 250, stone bricks 400, obsidian x16 1,500 (mobs need 12 s per block), iron bars 500;
   - fences + gates 350, cobwebs 600, magma blocks 450, scaffolding 250, ladders + torches 150;

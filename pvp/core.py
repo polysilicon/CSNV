@@ -4,7 +4,7 @@
   pvp:wild dimension) cloned in on every reset, with BELOW blocks of real underground under the core for trenches.
   The border is black concrete up to WALL_TOP (about 32 above the core) with barrier above it to the build limit and a
   barrier shell behind it; Mining Fatigue V right by it and patching during a run keep it whole. Players play in survival: they can mine, chop, craft, dig trenches and build walls around it. Everyone starts with stone tools,
-  planks, cobblestone, a crafting table, a furnace and torches on top of their kit; the Arsenal (out in the south-east corner)
+  planks, cobblestone, a crafting table, a furnace and torches on top of their kit; the Arsenal (just south-east of the core)
   works as on the other maps.
 - Mobs head for the core: they're tagged pve.seek and the PvP mod (spawnmod CoreSeek) walks any of them that isn't
   after a player to the core (#corex/#corey/#corez pve). Their follow range is cut to SEEK_RANGE, so only players
@@ -42,7 +42,7 @@ SLICE_H = 46
 BELOW = 19
 SURF = BOTTOM + 1 + BELOW   # -44: the ground under the core
 WALL_TOP = BOTTOM + SLICE_H + 6   # black concrete up to here (-12, about 32 above the core); barrier above, to the build limit
-ARSENAL = (22, 22)      # the Arsenal NPC, from the core (between the mob windows at (30, 16) and (16, 30))
+ARSENAL = (10, 10)      # the Arsenal NPC, from the core: ~14 blocks south-east (was (22, 22), too far to run to)
 BOX_Y0 = BOTTOM - 1     # the map's selector box (build.PVE_BOXES uses it too)
 BOX_DY = WALL_TOP + 20 - BOX_Y0
 SEEK_RANGE = 20         # core mobs only go after players this close (follow range); otherwise they head for the core
@@ -118,7 +118,7 @@ def post_cmds(b, cz):
     for dx, dz in b.MOB_POINTS:
         for t in ("#minecraft:logs", "#minecraft:leaves"):
             a.append(f"fill {PCX + dx - 2} {S - 10} {cz + dz - 2} {PCX + dx + 2} {WALL_TOP} {cz + dz + 2} minecraft:air replace {t}")
-    # the Arsenal: out in the south-east, well away from the core (and players' defences), facing it; trees cleared there
+    # the Arsenal: south-east of the core, facing it, outside the spawn clearing; trees cleared there
     ax, az = PCX + ARSENAL[0], cz + ARSENAL[1]
     for t in ("#minecraft:logs", "#minecraft:leaves"):
         a.append(f"fill {ax - 2} {BOTTOM + 1} {az - 2} {ax + 2} {WALL_TOP} {az + 2} minecraft:air replace {t}")
@@ -257,7 +257,7 @@ def build(b):
         "gamemode survival @s", *[f"give @s minecraft:{it}" for it in START_ITEMS],
         "tellraw @s " + tj([{"text": "⚡ Core Defense: ", "color": "aqua", "bold": True},
                             {"text": f"keep the beacon in the middle alive. You have {FIRST_BREAK_S} s before the first wave and {BREAK_S} s between waves. Mine, chop, craft and build walls; the mobs dig through "
-                                     "and build up, and you respawn as long as the core stands. The Arsenal is out in the south-east corner.",
+                                     "and build up, and you respawn as long as the core stands. The Arsenal is just south-east of the core.",
                              "color": "gray", "bold": False}]),
     ])
     fn("pve/core_tick", [   # every tick in a wave: mobs act every 10 ticks
