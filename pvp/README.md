@@ -427,17 +427,25 @@ empties them in place.
 Kits, shop, mob pool, spawns and arena layouts are tables at the top of `build.py`.
 
 ## Core Defense (`core.py`)
-An Outbreak map (id 7, centre 0, -48, 900) picked from the bottom-right slot of the Outbreak map menu (not part of
+An Outbreak map (id 7, centre 0, -43, 900) picked from the bottom-right slot of the Outbreak map menu (not part of
 Random). Waves, points, power-ups, the Arsenal, bosses and drop-ins work as on the other maps; what changes:
-- **The map**: a natural patch of world, rebuilt by `core.map_cmds`. Grass hills (a fixed heightmap, flat at the
-  core, the mob windows and the pond), a sandy pond with sugar cane, oak, birch and spruce trees, bushes, mossy
-  boulders, flowers. Under it are 3 blocks of dirt, then stone with granite, diorite, andesite, tuff, gravel and dirt
-  patches, then deepslate, down to the world's bedrock at y -64. Ore veins run through it all (coal, iron, copper, gold,
-  redstone, lapis, a few diamonds and emeralds). The ground is at y -49 (`core.SURF`), so there are about 14 blocks to
-  dig trenches in. The core stands on an old mossy stone pad in a flat clearing.
-- **The border**: black concrete from bedrock to 6 above the ground, with barrier above it, a barrier shell behind it
-  and a barrier ceiling. During a run, players right next to the wall get Mining Fatigue V (the concrete can't really
-  be broken), and any gap in the wall is filled back in every second.
+- **The map**: real Minecraft terrain. The datapack adds a dimension, `pvp:wild`, generated like a normal overworld
+  with the world's seed; nobody plays there. Every reset (`pve/core_reset`, then `pve/core_paste` 20 ticks later once
+  the chunks are loaded) clones a 65 x 65, 46-high slice of it into the map. The slice is centred on
+  `core.SRC_X, SRC_Z` (-216, 72: a forest with hills from 62 to 71 and no water or lava), and starts 19 blocks under
+  the ground at its centre. That puts the core's ground at y -44 (`core.SURF`) with 19 blocks of real underground
+  (dirt, stone, caves, ore) below it for trenches; the world's bedrock is at -64. Trees within 7 blocks of the core are
+  cleared, and the core stands on an old mossy stone pad.
+  Players, mobs, the boss and the Arsenal spawn on the ground at their spot (heightmap `motion_blocking_no_leaves`).
+  To pick another spot: `execute in pvp:wild run forceload add <x-35> <z-35> <x+35> <z+35>`, wait for it to generate,
+  `function pvp:admin/wildprobe {x:<x>,z:<z>}`, then `data get storage pvp:probe h`. That gives the ground height
+  (first air) on a 7 x 7 grid 10 apart, +1000 for water, +2000 for logs and +5000 for lava. Then set
+  `SRC_X, SRC_Z` and rebuild.
+- **The border**: black concrete from bedrock to y -12 (about 32 above the core), with barrier above it to the build
+  limit and a barrier shell behind it. During a run, players right next to the wall get Mining Fatigue V (the concrete
+  can't really be broken), and any gap in the wall is filled back in every second.
+- **The Arsenal** is out in the south-east, 22 blocks east and south of the core, between two mob windows, so it isn't
+  in the way of defences.
 - **Guard the core**: a beacon on the pad.
   It has 100 HP (boss bar "⚡ Core") and gets +20 back after every wave. Every mob within ~2.5 blocks of it takes 1 HP
   a second (the Abomination 5). At 0 the core blows up and the run is over. A player who breaks the core gets it

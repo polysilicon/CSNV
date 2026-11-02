@@ -4,7 +4,7 @@
   pvp:wild dimension) cloned in on every reset, with BELOW blocks of real underground under the core for trenches.
   The border is black concrete up to WALL_TOP (about 32 above the core) with barrier above it to the build limit and a
   barrier shell behind it; Mining Fatigue V right by it and patching during a run keep it whole. Players play in survival: they can mine, chop, craft, dig trenches and build walls around it. Everyone starts with stone tools,
-  planks, cobblestone, a crafting table, a furnace and torches on top of their kit; the Arsenal (just south of the core)
+  planks, cobblestone, a crafting table, a furnace and torches on top of their kit; the Arsenal (out in the south-east corner)
   works as on the other maps.
 - Mobs head for the core: they're tagged pve.seek and the PvP mod (spawnmod CoreSeek) walks any of them that isn't
   after a player to the core (#corex/#corey/#corez pve). Their follow range is cut to SEEK_RANGE, so only players
@@ -34,11 +34,12 @@ BOTTOM = -64            # the world's floor: bedrock (unbreakable)
 # (SRC_X, SRC_Z) is cloned in on every reset. The slice is SLICE_H high and starts BELOW blocks under the ground at its
 # centre, so the core's ground lands on SURF and there are BELOW blocks of real underground (stone, caves, ore) to dig.
 WILD = "pvp:wild"
-SRC_X, SRC_Z = 0, 0     # picked by probing pvp:wild (see README)
+SRC_X, SRC_Z = -216, 72   # a forest: hills 62-71, no water or lava (picked with admin/wildprobe)
 SLICE_H = 46
 BELOW = 19
 SURF = BOTTOM + 1 + BELOW   # -44: the ground under the core
 WALL_TOP = BOTTOM + SLICE_H + 6   # black concrete up to here (-12, about 32 above the core); barrier above, to the build limit
+ARSENAL = (22, 22)      # the Arsenal NPC, from the core (between the mob windows at (30, 16) and (16, 30))
 BOX_Y0 = BOTTOM - 1     # the map's selector box (build.PVE_BOXES uses it too)
 BOX_DY = WALL_TOP + 20 - BOX_Y0
 SEEK_RANGE = 20         # core mobs only go after players this close (follow range); otherwise they head for the core
@@ -82,9 +83,12 @@ def post_cmds(b, cz):
           f"fill {PCX - 1} {S} {cz - 1} {PCX + 1} {S} {cz + 1} minecraft:mossy_stone_bricks",
           f"setblock {PCX} {S} {cz} minecraft:chiseled_stone_bricks", f"setblock {PCX} {S + 1} {cz} minecraft:beacon"]
     a += [f"setblock {PCX + ox} {S} {cz + oz} minecraft:cracked_stone_bricks" for ox, oz in ((1, 1), (-1, -1))]
-    # the Arsenal, south of the core, facing it, on the ground there
-    body = b.npc("pvp.shopnpc", ("~", "~", "~"), "☣ Arsenal ☣", "green", "sniper", 180, hand="crossbow", chest="netherite_chestplate")
-    a += [f"kill @e[tag=pvp.shopnpc,{box}]"] + [f"execute positioned {PCX + 0.5} 0 {cz + 6.5} positioned over motion_blocking_no_leaves run {c}" for c in body[1:]]
+    # the Arsenal: out in the south-east, well away from the core (and players' defences), facing it; trees cleared there
+    ax, az = PCX + ARSENAL[0], cz + ARSENAL[1]
+    for t in ("#minecraft:logs", "#minecraft:leaves"):
+        a.append(f"fill {ax - 2} {BOTTOM + 1} {az - 2} {ax + 2} {WALL_TOP} {az + 2} minecraft:air replace {t}")
+    body = b.npc("pvp.shopnpc", ("~", "~", "~"), "☣ Arsenal ☣", "green", "sniper", 135, hand="crossbow", chest="netherite_chestplate")
+    a += [f"kill @e[tag=pvp.shopnpc,{box}]"] + [f"execute positioned {ax + 0.5} 0 {az + 0.5} positioned over motion_blocking_no_leaves run {c}" for c in body[1:]]
     return a
 
 
@@ -137,6 +141,22 @@ def build(b):
                            f"execute if score #state pve matches 0 run forceload remove {W1 - 1} {Z1 - 1} {W2 + 1} {Z2 + 1}"])
     fn("pve/core_clone", [f"$clone from {WILD} " + src.format(f"$(a{k})", f"$(b{k})") + f" to minecraft:overworld {PCX - PR} {BOTTOM + 1 + k} {CORE_Z - PR}"
                           for k in range(0, SLICE_H, 7)])
+    # picking a source spot (admin): "execute in pvp:wild run forceload add" the area, wait for it to generate, then
+    # "function pvp:admin/wildprobe {x:.., z:..}" and "data get storage pvp:probe h": ground height (first air) on a
+    # 7 x 7 grid 10 apart, +1000 where the surface is water, +2000 on a tree (logs), +5000 on lava
+    probe = ["data remove storage pvp:probe h"]
+    for i, dx in enumerate(range(-30, 31, 10)):
+        for j, dz in enumerate(range(-30, 31, 10)):
+            at = f"$execute in {WILD} positioned $(x) 0 $(z) positioned ~{dx} 0 ~{dz} positioned over"
+            k = f"r{j}c{i}"
+            probe += [f"{at} motion_blocking_no_leaves run summon minecraft:marker ~ ~ ~ {{Tags:[\"pr\"]}}",
+                      f"execute in {WILD} store result score #p pve run data get entity @e[type=minecraft:marker,tag=pr,limit=1] Pos[1]",
+                      f"execute in {WILD} run kill @e[type=minecraft:marker,tag=pr]",
+                      f"{at} world_surface if block ~ ~-1 ~ water run scoreboard players add #p pve 1000",
+                      f"{at} world_surface if block ~ ~-1 ~ #minecraft:logs run scoreboard players add #p pve 2000",
+                      f"{at} world_surface if block ~ ~-1 ~ lava run scoreboard players add #p pve 5000",
+                      f"execute store result storage pvp:probe h.{k} int 1 run scoreboard players get #p pve"]
+    fn("admin/wildprobe", probe)
     # mobs and the boss come in on the ground at their spot (the terrain isn't flat)
     fn("pve/core_spawny", ["$execute positioned $(x) 0 $(z) positioned over motion_blocking_no_leaves run summon minecraft:marker ~ ~ ~ {Tags:[\"pve.probe\"]}",
                            "execute store result storage pvp:pve m.y int 1 run data get entity @e[type=minecraft:marker,tag=pve.probe,limit=1] Pos[1]",
@@ -156,7 +176,8 @@ def build(b):
         "gamemode survival @s", *[f"give @s minecraft:{it}" for it in START_ITEMS],
         "tellraw @s " + tj([{"text": "⚡ Core Defense: ", "color": "aqua", "bold": True},
                             {"text": "keep the beacon in the middle alive. Mine, chop, craft and build walls; the mobs dig through "
-                                     "and build up, and you respawn as long as the core stands.", "color": "gray", "bold": False}]),
+                                     "and build up, and you respawn as long as the core stands. The Arsenal is out in the south-east corner.",
+                             "color": "gray", "bold": False}]),
     ])
     fn("pve/core_tick", [   # every tick in a wave: mobs act every 10 ticks
         "scoreboard players add #ctk pve 1",
