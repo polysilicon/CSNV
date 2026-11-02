@@ -688,6 +688,7 @@ def build():
                        "cmd": f"trigger pve.join set {RANDOM_KIT}"},
                       {"slot": 18, "item": icon("barrier", "Leave the lobby", "red", ["Stop waiting for this run"], False), "cmd": "trigger pve.join set 99"}]},
         **tower_menus(),
+        "core_shop": CORE["shop_menu"],
         "pve_shop": {"title": {"text": "☣ Arsenal (points)", "color": "dark_green"}, "rows": 3, "fill": PANE, "items":
                      [{"slot": s, "item": icon(i[3], f"{i[1]}" + (f" · {i[4]}" if i[4] else ""), i[2], [i[5]]), "cmd": f"trigger pve.buy set {i[0]}"} for s, i in zip(SHOP_SLOTS, SHOP)]},
     }
@@ -888,7 +889,7 @@ def build():
 
     npc_adv("npc", "pvp.npc", "kits")
     npc_adv("pvenpc", "pvp.pvenpc", f"function {NS}:pve/open_menu")
-    npc_adv("shopnpc", "pvp.shopnpc", "pve_shop")
+    npc_adv("shopnpc", "pvp.shopnpc", f"function {NS}:pve/shop_open")   # Core Defense opens its Base Defense page
     npc_adv("micronpc", "pvp.micronpc", f"function {NS}:micro/open")
     npc_adv("gamesnpc", "pvp.gamesnpc", f"function {NS}:games/open")
 
@@ -1764,6 +1765,7 @@ def build_pve():
         "execute store result entity @s Health float 1 run attribute @s minecraft:max_health get",
     ])
     fn("pve/boss", [
+        CORE["boss"],
         f"execute if score #map pve matches {HW_MAP} run return run function {NS}:hw/boss",
         'bossbar set pvp:boss name {"text":"Abomination","color":"dark_red"}', "bossbar set pvp:boss color red",
         CORE["boss_y"], f"function {P}/boss_summon with storage pvp:pve map",
@@ -1894,7 +1896,8 @@ def build_pve():
 
     # Arsenal shop
     buy = ["scoreboard players operation #n pve = @s pve.buy", "scoreboard players set @s pve.buy 0",
-           f"execute unless entity @s[tag=pve.in,tag=!pve.down] run return run {say('@s', 'The Arsenal only serves Outbreak survivors.', 'red')}"]
+           f"execute unless entity @s[tag=pve.in,tag=!pve.down] run return run {say('@s', 'The Arsenal only serves Outbreak survivors.', 'red')}",
+           CORE["buy"]]
     for (sid, name, color, ic, cost, lore, cmds, once) in SHOP:
         buy.append(f"execute if score #n pve matches {sid} run function {P}/shop/{sid}")
         fn(f"pve/shop/{sid}", [

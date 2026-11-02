@@ -11,9 +11,9 @@
   close by pull them away. Zombies, husks, zombie villagers and vindicators only (melee mobs that can dig).
 - Mobs break through: a mob that stands still with a block between it and the core chews through it (head height
   first, then feet): 3 s for most blocks, 5 s for stone-type blocks, twice as fast for Breakers (axe in hand). The
-  Abomination clears a 3-wide, 4-high hole at a time. A mob stuck below the core (in a trench) digs a staircase up. Builders (cobblestone in hand) bridge gaps on the way to the core
+  Warlord (this map's boss) digs about four times as fast. A mob stuck below the core (in a trench) digs a staircase up. Builders (cobblestone in hand) bridge gaps on the way to the core
   and pillar up under a player standing on something high nearby.
-- Every mob within ~2.5 blocks of the core takes 1 core HP a second (the Abomination 5). The core has CORE_HP and gets
+- Every mob within ~2.5 blocks of the core takes 1 core HP a second (the Warlord 5). The core has CORE_HP and gets
   CORE_HEAL back after every wave (boss bar "Core"). A player who breaks it gets it put straight back.
 - Dying isn't "down" here: while the core stands you're back at a spawn after RESPAWN_S seconds, with your inventory
   (keep_inventory is on). When the core is destroyed the run is over.
@@ -30,6 +30,7 @@ FIRST_BREAK_S = 90      # before wave 1: time to build defences
 BREAK_S = 30            # between waves
 DIG = 6                 # checks (every 10 ticks) to break a block: 3 s
 DIG_HARD = 10           # stone-type blocks (#minecraft:mineable/pickaxe): 5 s
+DIG_TOUGH = 24          # obsidian, iron blocks (#pvp:core_tough): 12 s
 CORE_REACH = 2.8        # mobs this close to the core's centre damage it
 BOTTOM = -64            # the world's floor: bedrock (unbreakable)
 # The terrain is real: a slice of a normally generated world (dimension pvp:wild, the world's seed) centred on
@@ -50,6 +51,32 @@ K_EXTRA = ',CustomName:{text:"Breaker",color:"red"},equipment:{mainhand:{id:"min
 # this map's whole roster (rolls up to 100, so the normal pool, which has mobs that ignore villagers, is never used)
 POOL = [(1, 18, "zombie", B_EXTRA), (1, 50, "zombie", ""), (2, 64, "husk", ""), (3, 76, "zombie_villager", ""),
         (4, 86, "vindicator", K_EXTRA), (6, 93, "zombie", K_EXTRA), (1, 100, "zombie", "")]
+# the Arsenal's Base Defense page (pve.buy 41..): id, name, colour, icon, cost, lore, commands
+CORE_SHOP = [
+    (41, "Oak Planks", "gold", "oak_planks", 150, "64 planks: quick walls", ["give @s minecraft:oak_planks 64"]),
+    (42, "Cobblestone", "gray", "cobblestone", 250, "64 cobblestone: slower to dig through", ["give @s minecraft:cobblestone 64"]),
+    (43, "Stone Bricks", "gray", "stone_bricks", 400, "64 stone bricks", ["give @s minecraft:stone_bricks 64"]),
+    (44, "Obsidian", "dark_purple", "obsidian", 1500, "16 obsidian: mobs need 12 s per block", ["give @s minecraft:obsidian 16"]),
+    (45, "Iron Bars", "white", "iron_bars", 500, "32 iron bars: see (and shoot) through", ["give @s minecraft:iron_bars 32"]),
+    (46, "Fences", "gold", "oak_fence", 350, "32 fences + 4 gates: too high to jump", ["give @s minecraft:oak_fence 32", "give @s minecraft:oak_fence_gate 4"]),
+    (47, "Water Bucket", "aqua", "water_bucket", 300, "Push mobs back, put out fires", ["give @s minecraft:water_bucket"]),
+    (48, "Lava Bucket", "red", "lava_bucket", 800, "A moat that burns (Builders cover it)", ["give @s minecraft:lava_bucket"]),
+    (49, "Cobwebs", "white", "cobweb", 600, "8 cobwebs: slow mobs to a crawl", ["give @s minecraft:cobweb 8"]),
+    (50, "Magma Blocks", "gold", "magma_block", 450, "16 magma blocks: burn anything standing on them", ["give @s minecraft:magma_block 16"]),
+    (51, "Scaffolding", "yellow", "scaffolding", 250, "32 scaffolding: build up fast", ["give @s minecraft:scaffolding 32"]),
+    (52, "Ladders & Torches", "yellow", "ladder", 150, "16 ladders + 32 torches", ["give @s minecraft:ladder 16", "give @s minecraft:torch 32"]),
+    (53, "Repair Core", "aqua", "beacon", 1000, "+25 core HP", ["function pvp:pve/core_repair"]),
+]
+SHOP_SLOTS = [10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 23, 24, 25]
+# the Warlord: this map's boss (every 5th wave) instead of the Abomination, which got stuck in the trees
+WARLORD = ('{Tags:["pve.mob","pve.boss","pve.new"],PersistenceRequired:1b,CanPickUpLoot:0b,DeathLootTable:"minecraft:empty",IsBaby:0b,'
+           'CustomName:{text:"Warlord",color:"dark_red",bold:true},CustomNameVisible:1b,'
+           'equipment:{mainhand:{id:"minecraft:netherite_axe",count:1},head:{id:"minecraft:netherite_helmet",count:1},'
+           'chest:{id:"minecraft:netherite_chestplate",count:1},legs:{id:"minecraft:netherite_leggings",count:1},feet:{id:"minecraft:netherite_boots",count:1}},'
+           'drop_chances:{mainhand:0.0f,head:0.0f,chest:0.0f,legs:0.0f,feet:0.0f},'
+           'attributes:[{id:"minecraft:max_health",base:160d},{id:"minecraft:attack_damage",base:8d},{id:"minecraft:knockback_resistance",base:1.0d},'
+           '{id:"minecraft:movement_speed",base:0.25d},{id:"minecraft:follow_range",base:20d}]}')
+RALLY_S = 15            # the Warlord calls in two Builders this often
 START_ITEMS = ["stone_pickaxe", "stone_axe", "stone_shovel", "oak_planks 32", "cobblestone 32", "crafting_table", "furnace",
                "torch 8"]
 LORE = ["Guard the core in a patch of wild world", "Mine, chop, craft, dig trenches, build walls", "Mobs dig through walls and build up",
@@ -85,6 +112,10 @@ def post_cmds(b, cz):
           f"fill {PCX - 1} {S} {cz - 1} {PCX + 1} {S} {cz + 1} minecraft:mossy_stone_bricks",
           f"setblock {PCX} {S} {cz} minecraft:chiseled_stone_bricks", f"setblock {PCX} {S + 1} {cz} minecraft:beacon"]
     a += [f"setblock {PCX + ox} {S} {cz + oz} minecraft:cracked_stone_bricks" for ox, oz in ((1, 1), (-1, -1))]
+    # no trees on the mob windows (mobs and the Warlord come in there, on the ground)
+    for dx, dz in b.MOB_POINTS:
+        for t in ("#minecraft:logs", "#minecraft:leaves"):
+            a.append(f"fill {PCX + dx - 2} {S - 10} {cz + dz - 2} {PCX + dx + 2} {WALL_TOP} {cz + dz + 2} minecraft:air replace {t}")
     # the Arsenal: out in the south-east, well away from the core (and players' defences), facing it; trees cleared there
     ax, az = PCX + ARSENAL[0], cz + ARSENAL[1]
     for t in ("#minecraft:logs", "#minecraft:leaves"):
@@ -111,6 +142,8 @@ def build(b):
         "#minecraft:replaceable", "#minecraft:small_flowers", "#minecraft:saplings", "minecraft:bedrock", "minecraft:barrier",
         "minecraft:beacon", "minecraft:light", "minecraft:torch", "minecraft:wall_torch", "minecraft:structure_void"]})
     wj(f"data/{NS}/tags/block/core_wallgap.json", {"values": ["#minecraft:air", "minecraft:water"]})
+    wj(f"data/{NS}/tags/block/core_tough.json", {"values": ["minecraft:obsidian", "minecraft:crying_obsidian", "minecraft:iron_block"]})
+    wj(f"data/{NS}/tags/block/core_liquid.json", {"values": ["minecraft:water", "minecraft:lava"]})
     wj(f"data/{NS}/predicate/half.json", {"condition": "minecraft:random_chance", "chance": 0.5})
 
     wj(f"data/{NS}/dimension/wild.json", {"type": "minecraft:overworld", "generator": {
@@ -159,6 +192,50 @@ def build(b):
                       f"{at} world_surface if block ~ ~-1 ~ lava run scoreboard players add #p pve 5000",
                       f"execute store result storage pvp:probe h.{k} int 1 run scoreboard players get #p pve"]
     fn("admin/wildprobe", probe)
+    # the Arsenal's Base Defense page
+    buy = []
+    for (sid, name, color, ic, cost, lore, cmds) in CORE_SHOP:
+        buy.append(f"execute if score #n pve matches {sid} run return run function {P}/core_shop/{sid}")
+        fn(f"pve/core_shop/{sid}", [f"execute if score @s pve.pts matches ..{cost - 1} run return run {b.afford(name, cost)}",
+                                    f"scoreboard players remove @s pve.pts {cost}", *cmds,
+                                    "tellraw @s " + tj([{"text": "Bought ", "color": "green"}, {"text": name, "color": color}]),
+                                    "playsound minecraft:entity.villager.yes neutral @s ~ ~ ~ 1 0.8"])
+    fn("pve/core_buy", [f"execute unless score #map pve matches {CORE_ID} run return run " + b.say("@s", "That's only sold in Core Defense.", "red"), *buy])
+    fn("pve/core_repair", [f"scoreboard players add #core pve 25",
+                           f"execute if score #core pve matches {CORE_HP + 1}.. run scoreboard players set #core pve {CORE_HP}",
+                           "execute store result bossbar pvp:core value run scoreboard players get #core pve",
+                           f"particle minecraft:happy_villager {cx} {cy + 0.5} {cz} 0.6 0.6 0.6 0 20",
+                           "tellraw @a[tag=pve.in] " + tj([{"selector": "@s", "color": "yellow"}, {"text": " repaired the core (", "color": "aqua"},
+                                                           {"score": {"name": "#core", "objective": "pve"}, "color": "white"}, {"text": f"/{CORE_HP}).", "color": "aqua"}])])
+    shop_menu = {"title": {"text": "⚡ Arsenal: Base Defense (points)", "color": "dark_aqua"}, "rows": 4, "fill": b.PANE, "items":
+                 [{"slot": sl, "item": b.icon(i[3], f"{i[1]} · {i[4]}", i[2], [i[5]], False), "cmd": f"trigger pve.buy set {i[0]}"}
+                  for sl, i in zip(SHOP_SLOTS, CORE_SHOP)]
+                 + [{"slot": 4, "item": b.icon("beacon", "Base Defense", "aqua", ["Blocks and supplies to hold the core", "Paid with Outbreak points"]), "cmd": ""},
+                    {"slot": 31, "item": b.icon("iron_sword", "Weapons, perks & armor →", "green", ["The usual Arsenal"], False), "cmd": "pvpmenu pve_shop"}]}
+    fn("pve/shop_open", [f"execute if score #map pve matches {CORE_ID} run return run pvpmenu core_shop", "pvpmenu pve_shop"])
+    # the Warlord: at a random mob window (cleared of trees), on the ground
+    fn("pve/core_boss", [
+        'bossbar set pvp:boss name {"text":"Warlord","color":"dark_red"}', "bossbar set pvp:boss color red",
+        "execute store result score #r pve run random value 1..4",
+        *[f"execute if score #r pve matches {n} run data modify storage pvp:pve m merge value {{x:{PCX + dx + 0.5},z:{CORE_Z + dz + 0.5}}}"
+          for n, (dx, dz) in enumerate([(30, 0), (-30, 0), (0, 30), (0, -30)], 1)],
+        f"function {P}/core_spawny with storage pvp:pve m",
+        f"function {P}/core_boss_summon with storage pvp:pve m",
+        f"execute as @e[tag=pve.new] run function {P}/scale with storage pvp:pve s",
+        "execute store result bossbar pvp:boss max run data get entity @e[tag=pve.boss,limit=1] Health",
+        "bossbar set pvp:boss players @a[tag=pve.in]", "bossbar set pvp:boss visible true", "scoreboard players set #wr pve 0",
+        "tellraw @a[tag=pve.in] " + tj({"text": "⚡ The Warlord has come for the core! He hacks through walls and calls in Builders.", "color": "dark_red", "bold": True}),
+        "execute as @a[tag=pve.in] at @s run playsound minecraft:event.raid.horn player @s ~ ~ ~ 1 0.6",
+    ])
+    fn("pve/core_boss_summon", ["$summon minecraft:zombie $(x) $(y) $(z) " + WARLORD,
+                                "$particle minecraft:large_smoke $(x) $(y) $(z) 0.5 1 0.5 0.02 40"])
+    fn("pve/core_rally", [   # as the Warlord, at him
+        *[f"summon minecraft:zombie ~{ox} ~ ~{oz} " + '{Tags:["pve.mob","pve.new"],PersistenceRequired:1b,CanPickUpLoot:0b,DeathLootTable:"minecraft:empty",IsBaby:0b' + B_EXTRA + "}"
+          for ox, oz in ((1, 0), (-1, 0))],
+        f"execute as @e[tag=pve.new] run function {P}/scale with storage pvp:pve s",
+        "particle minecraft:large_smoke ~ ~1 ~ 0.8 0.5 0.8 0.02 20",
+        "tellraw @a[tag=pve.in] " + tj({"text": "⚡ The Warlord calls in Builders!", "color": "red"}),
+    ])
     # mobs and the boss come in on the ground at their spot (the terrain isn't flat)
     fn("pve/core_spawny", ["$execute positioned $(x) 0 $(z) positioned over motion_blocking_no_leaves run summon minecraft:marker ~ ~ ~ {Tags:[\"pve.probe\"]}",
                            "execute store result storage pvp:pve m.y int 1 run data get entity @e[type=minecraft:marker,tag=pve.probe,limit=1] Pos[1]",
@@ -203,7 +280,6 @@ def build(b):
         "scoreboard players operation #t2 pve /= #20 pve", "scoreboard players operation #t pve -= #t2 pve",
         "execute if score #dx pve < #t pve run scoreboard players operation @s pve.cd = #dx pve",
         "execute if score #dx pve < #t pve run return run scoreboard players set @s pve.dig 0",
-        f"execute if entity @s[tag=pve.boss] run return run function {P}/core_bossdig",
         # below the core (in a trench): dig a staircase up towards it instead of a tunnel under it
         "execute store result score #my pve run data get entity @s Pos[1] 10",
         f"execute if score #my pve matches ..{round((cy - 0.5) * 10)} run return run function {P}/core_up",
@@ -222,24 +298,19 @@ def build(b):
     fn("pve/core_dig", [   # as the mob, positioned in the block it's breaking
         "scoreboard players add @s pve.dig 1",
         "execute if items entity @s weapon.mainhand #minecraft:axes run scoreboard players add @s pve.dig 1",
+        "execute if entity @s[tag=pve.boss] run scoreboard players add @s pve.dig 2",
         "particle minecraft:crit ~ ~0.5 ~ 0.3 0.3 0.3 0.1 4",
         "playsound minecraft:entity.zombie.attack_wooden_door hostile @a[distance=..20] ~ ~ ~ 0.4 1.3",
+        f"execute if block ~ ~ ~ #{NS}:core_tough if score @s pve.dig matches ..{DIG_TOUGH - 1} run return 0",
         f"execute if block ~ ~ ~ #minecraft:mineable/pickaxe if score @s pve.dig matches ..{DIG_HARD - 1} run return 0",
         f"execute if score @s pve.dig matches ..{DIG - 1} run return 0",
         "setblock ~ ~ ~ minecraft:air destroy", "scoreboard players set @s pve.dig 0",
     ])
-    boss_cells = [(x, y) for y in range(4) for x in (-1, 0, 1)]
-    fn("pve/core_bossdig", [   # the Abomination (scale 2) needs a 3-wide, 4-high hole
-        "scoreboard players add @s pve.dig 1",
-        f"execute facing {cx} ~ {cz} positioned ^ ^1 ^1.6 run particle minecraft:crit ~ ~ ~ 0.8 0.8 0.8 0.1 8",
-        f"execute if score @s pve.dig matches ..{DIG - 1} run return 0",
-        *[f"execute facing {cx} ~ {cz} positioned ^{x} ^{y} ^1.6 unless block ~ ~ ~ #{NS}:core_pass run setblock ~ ~ ~ minecraft:air destroy"
-          for x, y in boss_cells],
-        "scoreboard players set @s pve.dig 0",
-    ])
     fn("pve/core_build", [   # a Builder: bridge a drop (2+ deep) towards the core; pillar up under a player standing high nearby
         f"execute unless block ~ ~-0.5 ~ #minecraft:air facing {cx} ~ {cz} positioned ^ ^-1 ^1.0 if block ~ ~ ~ #minecraft:air if block ~ ~-1 ~ #minecraft:air "
         "run setblock ~ ~ ~ minecraft:cobblestone",
+        f"execute facing {cx} ~ {cz} positioned ^ ^-1 ^1.0 if block ~ ~ ~ #{NS}:core_liquid run setblock ~ ~ ~ minecraft:cobblestone",
+        f"execute facing {cx} ~ {cz} positioned ^ ^ ^1.0 if block ~ ~ ~ #{NS}:core_liquid run setblock ~ ~ ~ minecraft:cobblestone",
         f"execute unless block ~ ~-0.5 ~ #minecraft:air if block ~ ~2 ~ #minecraft:air positioned ~-3 ~3 ~-3 "
         f"if entity @a[tag=pve.in,gamemode=survival,dx=6,dy=16,dz=6] positioned ~3 ~-3 ~3 run function {P}/core_pillar",
     ])
@@ -265,6 +336,9 @@ def build(b):
             f"x={W1},y={BOX_Y0},z={Z1},dx={W2 - W1},dy={BOX_DY},dz=2", f"x={W1},y={BOX_Y0},z={Z2 - 2},dx={W2 - W1},dy={BOX_DY},dz=2")],
         *[f"fill {a1} {BOTTOM} {b1} {a2} {WALL_TOP} {b2} minecraft:black_concrete replace #{NS}:core_wallgap"
           for (a1, b1, a2, b2) in ((W1, Z1, W2, Z1), (W1, Z2, W2, Z2), (W1, Z1, W1, Z2), (W2, Z1, W2, Z2))],
+        "execute if entity @e[tag=pve.boss] run scoreboard players add #wr pve 1",
+        f"execute if score #wr pve matches {RALLY_S}.. as @e[tag=pve.boss] at @s run function {P}/core_rally",
+        f"execute if score #wr pve matches {RALLY_S}.. run scoreboard players set #wr pve 0",
         f"execute if score #core pve matches ..0 run function {P}/core_lost",
     ])
     fn("pve/core_hit", [   # as a mob at the core
@@ -318,6 +392,9 @@ def build(b):
         "enter": f"execute {on} run function {P}/core_enter",
         "died": f"execute {on} run return run function {P}/core_died",
         "wave_end": f"execute {on} run function {P}/core_heal",
+        "boss": f"execute {on} run return run function {P}/core_boss",
+        "buy": f"execute if score #n pve matches 41..60 run return run function {P}/core_buy",
+        "shop_menu": shop_menu,
         "first_break": f"execute {on} run scoreboard players set #timer pve {FIRST_BREAK_S * 20}",
         "break": f"execute {on} run scoreboard players set #timer pve {BREAK_S * 20}",
         "spawn_y": f"execute {on} run function {P}/core_spawny with storage pvp:pve m",

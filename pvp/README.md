@@ -445,10 +445,15 @@ Random). Waves, points, power-ups, the Arsenal, bosses and drop-ins work as on t
   limit and a barrier shell behind it. During a run, players right next to the wall get Mining Fatigue V (the concrete
   can't really be broken), and any gap in the wall is filled back in every second.
 - **The Arsenal** is out in the south-east, 22 blocks east and south of the core, between two mob windows, so it isn't
-  in the way of defences.
+  in the way of defences. Here it opens a **Base Defense** page (`core.CORE_SHOP`, `pve.buy` 41..53), with a button
+  through to the usual weapons, perks and armor:
+  - planks 150, cobblestone 250, stone bricks 400, obsidian x16 1,500 (mobs need 12 s per block), iron bars 500;
+  - fences + gates 350, cobwebs 600, magma blocks 450, scaffolding 250, ladders + torches 150;
+  - water bucket 300, lava bucket 800;
+  - Repair Core (+25 HP) 1,000.
 - **Guard the core**: a beacon on the pad.
   It has 100 HP (boss bar "⚡ Core") and gets +20 back after every wave. Every mob within ~2.5 blocks of it takes 1 HP
-  a second (the Abomination 5). At 0 the core blows up and the run is over. A player who breaks the core gets it
+  a second (the Warlord 5). At 0 the core blows up and the run is over. A player who breaks the core gets it
   put straight back.
 - **Survival building**: players are in survival here. Everyone gets stone tools, 32 planks, 32 cobblestone, a
   crafting table, a furnace and 8 torches on top of their kit. Block drops stay on the ground.
@@ -461,11 +466,15 @@ Random). Waves, points, power-ups, the Arsenal, bosses and drop-ins work as on t
   cobblestone), Breakers (vindicators from wave 4, zombies from wave 6, holding an iron axe).
 - **Mobs dig**: a mob that isn't getting any closer to the core than it already has been (pushing at a wall, or sliding along it),
   with a block between it and the core, chews through it,
-  head height first and then feet, leaving a 2-high tunnel. That takes 3 s per block, 5 s for stone-type blocks, and
-  half that for Breakers. The Abomination clears a 3-wide, 4-high hole at a time. A mob stuck below the core (in a
+  head height first and then feet, leaving a 2-high tunnel. That takes 3 s per block, 5 s for stone-type blocks,
+  12 s for obsidian and iron blocks, half that for Breakers and a quarter for the Warlord. A mob stuck below the core (in a
   trench) digs a staircase up towards it: head height and the block above it ahead, leaving the block at its feet as a
   step, and the block over its own head if that's what stops it jumping.
-- **Builders build**: they bridge drops 2+ deep on the way to the core and pillar up (cobblestone) under a player
+- **The Warlord** is this map's boss (every 5th wave) instead of the Abomination, which got stuck in trees. He's
+  normal-sized, in netherite armor with a netherite axe, with 160 base health and full knockback resistance. He comes
+  in at a random cardinal mob window (trees are cleared around all mob windows), digs about four times as fast as
+  other mobs, and calls in two Builders every 15 s.
+- **Builders build**: they cover lava and water in front of them with cobblestone, bridge drops 2+ deep on the way to the core and pillar up (cobblestone) under a player
   standing 3+ blocks above them nearby.
 - The map is rebuilt (`pve/core_reset` → `admin/build_pve_core`) when a run starts and when it ends.
 
