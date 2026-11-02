@@ -209,11 +209,27 @@ def build(b):
                            f"particle minecraft:happy_villager {cx} {cy + 0.5} {cz} 0.6 0.6 0.6 0 20",
                            "tellraw @a[tag=pve.in] " + tj([{"selector": "@s", "color": "yellow"}, {"text": " repaired the core (", "color": "aqua"},
                                                            {"score": {"name": "#core", "objective": "pve"}, "color": "white"}, {"text": f"/{CORE_HP}).", "color": "aqua"}])])
-    shop_menu = {"title": {"text": "⚡ Arsenal: Base Defense (points)", "color": "dark_aqua"}, "rows": 4, "fill": b.PANE, "items":
-                 [{"slot": sl, "item": b.icon(i[3], f"{i[1]} · {i[4]}", i[2], [i[5]], False), "cmd": f"trigger pve.buy set {i[0]}"}
-                  for sl, i in zip(SHOP_SLOTS, CORE_SHOP)]
-                 + [{"slot": 4, "item": b.icon("beacon", "Base Defense", "aqua", ["Blocks and supplies to hold the core", "Paid with Outbreak points"]), "cmd": ""},
-                    {"slot": 31, "item": b.icon("iron_sword", "Weapons, perks & armor →", "green", ["The usual Arsenal"], False), "cmd": "pvpmenu pve_shop"}]}
+    # one big Arsenal on this map: a row each for weapons, perks, blocks and traps, labelled on the left
+    shop = {i[0]: i for i in b.SHOP}
+    core_items = {i[0]: i for i in CORE_SHOP}
+    def entry(slot, it, core):
+        sid, name, color, ic, cost, lore = it[:6]
+        return {"slot": slot, "item": b.icon(ic, f"{name}" + (f" · {cost:,}" if cost else ""), color, [lore], False), "cmd": f"trigger pve.buy set {sid}"}
+    def label(slot, ic, name, color, lore):
+        return {"slot": slot, "item": b.icon(ic, name, color, lore), "cmd": ""}
+    rows = [  # (label, [(shop?, id)...]) one row each, items from the second column
+        (("iron_sword", "Weapons & upgrades", "red", ["Upgrade what you hold, or try your luck"]), [("s", k) for k in (10, 11, 7, 8, 3, 14)]),
+        (("honey_bottle", "Perks & healing", "light_purple", ["Perks last until you die"]), [("s", k) for k in (5, 6, 12, 13, 1, 2, 4, 9)]),
+        (("bricks", "Building blocks", "gold", ["Walls for your base"]), [("c", k) for k in (41, 42, 43, 44, 45, 46, 51, 52)]),
+        (("lava_bucket", "Traps & the core", "aqua", ["Slow them down, keep the core up"]), [("c", k) for k in (47, 48, 49, 50, 53)]),
+    ]
+    items = [{"slot": 4, "item": b.icon("beacon", "Arsenal", "aqua", [
+        ["Your points: ", {"score": {"name": "@s", "objective": "pve.pts"}, "color": "gold"}], "", "Click anything to buy it"]), "cmd": ""}]
+    for r, (lab, its) in enumerate(rows, 1):
+        items.append(label(r * 9, *lab))
+        for c, (kind, k) in enumerate(its, 1):
+            items.append(entry(r * 9 + c, shop[k] if kind == "s" else core_items[k], kind == "c"))
+    shop_menu = {"title": {"text": "⚡ Arsenal (points)", "color": "dark_aqua"}, "rows": 6, "fill": b.PANE, "items": items}
     fn("pve/shop_open", [f"execute if score #map pve matches {CORE_ID} run return run pvpmenu core_shop", "pvpmenu pve_shop"])
     # the Warlord: at a random mob window (cleared of trees), on the ground
     fn("pve/core_boss", [
