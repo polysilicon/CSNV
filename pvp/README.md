@@ -471,7 +471,8 @@ Random). Waves, points, power-ups, the Arsenal, bosses and drop-ins work as on t
   trench) digs a staircase up towards it: head height and the block above it ahead, leaving the block at its feet as a
   step, and the block over its own head if that's what stops it jumping.
 - **The Warlord** is this map's boss (every 5th wave) instead of the Abomination, which got stuck in trees. He's
-  normal-sized, in netherite armor with a netherite axe, with 160 base health and full knockback resistance. He comes
+  normal-sized, with a netherite helmet, chainmail and a netherite axe, 100 base health and 60% knockback resistance
+  (nerfed from 160 health, full netherite and full knockback resistance). He comes
   in at a random cardinal mob window (trees are cleared around all mob windows), digs about four times as fast as
   other mobs, and calls in two Builders every 15 s.
 - **Builders build**: they cover lava and water in front of them with cobblestone, bridge drops 2+ deep on the way to the core and pillar up (cobblestone) under a player

@@ -68,13 +68,14 @@ CORE_SHOP = [
     (53, "Repair Core", "aqua", "beacon", 1000, "+25 core HP", ["function pvp:pve/core_repair"]),
 ]
 SHOP_SLOTS = [10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 23, 24, 25]
-# the Warlord: this map's boss (every 5th wave) instead of the Abomination, which got stuck in the trees
+# the Warlord: this map's boss (every 5th wave) instead of the Abomination, which got stuck in the trees.
+# 2026-11-02: nerfed (was 160 health, full netherite, no knockback): 100 health, netherite helmet + chainmail, 60% knockback resistance
 WARLORD = ('{Tags:["pve.mob","pve.boss","pve.new"],PersistenceRequired:1b,CanPickUpLoot:0b,DeathLootTable:"minecraft:empty",IsBaby:0b,'
            'CustomName:{text:"Warlord",color:"dark_red",bold:true},CustomNameVisible:1b,'
            'equipment:{mainhand:{id:"minecraft:netherite_axe",count:1},head:{id:"minecraft:netherite_helmet",count:1},'
-           'chest:{id:"minecraft:netherite_chestplate",count:1},legs:{id:"minecraft:netherite_leggings",count:1},feet:{id:"minecraft:netherite_boots",count:1}},'
+           'chest:{id:"minecraft:chainmail_chestplate",count:1},legs:{id:"minecraft:chainmail_leggings",count:1},feet:{id:"minecraft:chainmail_boots",count:1}},'
            'drop_chances:{mainhand:0.0f,head:0.0f,chest:0.0f,legs:0.0f,feet:0.0f},'
-           'attributes:[{id:"minecraft:max_health",base:160d},{id:"minecraft:attack_damage",base:8d},{id:"minecraft:knockback_resistance",base:1.0d},'
+           'attributes:[{id:"minecraft:max_health",base:100d},{id:"minecraft:attack_damage",base:8d},{id:"minecraft:knockback_resistance",base:0.6d},'
            '{id:"minecraft:movement_speed",base:0.25d},{id:"minecraft:follow_range",base:20d}]}')
 RALLY_S = 15            # the Warlord calls in two Builders this often
 START_ITEMS = ["stone_pickaxe", "stone_axe", "stone_shovel", "oak_planks 32", "cobblestone 32", "crafting_table", "furnace",
