@@ -1,6 +1,13 @@
 # CrispyLobby
 
 Paper 26.2 plugin for the Lobby (`CrispyLobby01`). It provides:
+- **/vote and /cosmetics on every server** (1.16.0, `RemoteMenus.java`, `Viewer.java`): a localhost-only HTTP API
+  (port `remote-menus.port`, 25599) lets the other servers show these menus without a trip to the lobby. The menu code
+  runs against a `Viewer`: `Viewer.Local` is a player (or the console) here, `Viewer.Remote` records what a menu shows
+  (items, title, chat lines, sounds) for the server the player is really on. `GET /open?uuid&name&cmd=vote|cosmetics|links|top`,
+  `/click?uuid&slot&shift`, `/close?uuid`. Items go out twice: as the game's item JSON (`serializeItemAsJson`, read
+  natively by the 26.2 Fabric servers) and as a "simple" copy (material, name, lore, glint, head) for older servers
+  (Factions, 1.21.11). Drawn by `crispy_chattags` 1.7.0 (Fabric) and CrispyChatTags 1.6.0 (Factions).
 - **Cosmetics editor** (1.15.0, `CosmeticEditor.java`): `/cosmeticsadmin` (alias `/cadmin`, `crispylobby.admin`) opens a
   chest GUI to add, edit and delete cosmetic tags, name colours and chat colours in game. Each entry has a live
   preview. Text (id, display, name, colour code, note, cost) is typed in chat when asked ("cancel" stops). The icon is

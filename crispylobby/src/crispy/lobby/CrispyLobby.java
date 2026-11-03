@@ -29,6 +29,7 @@ public class CrispyLobby extends JavaPlugin implements Listener {
     Welcome welcome;
     OwnTag ownTag;
     CosmeticEditor editor;
+    RemoteMenus remote;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -50,9 +51,11 @@ public class CrispyLobby extends JavaPlugin implements Listener {
         ownTag.start();
         editor = new CosmeticEditor(this);
         getServer().getPluginManager().registerEvents(editor, this);
+        remote = new RemoteMenus(this);
+        remote.start();
     }
 
-    @Override public void onDisable() { if (stats != null) stats.stop(); if (votes != null) votes.stop(); if (ownTag != null) ownTag.stop(); }
+    @Override public void onDisable() { if (stats != null) stats.stop(); if (votes != null) votes.stop(); if (ownTag != null) ownTag.stop(); if (remote != null) remote.stop(); }
 
     @Override public boolean onCommand(org.bukkit.command.CommandSender s, org.bukkit.command.Command c, String l, String[] a) {
         if (c.getName().equalsIgnoreCase("vote") || c.getName().equalsIgnoreCase("cosmetics")) return votes.command(s, c.getName(), a);

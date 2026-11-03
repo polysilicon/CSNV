@@ -19,7 +19,9 @@
   - TAB's teams are off on Multiverse (`disable-condition: '%server%=Multiverse'`; TAB's `%server%` is the display
     name): the PvP datapack shows its Outbreak and Tower sidebars by team colour (`sidebar.team.*`), and a TAB team
     coloured by someone's name colour made the Tower sidebar stick. The ping objective is off too (`playerlist-objective`).
-- Owns `/vote` and `/cosmetics` on every server: off the lobby it connects the player to `lobby`
+- (Before 1.7.0) owned `/vote` and `/cosmetics` on every server. Since 1.7.0 each server draws the lobby's menus
+  itself (CrispyLobby `RemoteMenus`, crispy_chattags 1.7.0, CrispyChatTags 1.6.0), so they're no longer registered here.
+  The old behaviour, for reference: off the lobby it connects the player to `lobby`
   (`-Dcrispytags.lobby` to change), then hands the command line to CrispyLobby on the `crispy:vote` plugin channel,
   which opens the menu. On the lobby it hands it over straight away.
 - Not in combat (1.2.0): before sending anyone to the lobby it reads `Minecraft/crispy_combat.json` of the server

@@ -79,7 +79,7 @@ public class Votes implements Listener {
             "sparks", 6, "runes", 6, "glitch", 10, "endrod", 8, "totem", 12);
     record Job(String lower, String name, int count) {}
     static final class Menu implements InventoryHolder {
-        final String kind; final Map<Integer, String> actions = new HashMap<>(); Inventory inv;
+        final String kind; final Map<Integer, String> actions = new HashMap<>(); Inventory inv; Component title;
         Menu(String kind) { this.kind = kind; }
         @Override public Inventory getInventory() { return inv; }
     }
@@ -237,6 +237,7 @@ public class Votes implements Listener {
     }
     static Component c(String s) { return CrispyLobby.AMP.deserialize(s).decoration(TextDecoration.ITALIC, false); }
     static void msg(CommandSender s, String m) { s.sendMessage(c("&d&lVote &8» &7" + m)); }
+    static void msg(Viewer s, String m) { s.sendMessage(c("&d&lVote &8» &7" + m)); }
 
     // ------------------------------------------------------------------ votes in
     /** Main thread. */
@@ -251,11 +252,11 @@ public class Votes implements Listener {
         pd.unclaimed += n; pd.points += n * pointsPerVote; pd.total += n;
         pd.months.merge(month(), n, Integer::sum);
         save();
-        String line = "&a" + pd.name + " &7voted for CrispyAnarchy on &f" + service + "&7! &eClaim vote rewards in the lobby: &f/vote";
+        String line = "&a" + pd.name + " &7voted for CrispyAnarchy on &f" + service + "&7! &eClaim vote rewards: &f/vote";
         if (announce) {
             Bukkit.broadcast(c(line));
             // the Discord bot relays "<name> text" lines from this server's log to Discord and (cross-chat) every other server
-            if (botRelay) Bukkit.getConsoleSender().sendMessage("<Votes> " + pd.name + " voted for CrispyAnarchy on " + service + "! Claim vote rewards in the lobby: /vote");
+            if (botRelay) Bukkit.getConsoleSender().sendMessage("<Votes> " + pd.name + " voted for CrispyAnarchy on " + service + "! Claim vote rewards: /vote");
             if (rconAnnounce) {
                 String json = net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().serialize(CrispyLobby.AMP.deserialize(line));
                 List<Server> all = new ArrayList<>(servers.values());
@@ -281,29 +282,32 @@ public class Votes implements Listener {
     }
 
     // ------------------------------------------------------------------ claiming
-    void claim(Player p, String server, boolean all) {
+    void claim(Viewer p, String server, boolean all) {
         Server s = servers.get(server);
         PD pd = pd(p.getName());
         if (s == null || s.commands().isEmpty()) return;
-        if (pd.unclaimed <= 0) { msg(p, "&cNo rewards to claim. &7Vote with &f/vote links&7."); p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.7f, 1f); return; }
+        if (pd.unclaimed <= 0) { msg(p, "&cNo rewards to claim. &7Vote with &f/vote links&7."); p.playSound(Sound.ENTITY_VILLAGER_NO, 0.7f, 1f); return; }
         int n = all ? pd.unclaimed : 1;
         pd.unclaimed -= n;
         pd.pending.merge(server, n, Integer::sum);
         save();
-        p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.8f, 1.2f);
+        p.playSound(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.8f, 1.2f);
         p.sendMessage(c("&d&lVote &8» &7Sent &e" + n + " &7reward" + (n == 1 ? "" : "s") + " to " + s.label() + "&7. It arrives the next time you're there. ")
                 .append(c("&a&n[Go now]").clickEvent(ClickEvent.runCommand("/vote go " + server)).hoverEvent(HoverEvent.showText(c("&7Join " + s.label())))));
         open(p);
     }
 
     /** Send the player to a vote server, by its key here or its Velocity name. */
-    void connect(Player p, String server) {
+    void connect(Viewer p, String server) {
         Server s = servers.containsKey(server) ? servers.get(server)
                 : servers.values().stream().filter(x -> x.proxy().equalsIgnoreCase(server)).findFirst().orElse(null);
         if (s == null) return;
+        if (p instanceof Viewer.Remote r) { r.connect = s.proxy(); return; }
+        Player pl = p instanceof Viewer.Local l ? l.player() : null;
+        if (pl == null) return;
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF("Connect"); out.writeUTF(s.proxy());
-        p.sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
+        pl.sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
     }
 
     // ------------------------------------------------------------------ worker cycle (every 5 s)
@@ -385,14 +389,15 @@ public class Votes implements Listener {
     }
     Menu menu(String kind, int rows, String title) {
         Menu m = new Menu(kind);
-        m.inv = Bukkit.createInventory(m, rows * 9, c(title));
+        m.title = c(title);
+        m.inv = Bukkit.createInventory(m, rows * 9, m.title);
         ItemStack pane = item(Material.BLACK_STAINED_GLASS_PANE, " ", List.of(), false);
         for (int i = 0; i < rows * 9; i++) m.inv.setItem(i, pane);
         return m;
     }
     void put(Menu m, int slot, ItemStack it, String action) { m.inv.setItem(slot, it); if (action != null) m.actions.put(slot, action); }
 
-    void open(Player p) {
+    void open(Viewer p) {
         PD pd = pd(p.getName());
         Menu m = menu("main", 5, "&d&lVote Rewards");
         put(m, 4, item(Material.NETHER_STAR, "&d&lYour votes", List.of(
@@ -432,7 +437,7 @@ public class Votes implements Listener {
     }
 
     /** Cosmetics hub: one button each for tags, name colours and chat colours. */
-    void openCosmetics(Player p) {
+    void openCosmetics(Viewer p) {
         PD pd = pd(p.getName());
         Menu m = menu("cosmetics", 4, "&b&lCosmetics");
         Tag tg = pd.tag == null ? null : tags.get(pd.tag);
@@ -466,7 +471,7 @@ public class Votes implements Listener {
 
     /** Actions ("tag:x", "color:x", "chat:x") for every cosmetic the player can wear now: bought or claimed ones, and
      *  ranked tags while they hold the rank. Tags first, then name colours, then chat colours, in menu order. */
-    List<String> owned(Player p, PD pd) {
+    List<String> owned(Viewer p, PD pd) {
         List<String> out = new ArrayList<>();
         Set<String> advs = null;
         for (Tag t : tags.values()) {
@@ -483,7 +488,7 @@ public class Votes implements Listener {
     }
 
     /** "My cosmetics": everything unlocked, 28 to a page; click one to wear it or take it off. */
-    void openOwned(Player p, int page) {
+    void openOwned(Viewer p, int page) {
         PD pd = pd(p.getName());
         List<String> all = owned(p, pd);
         int pages = Math.max(1, (all.size() + GRID.length - 1) / GRID.length);
@@ -513,10 +518,10 @@ public class Votes implements Listener {
         p.openInventory(m.inv);
     }
 
-    void openTags(Player p) { openTags(p, "tags"); }
+    void openTags(Viewer p) { openTags(p, "tags"); }
     /** Tags, three pages: the shop (vote points, "tags"), earned tags (advancements, milestones, rankings, "etags") and
      *  mastery tags (one per PvP character, "mtags", laid out like the PvP kit menu). */
-    void openTags(Player p, String page) {
+    void openTags(Viewer p, String page) {
         PD pd = pd(p.getName());
         boolean earned = !page.equals("tags"), mastery = page.equals("mtags");
         Menu m = menu(page, 6, (mastery ? "&e&lMastery tags" : earned ? "&6&lEarned tags" : "&f&lTag shop") + " &8(&d" + pd.points + " points&8)");
@@ -582,7 +587,7 @@ public class Votes implements Listener {
         return above + 1;
     }
     /** null if the player meets the tag's requirement, else a lore line saying where they stand. */
-    String lockReason(Player p, Tag t, Set<String> advs) {
+    String lockReason(Viewer p, Tag t, Set<String> advs) {
         if (t.advancement() != null) return advs.contains(t.advancement()) ? null : "&cNot unlocked yet";
         if (t.event()) {
             if (!plugin.stats.loaded()) return "&8Stats are loading, try again in a minute";
@@ -609,7 +614,7 @@ public class Votes implements Listener {
     }
     final Map<UUID, Map.Entry<Long, Set<String>>> advCache = new HashMap<>();
     /** Every advancement this player has completed on any server (cosmetics.earned-sources.advancements), cached 30 s. */
-    Set<String> advancements(Player p) {
+    Set<String> advancements(Viewer p) {
         Map.Entry<Long, Set<String>> c = advCache.get(p.getUniqueId());
         if (c != null && System.currentTimeMillis() - c.getKey() < 30_000) return c.getValue();
         Set<String> done = new HashSet<>();
@@ -644,10 +649,10 @@ public class Votes implements Listener {
     static final String[][] COLOR_PAGES = {{"classic", "&f&lClassic", "WHITE_DYE"}, {"fades", "&d&lFades", "AMETHYST_SHARD"}, {"flags", "&b&lFlags", "WHITE_BANNER"}};
 
     // ------------------------------------------------------------------ Halloween (event) cosmetics
-    boolean eventUnlocked(Player p, NameColor c) { return c.event() && plugin.stats.mastery(p.getName(), c.score()) >= 1; }
+    boolean eventUnlocked(Viewer p, NameColor c) { return c.event() && plugin.stats.mastery(p.getName(), c.score()) >= 1; }
 
     /** The Halloween page: every event tag, name colour and chat colour, unlocked ones first-come wearable. */
-    void openEvent(Player p) {
+    void openEvent(Viewer p) {
         PD pd = pd(p.getName());
         Menu m = menu("event", 6, "&6&lHalloween &8- &7Haunted Night");
         put(m, 4, item(Material.JACK_O_LANTERN, "&6&lHalloween cosmetics", List.of("&7Survive &6Haunted Night &7in the Multiverse:", "&7every completed run unlocks one of these",
@@ -673,11 +678,11 @@ public class Votes implements Listener {
         p.openInventory(m.inv);
     }
 
-    void openColors(Player p, String page) { openColorMenu(p, false, page); }
-    void openChatColors(Player p, String page) { openColorMenu(p, true, page); }
+    void openColors(Viewer p, String page) { openColorMenu(p, false, page); }
+    void openChatColors(Viewer p, String page) { openColorMenu(p, true, page); }
 
     /** Name or chat colours, one page each for classic colours, fades and flags (ColorCodes.page). */
-    void openColorMenu(Player p, boolean chat, String page) {
+    void openColorMenu(Viewer p, boolean chat, String page) {
         PD pd = pd(p.getName());
         String base = chat ? "chatcolors" : "colors", prefix = chat ? "chat:" : "color:", using = chat ? pd.chat : pd.color;
         Menu m = menu(base + ":" + page, 6, (chat ? "&f&lChat colours" : "&f&lName colours") + " &8(&d" + pd.points + " points&8)");
@@ -702,10 +707,15 @@ public class Votes implements Listener {
     @EventHandler public void onDrag(InventoryDragEvent e) { if (e.getInventory().getHolder() instanceof Menu) e.setCancelled(true); }
 
     @EventHandler public void onClick(InventoryClickEvent e) {
-        if (!(e.getInventory().getHolder() instanceof Menu m) || !(e.getWhoClicked() instanceof Player p)) return;
+        if (!(e.getInventory().getHolder() instanceof Menu m) || !(e.getWhoClicked() instanceof Player pl)) return;
         e.setCancelled(true);
         if (e.getClickedInventory() != e.getInventory()) return;
-        String a = m.actions.get(e.getRawSlot());
+        click(new Viewer.Local(pl), m, e.getRawSlot(), e.isShiftClick());
+    }
+
+    /** A click on one of these menus, here or (RemoteMenus) on another server. */
+    void click(Viewer p, Menu m, int slot, boolean shift) {
+        String a = m.actions.get(slot);
         if (a == null) return;
         if (a.equals("links")) { p.closeInventory(); links(p); }
         else if (a.equals("top")) { p.closeInventory(); top(p); }
@@ -718,12 +728,12 @@ public class Votes implements Listener {
             PD pd = pd(p.getName());
             if (a.equals("off:tag")) pd.tag = null; else if (a.equals("off:chat")) pd.chat = null; else pd.color = null;
             writeTags(); save();
-            p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 1f);
+            p.playSound(Sound.UI_BUTTON_CLICK, 0.6f, 1f);
             if (a.equals("off:tag")) openTags(p, m.kind);
             else openColorMenu(p, a.equals("off:chat"), m.kind.substring(m.kind.indexOf(':') + 1));
         }
         else if (a.equals("back")) open(p);
-        else if (a.startsWith("claim:")) claim(p, a.substring(6), e.isShiftClick());
+        else if (a.startsWith("claim:")) claim(p, a.substring(6), shift);
         else if (a.startsWith("owned:")) openOwned(p, Integer.parseInt(a.substring(6)));
         else if (a.startsWith("tag:") || a.startsWith("color:") || a.startsWith("chat:")) {
             cosmetic(p, a);
@@ -735,7 +745,7 @@ public class Votes implements Listener {
     // ------------------------------------------------------------------ "joined before" (the OG tag)
     /** Earliest date the network has for this player: Anarchy (or other) advancement timestamps, the firstPlayed time
      *  Paper left in old player files, and those files' last-saved date. Configured in cosmetics.joined-sources. */
-    String firstSeen(Player p) {
+    String firstSeen(Viewer p) {
         return firstSeen.computeIfAbsent(p.getUniqueId(), u -> {
             String best = "9999";
             Path root = Path.of(plugin.getConfig().getString("network-stats.instances-dir", "/AMPStorage/.ampdata/instances"));
@@ -768,19 +778,22 @@ public class Votes implements Listener {
             return best;
         });
     }
-    boolean joinedBefore(Player p, String date) {
+    boolean joinedBefore(Viewer p, String date) {
         if (plugin.getConfig().getStringList("cosmetics.joined-sources.extra").stream().anyMatch(n -> n.equalsIgnoreCase(p.getName()))) return true;
         return firstSeen(p).compareTo(date) < 0;
     }
 
-    void cosmetic(Player p, String key) {
+    String firstSeen(Player p) { return firstSeen(new Viewer.Local(p)); }
+    void connect(Player p, String server) { connect(new Viewer.Local(p), server); }
+
+    void cosmetic(Viewer p, String key) {
         PD pd = pd(p.getName());
         boolean isTag = key.startsWith("tag:");
         String id = key.substring(key.indexOf(':') + 1);
         Tag lim = isTag ? tags.get(id) : null;
         if (lim != null && lim.joinedBefore() != null && !joinedBefore(p, lim.joinedBefore())) {
             msg(p, "&c" + lim.display() + " &cis only for players who joined before &f" + lim.joinedBefore() + "&c.");
-            p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.7f, 1f);
+            p.playSound(Sound.ENTITY_VILLAGER_NO, 0.7f, 1f);
             if (id.equals(pd.tag)) { pd.tag = null; writeTags(); save(); }   // no longer qualifies: take it off
             return;
         }
@@ -790,13 +803,13 @@ public class Votes implements Listener {
             String lock = wearing ? null : lockReason(p, et, advancements(p));
             if (lock != null) {
                 msg(p, et.display() + " &7is locked: " + String.join(" ", requirement(et).subList(0, 1)).replace("&7", "&f"));
-                p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.7f, 1f);
+                p.playSound(Sound.ENTITY_VILLAGER_NO, 0.7f, 1f);
                 return;
             }
             if (!et.ranked() && pd.owned.add(key)) {
                 msg(p, "&aUnlocked " + et.display() + "&a!");
-                p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.6f, 1.2f);
-            } else p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 1f);
+                p.playSound(Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.6f, 1.2f);
+            } else p.playSound(Sound.UI_BUTTON_CLICK, 0.6f, 1f);
             pd.tag = wearing ? null : id; writeTags(); save();
             if (!et.event()) openTags(p, et.page());
             return;
@@ -808,11 +821,11 @@ public class Votes implements Listener {
             boolean using = id.equals(isChat ? pd.chat : pd.color);
             if (!using && !eventUnlocked(p, ev)) {
                 msg(p, colored(ev.name(), ev.code()) + " &7is locked: survive &6Haunted Night &7in the Multiverse to win Halloween cosmetics.");
-                p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.7f, 1f);
+                p.playSound(Sound.ENTITY_VILLAGER_NO, 0.7f, 1f);
                 return;
             }
-            if (pd.owned.add(key)) { msg(p, "&aUnlocked " + colored(ev.name(), ev.code()) + "&a!"); p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.6f, 1.2f); }
-            else p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 1f);
+            if (pd.owned.add(key)) { msg(p, "&aUnlocked " + colored(ev.name(), ev.code()) + "&a!"); p.playSound(Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.6f, 1.2f); }
+            else p.playSound(Sound.UI_BUTTON_CLICK, 0.6f, 1f);
             if (isChat) pd.chat = using ? null : id; else pd.color = using ? null : id;
             writeTags(); save();
             return;
@@ -820,12 +833,12 @@ public class Votes implements Listener {
         int cost = isTag ? (tags.containsKey(id) ? tags.get(id).cost() : -1) : (pool.containsKey(id) ? pool.get(id).cost() : -1);
         if (cost < 0) return;
         if (!pd.owned.contains(key)) {
-            if (pd.points < cost) { msg(p, "&cYou need &d" + cost + " &cvote points (you have &d" + pd.points + "&c)."); p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.7f, 1f); return; }
+            if (pd.points < cost) { msg(p, "&cYou need &d" + cost + " &cvote points (you have &d" + pd.points + "&c)."); p.playSound(Sound.ENTITY_VILLAGER_NO, 0.7f, 1f); return; }
             pd.points -= cost;
             pd.owned.add(key);
             msg(p, "&aUnlocked!");
-            p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.6f, 1.2f);
-        } else p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 0.6f, 1f);
+            p.playSound(Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.6f, 1.2f);
+        } else p.playSound(Sound.UI_BUTTON_CLICK, 0.6f, 1f);
         if (isTag) { pd.tag = id.equals(pd.tag) ? null : id; writeTags(); }
         else if (isChat) { pd.chat = id.equals(pd.chat) ? null : id; writeTags(); }
         else { pd.color = id.equals(pd.color) ? null : id; writeTags(); }
@@ -833,7 +846,9 @@ public class Votes implements Listener {
         if (isTag) openTags(p, "tags"); else openColorMenu(p, isChat, ColorCodes.page(pool.get(id).code()));
     }
 
-    void links(CommandSender s) {
+    void links(CommandSender s) { links(new Viewer.Local(s)); }
+    void top(CommandSender s) { top(new Viewer.Local(s)); }
+    void links(Viewer s) {
         msg(s, "&eVote for CrispyAnarchy &7- every vote is a reward you can send to any server, plus vote points for cosmetics:");
         int shown = 0;
         for (Map<?, ?> l : plugin.getConfig().getMapList("votes.links")) {
@@ -845,7 +860,7 @@ public class Votes implements Listener {
         if (shown == 0) msg(s, "&7Vote links are coming soon.");
     }
 
-    void top(CommandSender s) {
+    void top(Viewer s) {
         String m = month();
         List<PD> l = new ArrayList<>(players.values());
         l.removeIf(pd -> pd.months.getOrDefault(m, 0) <= 0);
@@ -859,7 +874,7 @@ public class Votes implements Listener {
     // ------------------------------------------------------------------ /vote and /cosmetics
     boolean command(CommandSender s, String label, String[] a) {
         if (label.equalsIgnoreCase("cosmetics")) {
-            if (s instanceof Player p) Bukkit.getScheduler().runTask(plugin, () -> openCosmetics(p)); return true;
+            if (s instanceof Player p) Bukkit.getScheduler().runTask(plugin, () -> openCosmetics(new Viewer.Local(p))); return true;
         }
         String sub = a.length > 0 ? a[0].toLowerCase(Locale.ROOT) : "";
         boolean admin = s.hasPermission("crispylobby.admin");
@@ -886,7 +901,7 @@ public class Votes implements Listener {
             }
             case "reload" -> { if (admin) { plugin.reloadConfig(); load(); msg(s, "Reloaded vote servers and cosmetics."); } }
             // a tick later: the server selector runs /vote and then closes its own window, which would close this one too
-            default -> { if (s instanceof Player p) Bukkit.getScheduler().runTask(plugin, () -> open(p)); else links(s); }
+            default -> { if (s instanceof Player p) Bukkit.getScheduler().runTask(plugin, () -> open(new Viewer.Local(p))); else links(s); }
         }
         return true;
     }

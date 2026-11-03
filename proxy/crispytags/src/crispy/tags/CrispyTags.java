@@ -56,8 +56,8 @@ public class CrispyTags {
     @Subscribe public void onInit(ProxyInitializeEvent e) {
         proxy.getChannelRegistrar().register(CHANNEL);
         var cm = proxy.getCommandManager();
-        cm.register(cm.metaBuilder("vote").plugin(this).build(), new Lobby("vote", List.of("links", "top")));
-        cm.register(cm.metaBuilder("cosmetics").plugin(this).build(), new Lobby("cosmetics", List.of()));
+        // /vote and /cosmetics are no longer taken here (1.7.0): every server draws the lobby's menus itself
+        // (crispy_chattags 1.7.0 on Fabric, CrispyChatTags 1.6.0 on Factions, CrispyLobby 1.16.0 RemoteMenus).
         cm.register(cm.metaBuilder("lobby").aliases("hub").plugin(this).build(), new ToLobby());
         proxy.getScheduler().buildTask(this, this::tick).delay(10, TimeUnit.SECONDS).repeat(3, TimeUnit.SECONDS).schedule();
     }

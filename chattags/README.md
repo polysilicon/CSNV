@@ -5,6 +5,9 @@ These show the vote-cosmetic tags bought in the lobby (`/cosmetics`) before the 
 with no bot change. Both versions read the lobby's `plugins/CrispyLobby/tags.json` and re-read it when it changes.
 
 - `fabric/` is the `crispy_chattags` mod for Anarchy, Vanilla, Falling and PvP.
+  - `/vote` and `/cosmetics` (1.7.0, `RemoteMenu`, registered by `CommandsMixin`, no Fabric API needed): asks the
+    lobby's CrispyLobby (`RemoteMenus`, `http://127.0.0.1:25599`, `-Dcrispy.lobbyapi` to change) for the menu, draws
+    it as a chest, sends clicks back and shows the reply (next menu, chat lines, sounds). Refused while in combat.
   - Combat state (1.4.0): hitting or being hit by a player puts both in combat for 15 s; on PvP, being in a duel
     (`pvp.duel`) or an Outbreak run (`pve.in`) counts too. Once a second it writes `crispy_combat.json` in the server
     folder (name -> epoch ms when free), which the CrispyTags proxy plugin checks before `/vote` or `/cosmetics`.
@@ -20,6 +23,10 @@ with no bot change. Both versions read the lobby's `plugins/CrispyLobby/tags.jso
   - Build with `fabric/build.sh <lib-dir> <javac-25> <sponge-mixin.jar> <placeholder-api.jar>`. The Placeholder API
     jar is nested in styled-chat's jar under `META-INF/jars/`.
 - `paper/` is the `CrispyChatTags` plugin for the Lobby and Factions.
+  - `/vote` and `/cosmetics` (1.6.0, `RemoteMenu`): on servers without CrispyLobby (Factions) it takes both
+    commands (before CrispyFactions' own `/vote`, as the proxy used to), draws the lobby's menus from the reply's
+    "simple" items (Factions is 1.21.11, older than the lobby) and refuses while combat-tagged (`crispy_combat.json`).
+    Built with `--release 21` against the 26.2 API, for both the lobby (Java 25) and Factions (Java 21).
   - It puts the tag into the player's display name while a chat message is sent, and restores it 2 s later.
   - Clients show that name for signed chat, and EssentialsChat's `{DISPLAYNAME}` uses it.
   - A renderer pass adds the tag if a format left it out.
