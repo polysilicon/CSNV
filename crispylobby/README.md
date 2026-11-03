@@ -1,6 +1,11 @@
 # CrispyLobby
 
 Paper 26.2 plugin for the Lobby (`CrispyLobby01`). It provides:
+- **Your own name tag** (1.14.0, `OwnTag.java`): the game never draws your own name tag, so each player gets a text
+  display over their head, in their cosmetic name colour with their tag, shown only to them (others see the normal
+  name tag). See it in third person (F5). It follows them every tick (teleport interpolation for smoothness) instead
+  of riding them, because a player with a passenger can't be teleported by plugins. Hidden while invisible or in
+  spectator. `/owntag` turns it off or on (saved in `plugins/CrispyLobby/owntag-off.txt`).
 
 - the sidebar;
 - the spawn handling;

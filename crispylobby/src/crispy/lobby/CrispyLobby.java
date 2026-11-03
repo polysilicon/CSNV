@@ -27,6 +27,7 @@ public class CrispyLobby extends JavaPlugin implements Listener {
     NetworkStats stats;
     Votes votes;
     Welcome welcome;
+    OwnTag ownTag;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -43,13 +44,17 @@ public class CrispyLobby extends JavaPlugin implements Listener {
         votes.start();
         welcome = new Welcome(this);
         getServer().getPluginManager().registerEvents(welcome, this);
+        ownTag = new OwnTag(this);
+        getServer().getPluginManager().registerEvents(ownTag, this);
+        ownTag.start();
     }
 
-    @Override public void onDisable() { if (stats != null) stats.stop(); if (votes != null) votes.stop(); }
+    @Override public void onDisable() { if (stats != null) stats.stop(); if (votes != null) votes.stop(); if (ownTag != null) ownTag.stop(); }
 
     @Override public boolean onCommand(org.bukkit.command.CommandSender s, org.bukkit.command.Command c, String l, String[] a) {
         if (c.getName().equalsIgnoreCase("vote") || c.getName().equalsIgnoreCase("cosmetics")) return votes.command(s, c.getName(), a);
         if (c.getName().equalsIgnoreCase("welcome")) return welcome.command(s, a);
+        if (c.getName().equalsIgnoreCase("owntag")) return ownTag.command(s);
         if (c.getName().equalsIgnoreCase("stats")) {
             String who = a.length > 0 ? a[0] : s.getName();
             stats.showStats(s, who);

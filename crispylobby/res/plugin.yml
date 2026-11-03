@@ -1,11 +1,13 @@
 name: CrispyLobby
-version: 1.13.0
+version: 1.14.0
 main: crispy.lobby.CrispyLobby
 api-version: '1.21'
 author: CrispyAnarchy
 description: Lobby sidebar, spawn, network stats, vote rewards and cosmetics
 softdepend: [Votifier]
 commands:
+  owntag:
+    description: Show or hide your own name tag above your head (third person)
   crispylobby:
     description: Reload the lobby sidebar; /crispylobby leaderboard here|refresh
     permission: crispylobby.admin
