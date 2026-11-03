@@ -1,6 +1,13 @@
 # CrispyLobby
 
 Paper 26.2 plugin for the Lobby (`CrispyLobby01`). It provides:
+- **Cosmetics editor** (1.15.0, `CosmeticEditor.java`): `/cosmeticsadmin` (alias `/cadmin`, `crispylobby.admin`) opens a
+  chest GUI to add, edit and delete cosmetic tags, name colours and chat colours in game. Each entry has a live
+  preview. Text (id, display, name, colour code, note, cost) is typed in chat when asked ("cancel" stops). The icon is
+  whatever item you're holding. Delete needs a second click to confirm. Changes are saved to
+  `plugins/CrispyLobby/cosmetics-edits.yml`, which is laid over `config.yml`'s `cosmetics` on load (entries there add
+  to or replace config ones, `removed.<kind>` lists drop them), so the hand-written `config.yml` is never rewritten.
+  Edits apply at once (cosmetics reload, `tags.json` / `namecolors.json` / `chatcolors.json` rewritten for the proxy).
 - **Your own name tag** (1.14.0, `OwnTag.java`): the game never draws your own name tag, so each player gets a text
   display over their head, in their cosmetic name colour with their tag, shown only to them (others see the normal
   name tag). See it in third person (F5). It follows them every tick (teleport interpolation for smoothness) instead

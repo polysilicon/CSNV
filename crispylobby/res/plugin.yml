@@ -1,11 +1,15 @@
 name: CrispyLobby
-version: 1.14.0
+version: 1.15.0
 main: crispy.lobby.CrispyLobby
 api-version: '1.21'
 author: CrispyAnarchy
 description: Lobby sidebar, spawn, network stats, vote rewards and cosmetics
 softdepend: [Votifier]
 commands:
+  cosmeticsadmin:
+    description: Add, edit and delete cosmetic tags, name colours and chat colours in game
+    aliases: [cadmin]
+    permission: crispylobby.admin
   owntag:
     description: Show or hide your own name tag above your head (third person)
   crispylobby:

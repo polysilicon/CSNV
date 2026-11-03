@@ -146,7 +146,21 @@ public class Votes implements Listener {
                     new Rcon(k, root.resolve(s.getString("instance", k)).resolve("Minecraft/server.properties")),
                     s.getStringList("reward"), s.getStringList("commands"), s.getString("proxy", k)));
         }
-        ConfigurationSection ts = plugin.getConfig().getConfigurationSection("cosmetics.tags");
+        loadTags(plugin.getConfig().getConfigurationSection("cosmetics.tags"));
+        firstSeen.clear();
+        loadColors(plugin.getConfig().getConfigurationSection("cosmetics.name-colors"), colors);
+        loadColors(plugin.getConfig().getConfigurationSection("cosmetics.chat-colors"), chatColors);
+        // in-game edits (/cosmeticsadmin, CosmeticEditor) on top: added or changed entries, then removed ones
+        org.bukkit.configuration.file.YamlConfiguration ov = CosmeticEditor.edits(plugin);
+        loadTags(ov.getConfigurationSection("tags"));
+        loadColors(ov.getConfigurationSection("name-colors"), colors);
+        loadColors(ov.getConfigurationSection("chat-colors"), chatColors);
+        ov.getStringList("removed.tags").forEach(tags::remove);
+        ov.getStringList("removed.name-colors").forEach(colors::remove);
+        ov.getStringList("removed.chat-colors").forEach(chatColors::remove);
+        writeTags();
+    }
+    void loadTags(ConfigurationSection ts) {
         if (ts != null) for (String k : ts.getKeys(false)) {
             String stat = ts.getString(k + ".stat");
             if (stat != null && !stat.equals("VOTES") && Arrays.stream(NetworkStats.Cat.values()).noneMatch(x -> x.name().equals(stat))) {
@@ -156,16 +170,11 @@ public class Votes implements Listener {
                     ts.getString(k + ".joined-before"), ts.getString(k + ".note"), ts.getString(k + ".advancement"),
                     ts.getString(k + ".stat"), ts.getLong(k + ".min"), ts.getInt(k + ".top"), ts.getString(k + ".score"), ts.getString(k + ".head")));
         }
-        firstSeen.clear();
-        ConfigurationSection cs = plugin.getConfig().getConfigurationSection("cosmetics.name-colors");
+    }
+    void loadColors(ConfigurationSection cs, Map<String, NameColor> into) {
         if (cs != null) for (String k : cs.getKeys(false))
-            colors.put(k, new NameColor(k, cs.getString(k + ".name", k), cs.getString(k + ".code", "&f"), cs.getInt(k + ".cost", 5),
+            into.put(k, new NameColor(k, cs.getString(k + ".name", k), cs.getString(k + ".code", "&f"), cs.getInt(k + ".cost", 5),
                     mat(cs.getString(k + ".icon"), Material.WHITE_DYE), cs.getString(k + ".score")));
-        ConfigurationSection cc = plugin.getConfig().getConfigurationSection("cosmetics.chat-colors");
-        if (cc != null) for (String k : cc.getKeys(false))
-            chatColors.put(k, new NameColor(k, cc.getString(k + ".name", k), cc.getString(k + ".code", "&f"), cc.getInt(k + ".cost", 5),
-                    mat(cc.getString(k + ".icon"), Material.WHITE_DYE), cc.getString(k + ".score")));
-        writeTags();
     }
     static Material mat(String s, Material def) { Material m = s == null ? null : Material.matchMaterial(s); return m == null ? def : m; }
 

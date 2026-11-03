@@ -28,6 +28,7 @@ public class CrispyLobby extends JavaPlugin implements Listener {
     Votes votes;
     Welcome welcome;
     OwnTag ownTag;
+    CosmeticEditor editor;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -47,6 +48,8 @@ public class CrispyLobby extends JavaPlugin implements Listener {
         ownTag = new OwnTag(this);
         getServer().getPluginManager().registerEvents(ownTag, this);
         ownTag.start();
+        editor = new CosmeticEditor(this);
+        getServer().getPluginManager().registerEvents(editor, this);
     }
 
     @Override public void onDisable() { if (stats != null) stats.stop(); if (votes != null) votes.stop(); if (ownTag != null) ownTag.stop(); }
@@ -55,6 +58,7 @@ public class CrispyLobby extends JavaPlugin implements Listener {
         if (c.getName().equalsIgnoreCase("vote") || c.getName().equalsIgnoreCase("cosmetics")) return votes.command(s, c.getName(), a);
         if (c.getName().equalsIgnoreCase("welcome")) return welcome.command(s, a);
         if (c.getName().equalsIgnoreCase("owntag")) return ownTag.command(s);
+        if (c.getName().equalsIgnoreCase("cosmeticsadmin")) return editor.command(s);
         if (c.getName().equalsIgnoreCase("stats")) {
             String who = a.length > 0 ? a[0] : s.getName();
             stats.showStats(s, who);
