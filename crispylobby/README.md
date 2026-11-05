@@ -1,6 +1,11 @@
 # CrispyLobby
 
 Paper 26.2 plugin for the Lobby (`CrispyLobby01`). It provides:
+- **Animated and staff-given tags** (1.17.0): a tag can have `animation: <TAB animation>` (the tab list and name tags
+  use `%animation:<name>%`, through `tags_anim.json` and CrispyTags 1.8.0; chat and menus keep the still `display`) and
+  `granted: true` (not sold; hidden unless owned). `/vote grant <player> <tag|color|chat>:<id>` and `/vote revoke ...`
+  give or take one. Both can be set in `/cadmin` (Animation, Staff-given buttons). First one: `creator`, the animated
+  [Creator] tag (`proxy/tab-animations.yml`, animation `creator`).
 - **/vote and /cosmetics on every server** (1.16.0, `RemoteMenus.java`, `Viewer.java`): a localhost-only HTTP API
   (port `remote-menus.port`, 25599) lets the other servers show these menus without a trip to the lobby. The menu code
   runs against a `Viewer`: `Viewer.Local` is a player (or the console) here, `Viewer.Remote` records what a menu shows

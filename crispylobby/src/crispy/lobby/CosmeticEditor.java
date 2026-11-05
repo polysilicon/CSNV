@@ -141,6 +141,15 @@ final class CosmeticEditor implements Listener {
         if (o instanceof Votes.Tag tg) {
             put(m, 10, item(Material.NAME_TAG, t("&eDisplay text"), List.of("&7Now: " + tg.display().replace("&", "＆"), "&7e.g. ＆6[Crispy]  (＆ colour codes)", "", "&eClick, then type it in chat")),
                     e -> ask(e, "the display text (e.g. &6[Crispy])", s -> set(k, id, "display", s)));
+            put(m, 13, item(Material.CLOCK, t("&eAnimation"), List.of("&7Now: " + (tg.animation() == null ? "none" : tg.animation()),
+                            "&7A TAB animation name (plugins/tab/animations.yml).", "&7Animates the tab list and name tags;", "&7chat keeps the display text.",
+                            "&7Type 'none' to clear", "", "&eClick, then type it in chat")),
+                    e -> ask(e, "the TAB animation name ('none' to clear)", s -> set(k, id, "animation", s.equalsIgnoreCase("none") ? null : s.trim())));
+            put(m, 15, item(tg.granted() ? Material.LIME_DYE : Material.GRAY_DYE, t(tg.granted() ? "&aStaff-given only" : "&7For sale in the shop"),
+                    List.of("&7Staff-given tags aren't sold: give them", "&7with /vote grant <player> tag:" + id, "", "&eClick to switch")), e -> {
+                set(k, id, "granted", !tg.granted());
+                openEdit((Player) e.getWhoClicked(), k, id);
+            });
             put(m, 11, item(Material.BOOK, t("&eNote"), List.of("&7Now: " + (tg.note() == null ? "none" : tg.note()), "&7Shown under the tag; type 'none' to clear", "", "&eClick, then type it in chat")),
                     e -> ask(e, "the note ('none' to clear)", s -> set(k, id, "note", s.equalsIgnoreCase("none") ? null : s)));
         } else {

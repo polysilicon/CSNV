@@ -48,6 +48,10 @@ public class CrispyTags {
     long mtime = -1;
     // name colours bought in /cosmetics (the lobby writes namecolors.json next to tags.json): shown in the tab list too
     static final Path COLORS = FILE.resolveSibling("namecolors.json");
+    // animated tags (1.8.0): name -> TAB animation, written by the lobby next to tags.json; shown as %animation:<name>%
+    static final Path ANIM = FILE.resolveSibling("tags_anim.json");
+    Map<String, String> anim = Map.of();
+    long amtime = -1;
     Map<String, String> colors = Map.of();
     long cmtime = -1;
 
@@ -75,6 +79,14 @@ public class CrispyTags {
 
     void tick() {
         try {
+            long m = Files.getLastModifiedTime(ANIM).toMillis();
+            if (m != amtime) {
+                Map<String, String> a = new Gson().fromJson(Files.readString(ANIM), new TypeToken<Map<String, String>>() {}.getType());
+                anim = a == null ? Map.of() : a;
+                amtime = m;
+            }
+        } catch (Exception ignored) {}
+        try {
             long m = Files.getLastModifiedTime(FILE).toMillis();
             if (m != mtime) {
                 Map<String, String> t = new Gson().fromJson(Files.readString(FILE), new TypeToken<Map<String, String>>() {}.getType());
@@ -97,6 +109,8 @@ public class CrispyTags {
         for (TabPlayer p : api.getOnlinePlayers()) {
             if (!p.isLoaded()) continue;
             String tag = tags.get(p.getName().toLowerCase(Locale.ROOT));
+            String an = anim.get(p.getName().toLowerCase(Locale.ROOT));
+            if (an != null && an.matches("[A-Za-z0-9_-]+")) tag = "%animation:" + an + "%";   // TAB animates it
             if (listMgr != null) {
                 String want = tag == null ? null : join(listMgr.getOriginalRawSuffix(p), tag);
                 if (!Objects.equals(listMgr.getCustomSuffix(p), want)) listMgr.setSuffix(p, want);

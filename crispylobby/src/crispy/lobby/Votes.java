@@ -61,7 +61,7 @@ public class Votes implements Listener {
      *  Mastery tags (score + min) unlock at that much mastery XP on a PvP objective (pvp.mx<kit id>); they have their
      *  own page, and head = a player-head texture for the icon. */
     record Tag(String id, String display, int cost, Material icon, String joinedBefore, String note,
-               String advancement, String stat, long min, int top, String score, String head) {
+               String advancement, String stat, long min, int top, String score, String head, String animation, boolean granted) {
         boolean earned() { return advancement != null || stat != null || score != null; }
         boolean ranked() { return stat != null && top > 0; }
         boolean event() { return score != null && score.startsWith(EVENT_SCORE); }
@@ -168,7 +168,8 @@ public class Votes implements Listener {
             }
             tags.put(k, new Tag(k, ts.getString(k + ".display", k), ts.getInt(k + ".cost", 5), mat(ts.getString(k + ".icon"), Material.NAME_TAG),
                     ts.getString(k + ".joined-before"), ts.getString(k + ".note"), ts.getString(k + ".advancement"),
-                    ts.getString(k + ".stat"), ts.getLong(k + ".min"), ts.getInt(k + ".top"), ts.getString(k + ".score"), ts.getString(k + ".head")));
+                    ts.getString(k + ".stat"), ts.getLong(k + ".min"), ts.getInt(k + ".top"), ts.getString(k + ".score"), ts.getString(k + ".head"),
+                    ts.getString(k + ".animation"), ts.getBoolean(k + ".granted")));
         }
     }
     void loadColors(ConfigurationSection cs, Map<String, NameColor> into) {
@@ -205,6 +206,16 @@ public class Votes implements Listener {
     void writeTags() {
         Map<String, String> out = new TreeMap<>();
         players.forEach((k, pd) -> { Tag t = pd.tag == null ? null : tags.get(pd.tag); if (t != null) out.put(k, t.display()); });
+        // animated tags (a TAB animation name): the proxy's CrispyTags shows %animation:<name>% in the tab list and
+        // on name tags instead of the still display (which chat keeps, since a chat line can't animate)
+        Map<String, String> anim = new TreeMap<>();
+        players.forEach((k, pd) -> { Tag t = pd.tag == null ? null : tags.get(pd.tag); if (t != null && t.animation() != null) anim.put(k, t.animation()); });
+        try {
+            Files.createDirectories(tagsFile.getParent());
+            Path tmp = tagsFile.resolveSibling("tags_anim.json.tmp");
+            Files.writeString(tmp, GSON.toJson(anim));
+            Files.move(tmp, tagsFile.resolveSibling("tags_anim.json"), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) { plugin.getLogger().warning("tags_anim.json write failed: " + e); }
         try {
             Files.createDirectories(tagsFile.getParent());
             Path tmp = tagsFile.resolveSibling("tags.json.tmp");
@@ -532,6 +543,7 @@ public class Votes implements Listener {
         int i = 0;
         for (Tag t : tags.values()) {
             if (!t.page().equals(page) || i >= grid.length) continue;
+            if (t.granted() && !pd.owned.contains("tag:" + t.id())) continue;   // staff-given (/vote grant): not for sale
             boolean own = pd.owned.contains("tag:" + t.id()), on = t.id().equals(pd.tag);
             List<String> lore = new ArrayList<>(List.of("&7Preview: &f<" + t.display() + " &f" + p.getName() + "> hi"));
             if (earned) {
@@ -832,6 +844,7 @@ public class Votes implements Listener {
         }
         int cost = isTag ? (tags.containsKey(id) ? tags.get(id).cost() : -1) : (pool.containsKey(id) ? pool.get(id).cost() : -1);
         if (cost < 0) return;
+        if (isTag && tags.get(id).granted() && !pd.owned.contains(key)) return;   // staff-given only
         if (!pd.owned.contains(key)) {
             if (pd.points < cost) { msg(p, "&cYou need &d" + cost + " &cvote points (you have &d" + pd.points + "&c)."); p.playSound(Sound.ENTITY_VILLAGER_NO, 0.7f, 1f); return; }
             pd.points -= cost;
@@ -887,6 +900,24 @@ public class Votes implements Listener {
                 int n = a.length > 2 ? Math.max(1, Integer.parseInt(a[2])) : 1;
                 receive(a[1], sub.equals("test") ? "TestSite" : "an admin", n);
                 msg(s, "Gave " + a[1] + " " + n + " vote(s).");
+            }
+            case "grant", "revoke" -> {   // staff-given cosmetics, e.g. /vote grant Steve tag:creator
+                if (!admin || a.length < 3 || !a[2].matches("(tag|color|chat):[a-z0-9_]+")) { msg(s, "&7/vote " + sub + " <player> <tag|color|chat>:<id>"); return true; }
+                String key = a[2], id = key.substring(key.indexOf(':') + 1);
+                boolean exists = key.startsWith("tag:") ? tags.containsKey(id) : (key.startsWith("chat:") ? chatColors : colors).containsKey(id);
+                if (!exists) { msg(s, "&cNo cosmetic called " + key + "."); return true; }
+                PD pd = pd(a[1]);
+                if (sub.equals("grant")) { pd.owned.add(key); if (key.startsWith("tag:") && pd.tag == null) pd.tag = id; }
+                else {
+                    pd.owned.remove(key);
+                    if (key.startsWith("tag:") && id.equals(pd.tag)) pd.tag = null;
+                    if (key.startsWith("color:") && id.equals(pd.color)) pd.color = null;
+                    if (key.startsWith("chat:") && id.equals(pd.chat)) pd.chat = null;
+                }
+                writeTags(); save();
+                msg(s, (sub.equals("grant") ? "Gave " : "Took ") + key + (sub.equals("grant") ? " to " : " from ") + a[1] + ".");
+                Player t = Bukkit.getPlayerExact(a[1]);
+                if (t != null && sub.equals("grant")) msg(t, "&aYou've been given " + (key.startsWith("tag:") ? tags.get(id).display() : key) + "&a! &7/cosmetics to wear it.");
             }
             case "points" -> {
                 if (!admin || a.length < 3) { msg(s, "&7/vote points <player> <amount>"); return true; }
