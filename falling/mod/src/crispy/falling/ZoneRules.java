@@ -50,6 +50,8 @@ public final class ZoneRules {
     static final double HP_PER_LV = 0.12, DMG_PER_LV = 0.04;   // +12% health and +4% damage per level
     private static long tick;
 
+    /** For ServerPlayerMixin: PvP is off in the hub (HubPlots.noPvp). */
+    public static boolean noPvp(net.minecraft.world.entity.player.Player victim, net.minecraft.world.entity.player.Player attacker) { return HubPlots.noPvp(victim, attacker); }
     public static boolean isZoneMob(net.minecraft.world.entity.Entity e) { return e.entityTags().contains("cs_zone_mob"); }
 
     static AABB box(Zones.Zone z) { return new AABB(z.x1(), z.y1(), z.z1(), z.x2() + 1, z.y2() + 1, z.z2() + 1); }

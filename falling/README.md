@@ -186,6 +186,8 @@ The Realtor NPC just south-west of the plaza, a plot's sign, or `/plots` opens t
 ## Skyblock Guide (2.11.0)
 
 `Guide.java`. Every player gets a Skyblock Guide (a knowledge book with `custom_data {cs_guide:1b}`) the first time The guide also has a **Block values** page (2.12.5): every block worth more than 1 island-level point, highest first, read straight from `IslandLevels.VALUE`, with the 1-point and 0-point rules underneath.
+
+**No PvP in the hub** (2.12.6): `ServerPlayerMixin` cancels `canHarmPlayer` when either player is in the hub (the ±50 plaza or the hub-plot district box), so melee, arrows and tridents do nothing there and the attacker sees "PvP is off in the hub."
 they join after 2.11.0 (player tag `cs_guide`); `/guide book` gives a new one if they've lost theirs. Right-clicking it,
 `/guide`, or Island Menu > Skyblock Guide opens a chest menu with:
 

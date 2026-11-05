@@ -89,6 +89,16 @@ final class HubPlots {
         plots(level.getServer());
         return pos.getX() >= box[0] && pos.getX() <= box[3] && pos.getY() >= box[1] - 60 && pos.getY() <= box[4] && pos.getZ() >= box[2] && pos.getZ() <= box[5];
     }
+    /** The hub (plaza and the plot ring round it): no PvP here, for either side (ServerPlayerMixin.canHarmPlayer). */
+    static boolean inHub(Player p) {
+        if (p.level().dimension() != Level.OVERWORLD) return false;
+        return Math.abs(p.getBlockX()) <= Sidebar.HUB && Math.abs(p.getBlockZ()) <= Sidebar.HUB || inDistrict(p.level(), p.blockPosition());
+    }
+    public static boolean noPvp(Player victim, Player attacker) {
+        if (!inHub(victim) && !inHub(attacker)) return false;
+        if (attacker instanceof ServerPlayer sp && sp != victim) sp.sendOverlayMessage(t("PvP is off in the hub.", ChatFormatting.RED));
+        return true;
+    }
     static long price(MinecraftServer server) { return Economy.cfg(server).getLongOr("hubplot_price", 20_000); }
     static int refund(MinecraftServer server) { return Economy.cfg(server).getIntOr("hubplot_refund", 50); }
 
