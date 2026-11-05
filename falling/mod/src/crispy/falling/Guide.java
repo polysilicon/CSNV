@@ -95,6 +95,10 @@ final class Guide {
                 m.put(slots[i], Ui.item(tp.icon(), t(tp.title(), ChatFormatting.YELLOW, ChatFormatting.BOLD), List.of(t(tp.blurb(), ChatFormatting.GRAY),
                         Component.empty(), t("Click to read", ChatFormatting.DARK_GRAY)), false), (pl, c) -> topic(pl, tp));
             }
+            if (TOPICS.size() < slots.length)
+                m.put(slots[TOPICS.size()], Ui.item(Items.DIAMOND_BLOCK, t("Block values", ChatFormatting.YELLOW, ChatFormatting.BOLD), List.of(
+                        t("What each block adds to your", ChatFormatting.GRAY), t("island level", ChatFormatting.GRAY),
+                        Component.empty(), t("Click to read", ChatFormatting.DARK_GRAY)), false), (pl, c) -> blockValues(pl));
             m.put(46, Ui.item(Items.CRAFTING_TABLE, t("Recipes", ChatFormatting.GREEN, ChatFormatting.BOLD), List.of(
                     t("Every custom recipe: minions and gear", ChatFormatting.GRAY)), false), (pl, c) -> recipeCats(pl));
             m.put(47, Ui.item(Items.NETHER_STAR, t("Progression", ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD), List.of(
@@ -149,6 +153,54 @@ final class Guide {
         });
     }
 
+    // ------------------------------------------------------------------ block values (island level)
+    /** Every block worth more than 1 point, from IslandLevels.VALUE (so it's always what the counter uses), highest
+     *  first; blocks worth 2 share one icon, and the bottom row explains 1 point, 0 points and levels. */
+    static void blockValues(ServerPlayer p) {
+        List<Map.Entry<String, Integer>> big = new ArrayList<>(), two = new ArrayList<>();
+        for (var e : IslandLevels.VALUE.entrySet()) {
+            if (e.getValue() >= 3) big.add(e); else if (e.getValue() == 2) two.add(e);
+        }
+        big.add(Map.entry("shulker_box", 40));   // any colour (IslandLevels.value)
+        big.sort(Comparator.<Map.Entry<String, Integer>>comparingInt(Map.Entry::getValue).reversed().thenComparing(Map.Entry::getKey));
+        two.sort(Map.Entry.comparingByKey());
+        Ui.open(p, t("Guide: Block values", ChatFormatting.DARK_GRAY), 6, m -> {
+            int slot = 0;
+            for (var e : big) {
+                if (slot >= 44) break;
+                int pts = e.getValue();
+                String name = nice(e.getKey()) + (e.getKey().equals("shulker_box") ? " (any colour)" : "");
+                m.put(slot++, Ui.item(icon(e.getKey()), t(name, ChatFormatting.YELLOW), List.of(
+                        t(pts + " points", ChatFormatting.GOLD),
+                        t(pts >= IslandLevels.POINTS_PER_LEVEL ? String.format("= %.1f island levels", pts / (double) IslandLevels.POINTS_PER_LEVEL)
+                                : "1 level = " + (IslandLevels.POINTS_PER_LEVEL + pts - 1) / pts + " of these", ChatFormatting.GRAY)), false), null);
+            }
+            List<Component> twoLore = new ArrayList<>(List.of(t("2 points each:", ChatFormatting.GOLD)));
+            for (var e : two) twoLore.add(t(" " + nice(e.getKey()), ChatFormatting.GRAY));
+            m.put(44, Ui.item(Items.STONE_BRICKS, t("Building blocks", ChatFormatting.YELLOW), twoLore, false), null);
+            m.put(45, back(), (pl, c) -> open(pl));
+            m.put(48, Ui.item(Items.COBBLESTONE, t("Everything else: 1 point", ChatFormatting.YELLOW), List.of(
+                    t("Dirt, cobblestone, wood, planks,", ChatFormatting.GRAY), t("wool, ores, crops and the rest", ChatFormatting.GRAY)), false), null);
+            m.put(49, Ui.item(Items.NETHER_STAR, t(IslandLevels.POINTS_PER_LEVEL + " points = 1 island level", ChatFormatting.GOLD, ChatFormatting.BOLD), List.of(
+                    t("Only blocks inside your island's", ChatFormatting.GRAY), t("plot count. /island level recounts it", ChatFormatting.GRAY),
+                    t("(once a minute); /island top shows", ChatFormatting.GRAY), t("the best islands.", ChatFormatting.GRAY), Component.empty(),
+                    t("Tip: storage blocks are the cheapest", ChatFormatting.AQUA), t("big jumps: a diamond block is 150,", ChatFormatting.AQUA),
+                    t("nine diamond ore only 9.", ChatFormatting.AQUA)), true), null);
+            m.put(50, Ui.item(Items.WATER_BUCKET, t("Worth nothing: 0 points", ChatFormatting.YELLOW), List.of(
+                    t("Air, water, lava, fire, grass,", ChatFormatting.GRAY), t("ferns, vines, snow, bedrock,", ChatFormatting.GRAY),
+                    t("spawners and portals", ChatFormatting.GRAY)), false), null);
+        });
+    }
+    static String nice(String id) {
+        StringBuilder b = new StringBuilder();
+        for (String w : id.split("_")) { if (b.length() > 0) b.append(' '); b.append(Character.toUpperCase(w.charAt(0))).append(w.substring(1)); }
+        return b.toString();
+    }
+    static Item icon(String id) {
+        Item it = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.withDefaultNamespace(id));
+        return it == null || it == Items.AIR ? Items.PAPER : it;
+    }
+
     static Page pg(String head, String text) { return new Page(head, text); }
     static final List<Topic> TOPICS = List.of(
             new Topic("Getting started", Items.OAK_SAPLING, "Your first hour on Skyblock", List.of(
@@ -159,7 +211,7 @@ final class Guide {
                     pg("Next steps", "Hand in challenges for rewards, craft minions to gather while you're away, level up your skills and climb the island leaderboard with /island level."))),
             new Topic("Islands & portals", Items.CRYING_OBSIDIAN, "Your island, its portals and its realms", List.of(
                     pg("Hub portal", "Every island has a portal 14 blocks north of its centre, out over the void. Build a bridge to it and walk through to reach the hub. The hub's purple portal takes you home."),
-                    pg("Island level", "/island level counts the blocks on your island: 100 points make a level. Valuable blocks like diamond or netherite blocks count for more. /island top shows the best islands."),
+                    pg("Island level", "/island level counts the blocks on your island: 100 points make a level. Valuable blocks like diamond or netherite blocks count for more: see Block values in the guide. /island top shows the best islands."),
                     pg("Co-op", "/invite <player> lets a friend join your island. Upgrade co-op slots for up to 8 members."),
                     pg("Your Nether", "Build a Nether portal to reach your island's own Nether. Fortress wrecks with blaze spawners and bastion chunks crash in over time."),
                     pg("Your End", "The End portal appears east of your island after 150 min of play. Fill it with 12 Eyes of Ender to reach your island's own End, with a boss altar in the middle."))),

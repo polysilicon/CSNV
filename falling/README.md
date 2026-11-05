@@ -185,7 +185,7 @@ The Realtor NPC just south-west of the plaza, a plot's sign, or `/plots` opens t
 
 ## Skyblock Guide (2.11.0)
 
-`Guide.java`. Every player gets a Skyblock Guide (a knowledge book with `custom_data {cs_guide:1b}`) the first time
+`Guide.java`. Every player gets a Skyblock Guide (a knowledge book with `custom_data {cs_guide:1b}`) the first time The guide also has a **Block values** page (2.12.5): every block worth more than 1 island-level point, highest first, read straight from `IslandLevels.VALUE`, with the 1-point and 0-point rules underneath.
 they join after 2.11.0 (player tag `cs_guide`); `/guide book` gives a new one if they've lost theirs. Right-clicking it,
 `/guide`, or Island Menu > Skyblock Guide opens a chest menu with:
 
