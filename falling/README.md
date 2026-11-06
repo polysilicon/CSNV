@@ -268,3 +268,9 @@ in `#crispy_skyblock:gear_targets` (never players, villagers or pets) and never 
 `/island` (alias `/is`) opens the Island Menu; `/island choose|challenges|gear|level|top`; `/gear`; `/skills`; `/bazaar` (`/bz`); `/pets`; `/warp`; `/plots`; `/guide`; `/island upgrades|pets|skills`; `/invite <player>` (also
 `/island invite <player>`). Menus are chest GUIs defined by the datapack in storage `crispy_skyblock:menus` (set on
 every load); an entry with `done:"<objective>"` shows its `item_done` once the viewer's score there is 1 or more.
+
+**Travel and visits** (2.13.0, `Visits.java`): `/tpa <player>`, `/tpahere <player>`, `/tpaccept [player]`, `/tpdeny [player]`
+and `/visit <player>` (lands on their island's spawn spot via `p/home2`). Requests expire after 60 s, one per 10 s per
+sender; an accepted teleport waits 3 s and is cancelled if the traveller moves. Overworld islands are now protected:
+only members (`cs_plot` = the island id from the grid) and staff in creative can break, place, use blocks, buckets or
+entities there; visitors can only look.

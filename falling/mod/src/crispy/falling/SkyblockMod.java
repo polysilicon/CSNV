@@ -47,18 +47,23 @@ public class SkyblockMod implements ModInitializer {
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register(ZoneRules::onEntityLoad);
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register(Pets::onEntityLoad);
         ServerTickEvents.END_SERVER_TICK.register(HubPlots::onTick);
+        ServerTickEvents.END_SERVER_TICK.register(Visits::onTick);
+        net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((h, server) -> Visits.forget(h.player));
         net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents.AFTER_RESPAWN.register((oldP, newP, alive) -> ZoneRules.restore(newP));
         net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((h, sender, server) -> { ZoneRules.restore(h.player); Guide.onJoin(h.player); });
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPING.register(Zones::restoreAll);
+        PlayerBlockBreakEvents.BEFORE.register(Visits::canBreak);
         PlayerBlockBreakEvents.BEFORE.register(Portals::canBreak);
         PlayerBlockBreakEvents.BEFORE.register(Zones::canBreak);
         PlayerBlockBreakEvents.BEFORE.register(HubPlots::canBreak);
         PlayerBlockBreakEvents.AFTER.register(Skills::onBreak);
         PlayerBlockBreakEvents.AFTER.register(Zones::onBreak);
+        UseBlockCallback.EVENT.register(Visits::onUseBlock);
         UseBlockCallback.EVENT.register(HubPlots::onUseBlock);
         UseBlockCallback.EVENT.register(Zones::onUseBlock);
         UseBlockCallback.EVENT.register(Realms::onUseBlock);
         UseBlockCallback.EVENT.register(Minions::onUseBlock);
+        UseItemCallback.EVENT.register(Visits::onUseItem);
         UseItemCallback.EVENT.register(Guide::onUseItem);
         UseItemCallback.EVENT.register(Gear::onUseItem);
         UseEntityCallback.EVENT.register((player, world, hand, entity, hit) -> {
@@ -73,11 +78,16 @@ public class SkyblockMod implements ModInitializer {
                     }
                 return InteractionResult.SUCCESS;
             }
+            InteractionResult vi = Visits.onEntity(player, world, entity);
+            if (vi != InteractionResult.PASS) return vi;
             InteractionResult hp = HubPlots.onEntity(player, world, entity);
             if (hp != InteractionResult.PASS) return hp;
             return Minions.onUseEntity(player, world, hand, entity);
         });
-        net.fabricmc.fabric.api.event.player.AttackEntityCallback.EVENT.register((player, world, hand, entity, hit) -> HubPlots.onEntity(player, world, entity));
+        net.fabricmc.fabric.api.event.player.AttackEntityCallback.EVENT.register((player, world, hand, entity, hit) -> {
+            InteractionResult vi = Visits.onEntity(player, world, entity);
+            return vi != InteractionResult.PASS ? vi : HubPlots.onEntity(player, world, entity);
+        });
         CommandRegistrationCallback.EVENT.register((d, ctx, sel) -> {
             Economy.register(d);
             Bazaar.register(d);
@@ -85,6 +95,7 @@ public class SkyblockMod implements ModInitializer {
             Zones.register(d);
             HubPlots.register(d);
             Guide.register(d);
+            Visits.register(d);
             d.register(Commands.literal("invite").then(Commands.argument("player", EntityArgument.player())
                     .executes(c -> invite(c.getSource(), EntityArgument.getPlayer(c, "player")))));
             d.register(Commands.literal("challenges")

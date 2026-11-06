@@ -250,7 +250,9 @@ final class Guide {
                     pg("Island", "/island (/is), /island challenges, /island level, /island top, /invite <player>, /island upgrades"),
                     pg("Progress", "/skills, /pets, /gear, /guide"),
                     pg("Trading", "/bazaar (/bz), /plots"),
-                    pg("Travel", "/warp hub, /warp home, /warp mines, /warp woods, /warp plots"))));
+                    pg("Travel", "/warp hub, /warp home, /warp mines, /warp woods, /warp plots"),
+                    pg("Players", "/tpa <player> asks to teleport to someone, /tpahere <player> asks them to come to you. They click Accept, then stand still for 3 seconds."),
+                    pg("Visiting", "/visit <player> asks to visit their island. If they allow it you land on their island. Visitors can look around but can't build, break or open anything."))));
 
     // ------------------------------------------------------------------ recipes
     static List<RecipeHolder<?>> recipes(MinecraftServer server, String prefix) {
