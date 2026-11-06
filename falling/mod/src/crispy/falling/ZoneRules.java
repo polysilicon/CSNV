@@ -48,7 +48,7 @@ public final class ZoneRules {
     static final Identifier HP = Identifier.fromNamespaceAndPath("crispy_skyblock", "zone_level_health");
     static final Identifier DMG = Identifier.fromNamespaceAndPath("crispy_skyblock", "zone_level_damage");
     static final Identifier STASH = Identifier.fromNamespaceAndPath("crispy_skyblock", "stash");
-    static final String MARK = "cs_gathered";
+    static final String MARK = "cs_gathered", MARK_LINE = "Gathered here: dropped if you die in this zone";
     static final double HP_PER_LV = 0.12, DMG_PER_LV = 0.04;   // +12% health and +4% damage per level
     private static long tick;
 
@@ -108,7 +108,7 @@ public final class ZoneRules {
                 for (Mob m : ow.getEntitiesOfClass(Mob.class, box, ZoneRules::outsider)) m.discard();   // anything that slipped in
             }
         }
-        if (tick % 20 == 0)   // out of every zone: drop the gathered marks
+        if (tick % 5 == 0)   // out of every zone: drop the gathered marks (within a quarter second of leaving)
             for (ServerPlayer p : server.getPlayerList().getPlayers()) if (Zones.at(p.level(), p.blockPosition()) == null) unmarkAll(p);
     }
 
@@ -170,16 +170,17 @@ public final class ZoneRules {
         tag.putBoolean(MARK, true);
         s.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         List<Component> lore = new ArrayList<>(s.getOrDefault(DataComponents.LORE, ItemLore.EMPTY).lines());
-        lore.add(t("Gathered here: dropped if you die in this zone", ChatFormatting.DARK_GRAY));
+        lore.add(t(MARK_LINE, ChatFormatting.DARK_GRAY));
         s.set(DataComponents.LORE, new ItemLore(lore.stream().map(c -> (Component) c.copy().withStyle(st -> st.withItalic(false))).toList()));
         return s;
     }
     static ItemStack unmark(ItemStack s) {
+        if (!s.has(DataComponents.CUSTOM_DATA)) return s;
         CompoundTag tag = s.get(DataComponents.CUSTOM_DATA).copyTag();
         tag.remove(MARK);
         if (tag.isEmpty()) s.remove(DataComponents.CUSTOM_DATA); else s.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         List<Component> lore = new ArrayList<>(s.getOrDefault(DataComponents.LORE, ItemLore.EMPTY).lines());
-        if (!lore.isEmpty()) lore.remove(lore.size() - 1);
+        lore.removeIf(l -> l.getString().equals(MARK_LINE));
         if (lore.isEmpty()) s.remove(DataComponents.LORE); else s.set(DataComponents.LORE, new ItemLore(lore));
         return s;
     }

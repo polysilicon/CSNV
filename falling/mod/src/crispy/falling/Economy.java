@@ -75,7 +75,13 @@ public final class Economy {
     }
 
     /** A plain stack (no custom name, minion data...) that a merchant will take. */
-    static boolean plain(ItemStack s) { return !s.isEmpty() && s.getComponentsPatch().isEmpty(); }
+    /** A plain item (no custom name or data) can be bought, sold and traded. A resource-zone "gathered" mark doesn't
+     *  count: those items sell like any other, even before the mark comes off. */
+    static boolean plain(ItemStack s) {
+        if (s.isEmpty()) return false;
+        if (s.getComponentsPatch().isEmpty()) return true;
+        return ZoneRules.gathered(s) && ZoneRules.unmark(s.copy()).getComponentsPatch().isEmpty();
+    }
 
     static int count(ServerPlayer p, Item item) {
         Inventory inv = p.getInventory();

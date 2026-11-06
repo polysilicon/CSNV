@@ -279,3 +279,5 @@ without changing gamemode; tab-completes everyone who has an island.
 **Resource zones** (2.14.0): PvP is off in the zones (`HubPlots.noPvp`), and new drops there (mined, chopped, zone-mob
 loot, Skills double drops) go straight into the nearest player in the zone within 8 blocks (`ZoneRules.onTick`),
 still marked gathered; a full inventory leaves the rest on the floor. Thrown items and death drops stay on the ground.
+The gathered mark comes off within 5 ticks of leaving a zone (and its lore line is matched by text), and
+`Economy.plain` ignores it, so marked items sell at merchants and on the Bazaar like any other.
