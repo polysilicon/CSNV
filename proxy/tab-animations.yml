@@ -133,3 +133,28 @@ creator:
   - "&#F152D0&l[&#EC65C1&lC&#E878B1&lr&#E38BA2&le&#DE9F93&la&#D9B284&lt&#C7B88A&lo&#B4BF90&lr&#A2C596&l]"
   - "&#F63EDF&l[&#F152D0&lC&#EC65C1&lr&#E878B1&le&#E38BA2&la&#DE9F93&lt&#D9B284&lo&#C7B88A&lr&#B4BF90&l]"
   - "&#FB2BEE&l[&#F63EDF&lC&#F152D0&lr&#EC65C1&le&#E878B1&la&#E38BA2&lt&#DE9F93&lo&#D9B284&lr&#C7B88A&l]"
+
+# Meow :3 tag (rare: A Complete Catalogue, CrispyLobby tag r_meow): a pink-lavender shimmer
+meow:
+  change-interval: 50
+  texts:
+  - "&#FF7ED6&l[&#FF95DF&lM&#FFACE8&le&#F4B5F0&lo&#DFAEF7&lw&#C9A7FF&l &#B79CFF&l:&#A491FF&l3&#A491FF&l]"
+  - "&#FF8FDD&l[&#FFA7E5&lM&#FAB6EE&le&#E4B0F6&lo&#CEA9FD&lw&#BB9FFF&l &#A994FF&l:&#A08FFF&l3&#B29AFF&l]"
+  - "&#FFA1E3&l[&#FFB8EC&lM&#E9B1F4&le&#D4AAFB&lo&#C0A2FF&lw&#AD97FF&l &#9B8CFF&l:&#AD97FF&l3&#C0A2FF&l]"
+  - "&#FFB2EA&l[&#EFB3F2&lM&#D9ACF9&le&#C4A4FF&lo&#B29AFF&lw&#A08FFF&l &#A994FF&l:&#BB9FFF&l3&#CEA9FD&l]"
+  - "&#F4B5F0&l[&#DFAEF7&lM&#C9A7FF&le&#B79CFF&lo&#A491FF&lw&#A491FF&l &#B79CFF&l:&#C9A7FF&l3&#DFAEF7&l]"
+  - "&#E4B0F6&l[&#CEA9FD&lM&#BB9FFF&le&#A994FF&lo&#A08FFF&lw&#B29AFF&l &#C4A4FF&l:&#D9ACF9&l3&#EFB3F2&l]"
+  - "&#D4AAFB&l[&#C0A2FF&lM&#AD97FF&le&#9B8CFF&lo&#AD97FF&lw&#C0A2FF&l &#D4AAFB&l:&#E9B1F4&l3&#FFB8EC&l]"
+  - "&#C4A4FF&l[&#B29AFF&lM&#A08FFF&le&#A994FF&lo&#BB9FFF&lw&#CEA9FD&l &#E4B0F6&l:&#FAB6EE&l3&#FFA7E5&l]"
+  - "&#B79CFF&l[&#A491FF&lM&#A491FF&le&#B79CFF&lo&#C9A7FF&lw&#DFAEF7&l &#F4B5F0&l:&#FFACE8&l3&#FF95DF&l]"
+  - "&#A994FF&l[&#A08FFF&lM&#B29AFF&le&#C4A4FF&lo&#D9ACF9&lw&#EFB3F2&l &#FFB2EA&l:&#FF9BE1&l3&#FF84D8&l]"
+  - "&#9B8CFF&l[&#AD97FF&lM&#C0A2FF&le&#D4AAFB&lo&#E9B1F4&lw&#FFB8EC&l &#FFA1E3&l:&#FF8ADA&l3&#FF8ADA&l]"
+  - "&#A994FF&l[&#BB9FFF&lM&#CEA9FD&le&#E4B0F6&lo&#FAB6EE&lw&#FFA7E5&l &#FF8FDD&l:&#FF84D8&l3&#FF9BE1&l]"
+  - "&#B79CFF&l[&#C9A7FF&lM&#DFAEF7&le&#F4B5F0&lo&#FFACE8&lw&#FF95DF&l &#FF7ED6&l:&#FF95DF&l3&#FFACE8&l]"
+  - "&#C4A4FF&l[&#D9ACF9&lM&#EFB3F2&le&#FFB2EA&lo&#FF9BE1&lw&#FF84D8&l &#FF8FDD&l:&#FFA7E5&l3&#FAB6EE&l]"
+  - "&#D4AAFB&l[&#E9B1F4&lM&#FFB8EC&le&#FFA1E3&lo&#FF8ADA&lw&#FF8ADA&l &#FFA1E3&l:&#FFB8EC&l3&#E9B1F4&l]"
+  - "&#E4B0F6&l[&#FAB6EE&lM&#FFA7E5&le&#FF8FDD&lo&#FF84D8&lw&#FF9BE1&l &#FFB2EA&l:&#EFB3F2&l3&#D9ACF9&l]"
+  - "&#F4B5F0&l[&#FFACE8&lM&#FF95DF&le&#FF7ED6&lo&#FF95DF&lw&#FFACE8&l &#F4B5F0&l:&#DFAEF7&l3&#C9A7FF&l]"
+  - "&#FFB2EA&l[&#FF9BE1&lM&#FF84D8&le&#FF8FDD&lo&#FFA7E5&lw&#FAB6EE&l &#E4B0F6&l:&#CEA9FD&l3&#BB9FFF&l]"
+  - "&#FFA1E3&l[&#FF8ADA&lM&#FF8ADA&le&#FFA1E3&lo&#FFB8EC&lw&#E9B1F4&l &#D4AAFB&l:&#C0A2FF&l3&#AD97FF&l]"
+  - "&#FF8FDD&l[&#FF84D8&lM&#FF9BE1&le&#FFB2EA&lo&#EFB3F2&lw&#D9ACF9&l &#C4A4FF&l:&#B29AFF&l3&#A08FFF&l]"
