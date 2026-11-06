@@ -76,8 +76,8 @@ votes:
       proxy: skyblock
       icon: OAK_SAPLING
       instance: Falling01
-      reward: ["&6500 Coins", "&f32 Bone Meal"]   # ~1/3 of a minion tier-2 upgrade; 7 sites a day = ~3,500 coins
-      commands: ["scoreboard players add %player% cs_coins 500", "give %player% minecraft:bone_meal 32"]
+      reward: ["&6250 Coins", "&f32 Bone Meal"]   # 7 sites a day = ~1,750 coins
+      commands: ["scoreboard players add %player% cs_coins 250", "give %player% minecraft:bone_meal 32"]
     pvp:
       label: "&d&lMultiverse"
       proxy: multiverse
