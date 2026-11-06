@@ -165,6 +165,41 @@ final class Visits {
         server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withPermission(LevelBasedPermissionSet.GAMEMASTER).withSuppressedOutput(), cmd);
     }
 
+    // ------------------------------------------------------------------ staff
+    /** /island tp <player|id> (ops): go to anyone's island, online or not, keeping your gamemode. */
+    static int staffTp(CommandSourceStack s, String who) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer me = s.getPlayerOrException();
+        MinecraftServer server = s.getServer();
+        int id = 0;
+        if (who.matches("\\d+")) id = Integer.parseInt(who);
+        else {
+            var o = server.getScoreboard().getObjective("cs_plot");
+            if (o != null) for (var e : server.getScoreboard().listPlayerScores(o))
+                if (e.owner().equalsIgnoreCase(who) && e.value() > 0) { id = e.value(); who = e.owner(); break; }
+        }
+        var plots = server.getCommandStorage().get(net.minecraft.resources.Identifier.fromNamespaceAndPath(SkyblockMod.NS, "d")).getListOrEmpty("plots");
+        if (id <= 0 || id >= plots.size() || !plots.getCompoundOrEmpty(id).contains("cx")) {
+            s.sendFailure(t("No island found for " + who + ".", ChatFormatting.RED)); return 0;
+        }
+        var pl = plots.getCompoundOrEmpty(id);
+        int cx = pl.getIntOr("cx", 0), cz = pl.getIntOr("cz", 0);
+        run(server, "execute in minecraft:overworld run tp " + me.getUUID() + " " + cx + ".5 " + (Portals.ISLAND_Y + 1) + " " + cz + ".5");
+        List<String> members = new ArrayList<>();
+        var o = server.getScoreboard().getObjective("cs_plot");
+        if (o != null) for (var e : server.getScoreboard().listPlayerScores(o)) if (!e.owner().startsWith("#") && e.value() == id) members.add(e.owner());
+        me.sendSystemMessage(t("Island #" + id + " (" + String.join(", ", members) + ")", ChatFormatting.GOLD));
+        return 1;
+    }
+
+    static java.util.concurrent.CompletableFuture<com.mojang.brigadier.suggestion.Suggestions> suggestIslanders(
+            com.mojang.brigadier.context.CommandContext<CommandSourceStack> c, com.mojang.brigadier.suggestion.SuggestionsBuilder b) {
+        var o = c.getSource().getServer().getScoreboard().getObjective("cs_plot");
+        String pre = b.getRemaining().toLowerCase(Locale.ROOT);
+        if (o != null) for (var e : c.getSource().getServer().getScoreboard().listPlayerScores(o))
+            if (!e.owner().startsWith("#") && e.value() > 0 && e.owner().toLowerCase(Locale.ROOT).startsWith(pre)) b.suggest(e.owner());
+        return b.buildFuture();
+    }
+
     // ------------------------------------------------------------------ island protection
     /** The overworld island (cs_plot id) at pos, 0 if none (hub, zones, void outside the grid). Same grid as Sidebar. */
     static int islandAt(Level level, BlockPos pos) {

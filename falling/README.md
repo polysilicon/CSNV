@@ -273,4 +273,5 @@ every load); an entry with `done:"<objective>"` shows its `item_done` once the v
 and `/visit <player>` (lands on their island's spawn spot via `p/home2`). Requests expire after 60 s, one per 10 s per
 sender; an accepted teleport waits 3 s and is cancelled if the traveller moves. Overworld islands are now protected:
 only members (`cs_plot` = the island id from the grid) and staff in creative can break, place, use blocks, buckets or
-entities there; visitors can only look.
+entities there; visitors can only look. Ops: `/island tp <player|id>` goes to anyone's island, online or not (2.13.1),
+without changing gamemode; tab-completes everyone who has an island.
