@@ -61,7 +61,7 @@ public class Votes implements Listener {
      *  Mastery tags (score + min) unlock at that much mastery XP on a PvP objective (pvp.mx<kit id>); they have their
      *  own page, and head = a player-head texture for the icon. */
     record Tag(String id, String display, int cost, Material icon, String joinedBefore, String note,
-               String advancement, String stat, long min, int top, String score, String head, String animation, boolean granted) {
+               String advancement, String stat, long min, int top, String score, String head, String animation, boolean granted, boolean rare) {
         boolean earned() { return advancement != null || stat != null || score != null; }
         boolean ranked() { return stat != null && top > 0; }
         boolean event() { return score != null && score.startsWith(EVENT_SCORE); }
@@ -71,7 +71,7 @@ public class Votes implements Listener {
     }
     /** A name or chat colour: bought with vote points, or (score set) earned, free once that score reaches min (1 if
      *  unset): pvp.hw<n> = a Halloween colour (Halloween page), sb.* = a Skyblock colour (Skyblock page). */
-    record NameColor(String id, String name, String code, int cost, Material icon, String score, long min) {
+    record NameColor(String id, String name, String code, int cost, Material icon, String score, long min, boolean rare) {
         boolean event() { return score != null && score.startsWith(EVENT_SCORE); }
         boolean skyblock() { return score != null && score.startsWith(SKYBLOCK_SCORE); }
         boolean earned() { return score != null; }
@@ -174,13 +174,13 @@ public class Votes implements Listener {
             tags.put(k, new Tag(k, ts.getString(k + ".display", k), ts.getInt(k + ".cost", 5), mat(ts.getString(k + ".icon"), Material.NAME_TAG),
                     ts.getString(k + ".joined-before"), ts.getString(k + ".note"), ts.getString(k + ".advancement"),
                     ts.getString(k + ".stat"), ts.getLong(k + ".min"), ts.getInt(k + ".top"), ts.getString(k + ".score"), ts.getString(k + ".head"),
-                    ts.getString(k + ".animation"), ts.getBoolean(k + ".granted")));
+                    ts.getString(k + ".animation"), ts.getBoolean(k + ".granted"), ts.getBoolean(k + ".rare")));
         }
     }
     void loadColors(ConfigurationSection cs, Map<String, NameColor> into) {
         if (cs != null) for (String k : cs.getKeys(false))
             into.put(k, new NameColor(k, cs.getString(k + ".name", k), cs.getString(k + ".code", "&f"), cs.getInt(k + ".cost", 5),
-                    mat(cs.getString(k + ".icon"), Material.WHITE_DYE), cs.getString(k + ".score"), cs.getLong(k + ".min")));
+                    mat(cs.getString(k + ".icon"), Material.WHITE_DYE), cs.getString(k + ".score"), cs.getLong(k + ".min"), cs.getBoolean(k + ".rare")));
     }
     static Material mat(String s, Material def) { Material m = s == null ? null : Material.matchMaterial(s); return m == null ? def : m; }
 
@@ -456,6 +456,7 @@ public class Votes implements Listener {
     /** What a Skyblock score requirement means, for lore and messages. */
     static String skyNeed(String score, long min) {
         if (score.equals("sb.island_lvl")) return "&7Reach island level &f" + min + " &7on Skyblock";
+        if (score.equals("sb.skills_min")) return "&7Reach level &f" + (int) Math.round(Math.sqrt(min / 100.0)) + " &7in &fevery &7skill on Skyblock";
         String skill = score.startsWith("sb.sk_") ? score.substring(6) : score;
         skill = switch (skill) { case "farm" -> "Farming"; case "mine" -> "Mining"; case "forage" -> "Foraging"; case "combat" -> "Combat"; case "fish" -> "Fishing"; default -> skill; };
         int lv = (int) Math.round(Math.sqrt(min / 100.0));
@@ -464,7 +465,7 @@ public class Votes implements Listener {
     static String skyHave(String score, long v) {
         if (score.equals("sb.island_lvl")) return "island level " + v;
         int lv = 0; while (lv < 25 && v >= 100L * (lv + 1) * (lv + 1)) lv++;
-        return "level " + lv;
+        return (score.equals("sb.skills_min") ? "lowest skill level " : "level ") + lv;
     }
     List<String> skyblockKeys() {
         List<String> out = new ArrayList<>();
@@ -498,6 +499,7 @@ public class Votes implements Listener {
         if (t.skyblock()) { l.add(t.advancement() != null ? "&7Skyblock advancement: &f" + (t.note() != null ? t.note() : t.advancement())
                 : skyNeed(t.score(), t.min())); }
         else if (t.event()) { l.add("&7Survive &6Haunted Night &7in the Multiverse"); l.add("&8Each completed run unlocks one random"); l.add("&8Halloween cosmetic you don't have yet"); }
+        else if (t.score() != null && !t.score().startsWith("pvp.mx")) l.add("&7" + (t.note() != null ? t.note() : t.score() + " " + t.min()));
         else if (t.score() != null) { l.add("&7Master &f" + (t.note() != null ? t.note() : t.id()) + " &7in the Multiverse"); l.add("&8" + String.format("%,d", t.min()) + " mastery XP with that character"); }
         else if (t.advancement() != null) l.add("&7Advancement: &f" + (t.note() != null ? t.note() : t.advancement()));
         else if ("VOTES".equals(t.stat())) l.add("&7Be the &f#1 voter &7this month");
@@ -535,7 +537,7 @@ public class Votes implements Listener {
         if (t.score() != null) {
             if (!plugin.stats.loaded()) return "&8Stats are loading, try again in a minute";
             long v = plugin.stats.mastery(p.getName(), t.score());
-            return v >= t.min() ? null : "&cYou: &f" + String.format("%,d", v) + " &8/ " + String.format("%,d", t.min()) + " XP";
+            return v >= t.min() ? null : "&cYou: &f" + String.format("%,d", v) + " &8/ " + String.format("%,d", t.min()) + (t.score().startsWith("pvp.mx") ? " XP" : "");
         }
         if ("VOTES".equals(t.stat())) {
             int r = voteRank(p.getName());
@@ -656,7 +658,7 @@ public class Votes implements Listener {
         if (type.equals("tag")) {
             out.add(new String[]{"tags", "NAME_TAG", "&f&lShop", "Buy tags with", "vote points."});
             out.add(new String[]{"etags", "EXPERIENCE_BOTTLE", "&6&lAchievements", "Advancements, milestones and", "topping a leaderboard (/stats)."});
-            out.add(new String[]{"mtags", "NETHER_STAR", "&e&lMultiverse", "Master a Multiverse character", "to get its tag."});
+            out.add(new String[]{"mtags", "NETHER_STAR", "&e&lMultiverse", "Master characters and set", "records in the Multiverse."});
         } else out.add(new String[]{type.equals("color") ? "colors:classic" : "chatcolors:classic", "EMERALD", "&f&lShop", "Buy them with", "vote points."});
         out.add(new String[]{"skyblock:" + type, "OAK_SAPLING", "&a&lSkyblock", "Skyblock advancements, skill", "levels and your island level."});
         out.add(new String[]{"event:" + type, "JACK_O_LANTERN", "&6&lEvents", "Halloween: survive Haunted", "Night in the Multiverse."});
@@ -759,7 +761,7 @@ public class Votes implements Listener {
     /** A tag on a list page, with its state and lore (preview, cost or requirement, what a click does). */
     Entry tagEntry(Viewer p, PD pd, Tag t, Set<String> advs) {
         boolean on = t.id().equals(pd.tag), own = pd.owned.contains("tag:" + t.id());
-        List<String> lore = new ArrayList<>(List.of("&8Tag", "&f<" + t.display() + " &f" + p.getName() + "&f> hi", ""));
+        List<String> lore = new ArrayList<>(List.of(t.rare() ? "&d&l✦ RARE &8Tag" : "&8Tag", "&f<" + t.display() + " &f" + p.getName() + "&f> hi", ""));
         int state;
         if (t.granted()) {
             if (t.note() != null) lore.add("&8" + t.note());
@@ -790,7 +792,7 @@ public class Votes implements Listener {
         String key = (chat ? "chat:" : "color:") + c.id();
         boolean on = c.id().equals(chat ? pd.chat : pd.color), own = pd.owned.contains(key);
         String preview = chat ? "&f<" + p.getName() + "> " + colored("hey, gg everyone", c.code()) : "&f<" + colored(p.getName(), c.code()) + "&f> hi";
-        List<String> lore = new ArrayList<>(List.of(chat ? "&8Chat colour" : "&8Name colour", preview, ""));
+        List<String> lore = new ArrayList<>(List.of((c.rare() ? "&d&l✦ RARE &8" : "&8") + (chat ? "Chat colour" : "Name colour"), preview, ""));
         int state;
         String use = chat ? "use" : "use";
         if (c.earned()) {

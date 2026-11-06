@@ -168,3 +168,10 @@ The hub is only "You look like this" (and Special, top right, for owners of a st
 colours and Chat colours, plus My cosmetics. Each kind opens its own page of sources (`sources()`): Tags = Shop,
 Achievements, Multiverse, Skyblock, Events; colours = Shop, Skyblock, Events. Empty sources are hidden. List pages go
 Back to their kind's page (`backOf`).
+
+## Rare cosmetics (1.21.0)
+`rare: true` on a tag or colour shows **✦ RARE** in the menus. Rare tags: eight hard vanilla advancements on any server
+(Achievements page), Multiverse records via `score: <objective>` (`NetworkStats.RECORDS`: pve.best, tw.best, mo.best,
+cg.wins, pvp.best, pvp.dwin, pvp.mastered; Multiverse page, requirement text from `note`), and Skyblock (island level
+100; every skill at 25 via `sb.skills_min` = the lowest of the five skills' XP), plus the Celestial name colour and
+Phoenix chat colour on Skyblock.

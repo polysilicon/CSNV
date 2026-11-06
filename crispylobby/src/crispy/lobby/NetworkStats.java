@@ -37,6 +37,7 @@ final class NetworkStats {
         Cat(String title) { this.title = title; }
     }
 
+    static final Set<String> RECORDS = Set.of("pve.best", "tw.best", "mo.best", "cg.wins", "pvp.best", "pvp.dwin", "pvp.mastered");
     static final class Row {
         final String name;
         final long[] total = new long[Cat.values().length];
@@ -159,6 +160,9 @@ final class NetworkStats {
                         out.computeIfAbsent(name.toLowerCase(Locale.ROOT), k -> new Row(name)).mastery.merge(obj, n.longValue(), Math::max);
                         continue;
                     }
+                    // mode records for rare tags (score: <objective>): Outbreak, Tower, Micro, Crispy Games, streak, duels
+                    if (RECORDS.contains(obj) && e.get("Score") instanceof Number n)
+                        out.computeIfAbsent(name.toLowerCase(Locale.ROOT), k -> new Row(name)).mastery.merge(obj, n.longValue(), Math::max);
                     Cat c = switch (String.valueOf(e.get("Objective"))) {
                         case "pve.best" -> Cat.OUTBREAK_WAVE;
                         case "pvp.best" -> Cat.PVP_STREAK;
@@ -190,6 +194,12 @@ final class NetworkStats {
                     if (name.startsWith("#")) continue;
                     if (obj.startsWith("sk_")) out.computeIfAbsent(name.toLowerCase(Locale.ROOT), k -> new Row(name)).mastery.merge("sb." + obj, n.longValue(), Math::max);
                     else if (obj.equals("cs_plot") && n.intValue() > 0) plotOf.put(name.toLowerCase(Locale.ROOT), new String[]{name, String.valueOf(n.intValue())});
+                }
+                // lowest of the five skills (rare "every skill maxed" cosmetics): sb.skills_min
+                for (Row r : out.values()) {
+                    long low = Long.MAX_VALUE;
+                    for (String sk : new String[]{"sb.sk_farm", "sb.sk_mine", "sb.sk_forage", "sb.sk_combat", "sb.sk_fish"}) low = Math.min(low, r.mastery.getOrDefault(sk, 0L));
+                    if (low > 0) r.mastery.put("sb.skills_min", low);
                 }
                 for (var p : plotOf.entrySet()) {
                     Long lv = islandLvl.get(p.getValue()[1]);
