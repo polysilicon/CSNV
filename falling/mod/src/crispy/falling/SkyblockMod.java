@@ -121,9 +121,10 @@ public class SkyblockMod implements ModInitializer {
                 .then(Commands.literal("pets").executes(c -> { Pets.open(c.getSource().getPlayerOrException()); return 1; }))
                 .then(Commands.literal("level").executes(c -> IslandLevels.command(c.getSource())))
                 .then(Commands.literal("top").executes(c -> IslandLevels.top(c.getSource())))
-                .then(Commands.literal("dungeons").executes(c -> Upgrades.dungeonsCmd(c.getSource(), null))
-                        .then(Commands.literal("on").executes(c -> Upgrades.dungeonsCmd(c.getSource(), true)))
-                        .then(Commands.literal("off").executes(c -> Upgrades.dungeonsCmd(c.getSource(), false))))
+                .then(dropsNode("drops"))
+                .then(Commands.literal("dungeons").executes(c -> Upgrades.dropsCmd(c.getSource(), "dungeons", null))
+                        .then(Commands.literal("on").executes(c -> Upgrades.dropsCmd(c.getSource(), "dungeons", true)))
+                        .then(Commands.literal("off").executes(c -> Upgrades.dropsCmd(c.getSource(), "dungeons", false))))
                 .then(Commands.literal("tp").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .then(Commands.argument("player", com.mojang.brigadier.arguments.StringArgumentType.word()).suggests(Visits::suggestIslanders)
                                 .executes(c -> Visits.staffTp(c.getSource(), com.mojang.brigadier.arguments.StringArgumentType.getString(c, "player")))))
@@ -131,6 +132,16 @@ public class SkyblockMod implements ModInitializer {
                 .then(Commands.literal("refreshboard").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .executes(c -> { IslandLevels.updateBoard(c.getSource().getServer()); return 1; }));
         d.register(root);
+    }
+
+    /** /island drops [animals|crates|meteors|dungeons] [on|off]: the Sky drops switches. */
+    static LiteralArgumentBuilder<CommandSourceStack> dropsNode(String name) {
+        LiteralArgumentBuilder<CommandSourceStack> n = Commands.literal(name).executes(c -> Upgrades.dropsCmd(c.getSource(), null, null));
+        for (Upgrades.Drop d : Upgrades.DROPS)
+            n.then(Commands.literal(d.key()).executes(c -> Upgrades.dropsCmd(c.getSource(), d.key(), null))
+                    .then(Commands.literal("on").executes(c -> Upgrades.dropsCmd(c.getSource(), d.key(), true)))
+                    .then(Commands.literal("off").executes(c -> Upgrades.dropsCmd(c.getSource(), d.key(), false))));
+        return n;
     }
 
     /** The starter island picker: for players without an island, or who chose "Start a new island". */

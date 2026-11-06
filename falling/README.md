@@ -281,3 +281,8 @@ loot, Skills double drops) go straight into the nearest player in the zone withi
 still marked gathered; a full inventory leaves the rest on the floor. Thrown items and death drops stay on the ground.
 The gathered mark comes off within 5 ticks of leaving a zone (and its lore line is matched by text), and
 `Economy.plain` ignores it, so marked items sell at merchants and on the Bazaar like any other.
+
+**Sky drops switches** (2.14.1): each island can turn off falling animals, supply crates, meteors and dungeons
+separately: `/island upgrades` → Sky drops, or `/island drops [animals|crates|meteors|dungeons] [on|off]`
+(`/island dungeons on|off` still works). Stored as `#p<id>` = 1 in `cs_noanim`, `cs_nosup`, `cs_nomet`, `cs_nodng`;
+`plot/tick` skips the event while it's set. The End portal at 150 minutes always comes.

@@ -448,6 +448,9 @@ scoreboard objectives add cs_on dummy
 scoreboard objectives add cs_was dummy
 scoreboard objectives add cs_age dummy
 scoreboard objectives add cs_nodng dummy
+scoreboard objectives add cs_noanim dummy
+scoreboard objectives add cs_nosup dummy
+scoreboard objectives add cs_nomet dummy
 scoreboard objectives add cs_tmp dummy
 scoreboard objectives add cs_cd dummy
 scoreboard objectives add cs_seen dummy
@@ -909,10 +912,11 @@ function {NS}:plot/tick with storage {NS}:d cur
 """)
 
 # ======================================================================= per-island second
-def every(n, f):
+def every(n, f, off):
+    """Run ev/<f> every n seconds of island time, unless the island switched it off (#p<id> <off> = 1, /island drops)."""
     return (f"$scoreboard players operation #m cs_tmp = #p$(id) cs_age\nscoreboard players set #k cs_tmp {n}\n"
-            f"scoreboard players operation #m cs_tmp %= #k cs_tmp\nexecute if score #m cs_tmp matches 0 run function {NS}:{f} with storage {NS}:d cur")
-dng = "\n".join(f"$execute if score #p$(id) cs_age matches {a} unless score #p$(id) cs_nodng matches 1 run function {NS}:ev/dungeon with storage {NS}:d cur" for a in DUNGEON_AGES)   # cs_nodng: dungeons switched off (/island dungeons)
+            f"scoreboard players operation #m cs_tmp %= #k cs_tmp\n$execute if score #m cs_tmp matches 0 unless score #p$(id) {off} matches 1 run function {NS}:{f} with storage {NS}:d cur")
+dng = "\n".join(f"$execute if score #p$(id) cs_age matches {a} unless score #p$(id) cs_nodng matches 1 run function {NS}:ev/dungeon with storage {NS}:d cur" for a in DUNGEON_AGES)   # cs_nodng: dungeons switched off (/island drops)
 fn("plot/tick", f"""
 # just emptied: stop loading it (and its Nether)
 $execute unless score #p$(id) cs_on matches 1.. run forceload remove $(x) $(z) $(x1) $(z1)
@@ -922,9 +926,9 @@ $execute unless score #p$(id) cs_on matches 1.. run return run scoreboard player
 $execute unless score #p$(id) cs_was matches 1.. run forceload add $(x) $(z) $(x1) $(z1)
 $scoreboard players set #p$(id) cs_was 1
 $scoreboard players add #p$(id) cs_age 1
-{every(ANIMAL_EVERY, "ev/animal")}
-{every(SUPPLY_EVERY, "ev/supply")}
-{every(METEOR_EVERY, "ev/meteor")}
+{every(ANIMAL_EVERY, "ev/animal", "cs_noanim")}
+{every(SUPPLY_EVERY, "ev/supply", "cs_nosup")}
+{every(METEOR_EVERY, "ev/meteor", "cs_nomet")}
 {dng}
 $execute if score #p$(id) cs_age matches {PORTAL_AGE} run function {NS}:ev/portal with storage {NS}:d cur
 function {NS}:plot/ntick with storage {NS}:d cur

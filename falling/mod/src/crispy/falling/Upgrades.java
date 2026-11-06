@@ -99,38 +99,71 @@ public final class Upgrades {
                     "Now: " + members(server, id) + "/" + COOP_CAP[uc] + " members"), (pl, c) -> buy(pl, "uc", COOP_COST, uc, () -> {}, "Co-op: " + COOP_CAP[Math.min(COOP_CAP.length - 1, uc + 1)] + " members"));
             m.put(16, card(Items.COBBLESTONE, "Ore generator", ug, GEN_COST, genLine(ug + 1),
                     "Now: " + (ug == 0 ? "plain cobblestone" : genLine(ug))), (pl, c) -> buy(pl, "ug", GEN_COST, ug, () -> {}, "Ore generator tier " + (ug + 1)));
-            boolean dng = dungeons(server, id);
-            m.put(4, Ui.item(dng ? Items.MOSSY_COBBLESTONE : Items.BARRIER, t("Falling dungeons: " + (dng ? "ON" : "OFF"), dng ? ChatFormatting.GREEN : ChatFormatting.RED, ChatFormatting.BOLD),
-                    List.of(t("Dungeons crash onto your island at 30,", ChatFormatting.GRAY), t("90 and 180 minutes of island play time.", ChatFormatting.GRAY),
-                            t("Turn them off to keep them off your builds.", ChatFormatting.GRAY), Component.empty(),
-                            t("Click to turn " + (dng ? "off" : "on"), ChatFormatting.YELLOW)), dng), (pl, c) -> { setDungeons(pl, !dungeons(server, id)); open(pl); });
+            long offCount = java.util.Arrays.stream(DROPS).filter(d -> !dropOn(server, id, d)).count();
+            m.put(4, Ui.item(Items.FEATHER, t("Sky drops", ChatFormatting.AQUA, ChatFormatting.BOLD),
+                    List.of(t("Choose what falls onto your island:", ChatFormatting.GRAY), t("animals, crates, meteors and dungeons.", ChatFormatting.GRAY), Component.empty(),
+                            t(offCount == 0 ? "All on" : offCount + " switched off", offCount == 0 ? ChatFormatting.GREEN : ChatFormatting.YELLOW), Component.empty(),
+                            t("Click to choose", ChatFormatting.YELLOW)), false), (pl, c) -> openDrops(pl));
             m.put(22, Ui.item(Items.GOLD_NUGGET, t("Purse: " + Economy.fmt(Economy.coins(server, p)) + " coins", ChatFormatting.GOLD),
                     List.of(t("Any island member can buy upgrades", ChatFormatting.DARK_GRAY)), false), null);
         });
     }
 
-    // ------------------------------------------------------------------ falling dungeons on/off (score #p<id> cs_nodng)
-    static boolean dungeons(MinecraftServer server, int id) {
-        var o = server.getScoreboard().getObjective("cs_nodng");
+    // ------------------------------------------------------------------ sky drops on/off (score #p<id> <objective> = 1: off)
+    /** key (for /island drops), name, objective the datapack checks, icon, what it is. */
+    record Drop(String key, String name, String obj, Item icon, String what) {}
+    static final Drop[] DROPS = {
+            new Drop("animals", "Animals", "cs_noanim", Items.WHEAT, "An animal floats down every 15 minutes"),
+            new Drop("crates", "Supply crates", "cs_nosup", Items.BARREL, "A crate of supplies every 25 minutes"),
+            new Drop("meteors", "Meteors", "cs_nomet", Items.MAGMA_BLOCK, "A meteor full of ore every 45 minutes"),
+            new Drop("dungeons", "Dungeons", "cs_nodng", Items.MOSSY_COBBLESTONE, "Dungeons crash in at 30, 90 and 180 minutes")};
+
+    static boolean dropOn(MinecraftServer server, int id, Drop d) {
+        var o = server.getScoreboard().getObjective(d.obj());
         if (o == null) return true;
         var info = server.getScoreboard().getPlayerScoreInfo(net.minecraft.world.scores.ScoreHolder.forNameOnly("#p" + id), o);
         return info == null || info.value() != 1;
     }
-    static void setDungeons(ServerPlayer p, boolean on) {
+    static void setDrop(ServerPlayer p, Drop d, boolean on) {
         MinecraftServer server = p.level().getServer();
         int id = SkyblockMod.plot(server, p);
         if (id <= 0) return;
-        run(server, "scoreboard objectives add cs_nodng dummy");
-        run(server, "scoreboard players set #p" + id + " cs_nodng " + (on ? 0 : 1));
-        run(server, "tellraw @a[scores={cs_plot=" + id + "}] [{\"selector\":\"" + p.getScoreboardName() + "\",\"color\":\"yellow\"},{\"text\":\" turned falling dungeons "
-                + (on ? "on" : "off") + " for your island.\",\"color\":\"" + (on ? "green" : "red") + "\"}]");
+        run(server, "scoreboard objectives add " + d.obj() + " dummy");
+        run(server, "scoreboard players set #p" + id + " " + d.obj() + " " + (on ? 0 : 1));
+        run(server, "tellraw @a[scores={cs_plot=" + id + "}] [{\"selector\":\"" + p.getScoreboardName() + "\",\"color\":\"yellow\"},{\"text\":\" turned falling "
+                + d.name().toLowerCase(java.util.Locale.ROOT) + " " + (on ? "on" : "off") + " for your island.\",\"color\":\"" + (on ? "green" : "red") + "\"}]");
     }
-    static int dungeonsCmd(net.minecraft.commands.CommandSourceStack src, Boolean on) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+
+    /** Sky drops: one switch per kind of falling gift. */
+    static void openDrops(ServerPlayer p) {
+        MinecraftServer server = p.level().getServer();
+        int id = SkyblockMod.plot(server, p);
+        if (id <= 0) return;
+        Ui.open(p, t("Sky drops", ChatFormatting.DARK_GRAY), 3, m -> {
+            int[] slots = {10, 12, 14, 16};
+            for (int i = 0; i < DROPS.length; i++) {
+                Drop d = DROPS[i];
+                boolean on = dropOn(server, id, d);
+                m.put(slots[i], Ui.item(on ? d.icon() : Items.BARRIER, t(d.name() + ": " + (on ? "ON" : "OFF"), on ? ChatFormatting.GREEN : ChatFormatting.RED, ChatFormatting.BOLD),
+                        List.of(t(d.what(), ChatFormatting.GRAY), t("of island play time.", ChatFormatting.GRAY), Component.empty(),
+                                t("Click to turn " + (on ? "off" : "on"), ChatFormatting.YELLOW)), on),
+                        (pl, c) -> { setDrop(pl, d, !dropOn(server, id, d)); openDrops(pl); });
+            }
+            m.put(22, Ui.item(Items.ARROW, t("Back", ChatFormatting.GRAY), List.of(t("Any island member can change these", ChatFormatting.DARK_GRAY)), false), (pl, c) -> open(pl));
+        });
+    }
+
+    /** /island drops [animals|crates|meteors|dungeons] [on|off] */
+    static int dropsCmd(net.minecraft.commands.CommandSourceStack src, String key, Boolean on) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer p = src.getPlayerOrException();
         int id = SkyblockMod.plot(src.getServer(), p);
         if (id <= 0) { src.sendFailure(Component.literal("You need an island first.")); return 0; }
-        if (on == null) { p.sendSystemMessage(t("Falling dungeons are " + (dungeons(src.getServer(), id) ? "ON" : "OFF") + " for your island. /island dungeons on|off", ChatFormatting.YELLOW)); return 1; }
-        setDungeons(p, on);
+        if (key == null) { openDrops(p); return 1; }
+        Drop d = java.util.Arrays.stream(DROPS).filter(x -> x.key().equals(key)).findFirst().orElse(null);
+        if (d == null) { src.sendFailure(Component.literal("Unknown drop. Try animals, crates, meteors or dungeons.")); return 0; }
+        if (on == null) { p.sendSystemMessage(t("Falling " + d.name().toLowerCase(java.util.Locale.ROOT) + " are " + (dropOn(src.getServer(), id, d) ? "ON" : "OFF")
+                + " for your island. /island drops " + d.key() + " on|off", ChatFormatting.YELLOW)); return 1; }
+        setDrop(p, d, on);
         return 1;
     }
 

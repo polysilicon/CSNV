@@ -205,7 +205,7 @@ final class Guide {
     static final List<Topic> TOPICS = List.of(
             new Topic("Getting started", Items.OAK_SAPLING, "Your first hour on Skyblock", List.of(
                     pg("Your island", "Press Esc and open the Island Menu, or type /island. The first time, pick one of seven starter islands. Each has a chest of supplies and its own biome."),
-                    pg("Gifts from the sky", "While you play, the sky drops things near your island: an animal every 15 min, a supply crate every 25, a meteor full of ore every 45, dungeons at 30, 90 and 180 min (turn them off with /island dungeons off), and an End portal at 150 min."),
+                    pg("Gifts from the sky", "While you play, the sky drops things near your island: an animal every 15 min, a supply crate every 25, a meteor full of ore every 45, dungeons at 30, 90 and 180 min, and an End portal at 150 min. Choose which ones fall with /island drops."),
                     pg("Coins", "Sell crops, ores, wood and mob drops to the merchants in the hub, or to other players on the Bazaar. Coins buy upgrades, pets, plots and supplies."),
                     pg("Don't fall!", "The void is below every island. Build carefully and keep a few blocks spare. If you fall in the hub you're caught and sent back to spawn."),
                     pg("Next steps", "Hand in challenges for rewards, craft minions to gather while you're away, level up your skills and climb the island leaderboard with /island level."))),
