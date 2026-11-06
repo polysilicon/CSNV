@@ -205,7 +205,7 @@ cosmetics:
     r_untouchable: {display: "&#FFFFFF&l[&#FFECEF&lU&#FFD8E0&ln&#FFC5D0&lt&#FFB2C1&lo&#FF9EB1&lu&#FF8BA2&lc&#FF7892&lh&#FF6482&la&#FF5173&lb&#FF3E63&ll&#FF2A54&le&#FF1744&l]", icon: GOLDEN_APPLE, score: pvp.best, min: 15, note: "Get a 15-kill streak in PvP (record: 8)", rare: true}
     r_gladiator: {display: "&#FFC107&l[&#F8B009&lG&#F1A00B&ll&#E9900D&la&#E27F0F&ld&#DB6E12&li&#D45E14&la&#CD4E16&lt&#C53D18&lo&#BE2C1A&lr&#B71C1C&l]", icon: IRON_SWORD, score: pvp.dwin, min: 50, note: "Win 50 duels", rare: true}
     r_grandmaster: {display: "&#FFF59D&l[&#FFED90&lG&#FFE483&lr&#FFDC76&la&#FFD469&ln&#FFCB5C&ld&#FFC34E&lm&#FFBB41&la&#FFB234&ls&#FFAA27&lt&#FFA21A&le&#FF990D&lr&#FF9100&l]", icon: NETHER_STAR, score: pvp.mastered, min: 10, note: "Master 10 Multiverse characters", rare: true}
-    r_skygod: {display: "&#FFFFFF&l[&#E7F8FF&lS&#CFF0FF&lk&#B7E9FF&ly&#A0E2FF&l &#88DAFF&lG&#70D3FF&lo&#58CBFF&ld&#40C4FF&l]", icon: BEACON, score: sb.island_lvl, min: 100, rare: true}
+    r_skylord: {display: "&#FFFFFF&l[&#EAF8FF&lS&#D5F2FF&lk&#BFEBFF&ly&#AAE5FF&l &#95DEFF&lL&#80D8FF&lo&#6AD1FF&lr&#55CBFF&ld&#40C4FF&l]", icon: BEACON, score: sb.island_lvl, min: 100, rare: true}
     r_maxed: {display: "&#FF6F00&l[&#FF7900&lM&#FF8400&la&#FF8E00&lx&#FF9800&le&#FFA200&ld&#FFAD00&l &#FFB700&lO&#FFC100&lu&#FFCC00&lt&#FFD600&l]", icon: ENCHANTED_GOLDEN_APPLE, score: sb.skills_min, min: 62500, rare: true}
     # ---- end of rare
   # "joined-before" tags: a player qualifies if the earliest date found here (relative to network-stats.instances-dir)
