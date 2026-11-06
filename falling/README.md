@@ -275,3 +275,7 @@ sender; an accepted teleport waits 3 s and is cancelled if the traveller moves. 
 only members (`cs_plot` = the island id from the grid) and staff in creative can break, place, use blocks, buckets or
 entities there; visitors can only look. Ops: `/island tp <player|id>` goes to anyone's island, online or not (2.13.1),
 without changing gamemode; tab-completes everyone who has an island.
+
+**Resource zones** (2.14.0): PvP is off in the zones (`HubPlots.noPvp`), and new drops there (mined, chopped, zone-mob
+loot, Skills double drops) go straight into the nearest player in the zone within 8 blocks (`ZoneRules.onTick`),
+still marked gathered; a full inventory leaves the rest on the floor. Thrown items and death drops stay on the ground.

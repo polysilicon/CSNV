@@ -37,6 +37,8 @@ import static crispy.falling.Ui.t;
  *   and pays 2 coins per level to the killer. They don't burn in daylight (MobMixin).
  * - Items that drop in a zone (from mined blocks or mobs, not ones a player threw) are marked "gathered"
  *   (custom_data cs_gathered + a lore line). The mark comes off once you leave the zone, so they stack normally again.
+ * - New drops there go straight into the nearest player's inventory (within 8 blocks; the floor if it's full).
+ *   Death drops and thrown items stay on the ground. PvP is off in the zones (HubPlots.noPvp).
  * - Dying in a zone drops only gathered items: everything else, and your XP, is put aside (storage
  *   crispy_skyblock:stash, so it survives a restart) and handed back when you respawn.
  */
@@ -80,9 +82,27 @@ public final class ZoneRules {
             List<ServerPlayer> here = new ArrayList<>();
             for (ServerPlayer p : server.getPlayerList().getPlayers()) if (p.level() == ow && z.contains(p.blockPosition())) here.add(p);
             if (here.isEmpty()) continue;
-            // mark fresh drops (block drops can't be picked up for 10 ticks, so every tick is in time)
-            for (ItemEntity ie : ow.getEntitiesOfClass(ItemEntity.class, box, ie -> !(ie.getOwner() instanceof Player) && !gathered(ie.getItem())))
-                ie.setItem(mark(ie.getItem().copy()));
+            // mark fresh drops (block drops can't be picked up for 10 ticks, so every tick is in time), and hand
+            // brand-new ones (mined, chopped, mob loot) straight to the nearest player in the zone: no items on the floor
+            for (ItemEntity ie : ow.getEntitiesOfClass(ItemEntity.class, box, ie -> !(ie.getOwner() instanceof Player))) {
+                if (!gathered(ie.getItem())) ie.setItem(mark(ie.getItem().copy()));
+                if (ie.tickCount > 2 || nearDeath(ie)) continue;
+                ServerPlayer to = null;
+                double best = AUTO_PICKUP * AUTO_PICKUP;
+                for (ServerPlayer p : here) {
+                    double d = p.distanceToSqr(ie);
+                    if (d < best && p.isAlive() && !p.isSpectator()) { best = d; to = p; }
+                }
+                if (to == null) continue;
+                ItemStack st = ie.getItem().copy();
+                int before = st.getCount();
+                to.getInventory().add(st);
+                if (st.getCount() == before) continue;   // full: leave it on the ground
+                to.take(ie, before - st.getCount());
+                if (st.isEmpty()) ie.discard(); else ie.setItem(st);
+                ow.playSound(null, to.getX(), to.getY(), to.getZ(), net.minecraft.sounds.SoundEvents.ITEM_PICKUP, net.minecraft.sounds.SoundSource.PLAYERS, 0.2f,
+                        1.4f + ow.getRandom().nextFloat() * 0.4f);
+            }
             if (tick % 5 == 0) {
                 for (Mob m : ow.getEntitiesOfClass(Mob.class, box, ZoneRules::isZoneMob)) levelUp(m, z);
                 for (Mob m : ow.getEntitiesOfClass(Mob.class, box, ZoneRules::outsider)) m.discard();   // anything that slipped in
@@ -175,7 +195,19 @@ public final class ZoneRules {
 
     // ------------------------------------------------------------------ dying in a zone
     /** ServerPlayerMixin, before the death drops: keep everything that wasn't gathered here. */
+    static final double AUTO_PICKUP = 8;
+    /** Where players died in a zone this tick: their death drops stay on the ground (not handed to whoever's near). */
+    private static final List<net.minecraft.world.phys.Vec3> deaths = new ArrayList<>();
+    private static long deathTick;
+    static boolean nearDeath(ItemEntity ie) {
+        if (deathTick < tick - 3) { deaths.clear(); return false; }
+        for (var v : deaths) if (ie.position().distanceToSqr(v) < 9) return true;
+        return false;
+    }
+
     public static void onPlayerDeath(ServerPlayer p) {
+        if (deathTick < tick - 3) deaths.clear();
+        deaths.add(p.position()); deathTick = tick;
         if (Zones.at(p.level(), p.blockPosition()) == null || ((ServerLevel) p.level()).getGameRules().get(net.minecraft.world.level.gamerules.GameRules.KEEP_INVENTORY)) return;
         MinecraftServer server = p.level().getServer();
         RegistryOps<Tag> ops = server.registryAccess().createSerializationContext(NbtOps.INSTANCE);

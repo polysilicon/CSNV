@@ -95,8 +95,10 @@ final class HubPlots {
         return Math.abs(p.getBlockX()) <= Sidebar.HUB && Math.abs(p.getBlockZ()) <= Sidebar.HUB || inDistrict(p.level(), p.blockPosition());
     }
     public static boolean noPvp(Player victim, Player attacker) {
-        if (!inHub(victim) && !inHub(attacker)) return false;
-        if (attacker instanceof ServerPlayer sp && sp != victim) sp.sendOverlayMessage(t("PvP is off in the hub.", ChatFormatting.RED));
+        boolean hub = inHub(victim) || inHub(attacker);
+        boolean zone = Zones.at(victim.level(), victim.blockPosition()) != null || Zones.at(attacker.level(), attacker.blockPosition()) != null;
+        if (!hub && !zone) return false;
+        if (attacker instanceof ServerPlayer sp && sp != victim) sp.sendOverlayMessage(t(hub ? "PvP is off in the hub." : "PvP is off in the resource zones.", ChatFormatting.RED));
         return true;
     }
     static long price(MinecraftServer server) { return Economy.cfg(server).getLongOr("hubplot_price", 20_000); }
