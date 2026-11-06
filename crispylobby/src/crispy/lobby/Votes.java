@@ -609,43 +609,40 @@ public class Votes implements Listener {
     final Map<UUID, Integer> pageOf = new HashMap<>();
     final Map<UUID, String> lastKind = new HashMap<>();
 
-    /** Cosmetics hub: what you're wearing on top, the vote-point shop in the middle row, earned cosmetics by where you
-     *  earn them below, My cosmetics under that. */
+    static final String[][] CATS = {{"tag", "Tags"}, {"color", "Name colours"}, {"chat", "Chat colours"}};
+    /** Cosmetics hub: what you're wearing (and Special, for staff-given tags) on top, then the three kinds of
+     *  cosmetic. Each opens its own page of sources: the shop, achievements, Multiverse, Skyblock, events. */
     void openCosmetics(Viewer p) {
         PD pd = pd(p.getName());
         UUID u = p.getUniqueId();
         lastKind.put(u, "cosmetics"); filterOf.remove(u);
-        Menu m = menu("cosmetics", 5, "&b&lCosmetics");
+        Menu m = menu("cosmetics", 4, "&b&lCosmetics");
+        put(m, 4, wearing(p, pd), null);
+        Set<String> have = new HashSet<>(owned(p, pd));
+        if (group("special").stream().anyMatch(have::contains))
+            put(m, 8, item(Material.SPYGLASS, "&d&lSpecial", List.of("&7Tags given to you by staff.", "", "&eClick to open"), false), "special");
+        put(m, 11, hub(Material.NAME_TAG, "&f&lTags", "Shown with your name in chat, tab", "and above your head, everywhere.", have, catKeys("tag")), "cat:tag");
+        put(m, 13, hub(Material.ORANGE_DYE, "&f&lName colours", "Your name in colour in chat", "on every server.", have, catKeys("color")), "cat:color");
+        put(m, 15, hub(Material.WRITABLE_BOOK, "&f&lChat colours", "Your messages in colour", "on every server.", have, catKeys("chat")), "cat:chat");
+        put(m, 22, item(Material.ENDER_CHEST, "&d&lMy cosmetics", List.of("&7Everything you've unlocked.", "", "&7Unlocked: &f" + have.size(), "", "&eClick to open"), false), "owned");
+        put(m, 27, item(Material.ARROW, "&7Back to vote rewards", List.of(), false), "back");
+        put(m, 31, pointsItem(pd), null);
+        if (pd.tag != null || pd.color != null || pd.chat != null)
+            put(m, 35, item(Material.BARRIER, "&cTake everything off", List.of("&7Tag, name colour and chat colour"), false), "off:all");
+        p.openInventory(m.inv);
+    }
+
+    ItemStack wearing(Viewer p, PD pd) {
         Tag tg = pd.tag == null ? null : tags.get(pd.tag);
         NameColor nc = pd.color == null ? null : colors.get(pd.color);
         NameColor cc = pd.chat == null ? null : chatColors.get(pd.chat);
         String name = nc == null ? "&f" + p.getName() : colored(p.getName(), nc.code());
         String said = cc == null ? "&fhey everyone" : colored("hey everyone", cc.code());
-        put(m, 4, item(tg == null || tg.head() != null ? Material.NAME_TAG : tg.icon(), "&f&lYou look like this", List.of(
+        return item(tg == null || tg.head() != null ? Material.NAME_TAG : tg.icon(), "&f&lYou look like this", List.of(
                 "&f<" + (tg == null ? "" : tg.display() + " ") + name + "&f> " + said, "",
                 "&7Tag: " + (tg == null ? "&8none" : tg.display()),
                 "&7Name colour: " + (nc == null ? "&8none" : colored(nc.name(), nc.code())),
-                "&7Chat colour: " + (cc == null ? "&8none" : colored(cc.name(), cc.code()))), tg != null || nc != null || cc != null), null);
-        Set<String> have = new HashSet<>(owned(p, pd));
-        // the shop: bought with vote points
-        put(m, 11, hub(Material.NAME_TAG, "&f&lTags", "Shown with your name in chat, tab", "and above your head, everywhere.", have, group("tags")), "tags");
-        put(m, 13, hub(Material.ORANGE_DYE, "&f&lName colours", "Your name in colour in chat", "on every server.", have, group("colors")), "colors");
-        put(m, 15, hub(Material.WRITABLE_BOOK, "&f&lChat colours", "Your messages in colour", "on every server.", have, group("chatcolors")), "chatcolors");
-        // earned: by where you earn them
-        put(m, 19, hub(Material.EXPERIENCE_BOTTLE, "&6&lAchievements", "Advancements, milestones and", "topping a leaderboard (/stats).", have, group("etags")), "etags");
-        put(m, 21, hub(Material.NETHER_STAR, "&e&lMultiverse", "Master a character in the", "Multiverse to get its tag.", have, group("mtags")), "mtags");
-        if (!group("skyblock").isEmpty())
-            put(m, 23, hub(Material.OAK_SAPLING, "&a&lSkyblock", "Skyblock advancements, skill", "levels and your island's level.", have, group("skyblock")), "skyblock");
-        if (!group("event").isEmpty())
-            put(m, 25, hub(Material.JACK_O_LANTERN, "&6&lEvents", "Halloween: survive Haunted Night", "in the Multiverse.", have, group("event")), "event");
-        if (group("special").stream().anyMatch(have::contains))
-            put(m, 8, item(Material.SPYGLASS, "&d&lSpecial", List.of("&7Tags given to you by staff.", "", "&eClick to open"), false), "special");
-        put(m, 31, item(Material.ENDER_CHEST, "&d&lMy cosmetics", List.of("&7Everything you've unlocked", "&7in one place.", "", "&7Unlocked: &f" + have.size(), "", "&eClick to open"), false), "owned");
-        put(m, 36, item(Material.ARROW, "&7Back to vote rewards", List.of(), false), "back");
-        put(m, 40, pointsItem(pd), null);
-        if (pd.tag != null || pd.color != null || pd.chat != null)
-            put(m, 44, item(Material.BARRIER, "&cTake everything off", List.of("&7Tag, name colour and chat colour"), false), "off:all");
-        p.openInventory(m.inv);
+                "&7Chat colour: " + (cc == null ? "&8none" : colored(cc.name(), cc.code()))), tg != null || nc != null || cc != null);
     }
 
     ItemStack hub(Material icon, String title, String l1, String l2, Set<String> have, List<String> keys) {
@@ -653,22 +650,79 @@ public class Votes implements Listener {
         return item(icon, title, List.of("&7" + l1, "&7" + l2, "", "&7Unlocked: &f" + n + "&7/" + keys.size(), "", "&eClick to open"), false);
     }
 
-    /** Keys ("tag:x", "color:x", "chat:x") in one hub group: tags, colors, chatcolors (the shops), etags, mtags,
-     *  skyblock, event, special. */
+    /** The sources inside one kind (tag, color, chat): {page kind, icon, title, line 1, line 2}; empty ones are hidden. */
+    List<String[]> sources(String type) {
+        List<String[]> out = new ArrayList<>();
+        if (type.equals("tag")) {
+            out.add(new String[]{"tags", "NAME_TAG", "&f&lShop", "Buy tags with", "vote points."});
+            out.add(new String[]{"etags", "EXPERIENCE_BOTTLE", "&6&lAchievements", "Advancements, milestones and", "topping a leaderboard (/stats)."});
+            out.add(new String[]{"mtags", "NETHER_STAR", "&e&lMultiverse", "Master a Multiverse character", "to get its tag."});
+        } else out.add(new String[]{type.equals("color") ? "colors:classic" : "chatcolors:classic", "EMERALD", "&f&lShop", "Buy them with", "vote points."});
+        out.add(new String[]{"skyblock:" + type, "OAK_SAPLING", "&a&lSkyblock", "Skyblock advancements, skill", "levels and your island level."});
+        out.add(new String[]{"event:" + type, "JACK_O_LANTERN", "&6&lEvents", "Halloween: survive Haunted", "Night in the Multiverse."});
+        out.removeIf(s -> group(s[0]).isEmpty());
+        return out;
+    }
+    List<String> catKeys(String type) {
+        List<String> out = new ArrayList<>();
+        for (String[] s : sources(type)) out.addAll(group(s[0]));
+        return out;
+    }
+
+    /** One kind of cosmetic: a button per source, centred on the middle row. */
+    void openCategory(Viewer p, String type) {
+        PD pd = pd(p.getName());
+        UUID u = p.getUniqueId();
+        lastKind.put(u, "cat:" + type); filterOf.remove(u);
+        String title = type.equals("tag") ? "&f&lTags" : type.equals("color") ? "&f&lName colours" : "&f&lChat colours";
+        Menu m = menu("cat:" + type, 4, title);
+        put(m, 4, wearing(p, pd), null);
+        Set<String> have = new HashSet<>(owned(p, pd));
+        List<String[]> src = sources(type);
+        int[][] layouts = {{13}, {12, 14}, {11, 13, 15}, {10, 12, 14, 16}, {11, 12, 13, 14, 15}};
+        int[] slots = layouts[Math.max(0, Math.min(src.size(), 5) - 1)];
+        for (int i = 0; i < src.size() && i < slots.length; i++) {
+            String[] s = src.get(i);
+            List<String> keys = group(s[0]);
+            long n = keys.stream().filter(have::contains).count();
+            List<String> lore = new ArrayList<>();
+            lore.add("&7" + s[3]); lore.add("&7" + s[4]);
+            lore.add(""); lore.add("&7Unlocked: &f" + n + "&7/" + keys.size()); lore.add(""); lore.add("&eClick to open");
+            put(m, slots[i], item(Material.valueOf(s[1]), s[2], lore, false), s[0]);
+        }
+        String on = type.equals("tag") ? pd.tag : type.equals("color") ? pd.color : pd.chat;
+        if (on != null) put(m, 35, takeOff(type.equals("tag") ? "tag" : type.equals("color") ? "name colour" : "chat colour"), "off:" + type);
+        put(m, 27, item(Material.ARROW, "&7Back", List.of(), false), "cosmetics");
+        put(m, 31, pointsItem(pd), null);
+        p.openInventory(m.inv);
+    }
+
+    /** Keys ("tag:x", "color:x", "chat:x") in one list: tags (shop), etags, mtags, special, colors:<page> /
+     *  chatcolors:<page> (shops), and <skyblock|event>:<tag|color|chat>. */
     List<String> group(String g) {
         List<String> out = new ArrayList<>();
-        switch (g) {
-            case "colors" -> colors.values().stream().filter(c -> !c.earned()).forEach(c -> out.add("color:" + c.id()));
-            case "chatcolors" -> chatColors.values().stream().filter(c -> !c.earned()).forEach(c -> out.add("chat:" + c.id()));
+        int c = g.indexOf(':');
+        String head = c < 0 ? g : g.substring(0, c), tail = c < 0 ? "" : g.substring(c + 1);
+        switch (head) {
+            case "colors" -> colors.values().stream().filter(x -> !x.earned() && (tail.isEmpty() || ColorCodes.page(x.code()).equals(tail))).forEach(x -> out.add("color:" + x.id()));
+            case "chatcolors" -> chatColors.values().stream().filter(x -> !x.earned() && (tail.isEmpty() || ColorCodes.page(x.code()).equals(tail))).forEach(x -> out.add("chat:" + x.id()));
             case "skyblock", "event" -> {
-                boolean sky = g.equals("skyblock");
-                tags.values().stream().filter(t -> t.page().equals(g)).forEach(t -> out.add("tag:" + t.id()));
-                colors.values().stream().filter(c -> sky ? c.skyblock() : c.event()).forEach(c -> out.add("color:" + c.id()));
-                chatColors.values().stream().filter(c -> sky ? c.skyblock() : c.event()).forEach(c -> out.add("chat:" + c.id()));
+                boolean sky = head.equals("skyblock");
+                if (tail.isEmpty() || tail.equals("tag")) tags.values().stream().filter(t -> t.page().equals(head)).forEach(t -> out.add("tag:" + t.id()));
+                if (tail.isEmpty() || tail.equals("color")) colors.values().stream().filter(x -> sky ? x.skyblock() : x.event()).forEach(x -> out.add("color:" + x.id()));
+                if (tail.isEmpty() || tail.equals("chat")) chatColors.values().stream().filter(x -> sky ? x.skyblock() : x.event()).forEach(x -> out.add("chat:" + x.id()));
             }
-            default -> tags.values().stream().filter(t -> t.page().equals(g)).forEach(t -> out.add("tag:" + t.id()));
+            default -> tags.values().stream().filter(t -> t.page().equals(head)).forEach(t -> out.add("tag:" + t.id()));
         }
         return out;
+    }
+    /** Where Back goes from a list page. */
+    static String backOf(String kind) {
+        if (kind.equals("tags") || kind.equals("etags") || kind.equals("mtags")) return "cat:tag";
+        if (kind.startsWith("colors:")) return "cat:color";
+        if (kind.startsWith("chatcolors:")) return "cat:chat";
+        if (kind.startsWith("skyblock:") || kind.startsWith("event:")) return "cat:" + kind.substring(kind.indexOf(':') + 1);
+        return "cosmetics";
     }
 
     /** One list page: header at slot 4, entries 28 a page sorted wearing → owned → can get → locked (config order
@@ -696,7 +750,7 @@ public class Votes implements Listener {
         for (String x : FILTERS) fl.add((x.equals(f) ? "&a» " : "&8  ") + FILTER_LABEL.get(x));
         fl.add(""); fl.add("&eClick to change");
         put(m, 47, item(Material.HOPPER, "&e&lShow: &f" + FILTER_LABEL.get(f), fl, false), "filter");
-        put(m, 49, item(Material.ARROW, "&7Back", List.of(), false), "cosmetics");
+        put(m, 49, item(Material.ARROW, "&7Back", List.of(), false), backOf(kind));
         put(m, 51, pointsItem(pd), null);
         if (extra != null) extra.accept(m);
         p.openInventory(m.inv);
@@ -792,9 +846,9 @@ public class Votes implements Listener {
         });
     }
 
-    /** Tags and colours of one earned group (skyblock or event) on one page. */
+    /** One earned source for one kind: skyblock:<type> or event:<type>. */
     List<Entry> groupEntries(Viewer p, PD pd, String g) {
-        Set<String> advs = g.equals("skyblock") ? advancements(p) : Set.of();
+        Set<String> advs = g.startsWith("skyblock") ? advancements(p) : Set.of();
         List<Entry> es = new ArrayList<>();
         for (String k : group(g)) es.add(entry(p, pd, k, advs));
         return es;
@@ -808,20 +862,26 @@ public class Votes implements Listener {
     void wearingOff(Menu m, PD pd) {
         if (pd.tag != null || pd.color != null || pd.chat != null) put(m, 46, item(Material.BARRIER, "&cTake everything off", List.of(), false), "off:all");
     }
+    static String typeWord(String type) { return type.equals("tag") ? "tags" : type.equals("color") ? "name colours" : "chat colours"; }
+    void offFor(Menu m, PD pd, String type) {
+        String on = type.equals("tag") ? pd.tag : type.equals("color") ? pd.color : pd.chat;
+        if (on != null) put(m, 46, takeOff(type.equals("tag") ? "tag" : type.equals("color") ? "name colour" : "chat colour"), "off:" + type);
+    }
 
-    void openSkyblock(Viewer p) {
+    void openSkyblock(Viewer p, String type) {
         PD pd = pd(p.getName());
-        listPage(p, "skyblock", "&a&lSkyblock", item(Material.OAK_SAPLING, "&a&lSkyblock cosmetics", List.of("&7Earned on &bCrispy Skyblock&7: advancements,",
+        listPage(p, "skyblock:" + type, "&a&lSkyblock " + typeWord(type), item(Material.OAK_SAPLING, "&a&lSkyblock " + typeWord(type), List.of("&7Earned on &bCrispy Skyblock&7: advancements,",
                 "&7skill levels (/skills) and your island's", "&7level (/island level).", "", "&8Yours to keep. Progress shows up here", "&8within a few minutes."), false),
-                groupEntries(p, pd, "skyblock"), m -> wearingOff(m, pd));
+                groupEntries(p, pd, "skyblock:" + type), m -> offFor(m, pd, type));
     }
 
-    void openEvent(Viewer p) {
+    void openEvent(Viewer p, String type) {
         PD pd = pd(p.getName());
-        listPage(p, "event", "&6&lEvents &8- &7Halloween", item(Material.JACK_O_LANTERN, "&6&lHalloween", List.of("&7Survive &6Haunted Night &7in the Multiverse:",
-                "&7every completed run unlocks one of these", "&7at random (one you don't have yet).", "", "&8Event cosmetics are yours to keep."), false),
-                groupEntries(p, pd, "event"), m -> wearingOff(m, pd));
+        listPage(p, "event:" + type, "&6&lHalloween " + typeWord(type), item(Material.JACK_O_LANTERN, "&6&lHalloween", List.of("&7Survive &6Haunted Night &7in the Multiverse:",
+                "&7every completed run unlocks one Halloween", "&7cosmetic at random (one you don't have yet).", "", "&8Event cosmetics are yours to keep."), false),
+                groupEntries(p, pd, "event:" + type), m -> offFor(m, pd, type));
     }
+
 
     /** Special: the staff-given (/vote grant) tags this player has. Not in the shop; only reachable from the hub's
      *  Special button, shown to players who own one. */
@@ -848,14 +908,17 @@ public class Votes implements Listener {
         switch (kind) {
             case "cosmetics" -> openCosmetics(p);
             case "tags", "etags", "mtags" -> openTags(p, kind);
-            case "event" -> openEvent(p);
-            case "skyblock" -> openSkyblock(p);
+            case "event" -> openEvent(p, "tag");
+            case "skyblock" -> openSkyblock(p, "tag");
             case "special" -> openSpecial(p);
             case "owned" -> openOwned(p);
             case "colors" -> openColorMenu(p, false, "classic");
             case "chatcolors" -> openColorMenu(p, true, "classic");
             default -> {
-                if (kind.startsWith("colors:")) openColorMenu(p, false, kind.substring(7));
+                if (kind.startsWith("cat:")) openCategory(p, kind.substring(4));
+                else if (kind.startsWith("skyblock:")) openSkyblock(p, kind.substring(9));
+                else if (kind.startsWith("event:")) openEvent(p, kind.substring(6));
+                else if (kind.startsWith("colors:")) openColorMenu(p, false, kind.substring(7));
                 else if (kind.startsWith("chatcolors:")) openColorMenu(p, true, kind.substring(11));
             }
         }

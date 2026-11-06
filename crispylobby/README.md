@@ -162,3 +162,9 @@ datapack was removed from every server.
 - Every list page shares one layout (`listPage`): header at slot 4, 28 items a page sorted wearing → owned → can get
   now → locked, a filter (All / Owned / Not owned yet), arrows, take-off, back and points. Colour shops have
   Classic / Fades / Flags tabs on the top row. Pages and filters are per viewer and reset when you go back to the hub.
+
+## Cosmetics menu (1.20.0)
+The hub is only "You look like this" (and Special, top right, for owners of a staff-given tag), then Tags, Name
+colours and Chat colours, plus My cosmetics. Each kind opens its own page of sources (`sources()`): Tags = Shop,
+Achievements, Multiverse, Skyblock, Events; colours = Shop, Skyblock, Events. Empty sources are hidden. List pages go
+Back to their kind's page (`backOf`).
