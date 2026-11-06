@@ -928,7 +928,7 @@ $scoreboard players add #p$(id) cs_age 1
 $execute if score #p$(id) cs_age matches {PORTAL_AGE} run function {NS}:ev/portal with storage {NS}:d cur
 function {NS}:plot/ntick with storage {NS}:d cur
 $execute unless data storage {NS}:d plots[$(id)].portal run function {NS}:portal/retro with storage {NS}:d cur
-$execute if data storage {NS}:d plots[$(id)]{{portal:1b}} run function {NS}:portal/restyle with storage {NS}:d cur
+execute if data storage {NS}:d cur{{portal:1b}} run function {NS}:portal/restyle with storage {NS}:d cur
 $execute if score #p$(id) cs_bce matches 1.. run scoreboard players remove #p$(id) cs_bce 1
 $execute if score #p$(id) cs_bcn matches 1.. run scoreboard players remove #p$(id) cs_bcn 1
 $execute positioned $(cx) {ISLAND_Y} $(cz) positioned ~ ~ ~{PORTAL_DZ} run function {NS}:portal/fx_island
