@@ -452,47 +452,6 @@ public class Votes implements Listener {
                 List.of("&7You get &d" + pointsPerVote + " &7per vote. &f/vote &7for the links."), false);
     }
 
-    /** Cosmetics hub: one button each for tags, name colours and chat colours. */
-    void openCosmetics(Viewer p) {
-        PD pd = pd(p.getName());
-        Menu m = menu("cosmetics", 4, "&b&lCosmetics");
-        Tag tg = pd.tag == null ? null : tags.get(pd.tag);
-        NameColor nc = pd.color == null ? null : colors.get(pd.color);
-        long ownTags = tags.keySet().stream().filter(k -> pd.owned.contains("tag:" + k)).count();
-        long ownColors = colors.keySet().stream().filter(k -> pd.owned.contains("color:" + k)).count();
-        NameColor cc = pd.chat == null ? null : chatColors.get(pd.chat);
-        long ownChat = chatColors.keySet().stream().filter(k -> pd.owned.contains("chat:" + k)).count();
-        put(m, 10, item(tg == null ? Material.NAME_TAG : tg.icon(), "&f&lTags", List.of("&7Shown with your name in chat, the tab", "&7list and above your head, everywhere.", "",
-                "&7Wearing: " + (tg == null ? "&8none" : tg.display()), "&7Owned: &f" + ownTags + "&7/" + tags.size(), "",
-                "&7Buy them with points, or &6earn &7them", "&7with advancements, top stats and", "&7mastering Multiverse characters.", "", "&eClick to browse"), tg != null), "tags");
-        put(m, 4, pointsItem(pd), null);
-        put(m, 16, item(cc == null ? Material.WRITABLE_BOOK : cc.icon(), "&f&lChat colours", List.of("&7Your chat messages in colour on", "&7every server.", "",
-                "&7Using: " + (cc == null ? "&8none" : colored(cc.name(), cc.code())), "&7Owned: &f" + ownChat + "&7/" + chatColors.size(), "", "&eClick to browse"), cc != null), "chatcolors");
-        put(m, 13, item(nc == null ? Material.WHITE_DYE : nc.icon(), "&f&lName colours", List.of("&7Your name in colour in chat on", "&7every server (and in cross-chat).", "",
-                "&7Using: " + (nc == null ? "&8none" : colored(nc.name(), nc.code())), "&7Owned: &f" + ownColors + "&7/" + colors.size(), "", "&eClick to browse"), nc != null), "colors");
-        int unlocked = owned(p, pd).size();
-        put(m, 22, item(Material.ENDER_CHEST, "&d&lMy cosmetics", List.of("&7Everything you've unlocked in one place:", "&7tags, name colours and chat colours.", "",
-                "&7Unlocked: &f" + unlocked, "", "&eClick to view"), false), "owned:0");
-        if (tags.values().stream().anyMatch(Tag::event)) {
-            long have = owned(p, pd).stream().filter(k -> { String id = k.substring(k.indexOf(':') + 1);
-                return k.startsWith("tag:") ? tags.get(id).event() : (k.startsWith("chat:") ? chatColors : colors).get(id).event(); }).count();
-            long all = tags.values().stream().filter(Tag::event).count() + colors.values().stream().filter(NameColor::event).count()
-                    + chatColors.values().stream().filter(NameColor::event).count();
-            put(m, 24, item(Material.JACK_O_LANTERN, "&6&lHalloween", List.of("&7Event cosmetics from &6Haunted Night", "&7in the Multiverse.", "",
-                    "&7Unlocked: &f" + have + "&7/" + all, "", "&eClick to browse"), false), "event");
-        }
-        if (tags.values().stream().anyMatch(Tag::skyblock) || colors.values().stream().anyMatch(NameColor::skyblock)) {
-            List<String> sky = skyblockKeys();
-            long have = owned(p, pd).stream().filter(sky::contains).count();
-            put(m, 20, item(Material.OAK_SAPLING, "&a&lSkyblock", List.of("&7Tags and colours you earn on", "&7Crispy Skyblock: advancements, skill", "&7levels and your island's level.", "",
-                    "&7Unlocked: &f" + have + "&7/" + sky.size(), "", "&eClick to browse"), false), "skyblock");
-        }
-        if (tags.values().stream().anyMatch(t -> t.granted() && pd.owned.contains("tag:" + t.id())))
-            put(m, 8, item(Material.SPYGLASS, "&d&lSpecial", List.of("&7Tags given to you by staff.", "", "&eClick to browse"), false), "special");
-        put(m, 31, item(Material.ARROW, "&7Back to vote rewards", List.of(), false), "back");
-        p.openInventory(m.inv);
-    }
-
     // ------------------------------------------------------------------ Skyblock and special (staff-given) cosmetics
     /** What a Skyblock score requirement means, for lore and messages. */
     static String skyNeed(String score, long min) {
@@ -515,64 +474,6 @@ public class Votes implements Listener {
         return out;
     }
 
-    /** Skyblock page: every Skyblock tag and colour, with what it takes; click an unlocked one to wear it. */
-    void openSkyblock(Viewer p) {
-        PD pd = pd(p.getName());
-        Menu m = menu("skyblock", 6, "&a&lSkyblock cosmetics");
-        put(m, 4, item(Material.OAK_SAPLING, "&a&lSkyblock cosmetics", List.of("&7Earned on &bCrispy Skyblock&7: its advancements,", "&7skill levels (/skills) and your island's", "&7level (/island level).", "",
-                "&8Yours to keep once unlocked. Progress", "&8shows up here within a few minutes."), false), null);
-        boolean loaded = plugin.stats.loaded();
-        Set<String> advs = advancements(p);
-        int i = 0;
-        for (Tag t : tags.values()) {
-            if (!t.skyblock() || i >= GRID.length) continue;
-            boolean on = t.id().equals(pd.tag);
-            String lock = lockReason(p, t, advs);
-            List<String> lore = new ArrayList<>(List.of("&8Tag", "&7Preview: &f<" + t.display() + " &f" + p.getName() + "> hi", ""));
-            lore.addAll(requirement(t).subList(0, 1));
-            lore.add(lock == null ? "&aRequirement met!" : lock);
-            lore.add("");
-            lore.add(on ? "&aWearing &7- click to take off" : lock == null ? (pd.owned.contains("tag:" + t.id()) ? "&eClick to wear" : "&eClick to claim") : "&cLocked");
-            put(m, GRID[i++], tagItem(t, lore, on), "tag:" + t.id());
-        }
-        for (boolean chat : new boolean[]{false, true})
-            for (NameColor c : (chat ? chatColors : colors).values()) {
-                if (!c.skyblock() || i >= GRID.length) continue;
-                boolean on = c.id().equals(chat ? pd.chat : pd.color), open = eventUnlocked(p, c);
-                String preview = chat ? "&f<" + p.getName() + "> " + colored("anyone got spare cobble?", c.code()) : "&f<" + colored(p.getName(), c.code()) + "&f> hi";
-                List<String> lore = new ArrayList<>(List.of(chat ? "&8Chat colour" : "&8Name colour", "&7Preview: " + preview, "", skyNeed(c.score(), c.min())));
-                lore.add(open ? "&aRequirement met!" : loaded ? "&cYou: &f" + skyHave(c.score(), plugin.stats.mastery(p.getName(), c.score())) : "&8Stats are loading");
-                lore.add("");
-                lore.add(on ? "&aUsing &7- click to take off" : open ? "&eClick to use" : "&cLocked");
-                put(m, GRID[i++], item(c.icon(), colored(c.name(), c.code()), lore, on), (chat ? "chat:" : "color:") + c.id());
-            }
-        if (pd.tag != null && tags.containsKey(pd.tag) && tags.get(pd.tag).skyblock()) put(m, 48, item(Material.BARRIER, "&cTake off your tag", List.of(), false), "off:tag");
-        put(m, 49, item(Material.ARROW, "&7Back", List.of(), false), "cosmetics");
-        put(m, 50, pointsItem(pd), null);
-        p.openInventory(m.inv);
-    }
-
-    /** Special page: the staff-given (/vote grant) tags this player has. Kept out of the tag shop and the hub. */
-    void openSpecial(Viewer p) {
-        PD pd = pd(p.getName());
-        Menu m = menu("special", 4, "&d&lSpecial tags");
-        int i = 0;
-        int[] grid = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25};
-        for (Tag t : tags.values()) {
-            if (!t.granted() || !pd.owned.contains("tag:" + t.id()) || i >= grid.length) continue;
-            boolean on = t.id().equals(pd.tag);
-            List<String> lore = new ArrayList<>(List.of("&7Preview: &f<" + t.display() + " &f" + p.getName() + "> hi"));
-            if (t.note() != null) lore.add("&8" + t.note());
-            lore.add("");
-            lore.add(on ? "&aWearing &7- click to take off" : "&eClick to wear");
-            put(m, grid[i++], tagItem(t, lore, on), "tag:" + t.id());
-        }
-        if (i == 0) put(m, 13, item(Material.GRAY_DYE, "&7No special tags", List.of("&7Staff give these out."), false), null);
-        if (pd.tag != null && tags.containsKey(pd.tag) && tags.get(pd.tag).granted()) put(m, 30, item(Material.BARRIER, "&cTake off your tag", List.of(), false), "off:tag");
-        put(m, 31, item(Material.ARROW, "&7Back", List.of(), false), "cosmetics");
-        p.openInventory(m.inv);
-    }
-
     /** Actions ("tag:x", "color:x", "chat:x") for every cosmetic the player can wear now: bought or claimed ones, and
      *  ranked tags while they hold the rank. Tags first, then name colours, then chat colours, in menu order. */
     List<String> owned(Viewer p, PD pd) {
@@ -589,80 +490,6 @@ public class Votes implements Listener {
         for (NameColor c : colors.values()) if (pd.owned.contains("color:" + c.id()) || eventUnlocked(p, c)) out.add("color:" + c.id());
         for (NameColor c : chatColors.values()) if (pd.owned.contains("chat:" + c.id()) || eventUnlocked(p, c)) out.add("chat:" + c.id());
         return out;
-    }
-
-    /** "My cosmetics": everything unlocked, 28 to a page; click one to wear it or take it off. */
-    void openOwned(Viewer p, int page) {
-        PD pd = pd(p.getName());
-        List<String> all = owned(p, pd);
-        int pages = Math.max(1, (all.size() + GRID.length - 1) / GRID.length);
-        page = Math.max(0, Math.min(page, pages - 1));
-        Menu m = menu("owned:" + page, 6, "&d&lMy cosmetics" + (pages > 1 ? " &8(" + (page + 1) + "/" + pages + ")" : ""));
-        for (int i = 0; i < GRID.length && page * GRID.length + i < all.size(); i++) {
-            String key = all.get(page * GRID.length + i), id = key.substring(key.indexOf(':') + 1);
-            if (key.startsWith("tag:")) {
-                Tag t = tags.get(id);
-                boolean on = id.equals(pd.tag);
-                put(m, GRID[i], tagItem(t, List.of("&8Tag", "&7Preview: &f<" + t.display() + " &f" + p.getName() + "> hi", "",
-                        on ? "&aWearing &7- click to take off" : "&eClick to wear"), on), key);
-            } else {
-                boolean chat = key.startsWith("chat:");
-                NameColor c = (chat ? chatColors : colors).get(id);
-                boolean on = id.equals(chat ? pd.chat : pd.color);
-                String preview = chat ? "&f<" + p.getName() + "> " + colored("hey, gg everyone", c.code()) : "&f<" + colored(p.getName(), c.code()) + "&f> hi";
-                put(m, GRID[i], item(c.icon(), colored(c.name(), c.code()), List.of(chat ? "&8Chat colour" : "&8Name colour", "&7Preview: " + preview, "",
-                        on ? "&aUsing &7- click to take off" : "&eClick to use"), on), key);
-            }
-        }
-        if (all.isEmpty()) put(m, 22, item(Material.GRAY_DYE, "&7Nothing unlocked yet", List.of("&7Buy tags and colours with vote points,", "&7or earn tags in game."), false), null);
-        if (page > 0) put(m, 45, item(Material.ARROW, "&7Previous page", List.of(), false), "owned:" + (page - 1));
-        if (page < pages - 1) put(m, 53, item(Material.ARROW, "&7Next page", List.of(), false), "owned:" + (page + 1));
-        put(m, 49, item(Material.ARROW, "&7Back", List.of(), false), "cosmetics");
-        put(m, 50, pointsItem(pd), null);
-        p.openInventory(m.inv);
-    }
-
-    void openTags(Viewer p) { openTags(p, "tags"); }
-    /** Tags, three pages: the shop (vote points, "tags"), earned tags (advancements, milestones, rankings, "etags") and
-     *  mastery tags (one per PvP character, "mtags", laid out like the PvP kit menu). */
-    void openTags(Viewer p, String page) {
-        PD pd = pd(p.getName());
-        boolean earned = !page.equals("tags"), mastery = page.equals("mtags");
-        Menu m = menu(page, 6, (mastery ? "&e&lMastery tags" : earned ? "&6&lEarned tags" : "&f&lTag shop") + " &8(&d" + pd.points + " points&8)");
-        Set<String> advs = earned && !mastery ? advancements(p) : Set.of();
-        int[] grid = mastery ? MGRID : GRID;
-        if (mastery) put(m, 4, item(Material.NETHER_STAR, "&e&lMastery tags", List.of("&7Master a character in the Multiverse", "&7(level V, &f" + String.format("%,d", MASTERY_XP) + " &7mastery XP)",
-                "&7to unlock its tag, worn on every server.", "", "&7+10 XP per PvP kill, +1 per Outbreak kill.", "&f/trigger pvp.mastery &7in the Multiverse shows yours."), false), null);
-        int i = 0;
-        for (Tag t : tags.values()) {
-            if (!t.page().equals(page) || i >= grid.length) continue;
-            if (t.granted() && !pd.owned.contains("tag:" + t.id())) continue;   // staff-given (/vote grant): not for sale
-            boolean own = pd.owned.contains("tag:" + t.id()), on = t.id().equals(pd.tag);
-            List<String> lore = new ArrayList<>(List.of("&7Preview: &f<" + t.display() + " &f" + p.getName() + "> hi"));
-            if (earned) {
-                lore.add("");
-                lore.addAll(requirement(t));
-                String lock = lockReason(p, t, advs);
-                lore.add(lock == null ? "&aRequirement met!" : lock);
-                lore.add("");
-                lore.add(on ? "&aWearing &7- click to take off" : lock == null ? (own || t.ranked() ? "&eClick to wear" : "&eClick to claim") : "&cLocked");
-            } else {
-                if (t.note() != null) lore.add("&8" + t.note());
-                if (t.joinedBefore() != null) lore.add(joinedBefore(p, t.joinedBefore()) ? "&6Exclusive: &7you joined before " + t.joinedBefore()
-                        : "&cOnly for players who joined before " + t.joinedBefore());
-                lore.add("");
-                lore.add(on ? "&aWearing &7- click to take off" : own ? "&eOwned &7- click to wear" : "&7Cost: &d" + t.cost() + " points");
-                if (!own && pd.points < t.cost()) lore.add("&cNot enough points");
-            }
-            put(m, grid[i++], tagItem(t, lore, on), "tag:" + t.id());
-        }
-        put(m, 46, item(Material.NAME_TAG, "&f&lTag shop", List.of("&7Tags bought with vote points"), page.equals("tags")), "tags");
-        put(m, 52, item(Material.EXPERIENCE_BOTTLE, "&6&lEarned tags", List.of("&7Unlocked by advancements, milestones", "&7and being top of a leaderboard"), page.equals("etags")), "etags");
-        put(m, 53, item(Material.NETHER_STAR, "&e&lMastery tags", List.of("&7One for every Multiverse character:", "&7master it to unlock its tag"), mastery), "mtags");
-        if (pd.tag != null) put(m, 48, item(Material.BARRIER, "&cTake off your tag", List.of(), false), "off:tag");
-        put(m, 49, item(Material.ARROW, "&7Back", List.of(), false), "cosmetics");
-        put(m, 50, pointsItem(pd), null);
-        p.openInventory(m.inv);
     }
 
     // ------------------------------------------------------------------ earned tags
@@ -763,59 +590,6 @@ public class Votes implements Listener {
     // ------------------------------------------------------------------ Halloween (event) cosmetics
     boolean eventUnlocked(Viewer p, NameColor c) { return c.earned() && plugin.stats.mastery(p.getName(), c.score()) >= Math.max(1, c.min()); }
 
-    /** The Halloween page: every event tag, name colour and chat colour, unlocked ones first-come wearable. */
-    void openEvent(Viewer p) {
-        PD pd = pd(p.getName());
-        Menu m = menu("event", 6, "&6&lHalloween &8- &7Haunted Night");
-        put(m, 4, item(Material.JACK_O_LANTERN, "&6&lHalloween cosmetics", List.of("&7Survive &6Haunted Night &7in the Multiverse:", "&7every completed run unlocks one of these",
-                "&7at random (one you don't have yet).", "", "&8Event cosmetics are yours to keep.", "&8New unlocks show up here within 5 minutes."), false), null);
-        int i = 0;
-        boolean loaded = plugin.stats.loaded();
-        for (Tag t : tags.values()) {
-            if (!t.event() || i >= GRID.length) continue;
-            boolean on = t.id().equals(pd.tag), open = loaded && lockReason(p, t, Set.of()) == null;
-            put(m, GRID[i++], tagItem(t, List.of("&8Tag", "&7Preview: &f<" + t.display() + " &f" + p.getName() + "> hi", "",
-                    on ? "&aWearing &7- click to take off" : open ? "&eClick to wear" : loaded ? "&cLocked" : "&8Stats are loading"), on), "tag:" + t.id());
-        }
-        for (boolean chat : new boolean[]{false, true})
-            for (NameColor c : (chat ? chatColors : colors).values()) {
-                if (!c.event() || i >= GRID.length) continue;
-                boolean on = c.id().equals(chat ? pd.chat : pd.color), open = eventUnlocked(p, c);
-                String preview = chat ? "&f<" + p.getName() + "> " + colored("happy halloween!", c.code()) : "&f<" + colored(p.getName(), c.code()) + "&f> boo";
-                put(m, GRID[i++], item(c.icon(), colored(c.name(), c.code()), List.of(chat ? "&8Chat colour" : "&8Name colour", "&7Preview: " + preview, "",
-                        on ? "&aUsing &7- click to take off" : open ? "&eClick to use" : loaded ? "&cLocked" : "&8Stats are loading"), on), (chat ? "chat:" : "color:") + c.id());
-            }
-        put(m, 49, item(Material.ARROW, "&7Back", List.of(), false), "cosmetics");
-        put(m, 50, pointsItem(pd), null);
-        p.openInventory(m.inv);
-    }
-
-    void openColors(Viewer p, String page) { openColorMenu(p, false, page); }
-    void openChatColors(Viewer p, String page) { openColorMenu(p, true, page); }
-
-    /** Name or chat colours, one page each for classic colours, fades and flags (ColorCodes.page). */
-    void openColorMenu(Viewer p, boolean chat, String page) {
-        PD pd = pd(p.getName());
-        String base = chat ? "chatcolors" : "colors", prefix = chat ? "chat:" : "color:", using = chat ? pd.chat : pd.color;
-        Menu m = menu(base + ":" + page, 6, (chat ? "&f&lChat colours" : "&f&lName colours") + " &8(&d" + pd.points + " points&8)");
-        int i = 0;
-        for (NameColor c : (chat ? chatColors : colors).values()) {
-            if (i >= GRID.length || c.earned() || !ColorCodes.page(c.code()).equals(page)) continue;
-            boolean own = pd.owned.contains(prefix + c.id()), on = c.id().equals(using);
-            String preview = chat ? "&f<" + p.getName() + "> " + colored("hey, gg everyone", c.code()) : "&f<" + colored(p.getName(), c.code()) + "&f> hi";
-            List<String> lore = new ArrayList<>(List.of("&7Preview: " + preview, "",
-                    on ? "&aUsing &7- click to take off" : own ? "&eOwned &7- click to use" : "&7Cost: &d" + c.cost() + " points"));
-            if (!own && pd.points < c.cost()) lore.add("&cNot enough points");
-            put(m, GRID[i++], item(c.icon(), colored(c.name(), c.code()), lore, on), prefix + c.id());
-        }
-        for (int t = 0; t < COLOR_PAGES.length; t++)
-            put(m, 45 + t, item(Material.valueOf(COLOR_PAGES[t][2]), COLOR_PAGES[t][1], List.of(), COLOR_PAGES[t][0].equals(page)), base + ":" + COLOR_PAGES[t][0]);
-        if (using != null) put(m, 48, item(Material.BARRIER, chat ? "&cGo back to plain chat" : "&cGo back to a plain name", List.of(), false), "off:" + (chat ? "chat" : "color"));
-        put(m, 49, item(Material.ARROW, "&7Back", List.of(), false), "cosmetics");
-        put(m, 50, pointsItem(pd), null);
-        p.openInventory(m.inv);
-    }
-
     @EventHandler public void onDrag(InventoryDragEvent e) { if (e.getInventory().getHolder() instanceof Menu) e.setCancelled(true); }
 
     @EventHandler public void onClick(InventoryClickEvent e) {
@@ -825,37 +599,296 @@ public class Votes implements Listener {
         click(new Viewer.Local(pl), m, e.getRawSlot(), e.isShiftClick());
     }
 
+    // ------------------------------------------------------------------ cosmetics menus
+    /** One cosmetic on a list page: its icon (lore set), click action, and where it sorts:
+     *  0 wearing/using, 1 owned (or unlocked), 2 can get now (claim or buy), 3 locked / not enough points. */
+    record Entry(ItemStack item, String action, int state) {}
+    static final String[] FILTERS = {"all", "owned", "missing"};
+    static final Map<String, String> FILTER_LABEL = Map.of("all", "All", "owned", "Owned", "missing", "Not owned yet");
+    final Map<UUID, String> filterOf = new HashMap<>();
+    final Map<UUID, Integer> pageOf = new HashMap<>();
+    final Map<UUID, String> lastKind = new HashMap<>();
+
+    /** Cosmetics hub: what you're wearing on top, the vote-point shop in the middle row, earned cosmetics by where you
+     *  earn them below, My cosmetics under that. */
+    void openCosmetics(Viewer p) {
+        PD pd = pd(p.getName());
+        UUID u = p.getUniqueId();
+        lastKind.put(u, "cosmetics"); filterOf.remove(u);
+        Menu m = menu("cosmetics", 5, "&b&lCosmetics");
+        Tag tg = pd.tag == null ? null : tags.get(pd.tag);
+        NameColor nc = pd.color == null ? null : colors.get(pd.color);
+        NameColor cc = pd.chat == null ? null : chatColors.get(pd.chat);
+        String name = nc == null ? "&f" + p.getName() : colored(p.getName(), nc.code());
+        String said = cc == null ? "&fhey everyone" : colored("hey everyone", cc.code());
+        put(m, 4, item(tg == null || tg.head() != null ? Material.NAME_TAG : tg.icon(), "&f&lYou look like this", List.of(
+                "&f<" + (tg == null ? "" : tg.display() + " ") + name + "&f> " + said, "",
+                "&7Tag: " + (tg == null ? "&8none" : tg.display()),
+                "&7Name colour: " + (nc == null ? "&8none" : colored(nc.name(), nc.code())),
+                "&7Chat colour: " + (cc == null ? "&8none" : colored(cc.name(), cc.code()))), tg != null || nc != null || cc != null), null);
+        Set<String> have = new HashSet<>(owned(p, pd));
+        // the shop: bought with vote points
+        put(m, 11, hub(Material.NAME_TAG, "&f&lTags", "Shown with your name in chat, tab", "and above your head, everywhere.", have, group("tags")), "tags");
+        put(m, 13, hub(Material.ORANGE_DYE, "&f&lName colours", "Your name in colour in chat", "on every server.", have, group("colors")), "colors");
+        put(m, 15, hub(Material.WRITABLE_BOOK, "&f&lChat colours", "Your messages in colour", "on every server.", have, group("chatcolors")), "chatcolors");
+        // earned: by where you earn them
+        put(m, 19, hub(Material.EXPERIENCE_BOTTLE, "&6&lAchievements", "Advancements, milestones and", "topping a leaderboard (/stats).", have, group("etags")), "etags");
+        put(m, 21, hub(Material.NETHER_STAR, "&e&lMultiverse", "Master a character in the", "Multiverse to get its tag.", have, group("mtags")), "mtags");
+        if (!group("skyblock").isEmpty())
+            put(m, 23, hub(Material.OAK_SAPLING, "&a&lSkyblock", "Skyblock advancements, skill", "levels and your island's level.", have, group("skyblock")), "skyblock");
+        if (!group("event").isEmpty())
+            put(m, 25, hub(Material.JACK_O_LANTERN, "&6&lEvents", "Halloween: survive Haunted Night", "in the Multiverse.", have, group("event")), "event");
+        if (group("special").stream().anyMatch(have::contains))
+            put(m, 8, item(Material.SPYGLASS, "&d&lSpecial", List.of("&7Tags given to you by staff.", "", "&eClick to open"), false), "special");
+        put(m, 31, item(Material.ENDER_CHEST, "&d&lMy cosmetics", List.of("&7Everything you've unlocked", "&7in one place.", "", "&7Unlocked: &f" + have.size(), "", "&eClick to open"), false), "owned");
+        put(m, 36, item(Material.ARROW, "&7Back to vote rewards", List.of(), false), "back");
+        put(m, 40, pointsItem(pd), null);
+        if (pd.tag != null || pd.color != null || pd.chat != null)
+            put(m, 44, item(Material.BARRIER, "&cTake everything off", List.of("&7Tag, name colour and chat colour"), false), "off:all");
+        p.openInventory(m.inv);
+    }
+
+    ItemStack hub(Material icon, String title, String l1, String l2, Set<String> have, List<String> keys) {
+        long n = keys.stream().filter(have::contains).count();
+        return item(icon, title, List.of("&7" + l1, "&7" + l2, "", "&7Unlocked: &f" + n + "&7/" + keys.size(), "", "&eClick to open"), false);
+    }
+
+    /** Keys ("tag:x", "color:x", "chat:x") in one hub group: tags, colors, chatcolors (the shops), etags, mtags,
+     *  skyblock, event, special. */
+    List<String> group(String g) {
+        List<String> out = new ArrayList<>();
+        switch (g) {
+            case "colors" -> colors.values().stream().filter(c -> !c.earned()).forEach(c -> out.add("color:" + c.id()));
+            case "chatcolors" -> chatColors.values().stream().filter(c -> !c.earned()).forEach(c -> out.add("chat:" + c.id()));
+            case "skyblock", "event" -> {
+                boolean sky = g.equals("skyblock");
+                tags.values().stream().filter(t -> t.page().equals(g)).forEach(t -> out.add("tag:" + t.id()));
+                colors.values().stream().filter(c -> sky ? c.skyblock() : c.event()).forEach(c -> out.add("color:" + c.id()));
+                chatColors.values().stream().filter(c -> sky ? c.skyblock() : c.event()).forEach(c -> out.add("chat:" + c.id()));
+            }
+            default -> tags.values().stream().filter(t -> t.page().equals(g)).forEach(t -> out.add("tag:" + t.id()));
+        }
+        return out;
+    }
+
+    /** One list page: header at slot 4, entries 28 a page sorted wearing → owned → can get → locked (config order
+     *  within each), a filter (All / Owned / Not owned yet), arrows, back and points. extra adds tabs etc. */
+    void listPage(Viewer p, String kind, String title, ItemStack header, List<Entry> entries, java.util.function.Consumer<Menu> extra) {
+        PD pd = pd(p.getName());
+        UUID u = p.getUniqueId();
+        if (!kind.equals(lastKind.get(u))) { pageOf.put(u, 0); lastKind.put(u, kind); }
+        String f = filterOf.getOrDefault(u, "all");
+        List<Entry> shown = entries.stream().filter(e -> f.equals("all") || (f.equals("owned") ? e.state() <= 1 : e.state() >= 2))
+                .sorted(Comparator.comparingInt(Entry::state)).toList();
+        int pages = Math.max(1, (shown.size() + GRID.length - 1) / GRID.length);
+        int pg = Math.max(0, Math.min(pageOf.getOrDefault(u, 0), pages - 1));
+        pageOf.put(u, pg);
+        Menu m = menu(kind, 6, title + (pages > 1 ? " &8(" + (pg + 1) + "/" + pages + ")" : ""));
+        if (header != null) put(m, 4, header, null);
+        for (int i = 0; i < GRID.length && pg * GRID.length + i < shown.size(); i++) {
+            Entry e = shown.get(pg * GRID.length + i);
+            put(m, GRID[i], e.item(), e.action());
+        }
+        if (shown.isEmpty()) put(m, 22, item(Material.GRAY_DYE, "&7Nothing here", List.of(f.equals("all") ? "&8Nothing in this list yet" : "&8Try another filter"), false), null);
+        if (pg > 0) put(m, 45, item(Material.ARROW, "&7Previous page", List.of(), false), "pg:-1");
+        if (pg < pages - 1) put(m, 53, item(Material.ARROW, "&7Next page", List.of(), false), "pg:1");
+        List<String> fl = new ArrayList<>();
+        for (String x : FILTERS) fl.add((x.equals(f) ? "&a» " : "&8  ") + FILTER_LABEL.get(x));
+        fl.add(""); fl.add("&eClick to change");
+        put(m, 47, item(Material.HOPPER, "&e&lShow: &f" + FILTER_LABEL.get(f), fl, false), "filter");
+        put(m, 49, item(Material.ARROW, "&7Back", List.of(), false), "cosmetics");
+        put(m, 51, pointsItem(pd), null);
+        if (extra != null) extra.accept(m);
+        p.openInventory(m.inv);
+    }
+
+    /** A tag on a list page, with its state and lore (preview, cost or requirement, what a click does). */
+    Entry tagEntry(Viewer p, PD pd, Tag t, Set<String> advs) {
+        boolean on = t.id().equals(pd.tag), own = pd.owned.contains("tag:" + t.id());
+        List<String> lore = new ArrayList<>(List.of("&8Tag", "&f<" + t.display() + " &f" + p.getName() + "&f> hi", ""));
+        int state;
+        if (t.granted()) {
+            if (t.note() != null) lore.add("&8" + t.note());
+            state = on ? 0 : 1;
+            lore.add(on ? "&aWearing &8· &7click to take off" : "&eClick to wear");
+        } else if (t.earned()) {
+            String lock = lockReason(p, t, advs);
+            lore.add(requirement(t).get(0));
+            if (lock != null && !on) lore.add(lock);
+            state = on ? 0 : lock != null ? 3 : (own || t.ranked() || t.event()) ? 1 : 2;
+            if (t.ranked()) lore.add("&8Only while you hold the spot");
+            lore.add("");
+            lore.add(on ? "&aWearing &8· &7click to take off" : state == 3 ? "&cLocked" : state == 2 ? "&eClick to claim" : "&eClick to wear");
+        } else {
+            if (t.note() != null) lore.add("&8" + t.note());
+            boolean jb = t.joinedBefore() == null || joinedBefore(p, t.joinedBefore());
+            if (t.joinedBefore() != null) lore.add(jb ? "&6Exclusive: &7you joined before " + t.joinedBefore() : "&cOnly for players who joined before " + t.joinedBefore());
+            state = on ? 0 : own ? 1 : jb && pd.points >= t.cost() ? 2 : 3;
+            if (!own) lore.add("&7Cost: &d" + t.cost() + " point" + (t.cost() == 1 ? "" : "s"));
+            lore.add("");
+            lore.add(on ? "&aWearing &8· &7click to take off" : own ? "&eClick to wear" : state == 2 ? "&eClick to buy" : jb ? "&cNot enough points" : "&cLocked");
+        }
+        return new Entry(tagItem(t, lore, on), "tag:" + t.id(), state);
+    }
+
+    /** A name or chat colour on a list page. */
+    Entry colorEntry(Viewer p, PD pd, NameColor c, boolean chat) {
+        String key = (chat ? "chat:" : "color:") + c.id();
+        boolean on = c.id().equals(chat ? pd.chat : pd.color), own = pd.owned.contains(key);
+        String preview = chat ? "&f<" + p.getName() + "> " + colored("hey, gg everyone", c.code()) : "&f<" + colored(p.getName(), c.code()) + "&f> hi";
+        List<String> lore = new ArrayList<>(List.of(chat ? "&8Chat colour" : "&8Name colour", preview, ""));
+        int state;
+        String use = chat ? "use" : "use";
+        if (c.earned()) {
+            boolean open = own || eventUnlocked(p, c);
+            lore.add(c.skyblock() ? skyNeed(c.score(), c.min()) : "&7Survive &6Haunted Night &7in the Multiverse");
+            if (!open && c.skyblock()) lore.add(plugin.stats.loaded() ? "&cYou: &f" + skyHave(c.score(), plugin.stats.mastery(p.getName(), c.score())) : "&8Stats are loading");
+            state = on ? 0 : open ? 1 : 3;
+            lore.add("");
+            lore.add(on ? "&aUsing &8· &7click to take off" : open ? "&eClick to " + use : "&cLocked");
+        } else {
+            state = on ? 0 : own ? 1 : pd.points >= c.cost() ? 2 : 3;
+            if (!own) lore.add("&7Cost: &d" + c.cost() + " point" + (c.cost() == 1 ? "" : "s"));
+            lore.add("");
+            lore.add(on ? "&aUsing &8· &7click to take off" : own ? "&eClick to " + use : state == 2 ? "&eClick to buy" : "&cNot enough points");
+        }
+        return new Entry(item(c.icon(), colored(c.name(), c.code()), lore, on), key, state);
+    }
+
+    ItemStack takeOff(String what) { return item(Material.BARRIER, "&cTake off your " + what, List.of(), false); }
+
+    void openTags(Viewer p) { openTags(p, "tags"); }
+    /** Tag pages: the shop ("tags"), Achievements ("etags") and Multiverse mastery ("mtags"). */
+    void openTags(Viewer p, String page) {
+        PD pd = pd(p.getName());
+        Set<String> advs = page.equals("etags") ? advancements(p) : Set.of();
+        List<Entry> es = new ArrayList<>();
+        for (Tag t : tags.values()) if (t.page().equals(page)) es.add(tagEntry(p, pd, t, advs));
+        ItemStack header = switch (page) {
+            case "etags" -> item(Material.EXPERIENCE_BOTTLE, "&6&lAchievements", List.of("&7Free tags for advancements on any server,", "&7network milestones and being #1 on a", "&7leaderboard (/stats).", "", "&8Click one you've unlocked to claim it."), false);
+            case "mtags" -> item(Material.NETHER_STAR, "&e&lMultiverse mastery", List.of("&7Master a character in the Multiverse", "&7(level V, &f" + String.format("%,d", MASTERY_XP) + " &7mastery XP) to unlock its tag.",
+                    "", "&7+10 XP per PvP kill, +1 per Outbreak kill.", "&f/trigger pvp.mastery &7in the Multiverse shows yours."), false);
+            default -> item(Material.NAME_TAG, "&f&lTag shop", List.of("&7Buy tags with vote points.", "&7Every vote gives &d" + pointsPerVote + " &7point" + (pointsPerVote == 1 ? "" : "s") + "."), false);
+        };
+        String title = page.equals("etags") ? "&6&lAchievements" : page.equals("mtags") ? "&e&lMultiverse mastery" : "&f&lTag shop";
+        listPage(p, page, title, header, es, m -> { if (pd.tag != null) put(m, 46, takeOff("tag"), "off:tag"); });
+    }
+
+    void openColors(Viewer p, String page) { openColorMenu(p, false, page); }
+    void openChatColors(Viewer p, String page) { openColorMenu(p, true, page); }
+    /** Name or chat colour shop, with tabs on top for classic colours, fades and flags (ColorCodes.page). */
+    void openColorMenu(Viewer p, boolean chat, String page) {
+        PD pd = pd(p.getName());
+        String base = chat ? "chatcolors" : "colors";
+        List<Entry> es = new ArrayList<>();
+        for (NameColor c : (chat ? chatColors : colors).values())
+            if (!c.earned() && ColorCodes.page(c.code()).equals(page)) es.add(colorEntry(p, pd, c, chat));
+        String using = chat ? pd.chat : pd.color;
+        listPage(p, base + ":" + page, chat ? "&f&lChat colours" : "&f&lName colours", null, es, m -> {
+            for (int t = 0; t < COLOR_PAGES.length; t++)
+                put(m, 3 + t, item(Material.valueOf(COLOR_PAGES[t][2]), COLOR_PAGES[t][1], List.of(COLOR_PAGES[t][0].equals(page) ? "&aShowing" : "&eClick to show"),
+                        COLOR_PAGES[t][0].equals(page)), base + ":" + COLOR_PAGES[t][0]);
+            if (using != null) put(m, 46, takeOff(chat ? "chat colour" : "name colour"), "off:" + (chat ? "chat" : "color"));
+        });
+    }
+
+    /** Tags and colours of one earned group (skyblock or event) on one page. */
+    List<Entry> groupEntries(Viewer p, PD pd, String g) {
+        Set<String> advs = g.equals("skyblock") ? advancements(p) : Set.of();
+        List<Entry> es = new ArrayList<>();
+        for (String k : group(g)) es.add(entry(p, pd, k, advs));
+        return es;
+    }
+    Entry entry(Viewer p, PD pd, String key, Set<String> advs) {
+        String id = key.substring(key.indexOf(':') + 1);
+        if (key.startsWith("tag:")) return tagEntry(p, pd, tags.get(id), advs);
+        boolean chat = key.startsWith("chat:");
+        return colorEntry(p, pd, (chat ? chatColors : colors).get(id), chat);
+    }
+    void wearingOff(Menu m, PD pd) {
+        if (pd.tag != null || pd.color != null || pd.chat != null) put(m, 46, item(Material.BARRIER, "&cTake everything off", List.of(), false), "off:all");
+    }
+
+    void openSkyblock(Viewer p) {
+        PD pd = pd(p.getName());
+        listPage(p, "skyblock", "&a&lSkyblock", item(Material.OAK_SAPLING, "&a&lSkyblock cosmetics", List.of("&7Earned on &bCrispy Skyblock&7: advancements,",
+                "&7skill levels (/skills) and your island's", "&7level (/island level).", "", "&8Yours to keep. Progress shows up here", "&8within a few minutes."), false),
+                groupEntries(p, pd, "skyblock"), m -> wearingOff(m, pd));
+    }
+
+    void openEvent(Viewer p) {
+        PD pd = pd(p.getName());
+        listPage(p, "event", "&6&lEvents &8- &7Halloween", item(Material.JACK_O_LANTERN, "&6&lHalloween", List.of("&7Survive &6Haunted Night &7in the Multiverse:",
+                "&7every completed run unlocks one of these", "&7at random (one you don't have yet).", "", "&8Event cosmetics are yours to keep."), false),
+                groupEntries(p, pd, "event"), m -> wearingOff(m, pd));
+    }
+
+    /** Special: the staff-given (/vote grant) tags this player has. Not in the shop; only reachable from the hub's
+     *  Special button, shown to players who own one. */
+    void openSpecial(Viewer p) {
+        PD pd = pd(p.getName());
+        List<Entry> es = new ArrayList<>();
+        for (Tag t : tags.values()) if (t.granted() && pd.owned.contains("tag:" + t.id())) es.add(tagEntry(p, pd, t, Set.of()));
+        listPage(p, "special", "&d&lSpecial", item(Material.SPYGLASS, "&d&lSpecial tags", List.of("&7Given to you by staff."), false), es,
+                m -> { if (pd.tag != null) put(m, 46, takeOff("tag"), "off:tag"); });
+    }
+
+    /** My cosmetics: everything unlocked; click one to wear it or take it off. */
+    void openOwned(Viewer p) {
+        PD pd = pd(p.getName());
+        Set<String> advs = advancements(p);
+        List<Entry> es = new ArrayList<>();
+        for (String k : owned(p, pd)) es.add(entry(p, pd, k, advs));
+        listPage(p, "owned", "&d&lMy cosmetics", item(Material.ENDER_CHEST, "&d&lMy cosmetics", List.of("&7Everything you've unlocked.", "&7Click one to wear it or take it off."), false),
+                es, m -> wearingOff(m, pd));
+    }
+
+    /** Opens the page a menu kind names (after a click on it, or to go to it). */
+    void reopen(Viewer p, String kind) {
+        switch (kind) {
+            case "cosmetics" -> openCosmetics(p);
+            case "tags", "etags", "mtags" -> openTags(p, kind);
+            case "event" -> openEvent(p);
+            case "skyblock" -> openSkyblock(p);
+            case "special" -> openSpecial(p);
+            case "owned" -> openOwned(p);
+            case "colors" -> openColorMenu(p, false, "classic");
+            case "chatcolors" -> openColorMenu(p, true, "classic");
+            default -> {
+                if (kind.startsWith("colors:")) openColorMenu(p, false, kind.substring(7));
+                else if (kind.startsWith("chatcolors:")) openColorMenu(p, true, kind.substring(11));
+            }
+        }
+    }
+
     /** A click on one of these menus, here or (RemoteMenus) on another server. */
     void click(Viewer p, Menu m, int slot, boolean shift) {
         String a = m.actions.get(slot);
         if (a == null) return;
+        UUID u = p.getUniqueId();
         if (a.equals("links")) { p.closeInventory(); links(p); }
         else if (a.equals("top")) { p.closeInventory(); top(p); }
-        else if (a.equals("cosmetics")) openCosmetics(p);
-        else if (a.equals("tags") || a.equals("etags") || a.equals("mtags")) openTags(p, a);
-        else if (a.equals("event")) openEvent(p);
-        else if (a.equals("skyblock")) openSkyblock(p);
-        else if (a.equals("special")) openSpecial(p);
-        else if (a.equals("colors") || a.startsWith("colors:")) openColors(p, a.contains(":") ? a.substring(7) : "classic");
-        else if (a.equals("chatcolors") || a.startsWith("chatcolors:")) openChatColors(p, a.contains(":") ? a.substring(11) : "classic");
-        else if (a.startsWith("off:")) {
-            PD pd = pd(p.getName());
-            if (a.equals("off:tag")) pd.tag = null; else if (a.equals("off:chat")) pd.chat = null; else pd.color = null;
-            writeTags(); save();
-            p.playSound(Sound.UI_BUTTON_CLICK, 0.6f, 1f);
-            if (a.equals("off:tag")) { if (m.kind.equals("special")) openSpecial(p); else openTags(p, m.kind); }
-            else openColorMenu(p, a.equals("off:chat"), m.kind.substring(m.kind.indexOf(':') + 1));
-        }
         else if (a.equals("back")) open(p);
         else if (a.startsWith("claim:")) claim(p, a.substring(6), shift);
-        else if (a.startsWith("owned:")) openOwned(p, Integer.parseInt(a.substring(6)));
-        else if (a.startsWith("tag:") || a.startsWith("color:") || a.startsWith("chat:")) {
-            cosmetic(p, a);
-            if (m.kind.startsWith("owned:")) openOwned(p, Integer.parseInt(m.kind.substring(6)));   // stay on My cosmetics
-            else if (m.kind.equals("event")) openEvent(p);
-            else if (m.kind.equals("skyblock")) openSkyblock(p);
-            else if (m.kind.equals("special")) openSpecial(p);
+        else if (a.startsWith("pg:")) { pageOf.merge(u, Integer.parseInt(a.substring(3)), Integer::sum); reopen(p, m.kind); }
+        else if (a.equals("filter")) {
+            int i = Arrays.asList(FILTERS).indexOf(filterOf.getOrDefault(u, "all"));
+            filterOf.put(u, FILTERS[(i + 1) % FILTERS.length]);
+            pageOf.put(u, 0);
+            p.playSound(Sound.UI_BUTTON_CLICK, 0.6f, 1f);
+            reopen(p, m.kind);
         }
+        else if (a.startsWith("off:")) {
+            PD pd = pd(p.getName());
+            if (a.equals("off:tag") || a.equals("off:all")) pd.tag = null;
+            if (a.equals("off:chat") || a.equals("off:all")) pd.chat = null;
+            if (a.equals("off:color") || a.equals("off:all")) pd.color = null;
+            writeTags(); save();
+            p.playSound(Sound.UI_BUTTON_CLICK, 0.6f, 1f);
+            reopen(p, m.kind);
+        }
+        else if (a.startsWith("tag:") || a.startsWith("color:") || a.startsWith("chat:")) { cosmetic(p, a); reopen(p, m.kind); }
+        else reopen(p, a);   // go to a page
     }
 
     // ------------------------------------------------------------------ "joined before" (the OG tag)
@@ -927,7 +960,6 @@ public class Votes implements Listener {
                 p.playSound(Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.6f, 1.2f);
             } else p.playSound(Sound.UI_BUTTON_CLICK, 0.6f, 1f);
             pd.tag = wearing ? null : id; writeTags(); save();
-            if (!et.event() && !et.skyblock()) openTags(p, et.page());
             return;
         }
         boolean isChat = key.startsWith("chat:");
@@ -961,8 +993,6 @@ public class Votes implements Listener {
         else if (isChat) { pd.chat = id.equals(pd.chat) ? null : id; writeTags(); }
         else { pd.color = id.equals(pd.color) ? null : id; writeTags(); }
         save();
-        if (isTag) { if (tags.get(id).granted()) openSpecial(p); else openTags(p, "tags"); }
-        else openColorMenu(p, isChat, ColorCodes.page(pool.get(id).code()));
     }
 
     void links(CommandSender s) { links(new Viewer.Local(s)); }

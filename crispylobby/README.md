@@ -154,3 +154,11 @@ datapack was removed from every server.
   → `sb.island_lvl`. Kept out of the tag/colour shops.
 - **Special page**: staff-given (`granted`) tags. Not in the tag shop; the hub shows a Special button only to players
   who own one.
+
+## Cosmetics menu layout (1.19.0)
+- Hub (5 rows): what you're wearing (preview) on top, the vote-point shop (Tags, Name colours, Chat colours) in the
+  middle, earned cosmetics by source below (Achievements, Multiverse, Skyblock, Events), My cosmetics under that,
+  Special in the corner only for players who own a staff-given tag, and "Take everything off".
+- Every list page shares one layout (`listPage`): header at slot 4, 28 items a page sorted wearing → owned → can get
+  now → locked, a filter (All / Owned / Not owned yet), arrows, take-off, back and points. Colour shops have
+  Classic / Fades / Flags tabs on the top row. Pages and filters are per viewer and reset when you go back to the hub.
