@@ -172,6 +172,31 @@ final class NetworkStats {
                 }
             } catch (Exception e) { plugin.getLogger().warning("network-stats: can't read " + sb + ": " + e); }
         }
+        // Skyblock scoreboard (Skyblock cosmetics): skill XP sk_<skill> -> "sb.sk_<skill>", and the level of the
+        // player's island (cs_lvl of #p<cs_plot>) -> "sb.island_lvl"
+        Path ssb = root.resolve(cfg().getString("skyblock-scoreboard", "Falling01/Minecraft/world/data/minecraft/scoreboard.dat"));
+        if (Files.isRegularFile(ssb)) {
+            try (var in = new java.io.DataInputStream(new java.io.BufferedInputStream(new java.util.zip.GZIPInputStream(Files.newInputStream(ssb))))) {
+                int type = in.readUnsignedByte(); in.readUTF();
+                Object root2 = nbt(in, type);
+                Object data = root2 instanceof Map<?, ?> m ? m.get("data") : null;
+                Object scores = data instanceof Map<?, ?> d ? d.get("PlayerScores") : null;
+                Map<String, Long> islandLvl = new HashMap<>();
+                Map<String, String[]> plotOf = new HashMap<>();   // lower name -> {name, island id}
+                if (scores instanceof List<?> l) for (Object o : l) {
+                    if (!(o instanceof Map<?, ?> e) || !(e.get("Name") instanceof String name) || !(e.get("Score") instanceof Number n)) continue;
+                    String obj = String.valueOf(e.get("Objective"));
+                    if (name.startsWith("#p") && obj.equals("cs_lvl")) islandLvl.put(name.substring(2), n.longValue());
+                    if (name.startsWith("#")) continue;
+                    if (obj.startsWith("sk_")) out.computeIfAbsent(name.toLowerCase(Locale.ROOT), k -> new Row(name)).mastery.merge("sb." + obj, n.longValue(), Math::max);
+                    else if (obj.equals("cs_plot") && n.intValue() > 0) plotOf.put(name.toLowerCase(Locale.ROOT), new String[]{name, String.valueOf(n.intValue())});
+                }
+                for (var p : plotOf.entrySet()) {
+                    Long lv = islandLvl.get(p.getValue()[1]);
+                    if (lv != null) out.computeIfAbsent(p.getKey(), k -> new Row(p.getValue()[0])).mastery.merge("sb.island_lvl", lv, Math::max);
+                }
+            } catch (Exception e) { plugin.getLogger().warning("network-stats: can't read " + ssb + ": " + e); }
+        }
         rows = out;
         updatedAt = System.currentTimeMillis();
         Bukkit.getScheduler().runTask(plugin, () -> { if (plugin.votes != null) plugin.votes.recheckEarned(); });

@@ -175,6 +175,20 @@ cosmetics:
     hw_trickortreat: {display: "&6[&eT&6r&fi&ec&6k &fo&er &6T&fr&ee&6a&ft&6]", icon: COOKIE, score: pvp.hw5, min: 1, note: "Haunted Night"}
     hw_slasher: {display: "&4[&c⚔ &4&lS&c&ll&4&la&c&ls&4&lh&c&le&4&lr&4]", icon: IRON_SWORD, score: pvp.hw6, min: 1, note: "Haunted Night"}
     # ---- end of halloween
+    # ---- skyblock (Votes.Tag.skyblock): earned on Crispy Skyblock; Skyblock page in /cosmetics
+    sb_diamond:  {display: "&b[Sky Miner]", icon: DIAMOND, advancement: "crispy_skyblock:diamond", note: "Sky High Diamonds (get a diamond)"}
+    sb_crash:    {display: "&8[Scavenger]", icon: MOSSY_COBBLESTONE, advancement: "crispy_skyblock:dungeon", note: "Crash Site (loot a fallen dungeon)"}
+    sb_end:      {display: "&5[Voidwalker]", icon: END_STONE, advancement: "crispy_skyblock:end", note: "The End? (enter your island's End)"}
+    sb_skyfall:  {display: "&5&l[Sky Fall]", icon: DRAGON_HEAD, advancement: "crispy_skyblock:dragon", note: "Sky Fall (defeat a boss in your island's End)"}
+    sb_wings:    {display: "&f[Skyborne]", icon: ELYTRA, advancement: "crispy_skyblock:elytra", note: "Falling With Style (find an Elytra)"}
+    sb_beacon:   {display: "&b&l[Lighthouse]", icon: BEACON, advancement: "crispy_skyblock:beacon", note: "Lighthouse (build a beacon)"}
+    sb_farm:     {display: "&e[Harvester]", icon: GOLDEN_HOE, score: sb.sk_farm, min: 22500}       # Farming 15
+    sb_mine:     {display: "&7[Prospector]", icon: IRON_PICKAXE, score: sb.sk_mine, min: 22500}    # Mining 15
+    sb_forage:   {display: "&2[Lumberjack]", icon: IRON_AXE, score: sb.sk_forage, min: 22500}     # Foraging 15
+    sb_combat:   {display: "&c[Sky Slayer]", icon: IRON_SWORD, score: sb.sk_combat, min: 22500}   # Combat 15
+    sb_fish:     {display: "&3[Angler]", icon: FISHING_ROD, score: sb.sk_fish, min: 22500}       # Fishing 15
+    sb_island:   {display: "&6&l[Island Lord]", icon: GRASS_BLOCK, score: sb.island_lvl, min: 50}  # island level 50
+    # ---- end of skyblock
   # "joined-before" tags: a player qualifies if the earliest date found here (relative to network-stats.instances-dir)
   # is before that date: advancement timestamps, the firstPlayed time Paper left in old player files, and those files'
   # last-saved date. extra: names that always qualify.
@@ -256,6 +270,10 @@ cosmetics:
     hw_bloodmoon: {name: "Blood Moon", code: "&#8b0000>&#ff3b3b", cost: 0, icon: RED_DYE, score: pvp.hw10}
     hw_ghostly: {name: "Ghostly", code: "&#ffffff>&#8a8f99", cost: 0, icon: WHITE_DYE, score: pvp.hw11}
     # ---- end of halloween
+    # ---- skyblock: earned on Crispy Skyblock (score sb.*, unlocked at min)
+    sb_skyline: {name: "Skyline", code: "&#9be7ff>&#ffffff", cost: 0, icon: LIGHT_BLUE_DYE, score: sb.island_lvl, min: 10}
+    sb_void:    {name: "Void", code: "&#9d4dff>&#1a0033", cost: 0, icon: OBSIDIAN, score: sb.island_lvl, min: 30}
+    # ---- end of skyblock
   # chat colours: the sender's message text, on every server (chatcolors.json; same codes as name colours).
   # Messages with a link keep their own formatting.
   chat-colors:
@@ -321,6 +339,9 @@ cosmetics:
     hw_witchbrew: {name: "Witch's Brew", code: "&#7fff00>&#8a2be2", cost: 0, icon: LIME_DYE, score: pvp.hw14}
     hw_spectral: {name: "Spectral", code: "&#7df9ff>&#ffffff", cost: 0, icon: LIGHT_BLUE_DYE, score: pvp.hw15}
     # ---- end of halloween
+    # ---- skyblock: earned on Crispy Skyblock (score sb.*, unlocked at min)
+    sb_cloud:   {name: "Cloud", code: "&#ffffff>&#bfe9ff", cost: 0, icon: WHITE_WOOL, score: sb.island_lvl, min: 20}
+    # ---- end of skyblock
 
 # First join to the network (never on the lobby, no earlier trace on Anarchy/Vanilla): a title, a "Start here" menu of
 # the worlds, a welcome line in the lobby (and over the Discord bridge, so people say hi), and one nudge after

@@ -146,3 +146,11 @@ by `pvp/halloween_cosmetics.py <config.yml>` (between `# ---- halloween` markers
 
 Walking trails were retired in 1.5.0. Their points were refunded on the first load, and the `crispy_cosmetics`
 datapack was removed from every server.
+
+## Skyblock and Special cosmetics (1.18.0)
+- **Skyblock page** (/cosmetics → Skyblock): tags whose `advancement` is `crispy_skyblock:*` or whose `score` is `sb.*`,
+  and name/chat colours with an `sb.*` score (`min` = threshold). NetworkStats reads Falling01's scoreboard:
+  `sk_<skill>` XP → `sb.sk_<skill>` (level L = 100·L² XP) and the player's island level (`cs_lvl` of `#p<cs_plot>`)
+  → `sb.island_lvl`. Kept out of the tag/colour shops.
+- **Special page**: staff-given (`granted`) tags. Not in the tag shop; the hub shows a Special button only to players
+  who own one.
