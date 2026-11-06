@@ -447,6 +447,7 @@ scoreboard objectives add cs_inv dummy
 scoreboard objectives add cs_on dummy
 scoreboard objectives add cs_was dummy
 scoreboard objectives add cs_age dummy
+scoreboard objectives add cs_nodng dummy
 scoreboard objectives add cs_tmp dummy
 scoreboard objectives add cs_cd dummy
 scoreboard objectives add cs_seen dummy
@@ -911,7 +912,7 @@ function {NS}:plot/tick with storage {NS}:d cur
 def every(n, f):
     return (f"$scoreboard players operation #m cs_tmp = #p$(id) cs_age\nscoreboard players set #k cs_tmp {n}\n"
             f"scoreboard players operation #m cs_tmp %= #k cs_tmp\nexecute if score #m cs_tmp matches 0 run function {NS}:{f} with storage {NS}:d cur")
-dng = "\n".join(f"$execute if score #p$(id) cs_age matches {a} run function {NS}:ev/dungeon with storage {NS}:d cur" for a in DUNGEON_AGES)
+dng = "\n".join(f"$execute if score #p$(id) cs_age matches {a} unless score #p$(id) cs_nodng matches 1 run function {NS}:ev/dungeon with storage {NS}:d cur" for a in DUNGEON_AGES)   # cs_nodng: dungeons switched off (/island dungeons)
 fn("plot/tick", f"""
 # just emptied: stop loading it (and its Nether)
 $execute unless score #p$(id) cs_on matches 1.. run forceload remove $(x) $(z) $(x1) $(z1)

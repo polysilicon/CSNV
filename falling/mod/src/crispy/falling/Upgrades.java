@@ -99,9 +99,39 @@ public final class Upgrades {
                     "Now: " + members(server, id) + "/" + COOP_CAP[uc] + " members"), (pl, c) -> buy(pl, "uc", COOP_COST, uc, () -> {}, "Co-op: " + COOP_CAP[Math.min(COOP_CAP.length - 1, uc + 1)] + " members"));
             m.put(16, card(Items.COBBLESTONE, "Ore generator", ug, GEN_COST, genLine(ug + 1),
                     "Now: " + (ug == 0 ? "plain cobblestone" : genLine(ug))), (pl, c) -> buy(pl, "ug", GEN_COST, ug, () -> {}, "Ore generator tier " + (ug + 1)));
+            boolean dng = dungeons(server, id);
+            m.put(4, Ui.item(dng ? Items.MOSSY_COBBLESTONE : Items.BARRIER, t("Falling dungeons: " + (dng ? "ON" : "OFF"), dng ? ChatFormatting.GREEN : ChatFormatting.RED, ChatFormatting.BOLD),
+                    List.of(t("Dungeons crash onto your island at 30,", ChatFormatting.GRAY), t("90 and 180 minutes of island play time.", ChatFormatting.GRAY),
+                            t("Turn them off to keep them off your builds.", ChatFormatting.GRAY), Component.empty(),
+                            t("Click to turn " + (dng ? "off" : "on"), ChatFormatting.YELLOW)), dng), (pl, c) -> { setDungeons(pl, !dungeons(server, id)); open(pl); });
             m.put(22, Ui.item(Items.GOLD_NUGGET, t("Purse: " + Economy.fmt(Economy.coins(server, p)) + " coins", ChatFormatting.GOLD),
                     List.of(t("Any island member can buy upgrades", ChatFormatting.DARK_GRAY)), false), null);
         });
+    }
+
+    // ------------------------------------------------------------------ falling dungeons on/off (score #p<id> cs_nodng)
+    static boolean dungeons(MinecraftServer server, int id) {
+        var o = server.getScoreboard().getObjective("cs_nodng");
+        if (o == null) return true;
+        var info = server.getScoreboard().getPlayerScoreInfo(net.minecraft.world.scores.ScoreHolder.forNameOnly("#p" + id), o);
+        return info == null || info.value() != 1;
+    }
+    static void setDungeons(ServerPlayer p, boolean on) {
+        MinecraftServer server = p.level().getServer();
+        int id = SkyblockMod.plot(server, p);
+        if (id <= 0) return;
+        run(server, "scoreboard objectives add cs_nodng dummy");
+        run(server, "scoreboard players set #p" + id + " cs_nodng " + (on ? 0 : 1));
+        run(server, "tellraw @a[scores={cs_plot=" + id + "}] [{\"selector\":\"" + p.getScoreboardName() + "\",\"color\":\"yellow\"},{\"text\":\" turned falling dungeons "
+                + (on ? "on" : "off") + " for your island.\",\"color\":\"" + (on ? "green" : "red") + "\"}]");
+    }
+    static int dungeonsCmd(net.minecraft.commands.CommandSourceStack src, Boolean on) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer p = src.getPlayerOrException();
+        int id = SkyblockMod.plot(src.getServer(), p);
+        if (id <= 0) { src.sendFailure(Component.literal("You need an island first.")); return 0; }
+        if (on == null) { p.sendSystemMessage(t("Falling dungeons are " + (dungeons(src.getServer(), id) ? "ON" : "OFF") + " for your island. /island dungeons on|off", ChatFormatting.YELLOW)); return 1; }
+        setDungeons(p, on);
+        return 1;
     }
 
     static String genLine(int tier) {
