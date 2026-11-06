@@ -1,0 +1,7 @@
+{
+  "pack": {
+    "description": "Crispy Anarchy archive: old worlds kept as dimensions to explore (ops only)",
+    "min_format": [107, 0],
+    "max_format": [107, 1]
+  }
+}
