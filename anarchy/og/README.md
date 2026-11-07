@@ -22,3 +22,10 @@ apple 12, totem 8, Contraband Stash (shulker box) 10, 64 rockets 4.
   `/function og:place` for the dealer.
 - The market's own `spawn_shops`/reinstall kills every `crispy_shop` villager, so run `/function og:place` again after.
 - `/function og:remove` takes the dealer away. To test: `/advancement revoke <player> only anarchy:black_market`.
+
+**Smuggler's Map** (`mapart/`): a locked map (id 90001, `world/data/minecraft/maps/90001.dat`, dimension
+`crispy:market`) showing the whole market from above (4 blocks a pixel, centred on 0, -15) with a red dot at each
+of the eight spots. `render.py` reads the market's top blocks from its region files, `compose.py` turns them into map
+colours (the palette is MapColor's, taken from the server jar) and draws the dots. Hand it out with
+`give <player> minecraft:filled_map[minecraft:map_id=90001,...]` (see the item name and lore used in chat history).
+If the spots change, re-run compose.py with the new list and upload 90001.dat again.
