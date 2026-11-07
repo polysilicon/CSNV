@@ -817,7 +817,9 @@ STALLS = [("farming", 12, -5, "lime", "farmer"), ("mining", 12, 5, "light_gray",
 _hub = hub_build()
 _parts = [_hub[i:i + 20000] for i in range(0, len(_hub), 20000)]
 for _i, _p in enumerate(_parts, 1):
-    fn(f"hub/p{_i}", "\n".join(_p + ([f"schedule function {NS}:hub/p{_i + 1} 2t"] if _i < len(_parts) else [f"function {NS}:npcs", f"function {NS}:zones/hub_rift_portal"])))
+    fn(f"hub/p{_i}", "\n".join(_p + ([f"schedule function {NS}:hub/p{_i + 1} 2t"] if _i < len(_parts) else [f"function {NS}:npcs", f"function {NS}:zones/hub_rift_portal", f"schedule function {NS}:hub_sweep 20t"])))
+# the rebuild knocks the old flowers, grass and lanterns off as items: sweep them up once it's done
+fn("hub_sweep", f"kill @e[type=minecraft:item,x=-{HUB_R + 6},y=0,z=-{HUB_R + 6},dx={2 * HUB_R + 12},dy=250,dz={2 * HUB_R + 12}]")
 fn("hub", f"function {NS}:hub/p1")
 # hub v3: the stall lanterns sat where the merchants' labels go
 fn("hub_v4", f"function {NS}:hub")
