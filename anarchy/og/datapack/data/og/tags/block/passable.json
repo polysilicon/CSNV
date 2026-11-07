@@ -1,0 +1,26 @@
+{
+ "values": [
+  "#minecraft:air",
+  "#minecraft:replaceable",
+  "#minecraft:flowers",
+  "#minecraft:saplings",
+  "#minecraft:wool_carpets",
+  "#minecraft:buttons",
+  "#minecraft:pressure_plates",
+  "#minecraft:rails",
+  "#minecraft:all_signs",
+  "#minecraft:banners",
+  "minecraft:torch",
+  "minecraft:wall_torch",
+  "minecraft:soul_torch",
+  "minecraft:soul_wall_torch",
+  "minecraft:redstone_torch",
+  "minecraft:redstone_wall_torch",
+  "minecraft:lever",
+  "minecraft:ladder",
+  "minecraft:vine",
+  "minecraft:redstone_wire",
+  "minecraft:tripwire",
+  "minecraft:light"
+ ]
+}

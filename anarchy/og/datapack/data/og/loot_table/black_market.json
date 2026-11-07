@@ -108,6 +108,286 @@
        }
       }
      ]
+    },
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:clay_ball",
+     "functions": [
+      {
+       "function": "minecraft:set_components",
+       "components": {
+        "minecraft:item_model": "minecraft:amethyst_shard",
+        "minecraft:custom_data": {
+         "bm": "blink"
+        },
+        "minecraft:item_name": {
+         "text": "Phase Shard",
+         "color": "light_purple",
+         "bold": true,
+         "italic": false
+        },
+        "minecraft:lore": [
+         {
+          "text": "Right-click: blink up to 10 blocks where you look.",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Stops at walls, never through them.",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Each use spends one charge \u00b7 4 s cooldown",
+          "color": "dark_gray",
+          "italic": false
+         },
+         {
+          "text": "Crispy Anarchy \u00b7 Black Market",
+          "color": "dark_gray",
+          "italic": false
+         }
+        ],
+        "minecraft:max_stack_size": 16,
+        "minecraft:enchantment_glint_override": true,
+        "minecraft:consumable": {
+         "consume_seconds": 0.05,
+         "animation": "none",
+         "has_consume_particles": false,
+         "sound": "minecraft:intentionally_empty"
+        },
+        "minecraft:use_cooldown": {
+         "seconds": 4.0,
+         "cooldown_group": "og:blink"
+        }
+       }
+      },
+      {
+       "function": "minecraft:set_count",
+       "count": {
+        "type": "minecraft:uniform",
+        "min": 4,
+        "max": 8
+       }
+      }
+     ],
+     "weight": 8
+    },
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:clay_ball",
+     "functions": [
+      {
+       "function": "minecraft:set_components",
+       "components": {
+        "minecraft:item_model": "minecraft:ghast_tear",
+        "minecraft:custom_data": {
+         "bm": "stim"
+        },
+        "minecraft:item_name": {
+         "text": "Stim Shot",
+         "color": "red",
+         "bold": true,
+         "italic": false
+        },
+        "minecraft:lore": [
+         {
+          "text": "Right-click: heals you right away.",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Instant Health II \u00b7 Regeneration II 6 s \u00b7 Absorption 30 s",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Each use spends one charge \u00b7 30 s cooldown",
+          "color": "dark_gray",
+          "italic": false
+         },
+         {
+          "text": "Crispy Anarchy \u00b7 Black Market",
+          "color": "dark_gray",
+          "italic": false
+         }
+        ],
+        "minecraft:max_stack_size": 16,
+        "minecraft:enchantment_glint_override": true,
+        "minecraft:consumable": {
+         "consume_seconds": 0.05,
+         "animation": "none",
+         "has_consume_particles": false,
+         "sound": "minecraft:intentionally_empty"
+        },
+        "minecraft:use_cooldown": {
+         "seconds": 30.0,
+         "cooldown_group": "og:stim"
+        }
+       }
+      },
+      {
+       "function": "minecraft:set_count",
+       "count": {
+        "type": "minecraft:uniform",
+        "min": 2,
+        "max": 4
+       }
+      }
+     ],
+     "weight": 8
+    },
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:clay_ball",
+     "functions": [
+      {
+       "function": "minecraft:set_components",
+       "components": {
+        "minecraft:item_model": "minecraft:heavy_core",
+        "minecraft:custom_data": {
+         "bm": "gravity"
+        },
+        "minecraft:item_name": {
+         "text": "Gravity Bomb",
+         "color": "dark_purple",
+         "bold": true,
+         "italic": false
+        },
+        "minecraft:lore": [
+         {
+          "text": "Right-click: everyone within 6 blocks floats",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "helplessly into the air for 3 s, then drops.",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Each use spends one charge \u00b7 20 s cooldown",
+          "color": "dark_gray",
+          "italic": false
+         },
+         {
+          "text": "Crispy Anarchy \u00b7 Black Market",
+          "color": "dark_gray",
+          "italic": false
+         }
+        ],
+        "minecraft:max_stack_size": 16,
+        "minecraft:enchantment_glint_override": true,
+        "minecraft:consumable": {
+         "consume_seconds": 0.05,
+         "animation": "none",
+         "has_consume_particles": false,
+         "sound": "minecraft:intentionally_empty"
+        },
+        "minecraft:use_cooldown": {
+         "seconds": 20.0,
+         "cooldown_group": "og:gravity"
+        }
+       }
+      },
+      {
+       "function": "minecraft:set_count",
+       "count": 2
+      }
+     ],
+     "weight": 6
+    },
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:potion",
+     "functions": [
+      {
+       "function": "minecraft:set_components",
+       "components": {
+        "minecraft:custom_data": {
+         "bm": "grow"
+        },
+        "minecraft:custom_name": {
+         "text": "Growth Potion",
+         "color": "green",
+         "bold": true,
+         "italic": false
+        },
+        "minecraft:potion_contents": {
+         "custom_color": 4182346
+        },
+        "minecraft:lore": [
+         {
+          "text": "Drink: grow to twice your size for 3 minutes.",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "+4 hearts \u00b7 +1.5 blocks reach",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Crispy Anarchy \u00b7 Black Market",
+          "color": "dark_gray",
+          "italic": false
+         }
+        ],
+        "minecraft:max_stack_size": 4
+       }
+      },
+      {
+       "function": "minecraft:set_count",
+       "count": 2
+      }
+     ],
+     "weight": 6
+    },
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:potion",
+     "functions": [
+      {
+       "function": "minecraft:set_components",
+       "components": {
+        "minecraft:custom_data": {
+         "bm": "shrink"
+        },
+        "minecraft:custom_name": {
+         "text": "Shrink Potion",
+         "color": "light_purple",
+         "bold": true,
+         "italic": false
+        },
+        "minecraft:potion_contents": {
+         "custom_color": 11820287
+        },
+        "minecraft:lore": [
+         {
+          "text": "Drink: shrink to a third of your size for 3 minutes.",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Fit through 1-block gaps \u00b7 far harder to hit",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Crispy Anarchy \u00b7 Black Market",
+          "color": "dark_gray",
+          "italic": false
+         }
+        ],
+        "minecraft:max_stack_size": 4
+       }
+      },
+      {
+       "function": "minecraft:set_count",
+       "count": 2
+      }
+     ],
+     "weight": 6
     }
    ]
   }

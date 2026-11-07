@@ -1,0 +1,69 @@
+{
+ "type": "minecraft:command",
+ "pools": [
+  {
+   "rolls": 1,
+   "entries": [
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:clay_ball",
+     "functions": [
+      {
+       "function": "minecraft:set_components",
+       "components": {
+        "minecraft:item_model": "minecraft:breeze_rod",
+        "minecraft:custom_data": {
+         "bm": "jet"
+        },
+        "minecraft:item_name": {
+         "text": "Jump Jet",
+         "color": "aqua",
+         "bold": true,
+         "italic": false
+        },
+        "minecraft:lore": [
+         {
+          "text": "Right-click: launches you high into the air.",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Slow Falling 5 s to land.",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Each use spends one charge \u00b7 6 s cooldown",
+          "color": "dark_gray",
+          "italic": false
+         },
+         {
+          "text": "Crispy Anarchy \u00b7 Black Market",
+          "color": "dark_gray",
+          "italic": false
+         }
+        ],
+        "minecraft:max_stack_size": 16,
+        "minecraft:enchantment_glint_override": true,
+        "minecraft:consumable": {
+         "consume_seconds": 0.05,
+         "animation": "none",
+         "has_consume_particles": false,
+         "sound": "minecraft:intentionally_empty"
+        },
+        "minecraft:use_cooldown": {
+         "seconds": 6.0,
+         "cooldown_group": "og:jet"
+        }
+       }
+      },
+      {
+       "function": "minecraft:set_count",
+       "count": 1
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

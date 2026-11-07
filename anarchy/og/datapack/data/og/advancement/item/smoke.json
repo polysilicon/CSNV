@@ -1,0 +1,18 @@
+{
+ "criteria": {
+  "used": {
+   "trigger": "minecraft:consume_item",
+   "conditions": {
+    "item": {
+     "items": "minecraft:clay_ball",
+     "predicates": {
+      "minecraft:custom_data": "{bm:\"smoke\"}"
+     }
+    }
+   }
+  }
+ },
+ "rewards": {
+  "function": "og:item/use_smoke"
+ }
+}

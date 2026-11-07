@@ -1,0 +1,69 @@
+{
+ "type": "minecraft:command",
+ "pools": [
+  {
+   "rolls": 1,
+   "entries": [
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:clay_ball",
+     "functions": [
+      {
+       "function": "minecraft:set_components",
+       "components": {
+        "minecraft:item_model": "minecraft:heavy_core",
+        "minecraft:custom_data": {
+         "bm": "gravity"
+        },
+        "minecraft:item_name": {
+         "text": "Gravity Bomb",
+         "color": "dark_purple",
+         "bold": true,
+         "italic": false
+        },
+        "minecraft:lore": [
+         {
+          "text": "Right-click: everyone within 6 blocks floats",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "helplessly into the air for 3 s, then drops.",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Each use spends one charge \u00b7 20 s cooldown",
+          "color": "dark_gray",
+          "italic": false
+         },
+         {
+          "text": "Crispy Anarchy \u00b7 Black Market",
+          "color": "dark_gray",
+          "italic": false
+         }
+        ],
+        "minecraft:max_stack_size": 16,
+        "minecraft:enchantment_glint_override": true,
+        "minecraft:consumable": {
+         "consume_seconds": 0.05,
+         "animation": "none",
+         "has_consume_particles": false,
+         "sound": "minecraft:intentionally_empty"
+        },
+        "minecraft:use_cooldown": {
+         "seconds": 20.0,
+         "cooldown_group": "og:gravity"
+        }
+       }
+      },
+      {
+       "function": "minecraft:set_count",
+       "count": 1
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

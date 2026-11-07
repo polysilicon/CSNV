@@ -1,0 +1,55 @@
+{
+ "type": "minecraft:command",
+ "pools": [
+  {
+   "rolls": 1,
+   "entries": [
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:potion",
+     "functions": [
+      {
+       "function": "minecraft:set_components",
+       "components": {
+        "minecraft:custom_data": {
+         "bm": "grow"
+        },
+        "minecraft:custom_name": {
+         "text": "Growth Potion",
+         "color": "green",
+         "bold": true,
+         "italic": false
+        },
+        "minecraft:potion_contents": {
+         "custom_color": 4182346
+        },
+        "minecraft:lore": [
+         {
+          "text": "Drink: grow to twice your size for 3 minutes.",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "+4 hearts \u00b7 +1.5 blocks reach",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Crispy Anarchy \u00b7 Black Market",
+          "color": "dark_gray",
+          "italic": false
+         }
+        ],
+        "minecraft:max_stack_size": 4
+       }
+      },
+      {
+       "function": "minecraft:set_count",
+       "count": 1
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

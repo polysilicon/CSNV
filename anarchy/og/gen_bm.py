@@ -16,6 +16,7 @@ N = len(SPOTS)
 F = "datapack/data/og/function/bm/"
 open("datapack/data/og/function/load.mcfunction", "w").write("\n".join([
     "scoreboard objectives add bm_sneak dummy", "scoreboard objectives add bm dummy",
+    "scoreboard objectives add og_i dummy", "scoreboard objectives add og_size dummy", "scoreboard objectives add og_died deathCount",
     f"execute unless score #spot bm matches 1..{N} store result score #spot bm run random value 1..{N}",
     "schedule function og:bm/loop 20t replace", ""]))
 sneak = 'if predicate {condition:"minecraft:entity_properties",entity:"this",predicate:{"minecraft:flags":{is_sneaking:true}}}'
