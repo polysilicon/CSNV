@@ -431,7 +431,7 @@ def build(NS, fn, js, txt, snbt, Build):
             put(x + dx, g + h - 1, z + dz, "polished_blackstone_wall")
             if rnd.random() < 0.6:
                 n = rnd.randint(2, 4)
-                for k in range(n): put(x + dx, g + h - 2 - k, z + dz, "chain[axis=y]")
+                for k in range(n): put(x + dx, g + h - 2 - k, z + dz, "iron_chain[axis=y]")
                 put(x + dx, g + h - 2 - n, z + dz, "soul_lantern[hanging=true]")
     # paths: from the arrival platform to the crater, and a ring road at the pillars
     for z in range(-26, -10):
