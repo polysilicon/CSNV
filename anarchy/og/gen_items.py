@@ -87,17 +87,59 @@ ABILITIES = {
                  "effect give @s minecraft:absorption 30 0 true",
                  "particle minecraft:heart ~ ~1.8 ~ 0.4 0.3 0.4 0 6", snd("item.honey_bottle.drink", 1, 1.4),
                  bar("STIM SHOT", "red")], (4, 6)),
+    "swap": ("Swap Orb", "dark_aqua", "ender_eye", 12,
+             ["Right-click: trade places with what you aim at.", "24 blocks · players and mobs"], [
+                 "scoreboard players set #b og_i 48",
+                 "execute anchored eyes positioned ^ ^ ^ rotated as @s run function og:item/swap_ray",
+                 "execute unless entity @e[tag=og.hit] run return run function og:item/refund {k:\"swap\",what:\"Nothing to swap with\"}",
+                 "execute as @e[tag=og.hit] at @s run summon minecraft:marker ~ ~ ~ {Tags:[\"og.swp\"]}",
+                 "tp @e[tag=og.hit] ~ ~ ~", "execute at @n[type=minecraft:marker,tag=og.swp] run tp @s ~ ~ ~",
+                 "kill @e[type=minecraft:marker,tag=og.swp]",
+                 "execute at @e[tag=og.hit] run particle minecraft:reverse_portal ~ ~1 ~ 0.3 0.6 0.3 0.05 40",
+                 "execute at @s run particle minecraft:reverse_portal ~ ~1 ~ 0.3 0.6 0.3 0.05 40",
+                 "tag @e[tag=og.hit] remove og.hit", snd("entity.shulker.teleport", 1, 1.2), bar("SWAPPED", "dark_aqua")], (4, 8)),
+    "chrono": ("Chrono Clock", "gold", "clock", 25,
+               ["Right-click: rewind to where you stood 5 seconds ago.", "Same dimension only"], [
+                   "execute unless score @s og_hn matches 5.. run return run function og:item/refund {k:\"chrono\",what:\"The clock needs 5 seconds in this dimension to wind\"}",
+                   "particle minecraft:totem_of_undying ~ ~1 ~ 0.3 0.6 0.3 0.3 30",
+                   "execute store result storage og:t x double 0.01 run scoreboard players get @s og_x4",
+                   "execute store result storage og:t y double 0.01 run scoreboard players get @s og_y4",
+                   "execute store result storage og:t z double 0.01 run scoreboard players get @s og_z4",
+                   "function og:item/chrono_tp with storage og:t", "scoreboard players set @s og_hn 0",
+                   "execute at @s run particle minecraft:totem_of_undying ~ ~1 ~ 0.3 0.6 0.3 0.3 30",
+                   "execute at @s run " + snd("block.bell.resonate", 1, 1.6), bar("REWOUND", "gold")], (4, 8)),
+    "frost": ("Frost Nova", "aqua", "blue_ice", 18,
+              ["Right-click: a blast of cold freezes everyone around you.", "6 blocks · 3 damage · Slowness V + Mining Fatigue III 4 s"], [
+                  around(6, f"damage @s 3 minecraft:freeze {BY}"), around(6, "effect give @s minecraft:slowness 4 4"),
+                  around(6, "effect give @s minecraft:mining_fatigue 4 2"),
+                  around(6, "particle minecraft:snowflake ~ ~1 ~ 0.3 0.6 0.3 0.05 30"),
+                  "particle minecraft:snowflake ~ ~1 ~ 3 0.8 3 0.05 200", snd("block.glass.break", 1, 0.6),
+                  snd("entity.player.hurt_freeze", 1, 0.8), bar("FROST NOVA", "aqua")], (4, 6)),
+    "siphon": ("Blood Siphon", "dark_red", "fermented_spider_eye", 20,
+               ["Right-click: drains everyone within 5 blocks.", "4 damage each · heals you 2 hearts, more with 3+ hit"], [
+                   f"execute store result score #n og_i if entity @e[distance=..5,{TGT}]",
+                   around(5, f"damage @s 4 minecraft:magic {BY}"),
+                   around(5, "particle minecraft:damage_indicator ~ ~1 ~ 0.3 0.5 0.3 0.1 6"),
+                   "execute if score #n og_i matches 1.. run effect give @s minecraft:instant_health 1 0 true",
+                   "execute if score #n og_i matches 3.. run effect give @s minecraft:regeneration 5 1 true",
+                   "particle minecraft:dust{color:[0.6,0.0,0.0],scale:1.5} ~ ~1 ~ 2.5 0.8 2.5 0 120",
+                   snd("entity.warden.heartbeat", 1, 1.2), snd("entity.vex.charge", 1, 0.6), bar("BLOOD SIPHON", "dark_red")], (4, 8)),
 }
 
-POTIONS = {   # key: (name, colour, rgb, lore, scale change, extra modifiers, (count, price))
+POTIONS = {   # key: (name, colour, rgb, lore, attribute modifiers, sound, (count, price)); one brew at a time
     "grow": ("Growth Potion", "green", 0x3FD14A, ["Drink: grow to twice your size for 3 minutes.", "+4 hearts · +1.5 blocks reach"],
-             1.0, [("max_health", 8), ("entity_interaction_range", 1.5), ("block_interaction_range", 1.5)], (2, 6)),
+             [("scale", 1.0), ("max_health", 8), ("entity_interaction_range", 1.5), ("block_interaction_range", 1.5)],
+             ("block.beacon.power_select", 0.6), (2, 6)),
     "shrink": ("Shrink Potion", "light_purple", 0xB45CFF, ["Drink: shrink to a third of your size for 3 minutes.",
                                                            "Fit through 1-block gaps · far harder to hit"],
-               -0.65, [], (2, 6)),
+               [("scale", -0.65)], ("entity.illusioner.mirror_move", 1.6), (2, 6)),
+    "moon": ("Moon Juice", "white", 0xD8E0F0, ["Drink: low gravity for 3 minutes.", "Huge, floaty jumps · no fall damage"],
+             [("gravity", -0.06), ("jump_strength", 0.15), ("safe_fall_distance", 256)], ("block.amethyst_block.resonate", 0.8), (2, 6)),
+    "swift": ("Swiftfoot Tonic", "yellow", 0xF2D13B, ["Drink: run faster for 3 minutes.", "+40% speed · walk straight up 1-block steps"],
+              [("movement_speed", 0.04), ("step_height", 0.9)], ("entity.horse.gallop", 1.4), (2, 6)),
 }
 SIZE_SECONDS = 180
-MODS = ["scale", "max_health", "entity_interaction_range", "block_interaction_range"]
+MODS = sorted({a for p in POTIONS.values() for a, _ in p[4]})
 
 
 def ability_item(k, count):
@@ -115,12 +157,6 @@ def potion_item(k, count):
     return (f'{{id:"minecraft:potion",count:{count},components:{{"minecraft:custom_data":{{bm:"{k}"}},'
             f'"minecraft:custom_name":{txt(name, color, bold=True)},"minecraft:potion_contents":{{custom_color:{rgb}}},'
             f'"minecraft:lore":[{",".join(txt(l) for l in lore)},{TAG_LINE}],"minecraft:max_stack_size":4}}}}')
-
-
-def contraband(item, name, ench=None, count=1):
-    e = f',"minecraft:enchantments":{{{",".join(f"{json.dumps("minecraft:" + k)}:{v}" for k, v in ench.items())}}}' if ench else ""
-    return (f'{{id:"minecraft:{item}",count:{count},components:{{"minecraft:custom_name":{txt(name, bold=True)},'
-            f'"minecraft:lore":[{txt("Sold only on the black market")},{TAG_LINE}]{e}}}}}')
 
 
 def trade(price, sell):
@@ -155,29 +191,50 @@ w(f"{F}item/snare_ray.mcfunction", [
     "execute if entity @e[tag=og.hit] run return 0",
     "execute unless block ~ ~ ~ #og:passable run return 0",
     "execute if score #b og_i matches 1.. positioned ^ ^ ^0.5 run function og:item/snare_ray"])
+w(f"{F}item/swap_ray.mcfunction", [
+    "# Swap Orb: like the Snare Dart's ray, with portal sparks",
+    "scoreboard players remove #b og_i 1",
+    "particle minecraft:portal ~ ~ ~ 0 0 0 0 1",
+    f"execute positioned ~-0.5 ~-0.5 ~-0.5 as @e[{TGT},dx=0,dy=0,dz=0,limit=1] run tag @s add og.hit",
+    "execute if entity @e[tag=og.hit] run return 0",
+    "execute unless block ~ ~ ~ #og:passable run return 0",
+    "execute if score #b og_i matches 1.. positioned ^ ^ ^0.5 run function og:item/swap_ray"])
+w(f"{F}item/refund.mcfunction", [
+    "# an ability that had nothing to do gives its charge back (and returns early, so the caster tag goes here)",
+    "$loot give @s loot og:item/$(k)", "$title @s actionbar {\"text\":\"$(what)\",\"color\":\"gray\"}",
+    "playsound minecraft:block.dispenser.fail player @s ~ ~ ~ 1 1.2", "tag @s remove og.caster"])
+w(f"{F}item/chrono_tp.mcfunction", ["$tp @s $(x) $(y) $(z)"])
+w(f"{F}item/history.mcfunction", [
+    "# Chrono Clock: where each player stood the last 5 seconds (x100), oldest in slot 4. og_hn counts good samples",
+    *[f"scoreboard players operation @s og_{c}{i} = @s og_{c}{i - 1}" for i in range(4, 0, -1) for c in "xyz"],
+    *[f"execute store result score @s og_{c}0 run data get entity @s Pos[{n}] 100" for n, c in enumerate("xyz")],
+    "scoreboard players add @s og_hn 1"])
+json.dump({"criteria": {"moved": {"trigger": "minecraft:changed_dimension"}}, "rewards": {"function": "og:item/dim"}},
+          open(f"{D}og/advancement/item/dim.json", "w"), indent=1)
+w(f"{F}item/dim.mcfunction", ["advancement revoke @s only og:item/dim", "scoreboard players set @s og_hn 0"])
 w(f"{F}item/snare_hit.mcfunction", [
     f"damage @s 3 minecraft:arrow {BY}", "effect give @s minecraft:slowness 3 3", "effect give @s minecraft:glowing 8 0",
     "particle minecraft:item_slime ~ ~1 ~ 0.3 0.5 0.3 0.1 20", snd("entity.slime.squish", 1, 1.4)])
 
-for k, (name, color, rgb, lore, scale, extra, _) in POTIONS.items():
+for k, (name, color, rgb, lore, mods, (sound, pitch), _) in POTIONS.items():
     w(f"{F}item/size_{k}.mcfunction", [
-        f"# {name}: replaces any size you already had, for {SIZE_SECONDS} s",
+        f"# {name}: replaces any brew you already had, for {SIZE_SECONDS} s",
         "function og:item/size_reset",
-        f"attribute @s minecraft:scale modifier add og:size {scale} add_value",
-        *[f"attribute @s minecraft:{a} modifier add og:size {v} add_value" for a, v in extra],
+        *[f"attribute @s minecraft:{a} modifier add og:size {v} add_value" for a, v in mods],
         f"scoreboard players set @s og_size {SIZE_SECONDS}", "tag @s add og.sized",
-        "particle minecraft:effect ~ ~1 ~ 0.5 1 0.5 0.1 40",
-        snd("block.beacon.power_select" if scale > 0 else "entity.illusioner.mirror_move", 1, 0.6 if scale > 0 else 1.6),
-        f'title @s actionbar {{"text":"◆ {name.split()[0].upper()} · 3 minutes","color":"{color}","bold":true}}'])
+        "particle minecraft:effect ~ ~1 ~ 0.5 1 0.5 0.1 40", snd(sound, 1, pitch),
+        f'title @s actionbar {{"text":"◆ {name.upper()} · 3 minutes","color":"{color}","bold":true}}'])
 w(f"{F}item/size_reset.mcfunction", [f"attribute @s minecraft:{a} modifier remove og:size" for a in MODS]
   + ["scoreboard players reset @s og_size", "tag @s remove og.sized"])
 w(f"{F}item/second.mcfunction", [
-    "# once a second (og:bm/loop): size potions run out, and dying ends them",
+    "# once a second (og:bm/loop): brews run out, and dying ends them; the Chrono Clock's position history",
     "scoreboard players remove @a[tag=og.sized] og_size 1",
-    'title @a[tag=og.sized,scores={og_size=10}] actionbar {"text":"◆ Your potion wears off in 10 s","color":"gray"}',
+    'title @a[tag=og.sized,scores={og_size=10}] actionbar {"text":"◆ Your brew wears off in 10 s","color":"gray"}',
     "execute as @a[tag=og.sized,scores={og_died=1..}] run function og:item/size_reset",
     "execute as @a[tag=og.sized] unless score @s og_size matches 1.. run function og:item/size_reset",
-    "scoreboard players reset @a og_died"])
+    "execute as @a[scores={og_died=1..}] run scoreboard players set @s og_hn 0",
+    "scoreboard players reset @a og_died",
+    "execute as @a[gamemode=!spectator] run function og:item/history"])
 gives = []
 for k in ABILITIES:
     gives.append(f"loot give @s loot og:item/{k}")
@@ -236,26 +293,19 @@ for k in {**ABILITIES, **POTIONS}:
     json.dump({"type": "minecraft:command", "pools": [{"rolls": 1, "entries": [loot_entry(k, 1)]}]},
               open(f"{D}og/loot_table/item/{k}.json", "w"), indent=1)
 
-lt_path = f"{D}og/loot_table/black_market.json"
-lt = json.load(open(lt_path))
-ents = [e for e in lt["pools"][0]["entries"] if not (e.get("functions") and any(
-    f.get("function") == "minecraft:set_components" and "minecraft:custom_data" in f.get("components", {}) for f in e["functions"]))]
-ents += [loot_entry("blink", {"type": "minecraft:uniform", "min": 4, "max": 8}, 8),
-         loot_entry("stim", {"type": "minecraft:uniform", "min": 2, "max": 4}, 8),
-         loot_entry("gravity", 2, 6), loot_entry("grow", 2, 6), loot_entry("shrink", 2, 6)]
-lt["pools"][0]["entries"] = ents
-json.dump(lt, open(lt_path, "w"), indent=1)
+# the hidden dealer's once-per-player gift: one random stack of contraband
+U = lambda lo, hi: {"type": "minecraft:uniform", "min": lo, "max": hi}
+json.dump({"type": "minecraft:chest", "pools": [{"rolls": 1, "entries": [
+    loot_entry("blink", U(4, 8), 10), loot_entry("jet", U(4, 8), 10), loot_entry("stim", U(2, 4), 10),
+    loot_entry("smoke", U(2, 4), 8), loot_entry("snare", U(4, 8), 8), loot_entry("frost", U(2, 3), 8),
+    loot_entry("tesla", 2, 6), loot_entry("gravity", 2, 6), loot_entry("siphon", 2, 6), loot_entry("swap", 2, 6),
+    loot_entry("chrono", 2, 6), loot_entry("grow", 2, 6), loot_entry("shrink", 2, 6), loot_entry("moon", 2, 6),
+    loot_entry("swift", 2, 6)]}]}, open(f"{D}og/loot_table/black_market.json", "w"), indent=1)
 
 # ------------------------------------------------------------------ the dealer
 TRADES = ([trade(price, ability_item(k, n)) for k, (*_, (n, price)) in ABILITIES.items()]
           + [trade(price, potion_item(k, n)) for k, (*_, (n, price)) in POTIONS.items()]
-          + [trade(48, contraband("netherite_sword", "Contraband Blade", {"sharpness": 5, "looting": 3, "unbreaking": 3, "sweeping_edge": 3})),
-             trade(48, contraband("netherite_pickaxe", "Contraband Pickaxe", {"efficiency": 5, "fortune": 3, "unbreaking": 3})),
-             trade(32, contraband("elytra", "Contraband Wings")),
-             trade(10, contraband("gray_shulker_box", "Contraband Stash")),
-             trade(16, '{id:"minecraft:enchanted_book",count:1,components:{"minecraft:stored_enchantments":{"minecraft:mending":1}}}'),
-             trade(12, '{id:"minecraft:enchanted_golden_apple",count:1}'),
-             trade(8, '{id:"minecraft:totem_of_undying",count:1}')])
+)
 w(F + "place.mcfunction", [
     "# /function og:place (ops, on Anarchy): put the Black Market Dealer in the market, on the street outside the bank's door.",
     "# Written by gen_items.py. Tagged crispy_shop (or the market moves it out) and needtag.blackmarket (only players wearing",

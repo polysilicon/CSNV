@@ -1,0 +1,10 @@
+{
+ "criteria": {
+  "moved": {
+   "trigger": "minecraft:changed_dimension"
+  }
+ },
+ "rewards": {
+  "function": "og:item/dim"
+ }
+}

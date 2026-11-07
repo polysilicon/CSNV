@@ -26,18 +26,25 @@ and `/function og:place`):
 | Gravity Bomb ×4 | right-click: everything within 6 levitates 3 s, then falls, 20 s | 8 |
 | Snare Dart ×8 | right-click: dart at the first target in 24 blocks: 3 damage, Slowness IV 3 s, Glowing 8 s, 8 s | 6 |
 | Stim Shot ×4 | right-click: Instant Health II, Regeneration II 6 s, Absorption 30 s, 30 s | 6 |
-| Growth Potion ×2 | drink: 2x size, +4 hearts, +1.5 reach, 3 min | 6 |
-| Shrink Potion ×2 | drink: 0.35x size (fits through 1-block gaps, hard to hit), 3 min | 6 |
-| Contraband Blade / Pickaxe | netherite, Sharpness V Looting III / Efficiency V Fortune III | 48 |
-| Contraband Wings, Stash, Mending book, enchanted golden apple, totem | | 32, 10, 16, 12, 8 |
+| Swap Orb ×4 | right-click: trade places with the player or mob you aim at (24 blocks), 12 s | 8 |
+| Chrono Clock ×4 | right-click: rewind to where you stood 5 s ago (same dimension), 25 s | 8 |
+| Frost Nova ×4 | right-click: 3 freeze damage, Slowness V + Mining Fatigue III 4 s within 6, 18 s | 6 |
+| Blood Siphon ×4 | right-click: 4 damage to everything within 5; heals you, more if 3+ hit, 20 s | 8 |
+| Growth Potion ×2 | drink: 2x size, +4 hearts, +1.5 reach | 6 |
+| Shrink Potion ×2 | drink: 0.35x size (fits through 1-block gaps, hard to hit) | 6 |
+| Moon Juice ×2 | drink: low gravity, huge floaty jumps, no fall damage | 6 |
+| Swiftfoot Tonic ×2 | drink: +40% speed, walk straight up 1-block steps | 6 |
+
+Brews last 3 minutes, one at a time (a new one replaces the old). No generic items: everything sold, and the hidden
+dealer's once-per-player gift (`loot_table/black_market`, one random stack), is Black Market contraband.
+An ability with nothing to do (Swap Orb with no target, Chrono Clock before 5 s of history) gives its charge back.
 
 Ability items work like Multiverse's (right-click, the client shows the cooldown), but each use spends one charge
 from the stack. They're clay balls with an item model, a near-instant `consumable` and a `use_cooldown`; using one
 fires its `consume_item` advancement (`og:item/<key>`, matched on `custom_data {bm:"<key>"}`) whose reward runs
 `og:item/use_<key>` as the player. They hit every living thing except the user and shopkeepers (`#og:not_target`).
-The size potions add attribute modifier `og:size` (one replaces the other); `og:item/second` (once a second) ends it
-after 3 minutes or on death. The hidden dealer's random item can now also be Phase Shards, Stim Shots, Gravity Bombs or
-a size potion. Ops: `/function og:give_all` gives one of each (needs 9 free slots).
+The brews add attribute modifier `og:size`; `og:item/second` (once a second) ends it after 3 minutes or on death, and
+keeps each player's last 5 positions for the Chrono Clock (reset on death or changing dimension). Ops: `/function og:give_all` gives one of each (needs 9 free slots).
 
 - Install: `datapack/` as `world/datapacks/crispy_og`, `/reload` (og:load starts the once-a-second check), then
   `/function og:place` for the dealer.

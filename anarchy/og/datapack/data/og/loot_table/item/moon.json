@@ -1,0 +1,55 @@
+{
+ "type": "minecraft:command",
+ "pools": [
+  {
+   "rolls": 1,
+   "entries": [
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:potion",
+     "functions": [
+      {
+       "function": "minecraft:set_components",
+       "components": {
+        "minecraft:custom_data": {
+         "bm": "moon"
+        },
+        "minecraft:custom_name": {
+         "text": "Moon Juice",
+         "color": "white",
+         "bold": true,
+         "italic": false
+        },
+        "minecraft:potion_contents": {
+         "custom_color": 14213360
+        },
+        "minecraft:lore": [
+         {
+          "text": "Drink: low gravity for 3 minutes.",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Huge, floaty jumps \u00b7 no fall damage",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Crispy Anarchy \u00b7 Black Market",
+          "color": "dark_gray",
+          "italic": false
+         }
+        ],
+        "minecraft:max_stack_size": 4
+       }
+      },
+      {
+       "function": "minecraft:set_count",
+       "count": 1
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
