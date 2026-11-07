@@ -625,7 +625,7 @@ def build(NS, fn, js, txt, snbt, Build):
     fn("zones/rift/boss_wave", "\n".join([
         "particle minecraft:sculk_soul ~ ~0.5 ~ 4 0.2 4 0.02 120 force", "particle minecraft:explosion ~ ~0.5 ~ 2 0.1 2 0 6 force",
         "playsound minecraft:entity.warden.sonic_boom hostile @a ~ ~ ~ 3 0.7",
-        "damage @a[distance=..7,gamemode=!creative,gamemode=!spectator] 8 minecraft:sonic_boom by @s",
+        "execute as @a[distance=..7,gamemode=!creative,gamemode=!spectator] run damage @s 8 minecraft:sonic_boom",   # damage takes one target
         "effect give @a[distance=..7,gamemode=!creative,gamemode=!spectator] minecraft:wither 5 1",
         "effect give @a[distance=..7,gamemode=!creative,gamemode=!spectator] minecraft:levitation 1 3"]))
     fn("zones/rift/boss_gone", "\n".join([
