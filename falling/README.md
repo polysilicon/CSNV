@@ -289,7 +289,7 @@ separately: `/island upgrades` → Sky drops, or `/island drops [animals|crates|
 
 **Sky Lord's Rift** (2.15.0): a third resource zone at (0, 120, -640), only for players wearing **[Sky Lord]** (lobby
 tag `r_skylord`). Rare blocks grow back (amethyst, crying obsidian, gilded blackstone, Nether gold and quartz ore,
-ancient debris, obsidian); Lv 15-30 wither skeletons, pillagers, vindicators and blazes. The hub portal stands
+ancient debris, obsidian, amethyst clusters); the area is soul sand valley biome, so it never rains (rain put out the blazes); Lv 15-30 wither skeletons, pillagers, vindicators and blazes. The hub portal stands
 south-east of the plaza (13, 101, 15), mirroring the Woods portal; `zones/build_rift` builds the island and `zones/hub_rift_portal` the
 hub portal (run once). The gate is a `gate` field on the zone: `Zones.warp` (portal, /warp rift, Warps menu) checks
 the chat-tags mod's `ctag.<id>` marker and otherwise runs `crispytag gate`, which explains and offers a click to equip.

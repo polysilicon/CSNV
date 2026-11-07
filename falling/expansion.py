@@ -27,7 +27,8 @@ MINES = (-260, 90, -360)     # rim of the pit at y 90
 WOODS = (260, 100, -360)
 RIFT = (0, 120, -640)        # the Sky Lord's Rift: only players wearing [Sky Lord] (lobby tag r_skylord) get in
 RIFT_GATE = "r_skylord"
-RIFT_RES = ["amethyst_block", "crying_obsidian", "gilded_blackstone", "nether_gold_ore", "nether_quartz_ore", "ancient_debris", "obsidian"]
+RIFT_RES = ["amethyst_block", "amethyst_cluster", "crying_obsidian", "gilded_blackstone", "nether_gold_ore", "nether_quartz_ore", "ancient_debris", "obsidian"]
+RIFT_BIOME = "soul_sand_valley"   # no rain (it put out the blazes), soul particles and a blue haze
 STONES = ["stone", "cobblestone", "andesite", "diorite", "granite", "tuff", "deepslate", "cobbled_deepslate"]
 ORES = ["coal_ore", "iron_ore", "copper_ore", "gold_ore", "lapis_ore", "redstone_ore", "diamond_ore", "emerald_ore"]
 LOGS = ["oak_log", "birch_log", "spruce_log", "dark_oak_log", "cherry_log"]
@@ -524,6 +525,11 @@ def build(NS, fn, js, txt, snbt, Build):
     fn("zones/rift_island", "\n".join(b.c))
     rift_cmds = [f"kill @e[type=minecraft:text_display,tag=cs_zonel,x={RIFT[0] - 40},y={RIFT[1] - 20},z={RIFT[2] - 42},dx=80,dy=45,dz=84]"]
     rift_cmds += [f"fill {RIFT[0] - RR - 3} {y} {RIFT[2] - RR - 3} {RIFT[0] + RR + 3} {y} {RIFT[2] + RR + 3} minecraft:air" for y in range(RIFT[1] - 28, RIFT[1] + 22)]
+    biome = [f"fillbiome {RIFT[0] - RR - 3} {y} {RIFT[2] - RR - 3} {RIFT[0] + RR + 3} {y + 3} {RIFT[2] + RR + 3} minecraft:{RIFT_BIOME}"
+             for y in range(RIFT[1] - 32, RIFT[1] + 28, 4)]   # in 4-high slabs: fillbiome takes at most 32768 blocks a go
+    fn("zones/rift_biome", "\n".join([f"forceload add {RIFT[0] - 36} {RIFT[2] - 36} {RIFT[0] + 36} {RIFT[2] + 36}"] + biome
+                                     + [f"forceload remove {RIFT[0] - 36} {RIFT[2] - 36} {RIFT[0] + 36} {RIFT[2] + 36}"]))
+    rift_cmds += biome
     rift_cmds += [f"execute positioned {RIFT[0]} {RIFT[1]} {RIFT[2]} run function {NS}:zones/rift_island",
                   f"execute positioned {RIFT[0]} {RIFT[1]} {RIFT[2] - 31} run function {NS}:portal/style_rift",
                   f"summon minecraft:text_display {RIFT[0] + 0.5} {RIFT[1] + 3} {RIFT[2] - 26.5} {{Tags:[\"{NS}\",\"cs_zonel\"],billboard:\"center\",text:"
