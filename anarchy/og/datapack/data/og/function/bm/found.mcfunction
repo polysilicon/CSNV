@@ -6,5 +6,6 @@ playsound minecraft:entity.wandering_trader.reappeared neutral @s ~ ~ ~ 1 0.7
 tellraw @s [{"text":"??? ","color":"dark_gray","italic":true},{"text":"whispers: ","color":"gray","italic":true},{"text":"You didn't find me. Take this, and tell no one.","color":"white","italic":true}]
 loot give @s loot og:black_market
 advancement grant @s only anarchy:black_market
-tellraw @s [{"text":"You unlocked the ","color":"gray"},{"text":"[Black Market]","color":"dark_gray","bold":true},{"text":" tag: wear it in /cosmetics to trade with the Black Market Dealer outside the bank.","color":"gray"}]
+# unlock and wear [Black Market] at once (chat-tags mod -> lobby), not when the advancement file next saves
+crispytag award blackmarket
 schedule function og:bm/vanish 5s replace

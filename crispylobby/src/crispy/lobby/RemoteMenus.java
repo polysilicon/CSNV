@@ -104,6 +104,11 @@ final class RemoteMenus {
                 if (t == null) { o.addProperty("error", "no such tag"); return o; }
                 boolean on = id.equals(pd.tag);
                 if (act.equals("equip") && !on && v.canWear(r, pd, t)) { v.cosmetic(r, "tag:" + id); on = id.equals(pd.tag); }
+                // award: unlock and wear an earned tag right now (a server found the player did the thing, so no
+                // waiting for its advancement file). Only the servers' mods call this (ops-only /crispytag award).
+                if (act.equals("award") && t.earned() && !t.granted()) {
+                    pd.owned.add("tag:" + id); pd.tag = id; v.writeTags(); v.save(); on = true;
+                }
                 o.addProperty("display", t.display());
                 o.addProperty("equipped", on);
                 o.addProperty("owned", pd.owned.contains("tag:" + id));

@@ -110,6 +110,15 @@ public final class Gates {
         });
     }
 
+    static void award(ServerPlayer p, String id) {
+        lobby(p, id, "award", o -> {
+            if (o == null || !o.get("equipped").getAsBoolean()) { p.sendSystemMessage(red("Couldn't reach the lobby to unlock your tag: claim it in /cosmetics in a few minutes.")); return; }
+            sync(p, id);
+            p.sendSystemMessage(Component.literal("✔ ").withStyle(s -> s.withColor(0x55FF55)).append(Tags.legacy(o.get("display").getAsString()))
+                    .append(Component.literal(" unlocked and equipped!").withStyle(s -> s.withColor(0x55FF55))));
+        });
+    }
+
     static void equip(ServerPlayer p, String id) {
         lobby(p, id, "equip", o -> {
             if (o == null) { p.sendSystemMessage(red("The lobby isn't answering, so tags can't be changed right now. Try again soon.")); return; }
@@ -160,6 +169,14 @@ public final class Gates {
                     equip(p, StringArgumentType.getString(c, "id"));
                     return 1;
                 })))
+                // run by datapacks/mods (as the player, with permission) the moment someone earns a tag: unlock + wear it now
+                .then(Commands.literal("award").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .then(Commands.argument("id", StringArgumentType.word()).executes(c -> {
+                            ServerPlayer p = c.getSource().getPlayer();
+                            if (p == null) return 0;
+                            award(p, StringArgumentType.getString(c, "id"));
+                            return 1;
+                        })))
                 // run by other mods (as the player, with permission) when they turn someone away
                 .then(Commands.literal("gate").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .then(Commands.argument("id", StringArgumentType.word()).then(Commands.argument("what", StringArgumentType.greedyString()).executes(c -> {
