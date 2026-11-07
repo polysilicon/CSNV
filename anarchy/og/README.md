@@ -33,7 +33,7 @@ and `/function og:place`):
 | Growth Potion ×2 | drink: 2x size, +4 hearts, +1.5 reach | 6 |
 | Shrink Potion ×2 | drink: 0.35x size (fits through 1-block gaps, hard to hit) | 6 |
 | Moon Juice ×2 | drink: low gravity, huge floaty jumps, no fall damage | 6 |
-| Swiftfoot Tonic ×2 | drink: +40% speed, walk straight up 1-block steps | 6 |
+| Restoring Draught ×2 | drink: back to normal size, ends any brew | 2 |
 
 Brews last 3 minutes, one at a time (a new one replaces the old). No generic items: everything sold, and the hidden
 dealer's once-per-player gift (`loot_table/black_market`, one random stack), is Black Market contraband.

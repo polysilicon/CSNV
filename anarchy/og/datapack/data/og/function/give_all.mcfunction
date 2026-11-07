@@ -13,4 +13,4 @@ loot give @s loot og:item/siphon
 loot give @s loot og:item/grow
 loot give @s loot og:item/shrink
 loot give @s loot og:item/moon
-loot give @s loot og:item/swift
+loot give @s loot og:item/normal

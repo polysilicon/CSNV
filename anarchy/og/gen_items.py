@@ -135,8 +135,8 @@ POTIONS = {   # key: (name, colour, rgb, lore, attribute modifiers, sound, (coun
                [("scale", -0.65)], ("entity.illusioner.mirror_move", 1.6), (2, 6)),
     "moon": ("Moon Juice", "white", 0xD8E0F0, ["Drink: low gravity for 3 minutes.", "Huge, floaty jumps · no fall damage"],
              [("gravity", -0.06), ("jump_strength", 0.15), ("safe_fall_distance", 256)], ("block.amethyst_block.resonate", 0.8), (2, 6)),
-    "swift": ("Swiftfoot Tonic", "yellow", 0xF2D13B, ["Drink: run faster for 3 minutes.", "+40% speed · walk straight up 1-block steps"],
-              [("movement_speed", 0.04), ("step_height", 0.9)], ("entity.horse.gallop", 1.4), (2, 6)),
+    "normal": ("Restoring Draught", "gray", 0x9AA3AD, ["Drink: back to your normal size and self.", "Ends any Black Market brew right away"],
+               [], ("block.beacon.deactivate", 1.2), (2, 2)),
 }
 SIZE_SECONDS = 180
 MODS = sorted({a for p in POTIONS.values() for a, _ in p[4]})
@@ -217,6 +217,11 @@ w(f"{F}item/snare_hit.mcfunction", [
     "particle minecraft:item_slime ~ ~1 ~ 0.3 0.5 0.3 0.1 20", snd("entity.slime.squish", 1, 1.4)])
 
 for k, (name, color, rgb, lore, mods, (sound, pitch), _) in POTIONS.items():
+    if not mods:   # the Restoring Draught: just ends whatever brew you're on
+        w(f"{F}item/size_{k}.mcfunction", [f"# {name}: back to normal", "function og:item/size_reset",
+                                           "particle minecraft:effect ~ ~1 ~ 0.5 1 0.5 0.1 40", snd(sound, 1, pitch),
+                                           f'title @s actionbar {{"text":"◆ BACK TO NORMAL","color":"{color}","bold":true}}'])
+        continue
     w(f"{F}item/size_{k}.mcfunction", [
         f"# {name}: replaces any brew you already had, for {SIZE_SECONDS} s",
         "function og:item/size_reset",
@@ -300,7 +305,7 @@ json.dump({"type": "minecraft:chest", "pools": [{"rolls": 1, "entries": [
     loot_entry("smoke", U(2, 4), 8), loot_entry("snare", U(4, 8), 8), loot_entry("frost", U(2, 3), 8),
     loot_entry("tesla", 2, 6), loot_entry("gravity", 2, 6), loot_entry("siphon", 2, 6), loot_entry("swap", 2, 6),
     loot_entry("chrono", 2, 6), loot_entry("grow", 2, 6), loot_entry("shrink", 2, 6), loot_entry("moon", 2, 6),
-    loot_entry("swift", 2, 6)]}]}, open(f"{D}og/loot_table/black_market.json", "w"), indent=1)
+    loot_entry("normal", 2, 6)]}]}, open(f"{D}og/loot_table/black_market.json", "w"), indent=1)
 
 # ------------------------------------------------------------------ the dealer
 TRADES = ([trade(price, ability_item(k, n)) for k, (*_, (n, price)) in ABILITIES.items()]

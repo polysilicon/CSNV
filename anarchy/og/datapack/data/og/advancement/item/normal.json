@@ -6,13 +6,13 @@
     "item": {
      "items": "minecraft:potion",
      "predicates": {
-      "minecraft:custom_data": "{bm:\"swift\"}"
+      "minecraft:custom_data": "{bm:\"normal\"}"
      }
     }
    }
   }
  },
  "rewards": {
-  "function": "og:item/use_swift"
+  "function": "og:item/use_normal"
  }
 }

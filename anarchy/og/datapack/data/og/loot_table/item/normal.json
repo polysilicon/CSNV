@@ -12,25 +12,25 @@
        "function": "minecraft:set_components",
        "components": {
         "minecraft:custom_data": {
-         "bm": "swift"
+         "bm": "normal"
         },
         "minecraft:custom_name": {
-         "text": "Swiftfoot Tonic",
-         "color": "yellow",
+         "text": "Restoring Draught",
+         "color": "gray",
          "bold": true,
          "italic": false
         },
         "minecraft:potion_contents": {
-         "custom_color": 15913275
+         "custom_color": 10134445
         },
         "minecraft:lore": [
          {
-          "text": "Drink: run faster for 3 minutes.",
+          "text": "Drink: back to your normal size and self.",
           "color": "gray",
           "italic": false
          },
          {
-          "text": "+40% speed \u00b7 walk straight up 1-block steps",
+          "text": "Ends any Black Market brew right away",
           "color": "gray",
           "italic": false
          },
