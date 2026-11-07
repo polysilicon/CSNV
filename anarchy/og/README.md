@@ -1,6 +1,6 @@
 # [OG] Merchant (Anarchy)
 
-A shop villager in the market (`crispy:market`, -56.5 172 65.5, opposite the Ripperdoc) that only trades with
+A shop villager in the market (`crispy:market`, -102.5 95 -68.5, on the street just outside the bank's east door) that only trades with
 players **wearing** the [OG] tag. The gate is the chat-tags mod's: the villager is tagged `needtag.og`, so anyone not
 wearing [OG] gets "This [OG] Merchant needs [OG] equipped", with a click to equip it if they own or can get it.
 
