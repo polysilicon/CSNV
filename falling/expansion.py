@@ -574,6 +574,82 @@ def build(NS, fn, js, txt, snbt, Build):
             mob.append(f"execute if score #m cs_tmp matches {i} run summon minecraft:{m} ~ ~ ~ {{Tags:[\"cs_zone_mob\",\"cs_zone_{key}\"],PersistenceRequired:1b{extra}}}")
         mob.append("particle minecraft:large_smoke ~ ~0.5 ~ 0.3 0.5 0.3 0.01 10")
         fn(f"zones/{key}/mob", "\n".join(mob))
+    # ---- the Rift Warden: a giant armoured wither skeleton that sometimes rises in the Rift (while someone's there).
+    # About once every WARDEN_ODDS seconds of play there, never within WARDEN_COOLDOWN seconds of the last one. It
+    # calls up wither skeleton guards, sends out a withering shockwave, and drops rich loot; everyone in the Rift when
+    # it falls gets WARDEN_COINS. It sinks back into the rift when the last player leaves (tag cs_zone_rift).
+    WARDEN_ODDS, WARDEN_COOLDOWN, WARDEN_COINS, WARDEN_HP = 600, 900, 1500, 700
+    rbox = box(next(z for z in ZONES if z[0] == "rift"))
+    trim = '"minecraft:trim":{material:"minecraft:amethyst",pattern:"minecraft:%s"}'
+    def piece(it, pat): return '{id:"minecraft:%s",count:1,components:{%s,"minecraft:enchantment_glint_override":true}}' % (it, trim % pat)
+    warden = ("{Tags:[\"cs_zone_boss\",\"cs_rift_boss\",\"cs_zone_rift\"],PersistenceRequired:1b,CustomNameVisible:1b,"
+              "CustomName:{text:\"☠ The Rift Warden\",color:\"dark_purple\",bold:true},DeathLootTable:\"%s:entities/rift_warden\","
+              "equipment:{head:%s,chest:%s,legs:%s,feet:%s,mainhand:{id:\"minecraft:netherite_sword\",count:1,components:{\"minecraft:enchantment_glint_override\":true}}},"
+              "drop_chances:{head:0f,chest:0f,legs:0f,feet:0f,mainhand:0f},"
+              "attributes:[{id:\"minecraft:scale\",base:2.6},{id:\"minecraft:max_health\",base:%d},{id:\"minecraft:attack_damage\",base:16},"
+              "{id:\"minecraft:armor\",base:20},{id:\"minecraft:armor_toughness\",base:12},{id:\"minecraft:knockback_resistance\",base:1},"
+              "{id:\"minecraft:movement_speed\",base:0.28},{id:\"minecraft:follow_range\",base:48},{id:\"minecraft:step_height\",base:2}],Health:%d}"
+              % (NS, piece("netherite_helmet", "silence"), piece("netherite_chestplate", "eye"), piece("netherite_leggings", "ward"),
+                 piece("netherite_boots", "rib"), WARDEN_HP, WARDEN_HP))
+    fn("zones/rift/boss_roll", "\n".join([
+        f"execute if entity @e[tag=cs_rift_boss] run return run function {NS}:zones/rift/boss_tick",
+        f"execute if score #rboss cs_tmp matches 1 run function {NS}:zones/rift/boss_gone",
+        "execute if score #rcd cs_tmp matches 1.. run return run scoreboard players remove #rcd cs_tmp 1",
+        f"execute store result score #r cs_tmp run random value 1..{WARDEN_ODDS}",
+        f"execute if score #r cs_tmp matches 1 run function {NS}:zones/rift/boss_spawn"]))
+    fn("zones/rift/boss_spawn", "\n".join([
+        f"execute positioned {RIFT[0] + 0.5} {RIFT[1] + 12} {RIFT[2] - 14.5} positioned over motion_blocking_no_leaves run summon minecraft:wither_skeleton ~ ~ ~ " + warden,
+        f"execute positioned {RIFT[0]} {RIFT[1] + 1} {RIFT[2] - 14} run particle minecraft:soul_fire_flame ~ ~2 ~ 2 3 2 0.05 300 force",
+        f"execute positioned {RIFT[0]} {RIFT[1] + 1} {RIFT[2] - 14} run playsound minecraft:entity.wither.spawn hostile @a ~ ~ ~ 4 0.8",
+        "scoreboard players set #rboss cs_tmp 1", "scoreboard players set #rtick cs_tmp 0",
+        f"bossbar add {NS}:rift_warden {{text:\"☠ The Rift Warden\",color:\"dark_purple\",bold:true}}",
+        f"bossbar set {NS}:rift_warden color purple", f"bossbar set {NS}:rift_warden style notched_10", f"bossbar set {NS}:rift_warden max {WARDEN_HP}",
+        f"bossbar set {NS}:rift_warden value {WARDEN_HP}",
+        f"tellraw @a [{{text:\"☠ \",color:\"dark_purple\"}},{{text:\"The Rift Warden has risen in the Sky Lord's Rift!\",color:\"light_purple\",bold:true}}]"]))
+    fn("zones/rift/boss_tick", "\n".join([
+        f"bossbar set {NS}:rift_warden players @a[{rbox}]",
+        f"execute store result bossbar {NS}:rift_warden value run data get entity @e[tag=cs_rift_boss,limit=1] Health",
+        "scoreboard players add #rtick cs_tmp 1",
+        # every 15 s: two wither skeleton guards rise beside it
+        "scoreboard players operation #m cs_tmp = #rtick cs_tmp", "scoreboard players set #k cs_tmp 15", "scoreboard players operation #m cs_tmp %= #k cs_tmp",
+        f"execute if score #m cs_tmp matches 0 as @e[tag=cs_rift_boss] at @s run function {NS}:zones/rift/boss_guards",
+        # every 9 s: a withering shockwave hits everyone within 7 blocks
+        "scoreboard players operation #m cs_tmp = #rtick cs_tmp", "scoreboard players set #k cs_tmp 9", "scoreboard players operation #m cs_tmp %= #k cs_tmp",
+        f"execute if score #m cs_tmp matches 4 as @e[tag=cs_rift_boss] at @s run function {NS}:zones/rift/boss_wave",
+        # it never strays far from the island
+        f"execute as @e[tag=cs_rift_boss] at @s unless entity @s[{rbox}] positioned {RIFT[0] + 0.5} {RIFT[1] + 12} {RIFT[2] - 14.5} positioned over motion_blocking_no_leaves run tp @s ~ ~ ~"]))
+    fn("zones/rift/boss_guards", "\n".join([
+        "particle minecraft:soul ~ ~1 ~ 2 1 2 0.05 60 force", "playsound minecraft:entity.wither_skeleton.ambient hostile @a ~ ~ ~ 3 0.6",
+        "summon minecraft:wither_skeleton ~2 ~ ~ {Tags:[\"cs_zone_mob\",\"cs_zone_rift\"],PersistenceRequired:1b}",
+        "summon minecraft:wither_skeleton ~-2 ~ ~ {Tags:[\"cs_zone_mob\",\"cs_zone_rift\"],PersistenceRequired:1b}"]))
+    fn("zones/rift/boss_wave", "\n".join([
+        "particle minecraft:sculk_soul ~ ~0.5 ~ 4 0.2 4 0.02 120 force", "particle minecraft:explosion ~ ~0.5 ~ 2 0.1 2 0 6 force",
+        "playsound minecraft:entity.warden.sonic_boom hostile @a ~ ~ ~ 3 0.7",
+        "damage @a[distance=..7,gamemode=!creative,gamemode=!spectator] 8 minecraft:sonic_boom by @s",
+        "effect give @a[distance=..7,gamemode=!creative,gamemode=!spectator] minecraft:wither 5 1",
+        "effect give @a[distance=..7,gamemode=!creative,gamemode=!spectator] minecraft:levitation 1 3"]))
+    fn("zones/rift/boss_gone", "\n".join([
+        "scoreboard players set #rboss cs_tmp 0", f"scoreboard players set #rcd cs_tmp {WARDEN_COOLDOWN}", f"bossbar remove {NS}:rift_warden",
+        # killed (someone's still in the Rift) or just faded away when everyone left (then no reward)
+        f"execute if entity @a[{rbox}] run function {NS}:zones/rift/boss_won"]))
+    fn("zones/rift/boss_won", "\n".join([
+        f"scoreboard players add @a[{rbox}] cs_coins {WARDEN_COINS}",
+        f"tellraw @a [{{text:\"☠ \",color:\"dark_purple\"}},{{text:\"The Rift Warden has fallen! \",color:\"light_purple\",bold:true}},{{text:\"Everyone in the Rift gets {WARDEN_COINS:,} coins.\",color:\"gold\",bold:false}}]",
+        f"execute positioned {RIFT[0]} {RIFT[1] + 1} {RIFT[2]} run playsound minecraft:ui.toast.challenge_complete master @a[{rbox}] ~ ~ ~ 1 1",
+        f"kill @e[type=minecraft:wither_skeleton,tag=cs_zone_rift]"]))
+    def lt(it, lo, hi=None, chance=1.0):
+        e = {"type": "minecraft:item", "name": f"minecraft:{it}"}
+        if hi: e["functions"] = [{"function": "minecraft:set_count", "count": {"type": "minecraft:uniform", "min": lo, "max": hi}}]
+        p = {"rolls": 1, "entries": [e]}
+        if chance < 1: p["conditions"] = [{"condition": "minecraft:random_chance", "chance": chance}]
+        return p
+    js(f"data/{NS}/loot_table/entities/rift_warden.json", {"type": "minecraft:entity", "pools": [
+        lt("netherite_scrap", 2, 4), lt("ancient_debris", 1, 3), lt("amethyst_shard", 12, 24), lt("crying_obsidian", 4, 8),
+        lt("enchanted_golden_apple", 1, None, 0.5), lt("wither_skeleton_skull", 1, None, 0.5), lt("netherite_upgrade_smithing_template", 1, None, 0.35),
+        lt("nether_star", 1, None, 0.12), lt("silence_armor_trim_smithing_template", 1, None, 0.08)]})
+    sec.append(f"execute if entity @a[{rbox}] run function {NS}:zones/rift/boss_roll")
+    sec.append(f"execute unless entity @a[{rbox}] if score #rboss cs_tmp matches 1 unless entity @e[tag=cs_rift_boss] run function {NS}:zones/rift/boss_gone")
+
     fn("zones/second", "\n".join(sec))
     fn("zones/tp", "$execute in minecraft:overworld run tp @s $(x) $(y) $(z) $(yaw) 0")
 

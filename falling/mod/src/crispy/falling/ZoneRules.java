@@ -64,7 +64,7 @@ public final class ZoneRules {
     /** Only the zone's own levelled mobs live in a zone: anything else (natural spawns, zombie reinforcements, ...)
      *  is removed as soon as it appears. Tamed pets that followed a player in are left alone. */
     static boolean outsider(net.minecraft.world.entity.Entity e) {
-        return e instanceof Mob m && !isZoneMob(m) && !(m instanceof net.minecraft.world.entity.TamableAnimal ta && ta.isTame())
+        return e instanceof Mob m && !isZoneMob(m) && !m.entityTags().contains("cs_zone_boss") && !(m instanceof net.minecraft.world.entity.TamableAnimal ta && ta.isTame())
                 && !m.isPassenger() && Zones.at(m.level(), m.blockPosition()) != null;
     }
     /** ServerEntityEvents.ENTITY_LOAD: queue it (removing an entity while it's being added isn't safe). */

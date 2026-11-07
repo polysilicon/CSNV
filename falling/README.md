@@ -293,3 +293,11 @@ ancient debris, obsidian, amethyst clusters); the area is soul sand valley biome
 south-east of the plaza (13, 101, 15), mirroring the Woods portal; `zones/build_rift` builds the island and `zones/hub_rift_portal` the
 hub portal (run once). The gate is a `gate` field on the zone: `Zones.warp` (portal, /warp rift, Warps menu) checks
 the chat-tags mod's `ctag.<id>` marker and otherwise runs `crispytag gate`, which explains and offers a click to equip.
+
+**The Rift Warden** (2.15.2): a giant (scale 2.6) wither skeleton in amethyst-trimmed netherite, 700 HP, that rises in
+the Rift about once every 10 minutes someone spends there (1 in 600 a second, 15-minute cooldown after each). Boss bar
+for players in the Rift; every 15 s it raises two wither skeleton guards, every 9 s a withering shockwave (8 damage,
+Wither II, a short levitation) hits everyone within 7 blocks. Loot table `entities/rift_warden` (netherite scrap,
+ancient debris, amethyst, crying obsidian; chances of a god apple, a wither skull, an upgrade template, a nether
+star); everyone in the Rift when it dies gets 1,500 coins. It fades when the last player leaves (no reward).
+Tagged `cs_zone_boss`, which ZoneRules.outsider leaves alone. Test spawn: `function crispy_skyblock:zones/rift/boss_spawn`.
