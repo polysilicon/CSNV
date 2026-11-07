@@ -4,7 +4,6 @@ SPOTS = [  # (x, y, z) block a player crouches in: a covered corner inside or ri
            # area that opens to the outside (find_spots2: walkable from the shop and connected to open sky), each
            # checked in the live world (feet and head clear, solid ground)
     (-26, 93, -100),   # Basic Tools And Equipment
-    (-137, 172, -72),  # Coins To Wither Stars
     (-58, 93, -71),    # Concrete Mixer
     (-57, 105, -35),   # Redstone Parts Dealer
     (203, 74, -202),   # Building Blocks
