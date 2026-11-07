@@ -647,7 +647,7 @@ def hub_build():
                             surf(x + dx, z + dz, hubdeco.path_block(kind, rnd)); used.add((x + dx, z + dz))
                         if (x + dx, z + dz) in top: pathcells.add((x + dx, z + dz))
     path([(0, -9), (0, HUB_PORTAL_Z + 1)], 1, "stone_bricks")
-    path([(0, 9), (0, 17)], 1, "stone_bricks")
+    path([(0, 9), (0, 11)], 1, "stone_bricks")
     # the plots: a ring path round the hills with a spur to the front of each plot
     ring = [(round(district.ROAD * math.cos(2 * math.pi * k / 96)), round(district.ROAD * math.sin(2 * math.pi * k / 96))) for k in range(97)]
     path(ring, 1, "dirt_path")
@@ -673,8 +673,9 @@ def hub_build():
                 c += [f"setblock {lx} {t + 1} {lz} minecraft:oak_fence", f"setblock {lx} {t + 2} {lz} minecraft:lantern[hanging=false]"]
                 used.add((lx, lz))
     # landmarks: a lookout tower up north behind the portal, a gazebo south of spawn, a waterfall off the east edge
-    path([(0, HUB_PORTAL_Z - 3), (0, -38)], 1, "stone_bricks")
-    path([(0, 17), (0, 30)], 1, "dirt_path")
+    for sx_ in (-1, 1):   # round either side of the island portal to the tower, round the Builder's stall to the gazebo
+        path([(4 * sx_, -10), (5 * sx_, -16), (5 * sx_, -23), (sx_, -29), (0, -38)], 1, "stone_bricks")
+    path([(4, 10), (5, 18), (1, 24), (0, 30)], 1, "dirt_path")
     avoid = set()
     hubdeco.lookout(c, top, used, Y, 0, -42)
     hubdeco.gazebo(c, top, used, Y, 0, 34)
@@ -692,7 +693,7 @@ def hub_build():
     # no monsters: light blocks every 10 blocks (invisible, you walk through them)
     for x in range(-HUB_R + 4, HUB_R - 3, 10):
         for z in range(-HUB_R + 4, HUB_R - 3, 10):
-            if (x, z) in top: c.append(f"setblock {x} {top[(x, z)] + 3} {z} minecraft:light[level=15]")
+            if (x, z) in top: c.append(f"setblock {x} {top[(x, z)] + 3} {z} minecraft:light[level=15] keep")
     # market stalls with the merchants
     hubdeco.stalls(c, used, Y, STALLS)
     # the portal to your island

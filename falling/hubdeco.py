@@ -117,14 +117,10 @@ def fountain(c, top, Y):
             c += [f"setblock {x} {Y} {z} minecraft:water", f"setblock {x} {Y - 1} {z} minecraft:{'sea_lantern' if (x + z) % 3 == 0 else 'stone_bricks'}"]
         elif r <= 3.6:
             c += [f"setblock {x} {Y} {z} minecraft:stone_bricks", f"setblock {x} {Y + 1} {z} minecraft:stone_brick_slab[type=bottom]"]
-    c += [f"fill 0 {Y} 0 0 {Y + 3} 0 minecraft:chiseled_stone_bricks",
-          f"fill -1 {Y + 3} -1 1 {Y + 3} 1 minecraft:stone_brick_slab[type=bottom]",
-          f"setblock 0 {Y + 3} 0 minecraft:chiseled_stone_bricks",
-          f"setblock 0 {Y + 4} 0 minecraft:water",
-          f"setblock 0 {Y + 5} 0 minecraft:stone_brick_wall", f"setblock 0 {Y + 6} 0 minecraft:lantern",
+    c += [f"fill 0 {Y} 0 0 {Y + 2} 0 minecraft:chiseled_stone_bricks", f"setblock 0 {Y + 3} 0 minecraft:water",
           f"setblock 1 {Y + 1} 1 minecraft:lily_pad", f"setblock -2 {Y + 1} 0 minecraft:lily_pad"]
     for dx, dz in N4:   # four spouts on the column
-        c.append(f"setblock {dx} {Y + 2} {dz} minecraft:stone_brick_stairs[facing={ {(1, 0): 'west', (-1, 0): 'east', (0, 1): 'north', (0, -1): 'south'}[(dx, dz)] },half=top]")
+        c.append(f"setblock {dx} {Y + 1} {dz} minecraft:stone_brick_stairs[facing={ {(1, 0): 'west', (-1, 0): 'east', (0, 1): 'north', (0, -1): 'south'}[(dx, dz)] },half=top,waterlogged=true]")
 
 
 # ------------------------------------------------------------------ market stalls
@@ -173,7 +169,7 @@ def stalls(c, used, Y, STALLS):
         # counter: either side of the open middle at the front
         for s in (-1, 1):
             x, z = L(1, s)
-            c.append(f"setblock {x} {Y + 1} {z} minecraft:spruce_slab[type=top]")
+            c.append(f"setblock {x} {Y + 1} {z} minecraft:stripped_spruce_wood")
         # goods at the back
         deco = STALL_DECO.get(key, ["barrel"] * 4)
         for i, s in enumerate((-1, 0, 1)):
@@ -192,15 +188,17 @@ def tree(c, rnd, x, t, z, kind):
     """One of several tree shapes; returns the footprint radius."""
     def L(b): return f"minecraft:{b}[persistent=true]"
     if kind == "spruce":
-        h = rnd.randint(7, 10)
+        h = rnd.randint(8, 11)
+        layers = [0, 0, 1, 1, 2, 1, 2, 3, 2, 3, 3]          # leaf radius from the top down, like a real spruce
+        top_y = t + h + 1
+        for i, r in enumerate(layers[:h - 1]):
+            y = top_y - i
+            for dx in range(-r, r + 1):
+                for dz in range(-r, r + 1):
+                    d = dx * dx + dz * dz
+                    if d > r * r + r * 0.6 or (d and d >= r * r and rnd.random() < 0.25): continue
+                    c.append(f"setblock {x + dx} {y} {z + dz} {L('spruce_leaves')}")
         c.append(f"fill {x} {t + 1} {z} {x} {t + h} {z} minecraft:spruce_log")
-        for i, y in enumerate(range(t + 3, t + h + 1)):
-            r = max(0, (h - (y - t)) // 2 - (1 if i % 2 else 0))
-            r = min(r, 3)
-            if r > 0:
-                c.append(f"fill {x - r} {y} {z - r} {x + r} {y} {z + r} {L('spruce_leaves')} replace minecraft:air")
-                for cx, cz in ((-r, -r), (-r, r), (r, -r), (r, r)): c.append(f"setblock {x + cx} {y} {z + cz} minecraft:air")
-        c += [f"setblock {x} {t + h + 1} {z} {L('spruce_leaves')}", f"setblock {x} {t + h + 2} {z} {L('spruce_leaves')}"]
         return 3
     if kind == "big_oak":
         h = rnd.randint(7, 9)
@@ -208,7 +206,7 @@ def tree(c, rnd, x, t, z, kind):
         for dx, dz in rnd.sample([(1, 0), (-1, 0), (0, 1), (0, -1)], 3):   # branches
             by = t + rnd.randint(h - 3, h - 1)
             ax = "x" if dx else "z"
-            c += [f"setblock {x + dx} {by} {z + dz} minecraft:oak_log[axis={ax}]", f"setblock {x + 2 * dx} {by + 1} {z + 2 * dz} minecraft:oak_log"]
+            c += [f"setblock {x + dx} {by} {z + dz} minecraft:oak_log[axis={ax}]", f"setblock {x + 2 * dx} {by} {z + 2 * dz} minecraft:oak_log[axis={ax}]"]
             cx, cz = x + 2 * dx, z + 2 * dz
             c.append(f"fill {cx - 2} {by + 1} {cz - 2} {cx + 2} {by + 2} {cz + 2} {L('oak_leaves')} replace minecraft:air")
             c.append(f"fill {cx - 1} {by + 3} {cz - 1} {cx + 1} {by + 3} {cz + 1} {L('oak_leaves')} replace minecraft:air")
@@ -291,9 +289,10 @@ def plants(c, top, used, rnd, noise, Y, district, avoid):
         if rnd.random() > 0.02: continue
         t = top[(x, z)]
         stone = rnd.choice(["mossy_cobblestone", "cobblestone", "andesite", "stone", "tuff"])
+        drop = rnd.choice([None, (1, 0), (0, 1)])
         for a in (0, 1):
             for b in (0, 1):
-                if rnd.random() < 0.85: c.append(f"setblock {x + a} {t + 1} {z + b} minecraft:{stone}")
+                if (a, b) != drop: c.append(f"setblock {x + a} {t + 1} {z + b} minecraft:{stone}")
         if rnd.random() < 0.6: c.append(f"setblock {x} {t + 2} {z} minecraft:{stone}")
         c.append(f"setblock {x + 1} {t + 2} {z + 1} minecraft:moss_carpet")
         for a in (-1, 0, 1, 2):
@@ -323,8 +322,8 @@ def plants(c, top, used, rnd, noise, Y, district, avoid):
         m = noise(x * 0.06 + 70, z * 0.06 + 70, 51)
         k = kinds[int(noise(x * 0.02 + 5, z * 0.02 + 5, 52) * 7.99)]
         r_ = rnd.random()
-        if m > 0.62 and r_ < 0.45: c.append(f"setblock {x} {t + 1} {z} minecraft:{rnd.choice(k)}")
-        elif r_ < 0.14:
+        if m > 0.68 and r_ < 0.18: c.append(f"setblock {x} {t + 1} {z} minecraft:{rnd.choice(k)}")
+        elif r_ < 0.10:
             g = rnd.choice(["short_grass"] * 5 + ["fern", "tall_grass"])
             if g == "tall_grass": c += [f"setblock {x} {t + 1} {z} minecraft:tall_grass[half=lower]", f"setblock {x} {t + 2} {z} minecraft:tall_grass[half=upper]"]
             else: c.append(f"setblock {x} {t + 1} {z} minecraft:{g}")
@@ -334,37 +333,37 @@ def plants(c, top, used, rnd, noise, Y, district, avoid):
 def lookout(c, top, used, Y, ox, oz):
     """A stone lookout tower with a ladder up the inside to a railed platform and a pointed roof."""
     t = max(top.get((ox + a, oz + b), Y) for a in range(-2, 3) for b in range(-2, 3))
+    lo = min(top.get((ox + a, oz + b), Y) for a in range(-3, 4) for b in range(-3, 4))
     H = 14
-    c.append(f"fill {ox - 2} {t - 2} {oz - 2} {ox + 2} {t} {oz + 2} minecraft:stone_bricks")
+    c.append(f"fill {ox - 2} {lo - 1} {oz - 2} {ox + 2} {t} {oz + 2} minecraft:stone_bricks")
     c.append(f"fill {ox - 2} {t + 1} {oz - 2} {ox + 2} {t + H} {oz + 2} minecraft:stone_bricks")
     c.append(f"fill {ox - 1} {t + 1} {oz - 1} {ox + 1} {t + H} {oz + 1} minecraft:air")
-    for y in range(t + 1, t + H, 4):   # mossy, cracked bands and windows
+    for y in range(t + 1, t + H, 4):   # mossy bands and windows
         c.append(f"fill {ox - 2} {y} {oz - 2} {ox + 2} {y} {oz + 2} minecraft:mossy_stone_bricks replace minecraft:stone_bricks")
     for y in (t + 5, t + 9):
         for a, b in ((0, -2), (2, 0), (-2, 0)):
             c.append(f"setblock {ox + a} {y} {oz + b} minecraft:glass_pane")
     for a, b in ((-2, -2), (2, -2), (-2, 2), (2, 2)):
         c.append(f"fill {ox + a} {t + 1} {oz + b} {ox + a} {t + H} {oz + b} minecraft:polished_andesite")
+    P = t + H + 1      # the platform
     c += [f"fill {ox} {t + 1} {oz + 2} {ox} {t + 2} {oz + 2} minecraft:air",                      # door on the south side
           f"setblock {ox} {t + 3} {oz + 2} minecraft:stone_brick_stairs[facing=north,half=top]",
-          f"fill {ox} {t + 1} {oz - 1} {ox} {t + H} {oz - 1} minecraft:ladder[facing=south]",
-          f"fill {ox - 3} {t + H + 1} {oz - 3} {ox + 3} {t + H + 1} {oz + 3} minecraft:spruce_planks",
-          f"setblock {ox} {t + H + 1} {oz - 1} minecraft:spruce_trapdoor[facing=south,half=top,open=false]",
-          f"fill {ox - 3} {t + H + 2} {oz - 3} {ox + 3} {t + H + 2} {oz + 3} minecraft:spruce_fence",
-          f"fill {ox - 2} {t + H + 2} {oz - 2} {ox + 2} {t + H + 2} {oz + 2} minecraft:air",
-          f"setblock {ox} {t + H + 1} {oz - 1} minecraft:air",
-          f"fill {ox} {t + H + 1} {oz - 1} {ox} {t + H + 1} {oz - 1} minecraft:ladder[facing=south]"]
+          f"fill {ox} {t + 1} {oz - 1} {ox} {P} {oz - 1} minecraft:ladder[facing=south]",
+          f"fill {ox - 3} {P} {oz - 3} {ox + 3} {P} {oz + 3} minecraft:spruce_planks",
+          f"fill {ox - 3} {P - 1} {oz - 3} {ox + 3} {P - 1} {oz + 3} minecraft:spruce_slab[type=top] replace minecraft:air",
+          f"setblock {ox} {P} {oz - 1} minecraft:ladder[facing=south]",
+          f"fill {ox - 3} {P + 1} {oz - 3} {ox + 3} {P + 1} {oz + 3} minecraft:spruce_fence",
+          f"fill {ox - 2} {P + 1} {oz - 2} {ox + 2} {P + 1} {oz + 2} minecraft:air"]
     for a, b in ((-3, -3), (3, -3), (-3, 3), (3, 3)):
-        c += [f"fill {ox + a} {t + H + 2} {oz + b} {ox + a} {t + H + 4} {oz + b} minecraft:spruce_log",
-              f"setblock {ox + a} {t + H + 5} {oz + b} minecraft:lantern"]
-    for i, r in enumerate((4, 3, 2, 1, 0)):   # roof
-        y = t + H + 5 + i
-        if r: c.append(f"fill {ox - r} {y} {oz - r} {ox + r} {y} {oz + r} minecraft:dark_oak_slab[type=bottom]" if i == 0 else
-                       f"fill {ox - r} {y} {oz - r} {ox + r} {y} {oz + r} minecraft:dark_oak_planks")
-        else: c.append(f"setblock {ox} {y} {oz} minecraft:lightning_rod")
-    c.append(f"fill {ox - 2} {t + H + 5} {oz - 2} {ox + 2} {t + H + 5} {oz + 2} minecraft:air")
-    c.append(f"fill {ox - 3} {t + H + 5} {oz - 3} {ox + 3} {t + H + 5} {oz + 3} minecraft:dark_oak_slab[type=bottom] replace minecraft:air")
-    c.append(f"fill {ox - 2} {t + H + 5} {oz - 2} {ox + 2} {t + H + 5} {oz + 2} minecraft:air")
+        c.append(f"fill {ox + a} {P + 1} {oz + b} {ox + a} {P + 3} {oz + b} minecraft:spruce_log")
+    R = P + 4          # the roof, resting on the corner posts
+    c += [f"fill {ox - 3} {R} {oz - 3} {ox + 3} {R} {oz + 3} minecraft:dark_oak_planks",
+          f"fill {ox - 4} {R} {oz - 4} {ox + 4} {R} {oz + 4} minecraft:dark_oak_slab[type=bottom] replace minecraft:air",
+          f"fill {ox - 2} {R + 1} {oz - 2} {ox + 2} {R + 1} {oz + 2} minecraft:dark_oak_planks",
+          f"fill {ox - 1} {R + 2} {oz - 1} {ox + 1} {R + 2} {oz + 1} minecraft:dark_oak_planks",
+          f"setblock {ox} {R + 3} {oz} minecraft:dark_oak_slab[type=bottom]", f"setblock {ox} {R + 4} {oz} minecraft:lightning_rod"]
+    for a, b in ((-2, -2), (2, -2), (-2, 2), (2, 2)):
+        c.append(f"setblock {ox + a} {R - 1} {oz + b} minecraft:lantern[hanging=true]")
     c.append(f"setblock {ox} {t + 4} {oz} minecraft:light[level=12]")
     c.append(f"setblock {ox} {t + 10} {oz} minecraft:light[level=12]")
     for a in range(-4, 5):
@@ -375,10 +374,11 @@ def lookout(c, top, used, Y, ox, oz):
 def gazebo(c, top, used, Y, ox, oz):
     """An open octagonal gazebo with a bench ring and a hanging lantern."""
     t = top.get((ox, oz), Y)
+    lo = min(top.get((ox + a, oz + b), t) for a in range(-4, 5) for b in range(-4, 5))
     cells = [(a, b) for a in range(-3, 4) for b in range(-3, 4) if math.hypot(a, b) <= 3.4]
     for a, b in cells:
         c += [f"setblock {ox + a} {t} {oz + b} minecraft:{'polished_granite' if math.hypot(a, b) < 2 else 'spruce_planks'}",
-              f"fill {ox + a} {t - 2} {oz + b} {ox + a} {t - 1} {oz + b} minecraft:dirt",
+              f"fill {ox + a} {min(lo, t) - 1} {oz + b} {ox + a} {t - 1} {oz + b} minecraft:dirt",
               f"fill {ox + a} {t + 1} {oz + b} {ox + a} {t + 7} {oz + b} minecraft:air"]
         used.add((ox + a, oz + b))
     posts = [(3, 0), (-3, 0), (0, 3), (0, -3), (2, 2), (2, -2), (-2, 2), (-2, -2)]
@@ -413,29 +413,31 @@ def waterfall(c, top, used, rnd, Y, ang):
                 c += [f"fill {k[0]} {t0 - 1} {k[1]} {k[0]} {t0} {k[1]} minecraft:water", f"setblock {k[0]} {t0 - 2} {k[1]} minecraft:mossy_cobblestone"]
                 c.append(f"fill {k[0]} {t0 + 1} {k[1]} {k[0]} {t0 + 4} {k[1]} minecraft:air")
             else:
-                c += [f"setblock {k[0]} {t0} {k[1]} minecraft:{rnd.choice(['mossy_cobblestone', 'mossy_stone_bricks', 'moss_block', 'cobblestone'])}",
+                c += [f"fill {k[0]} {min(top[k], t0)} {k[1]} {k[0]} {t0} {k[1]} minecraft:{rnd.choice(['mossy_cobblestone', 'mossy_stone_bricks', 'moss_block', 'cobblestone'])}",
                       f"fill {k[0]} {t0 + 1} {k[1]} {k[0]} {t0 + 4} {k[1]} minecraft:air"]
             used.add(k)
     back = (pool[0] - round(2 * dx) - (1 if abs(dz) > abs(dx) else 0) * 0, pool[1] - round(2 * dz))
     c += [f"fill {back[0]} {t0 + 1} {back[1]} {back[0]} {t0 + 3} {back[1]} minecraft:mossy_cobblestone",
           f"setblock {back[0]} {t0 + 4} {back[1]} minecraft:moss_carpet"]
-    # the stream: a 1-wide channel of still water at t0 out to the edge, walled with moss and stone
-    n = 0
+    # the stream: a 1-wide channel at each cell's own ground (stepping down where the ground does), walled with moss
+    last = t0
     for r in range(r_edge - 7, r_edge + 1):
         x, z = round(r * dx), round(r * dz)
         if (x, z) not in top: break
-        c += [f"setblock {x} {t0} {z} minecraft:water", f"setblock {x} {t0 - 1} {z} minecraft:mossy_cobblestone",
-              f"fill {x} {t0 + 1} {z} {x} {t0 + 3} {z} minecraft:air"]
+        y = min(top[(x, z)], last)
+        c += [f"setblock {x} {y} {z} minecraft:water", f"fill {x} {y - 2} {z} {x} {y - 1} {z} minecraft:mossy_cobblestone",
+              f"fill {x} {y + 1} {z} {x} {y + 3} {z} minecraft:air"]
         for sx, sz in ((-dz, dx), (dz, -dx)):
             k = (round(x + sx), round(z + sz))
             if k in top and k != (x, z):
-                c += [f"setblock {k[0]} {t0} {k[1]} minecraft:{rnd.choice(['mossy_cobblestone', 'moss_block', 'stone'])}",
-                      f"fill {k[0]} {t0 + 1} {k[1]} {k[0]} {t0 + 3} {k[1]} minecraft:air"]
+                c += [f"fill {k[0]} {min(top[k], y)} {k[1]} {k[0]} {y} {k[1]} minecraft:{rnd.choice(['mossy_cobblestone', 'moss_block', 'stone'])}",
+                      f"fill {k[0]} {y + 1} {k[1]} {k[0]} {y + 3} {k[1]} minecraft:air"]
                 used.add(k)
-        used.add((x, z)); n += 1
+        used.add((x, z)); last = y
+    t0e = last
     # over the edge: the last cell's water flows out and down to the void
     x, z = round((r_edge + 1) * dx), round((r_edge + 1) * dz)
-    c.append(f"setblock {x} {t0} {z} minecraft:water")
+    c.append(f"setblock {x} {t0e} {z} minecraft:water")
     return pool, t0
 
 
