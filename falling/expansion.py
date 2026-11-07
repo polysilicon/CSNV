@@ -25,6 +25,9 @@ PHOENIX_CHANCE = 3    # % per island member per End boss kill
 # ------------------------------------------------------------------ zones
 MINES = (-260, 90, -360)     # rim of the pit at y 90
 WOODS = (260, 100, -360)
+RIFT = (0, 120, -640)        # the Sky Lord's Rift: only players wearing [Sky Lord] (lobby tag r_skylord) get in
+RIFT_GATE = "r_skylord"
+RIFT_RES = ["amethyst_block", "crying_obsidian", "gilded_blackstone", "nether_gold_ore", "nether_quartz_ore", "ancient_debris", "obsidian"]
 STONES = ["stone", "cobblestone", "andesite", "diorite", "granite", "tuff", "deepslate", "cobbled_deepslate"]
 ORES = ["coal_ore", "iron_ore", "copper_ore", "gold_ore", "lapis_ore", "redstone_ore", "diamond_ore", "emerald_ore"]
 LOGS = ["oak_log", "birch_log", "spruce_log", "dark_oak_log", "cherry_log"]
@@ -34,9 +37,11 @@ ZONES = [
      45, ["zombie", "skeleton", "silverfish", "husk"], (MINES[0] + 0.5, MINES[1] + 1, MINES[2] - 30.5, 0)),
     ("woods", "Whispering Woods", WOODS, 38, (WOODS[1] - 16, WOODS[1] + 20), LOGS,
      30, ["spider", "zombie", "witch", "skeleton"], (WOODS[0] + 0.5, WOODS[1] + 1, WOODS[2] - 27.5, 0)),
+    ("rift", "Sky Lord's Rift", RIFT, 34, (RIFT[1] - 18, RIFT[1] + 22), RIFT_RES,
+     90, ["wither_skeleton", "piglin_brute", "vindicator", "blaze", "wither_skeleton"], (RIFT[0] + 0.5, RIFT[1] + 1, RIFT[2] - 27.5, 0)),
 ]
 ZONE_CAP = 8          # mobs per zone at once (+2 per player there)
-SPAWN_EVERY = {"mines": 8, "woods": 3}   # a new mob about every N seconds per zone (a 1-in-N roll each second) until the cap
+SPAWN_EVERY = {"mines": 8, "woods": 3, "rift": 4}   # a new mob about every N seconds per zone (a 1-in-N roll each second) until the cap
 
 
 def build(NS, fn, js, txt, snbt, Build):
@@ -47,7 +52,7 @@ def build(NS, fn, js, txt, snbt, Build):
         "pets": [{"key": k, "name": n, "skill": s, "price": p or 0, "shop": p is not None, "stat": st, "tex": heads[k]["value"]}
                  for k, n, s, p, st in PETS],
         "zones": [{"key": k, "name": n, "x1": c[0] - h, "z1": c[2] - h, "x2": c[0] + h, "z2": c[2] + h, "y1": y[0], "y2": y[1],
-                   "allow": [f"minecraft:{b}" for b in allow], "secs": secs, "warp": list(w)}
+                   "allow": [f"minecraft:{b}" for b in allow], "secs": secs, "warp": list(w), "gate": RIFT_GATE if k == "rift" else ""}
                   for k, n, c, h, y, allow, secs, mobs, w in ZONES],
     }
     box = lambda z: f"x={z[2][0] - z[3]},y={z[4][0]},z={z[2][2] - z[3]},dx={2 * z[3]},dy={z[4][1] - z[4][0]},dz={2 * z[3]}"
@@ -351,11 +356,72 @@ def build(NS, fn, js, txt, snbt, Build):
         *[f"forceload remove {c[0] - h - 2} {c[2] - h - 2} {c[0] + h + 2} {c[2] + h + 2}" for k, n, c, h, *_ in ZONES],
         "scoreboard players set #zonesv cs_cfg 1"]))
 
+    # ---- the Sky Lord's Rift: a dark floating island of blackstone and obsidian torn open by amethyst. Outcrops of rare
+    # blocks grow back after mining; a ring of basalt pillars with soul fire surrounds a sunken amethyst crater.
+    rnd = random.Random(1717)
+    b = Build(1717)
+    RR = 30
+    b.blob(RR, 15, "blackstone", "obsidian", "crying_obsidian")
+    for _ in range(140):   # surface texture
+        a = rnd.uniform(0, 6.283); d = rnd.uniform(0, RR - 2)
+        b.set(int(math.cos(a) * d), 0, int(math.sin(a) * d), rnd.choice(["polished_blackstone", "basalt", "blackstone", "gilded_blackstone", "smooth_basalt", "magma_block"]))
+    b.disk(0, 9, "crying_obsidian"); b.disk(-1, 8, "amethyst_block"); b.disk(0, 7, "air"); b.disk(-1, 6, "budding_amethyst")   # the crater
+    for y in (0, 1):
+        b.disk(y, 6.5, "air")
+    for _ in range(26):
+        a = rnd.uniform(0, 6.283); d = rnd.uniform(1, 6)
+        b.set(int(math.cos(a) * d), 0, int(math.sin(a) * d), "amethyst_cluster[facing=up]")
+    rift_spawns = []
+    for i in range(10):   # basalt pillars topped with soul fire, in a ring
+        a = i * 6.283 / 10 + 0.3; x, z = int(math.cos(a) * 19), int(math.sin(a) * 19)
+        h = rnd.randint(5, 10)
+        b.fill(x, 1, z, x, h, z, "polished_basalt"); b.set(x, h + 1, z, "soul_soil"); b.set(x, h + 2, z, "soul_fire")
+    outcrops = []
+    for i in range(22):   # outcrops of the minable rarities
+        a = rnd.uniform(0, 6.283); d = rnd.uniform(10, RR - 4)
+        x, z = int(math.cos(a) * d), int(math.sin(a) * d)
+        if z < -22 and abs(x) < 6: continue   # keep the arrival platform clear
+        blk = rnd.choice(["amethyst_block", "crying_obsidian", "gilded_blackstone", "nether_gold_ore", "nether_quartz_ore", "obsidian", "nether_quartz_ore", "gilded_blackstone"])
+        r = rnd.randint(1, 2)
+        for dx in range(-r, r + 1):
+            for dz in range(-r, r + 1):
+                if abs(dx) + abs(dz) > r + 1: continue
+                for dy in range(1, rnd.randint(2, 4)): b.set(x + dx, dy, z + dz, blk)
+        if i % 4 == 0: b.set(x, 1, z, "ancient_debris")   # a little debris at the heart of some
+        outcrops.append((x, z))
+    for i in range(16):   # mob spawns on open ground
+        a = i * 6.283 / 16 + 0.15; d = 13 if i % 2 else 24
+        rift_spawns.append((int(math.cos(a) * d), 1, int(math.sin(a) * d)))
+    # arrival platform with the portal back to the hub
+    b.fill(-3, 0, -33, 3, 0, -27, "polished_blackstone_bricks")
+    b.fill(-3, 1, -33, 3, 9, -30, "air")
+    fn("zones/rift_island", "\n".join(b.c))
+    rift_cmds = [f"kill @e[type=minecraft:text_display,tag=cs_zonel,x={RIFT[0] - 40},y={RIFT[1] - 20},z={RIFT[2] - 42},dx=80,dy=45,dz=84]"]
+    rift_cmds += [f"fill {RIFT[0] - RR - 3} {y} {RIFT[2] - RR - 3} {RIFT[0] + RR + 3} {y} {RIFT[2] + RR + 3} minecraft:air" for y in range(RIFT[1] - 18, RIFT[1] + 22)]
+    rift_cmds += [f"execute positioned {RIFT[0]} {RIFT[1]} {RIFT[2]} run function {NS}:zones/rift_island",
+                  f"execute positioned {RIFT[0]} {RIFT[1]} {RIFT[2] - 31} run function {NS}:portal/style_rift",
+                  f"summon minecraft:text_display {RIFT[0] + 0.5} {RIFT[1] + 3} {RIFT[2] - 26.5} {{Tags:[\"{NS}\",\"cs_zonel\"],billboard:\"center\",text:"
+                  + snbt({"text": "Sky Lord's Rift", "color": "light_purple", "bold": True, "extra": [txt("\nRare blocks grow back · Lv 15-30 mobs · /warp hub", "dark_gray", bold=False)]}) + "}",
+                  f"summon minecraft:text_display {RIFT[0] + 0.5} {RIFT[1] + 8.4} {RIFT[2] - 30.5} {{Tags:[\"{NS}\",\"cs_zonel\"],billboard:\"center\",text:"
+                  + snbt({"text": "Hub", "color": "gold", "bold": True, "extra": [txt("\nWalk through to go back", "gray", bold=False)]}) + "}"]
+    fn("zones/build_rift", "\n".join([f"forceload add {RIFT[0] - 36} {RIFT[2] - 36} {RIFT[0] + 36} {RIFT[2] + 36}"] + rift_cmds
+                                     + [f"forceload remove {RIFT[0] - 36} {RIFT[2] - 36} {RIFT[0] + 36} {RIFT[2] + 36}"]))
+    # its portal in the hub: at the end of the plaza's south path, facing the plaza (Portals.FIXED {0, 102, 20, rift})
+    fn("zones/hub_rift_portal", "\n".join([
+        "kill @e[type=minecraft:text_display,tag=cs_riftl]",
+        "fill -3 102 17 3 102 23 minecraft:polished_blackstone_bricks", "fill -3 101 17 3 101 23 minecraft:stone",
+        "fill -3 103 18 3 111 22 minecraft:air",
+        "fill -1 102 17 1 102 18 minecraft:polished_blackstone_brick_stairs[facing=north]",
+        f"execute positioned 0 102 20 run function {NS}:portal/style_rift",
+        "summon minecraft:text_display 0.5 109.4 20.5 {Tags:[\"" + NS + "\",\"cs_riftl\"],billboard:\"center\",text:"
+        + snbt({"text": "Sky Lord's Rift", "color": "light_purple", "bold": True,
+                "extra": [txt("\nOnly for those wearing ", "gray", bold=False), txt("[Sky Lord]", "aqua", bold=True), txt(" · Lv 15-30 mobs", "gray", bold=False)]}) + "}"]))
+
     # ---- mobs: while someone is in a zone, keep up to ZONE_CAP (+2 per player) hostiles there; none when it's empty
     sec = []
     for z in ZONES:
         key, name, c, h, y, allow, secs, mobs, w = z
-        spawns = mine_spawns if key == "mines" else woods_spawns
+        spawns = {"mines": mine_spawns, "woods": woods_spawns, "rift": rift_spawns}[key]
         rp = (c[0], c[1], c[2] - 33) if key == "mines" else (c[0], c[1], c[2] - 31)
         sec += [f"execute if entity @a[{box(z)}] positioned {rp[0]} {rp[1]} {rp[2]} run function {NS}:portal/fx_{key}"]
         sec += [f"execute unless entity @a[{box(z)}] run kill @e[tag=cs_zone_{key}]",

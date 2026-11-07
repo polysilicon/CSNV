@@ -39,7 +39,8 @@ import static crispy.falling.Ui.t;
 final class Zones {
     private Zones() {}
 
-    record Zone(String key, String name, int x1, int y1, int z1, int x2, int y2, int z2, Set<String> allow, int secs, double[] warp) {
+    /** gate: a lobby tag id the player must be wearing to warp in (ctag.<id>, set by the chat-tags mod), or "". */
+    record Zone(String key, String name, int x1, int y1, int z1, int x2, int y2, int z2, Set<String> allow, int secs, double[] warp, String gate) {
         boolean contains(BlockPos p) { return p.getX() >= x1 && p.getX() <= x2 && p.getY() >= y1 && p.getY() <= y2 && p.getZ() >= z1 && p.getZ() <= z2; }
     }
     record Pending(BlockState state, long due) {}
@@ -61,7 +62,7 @@ final class Zones {
                 double[] warp = new double[w.size()];
                 for (int j = 0; j < w.size(); j++) warp[j] = w.getDoubleOr(j, 0);
                 out.add(new Zone(z.getStringOr("key", ""), z.getStringOr("name", ""), z.getIntOr("x1", 0), z.getIntOr("y1", 0), z.getIntOr("z1", 0),
-                        z.getIntOr("x2", 0), z.getIntOr("y2", 0), z.getIntOr("z2", 0), allow, z.getIntOr("secs", 45), warp));
+                        z.getIntOr("x2", 0), z.getIntOr("y2", 0), z.getIntOr("z2", 0), allow, z.getIntOr("secs", 45), warp, z.getStringOr("gate", "")));
             }
             zones = out;
         }
@@ -139,6 +140,14 @@ final class Zones {
                     (pl, c) -> warp(pl, "plots"));
             List<Zone> zs = zones(server);
             int[] slots = {14, 16};
+            for (Zone z : zs) if (z.key().equals("rift")) {
+                boolean in = p.entityTags().contains("ctag." + z.gate());
+                m.put(4, Ui.item(Items.AMETHYST_CLUSTER, t(z.name(), ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD),
+                        List.of(t("Rare blocks that grow back, Lv 15-30 mobs", ChatFormatting.GRAY), t(in ? "You're wearing [Sky Lord]: go on in" : "Only for players wearing [Sky Lord]",
+                                in ? ChatFormatting.GREEN : ChatFormatting.RED), t("You can't build here", ChatFormatting.DARK_GRAY)), in),
+                        (pl, c) -> warp(pl, z.key()));
+            }
+            zs = zs.stream().filter(z -> !z.key().equals("rift")).toList();
             for (int i = 0; i < zs.size() && i < slots.length; i++) {
                 Zone z = zs.get(i);
                 boolean mines = z.key().equals("mines");
@@ -160,10 +169,17 @@ final class Zones {
             default -> {
                 Zone z = zones(server).stream().filter(x -> x.key().equals(where)).findFirst().orElse(null);
                 if (z == null || z.warp().length < 4) yield null;
+                if (!z.gate().isEmpty() && !p.entityTags().contains("ctag." + z.gate()) && !staff(p)) {
+                    // not wearing the tag: the chat-tags mod explains, with a click to equip it if they can
+                    server.getCommands().performPrefixedCommand(p.createCommandSourceStack().withSuppressedOutput().withPermission(LevelBasedPermissionSet.GAMEMASTER),
+                            "crispytag gate " + z.gate() + " " + z.name());
+                    yield "DENIED";
+                }
                 yield "function crispy_skyblock:zones/tp {x:" + z.warp()[0] + ",y:" + z.warp()[1] + ",z:" + z.warp()[2] + ",yaw:" + z.warp()[3] + "}";
             }
         };
         if (cmd != null && cmd.isEmpty()) return 1;
+        if ("DENIED".equals(cmd)) return -1;
         if (cmd == null) { p.sendSystemMessage(t("No warp called " + where + ". Try hub, home, plots, mines or woods.", ChatFormatting.RED)); return 0; }
         server.getCommands().performPrefixedCommand(p.createCommandSourceStack().withSuppressedOutput().withPermission(LevelBasedPermissionSet.GAMEMASTER), cmd);
         return 1;
@@ -172,7 +188,7 @@ final class Zones {
     static void register(CommandDispatcher<CommandSourceStack> d) {
         d.register(Commands.literal("warp").executes(c -> { openWarps(c.getSource().getPlayerOrException()); return 1; })
                 .then(Commands.argument("where", StringArgumentType.word())
-                        .suggests((c, b) -> { for (String s : new String[]{"hub", "home", "plots", "mines", "woods"}) b.suggest(s); return b.buildFuture(); })
+                        .suggests((c, b) -> { for (String s : new String[]{"hub", "home", "plots", "mines", "woods", "rift"}) b.suggest(s); return b.buildFuture(); })
                         .executes(c -> warp(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "where")))));
     }
 }

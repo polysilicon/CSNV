@@ -286,3 +286,10 @@ The gathered mark comes off within 5 ticks of leaving a zone (and its lore line 
 separately: `/island upgrades` → Sky drops, or `/island drops [animals|crates|meteors|dungeons] [on|off]`
 (`/island dungeons on|off` still works). Stored as `#p<id>` = 1 in `cs_noanim`, `cs_nosup`, `cs_nomet`, `cs_nodng`;
 `plot/tick` skips the event while it's set. The End portal at 150 minutes always comes.
+
+**Sky Lord's Rift** (2.15.0): a third resource zone at (0, 120, -640), only for players wearing **[Sky Lord]** (lobby
+tag `r_skylord`). Rare blocks grow back (amethyst, crying obsidian, gilded blackstone, Nether gold and quartz ore,
+ancient debris, obsidian); Lv 15-30 wither skeletons, piglin brutes, vindicators and blazes. The hub portal stands at
+the end of the plaza's south path (0, 102, 20); `zones/build_rift` builds the island and `zones/hub_rift_portal` the
+hub portal (run once). The gate is a `gate` field on the zone: `Zones.warp` (portal, /warp rift, Warps menu) checks
+the chat-tags mod's `ctag.<id>` marker and otherwise runs `crispytag gate`, which explains and offers a click to equip.

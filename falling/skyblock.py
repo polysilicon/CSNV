@@ -767,6 +767,8 @@ def portal_style(theme):
         post, cap, lintel, mid, butt, light = "crying_obsidian", "obsidian", "crying_obsidian", "amethyst_block", "blackstone_wall", "soul_lantern"
     elif theme == "mines":
         post, cap, lintel, mid, butt, light = "deepslate_bricks", "polished_deepslate", "deepslate_tiles", "raw_gold_block", "cobbled_deepslate_wall", "lantern"
+    elif theme == "rift":
+        post, cap, lintel, mid, butt, light = "crying_obsidian", "gilded_blackstone", "polished_blackstone_bricks", "amethyst_block", "polished_blackstone_wall", "soul_lantern"
     else:
         post, cap, lintel, mid, butt, light = "stripped_spruce_log", "mossy_stone_bricks", "stripped_spruce_log[axis=x]", "moss_block", "mossy_stone_brick_wall", "lantern"
     b.c.append("kill @e[type=minecraft:block_display,tag=cs_portalfx,distance=..3]")
@@ -788,6 +790,12 @@ def portal_style(theme):
         b.set(-1, 4, 0, "raw_iron_block"); b.set(1, 4, 0, "raw_copper_block")
         b.set(-2, 6, 0, "lantern"); b.set(2, 6, 0, "lantern")
         b.fill(-2, 5, 0, -2, 5, 0, "polished_deepslate"); b.fill(2, 5, 0, 2, 5, 0, "polished_deepslate")
+    elif theme == "rift":
+        b.fill(-2, 5, 0, 2, 5, 0, "polished_blackstone_brick_slab[type=bottom]")
+        b.set(0, 5, 0, "amethyst_cluster[facing=up]")
+        b.set(-2, 5, 0, "soul_lantern"); b.set(2, 5, 0, "soul_lantern")
+        for x in (-2, 2):
+            for z in (-2, 2): b.set(x, 1, z, "amethyst_cluster[facing=up]")
     else:
         b.fill(-3, 5, -1, 3, 5, 1, "flowering_azalea_leaves[persistent=true]")
         b.fill(-2, 6, -1, 2, 6, 1, "azalea_leaves[persistent=true]")
@@ -798,7 +806,7 @@ def portal_style(theme):
     if theme == "island":
         state, tr, sc = '{Name:"minecraft:nether_portal",Properties:{axis:"x"}}', "0f,0f,0f", "3f,3f,1f"
     else:
-        state, tr, sc = '{Name:"minecraft:%s_stained_glass"}' % ("orange" if theme == "mines" else "lime"), "0f,0f,0.4375f", "3f,3f,0.125f"
+        state, tr, sc = '{Name:"minecraft:%s_stained_glass"}' % {"mines": "orange", "rift": "purple"}.get(theme, "lime"), "0f,0f,0.4375f", "3f,3f,0.125f"
     b.c.append("summon minecraft:block_display ~-1.5 ~1 ~-0.5 {Tags:[\"%s\",\"cs_portalfx\"],block_state:%s,"
                "brightness:{sky:15,block:15},transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],"
                "translation:[%s],scale:[%s]}}" % (NS, state, tr, sc))
@@ -809,8 +817,11 @@ PORTAL_FX = {"island": ["minecraft:portal ~ ~2.5 ~ 0.9 0.9 0.05 0.3 40"],
                        "minecraft:small_flame ~ ~2.5 ~ 0.9 0.9 0.1 0.01 6"],
              "woods": ["minecraft:dust{color:[0.35,1.0,0.3],scale:1.4} ~ ~2.5 ~ 0.9 0.9 0.05 0 30",
                        "minecraft:dust{color:[0.1,0.7,0.2],scale:0.9} ~ ~2.5 ~ 0.9 0.9 0.05 0 20",
-                       "minecraft:happy_villager ~ ~2.5 ~ 0.9 0.9 0.1 0 5"]}
-for _t in ("island", "mines", "woods"):
+                       "minecraft:happy_villager ~ ~2.5 ~ 0.9 0.9 0.1 0 5"],
+             "rift": ["minecraft:dust{color:[0.75,0.3,1.0],scale:1.4} ~ ~2.5 ~ 0.9 0.9 0.05 0 30",
+                      "minecraft:reverse_portal ~ ~2.5 ~ 0.9 0.9 0.1 0.02 12",
+                      "minecraft:soul_fire_flame ~ ~2.5 ~ 0.9 0.9 0.1 0.01 4"]}
+for _t in ("island", "mines", "woods", "rift"):
     fn(f"portal/style_{_t}", "\n".join(portal_style(_t)))
     fn(f"portal/fx_{_t}", "\n".join(f"particle {x}" for x in PORTAL_FX[_t]))
 # the hub's portals to the resource zones, either side of the island portal (Portals.java knows these spots)
@@ -879,6 +890,7 @@ scoreboard players set #t cs_tmp 0
 execute positioned 0 {Y} {HUB_PORTAL_Z} run function {NS}:portal/fx_island
 execute positioned -13 {Y} -14 run function {NS}:portal/fx_mines
 execute positioned 13 {Y} -14 run function {NS}:portal/fx_woods
+execute positioned 0 102 20 run function {NS}:portal/fx_rift
 kill @e[type=#{NS}:hostile,x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}]
 execute as @e[tag=cs_boss] at @s run function {NS}:boss/tick
 function {NS}:gear/second

@@ -124,6 +124,7 @@ public final class ZoneRules {
             int roll = m.getRandom().nextInt(5) - 2;
             lv = z.key().equals("mines")
                     ? 2 + (int) Math.round(0.75 * (z.y2() - 12 - m.getBlockY())) + roll   // the rim is 12 below the box top: deeper = harder
+                    : z.key().equals("rift") ? 15 + m.getRandom().nextInt(16)              // the Sky Lord's Rift: 15-30
                     : 3 + m.getRandom().nextInt(6);
             lv = Math.max(1, Math.min(30, lv));
             m.addTag("cs_lv_" + lv);

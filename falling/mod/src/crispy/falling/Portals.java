@@ -29,7 +29,8 @@ public final class Portals {
     static final int GRID = 1024, COLS = 64, HALF = 64, ISLAND_Y = 100, PORTAL_DZ = -14, END_DX = 14, HUB_Y = 100, HUB_PORTAL_Z = -18;
     private static final Map<ServerPlayer, Integer> cooldown = new WeakHashMap<>();
     /** Fixed overworld portals (skyblock.py HUB_ZONE_PORTALS, expansion.py): frame centre x, floor y, z, and the warp. */
-    static final Object[][] FIXED = {{-13, HUB_Y, -14, "mines"}, {13, HUB_Y, -14, "woods"}, {-260, 90, -393, "hub"}, {260, 100, -391, "hub"}};
+    static final Object[][] FIXED = {{-13, HUB_Y, -14, "mines"}, {13, HUB_Y, -14, "woods"}, {-260, 90, -393, "hub"}, {260, 100, -391, "hub"},
+            {0, 102, 20, "rift"}, {0, 120, -671, "hub"}};   // the Sky Lord's Rift (gated in Zones.warp) and its way back
     private static int tick;
 
     /** Centre of the island portal's frame for the plot containing (x, z), or null outside the grid. */
@@ -55,7 +56,11 @@ public final class Portals {
             else if (fixed(x, y, z) != null) {
                 cooldown.put(p, tick + 60);
                 p.playSound(SoundEvents.ENDERMAN_TELEPORT, 0.8f, 1.2f);
-                Zones.warp(p, fixed(x, y, z));
+                if (Zones.warp(p, fixed(x, y, z)) < 0) {   // turned away (tag gate): step them back out of the frame
+                    var look = p.getLookAngle();
+                    double len = Math.max(0.01, Math.hypot(look.x, look.z));
+                    p.teleportTo(p.getX() - look.x / len * 2.2, p.getY(), p.getZ() - look.z / len * 2.2);
+                }
                 continue;
             }
             else {
