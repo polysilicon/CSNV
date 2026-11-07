@@ -38,7 +38,7 @@ ZONES = [
     ("woods", "Whispering Woods", WOODS, 38, (WOODS[1] - 16, WOODS[1] + 20), LOGS,
      30, ["spider", "zombie", "witch", "skeleton"], (WOODS[0] + 0.5, WOODS[1] + 1, WOODS[2] - 27.5, 0)),
     ("rift", "Sky Lord's Rift", RIFT, 34, (RIFT[1] - 28, RIFT[1] + 22), RIFT_RES,
-     90, ["wither_skeleton", "piglin_brute", "vindicator", "blaze", "wither_skeleton"], (RIFT[0] + 0.5, RIFT[1] + 1, RIFT[2] - 27.5, 0)),
+     90, ["wither_skeleton", "pillager", "vindicator", "blaze", "wither_skeleton"],   # no piglins: they fight wither skeletons (RIFT[0] + 0.5, RIFT[1] + 1, RIFT[2] - 27.5, 0)),
 ]
 ZONE_CAP = 8          # mobs per zone at once (+2 per player there)
 SPAWN_EVERY = {"mines": 8, "woods": 3, "rift": 4}   # a new mob about every N seconds per zone (a 1-in-N roll each second) until the cap
@@ -480,8 +480,10 @@ def build(NS, fn, js, txt, snbt, Build):
         r = rnd.randint(1, 2); g = ground(x, z)
         for dx in range(-r, r + 1):
             for dz in range(-r, r + 1):
-                if abs(dx) + abs(dz) > r + 1: continue
-                for dy in range(1, rnd.randint(2, 4)): put(x + dx, g + dy, z + dz, blk)
+                if abs(dx) + abs(dz) > r + 1 or (x + dx, z + dz) not in H or math.hypot(x + dx, z + dz) < 11.5: continue   # not over the crater
+                gg = ground(x + dx, z + dz)   # each column sits on its own ground, so nothing hangs over a slope
+                tall = rnd.randint(1, 3) if (dx, dz) != (0, 0) else 3
+                for dy in range(1, tall + 1): put(x + dx, gg + dy, z + dz, blk)
         if i % 4 == 0: put(x, g + 1, z, "ancient_debris")
     # islets hovering overhead
     for i in range(5):
@@ -561,7 +563,8 @@ def build(NS, fn, js, txt, snbt, Build):
         fn(f"zones/{key}/tick", "\n".join(roll))
         mob = [f"execute store result score #m cs_tmp run random value 1..{len(mobs)}"]
         for i, m in enumerate(mobs, 1):
-            mob.append(f"execute if score #m cs_tmp matches {i} run summon minecraft:{m} ~ ~ ~ {{Tags:[\"cs_zone_mob\",\"cs_zone_{key}\"],PersistenceRequired:1b}}")
+            extra = ",IsImmuneToZombification:1b" if m.startswith("piglin") else ""   # brutes would zombify in the overworld
+            mob.append(f"execute if score #m cs_tmp matches {i} run summon minecraft:{m} ~ ~ ~ {{Tags:[\"cs_zone_mob\",\"cs_zone_{key}\"],PersistenceRequired:1b{extra}}}")
         mob.append("particle minecraft:large_smoke ~ ~0.5 ~ 0.3 0.5 0.3 0.01 10")
         fn(f"zones/{key}/mob", "\n".join(mob))
     fn("zones/second", "\n".join(sec))
