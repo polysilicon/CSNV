@@ -6,7 +6,7 @@ the bank's east door) that only trades with players **wearing** the rare **[Blac
 "needs [Black Market] equipped" message, with a click to equip it once they've earned it.
 
 **Earning the tag**: find the hidden dealer. Crouching for 4 seconds in the current hidden spot somewhere in the market
-(one of the hidden nooks in `gen_bm.py`, and it moves to a different one after every find) makes a hooded "???" appear for 5 seconds, whisper,
+(one of nine covered corners in or beside shop buildings, listed in `gen_bm.py`; it moves to a different one after every find) makes a hooded "???" appear for 5 seconds, whisper,
 hand over one random item (`loot_table/black_market`) and grant the hidden advancement `anarchy:black_market`,
 which the lobby turns into the tag. Once per player.
 

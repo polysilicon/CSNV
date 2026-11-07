@@ -1,9 +1,17 @@
 """Writes the Black Market's rotating-spot functions (python3 gen_bm.py). The current spot is #spot in objective bm;
 after each find it moves to a different random one, so finders can't pass the location on."""
-SPOTS = [  # (x, y, z) block a player crouches in: hidden, roofed dead-end nooks reachable on foot (market survey,
-           # each checked in the live world: feet and head clear, solid ground)
-    (-107, 99, -77),   # the bank's corner planter, behind the dripleaf
-    (-57, 105, -39), (-26, 93, -100), (-52, 106, -90), (191, 73, -207),
+SPOTS = [  # (x, y, z) block a player crouches in: a covered corner inside or right beside a shop building, in an
+           # area that opens to the outside (find_spots2: walkable from the shop and connected to open sky), each
+           # checked in the live world (feet and head clear, solid ground)
+    (-26, 93, -100),   # Basic Tools And Equipment
+    (-137, 172, -72),  # Coins To Wither Stars
+    (-58, 93, -71),    # Concrete Mixer
+    (-57, 105, -35),   # Redstone Parts Dealer
+    (203, 74, -202),   # Building Blocks
+    (109, 175, -146),  # Cartography
+    (164, 155, 235),   # Cookies And Milk
+    (148, 86, -206),   # fireworks tags and leads
+    (-138, 95, -52),   # Golden Food Supplies
 ]
 N = len(SPOTS)
 F = "datapack/data/og/function/bm/"
