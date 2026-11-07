@@ -1,0 +1,169 @@
+{
+ "parent": "minecraft:adventure/root",
+ "display": {
+  "icon": {
+   "id": "minecraft:netherite_chestplate"
+  },
+  "title": {
+   "text": "Wasteland Legend",
+   "color": "gold"
+  },
+  "description": {
+   "text": "Kill the Ender Dragon and the Wither, own full netherite armor, and travel 10,000 blocks from spawn"
+  },
+  "frame": "challenge",
+  "show_toast": true,
+  "announce_to_chat": true,
+  "hidden": false
+ },
+ "criteria": {
+  "dragon": {
+   "trigger": "minecraft:player_killed_entity",
+   "conditions": {
+    "entity": [
+     {
+      "condition": "minecraft:entity_properties",
+      "entity": "this",
+      "predicate": {
+       "minecraft:entity_type": "minecraft:ender_dragon"
+      }
+     }
+    ]
+   }
+  },
+  "wither": {
+   "trigger": "minecraft:player_killed_entity",
+   "conditions": {
+    "entity": [
+     {
+      "condition": "minecraft:entity_properties",
+      "entity": "this",
+      "predicate": {
+       "minecraft:entity_type": "minecraft:wither"
+      }
+     }
+    ]
+   }
+  },
+  "netherite": {
+   "trigger": "minecraft:inventory_changed",
+   "conditions": {
+    "items": [
+     {
+      "items": "minecraft:netherite_helmet"
+     },
+     {
+      "items": "minecraft:netherite_chestplate"
+     },
+     {
+      "items": "minecraft:netherite_leggings"
+     },
+     {
+      "items": "minecraft:netherite_boots"
+     }
+    ]
+   }
+  },
+  "far_east": {
+   "trigger": "minecraft:location",
+   "conditions": {
+    "player": [
+     {
+      "condition": "minecraft:entity_properties",
+      "entity": "this",
+      "predicate": {
+       "minecraft:location": {
+        "dimension": "minecraft:overworld",
+        "position": {
+         "x": {
+          "min": 10000
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  },
+  "far_west": {
+   "trigger": "minecraft:location",
+   "conditions": {
+    "player": [
+     {
+      "condition": "minecraft:entity_properties",
+      "entity": "this",
+      "predicate": {
+       "minecraft:location": {
+        "dimension": "minecraft:overworld",
+        "position": {
+         "x": {
+          "max": -10000
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  },
+  "far_south": {
+   "trigger": "minecraft:location",
+   "conditions": {
+    "player": [
+     {
+      "condition": "minecraft:entity_properties",
+      "entity": "this",
+      "predicate": {
+       "minecraft:location": {
+        "dimension": "minecraft:overworld",
+        "position": {
+         "z": {
+          "min": 10000
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  },
+  "far_north": {
+   "trigger": "minecraft:location",
+   "conditions": {
+    "player": [
+     {
+      "condition": "minecraft:entity_properties",
+      "entity": "this",
+      "predicate": {
+       "minecraft:location": {
+        "dimension": "minecraft:overworld",
+        "position": {
+         "z": {
+          "max": -10000
+         }
+        }
+       }
+      }
+     }
+    ]
+   }
+  }
+ },
+ "requirements": [
+  [
+   "dragon"
+  ],
+  [
+   "wither"
+  ],
+  [
+   "netherite"
+  ],
+  [
+   "far_east",
+   "far_west",
+   "far_south",
+   "far_north"
+  ]
+ ]
+}

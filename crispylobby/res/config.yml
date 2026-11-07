@@ -206,6 +206,7 @@ cosmetics:
     r_grandmaster: {display: "&#FFF59D&l[&#FFED90&lG&#FFE483&lr&#FFDC76&la&#FFD469&ln&#FFCB5C&ld&#FFC34E&lm&#FFBB41&la&#FFB234&ls&#FFAA27&lt&#FFA21A&le&#FF990D&lr&#FF9100&l]", icon: NETHER_STAR, score: pvp.mastered, min: 10, note: "Master 10 Multiverse characters", rare: true}
     r_skylord: {display: "&#FFFFFF&l[&#EAF8FF&lS&#D5F2FF&lk&#BFEBFF&ly&#AAE5FF&l &#95DEFF&lL&#80D8FF&lo&#6AD1FF&lr&#55CBFF&ld&#40C4FF&l]", icon: BEACON, score: sb.island_lvl, min: 100, rare: true}
     r_maxed: {display: "&#FF6F00&l[&#FF7900&lM&#FF8400&la&#FF8E00&lx&#FF9800&le&#FFA200&ld&#FFAD00&l &#FFB700&lO&#FFC100&lu&#FFCC00&lt&#FFD600&l]", icon: ENCHANTED_GOLDEN_APPLE, score: sb.skills_min, min: 62500, rare: true}
+    wastelander: {display: "&#FFB347&l[&#F5AA43&lW&#ECA13E&la&#E2983A&ls&#D88E36&lt&#CF8531&le&#C57C2D&ll&#BB7329&la&#B26A24&ln&#A86020&ld&#9E571C&le&#954E17&lr&#8B4513&l]", icon: NETHERITE_CHESTPLATE, advancement: "anarchy:wasteland_legend", note: "Wasteland Legend on Anarchy (Dragon, Wither, full netherite, 10,000 blocks out)", rare: true}
     # ---- end of rare
   # "joined-before" tags: a player qualifies if the earliest date found here (relative to network-stats.instances-dir)
   # is before that date: advancement timestamps, the firstPlayed time Paper left in old player files, and those files'
