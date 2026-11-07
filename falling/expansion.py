@@ -578,16 +578,16 @@ def build(NS, fn, js, txt, snbt, Build):
     # About once every WARDEN_ODDS seconds of play there, never within WARDEN_COOLDOWN seconds of the last one. It
     # calls up wither skeleton guards, sends out a withering shockwave, and drops rich loot; everyone in the Rift when
     # it falls gets WARDEN_COINS. It sinks back into the rift when the last player leaves (tag cs_zone_rift).
-    WARDEN_ODDS, WARDEN_COOLDOWN, WARDEN_COINS, WARDEN_HP = 600, 900, 1500, 700
+    WARDEN_ODDS, WARDEN_COOLDOWN, WARDEN_COINS, WARDEN_HP = 600, 900, 1500, 450
     rbox = box(next(z for z in ZONES if z[0] == "rift"))
     trim = '"minecraft:trim":{material:"minecraft:amethyst",pattern:"minecraft:%s"}'
     def piece(it, pat): return '{id:"minecraft:%s",count:1,components:{%s,"minecraft:enchantment_glint_override":true}}' % (it, trim % pat)
     warden = ("{Tags:[\"cs_zone_boss\",\"cs_rift_boss\",\"cs_zone_rift\"],PersistenceRequired:1b,CustomNameVisible:1b,"
               "CustomName:{text:\"☠ The Rift Warden\",color:\"dark_purple\",bold:true},DeathLootTable:\"%s:entities/rift_warden\","
-              "equipment:{head:%s,chest:%s,legs:%s,feet:%s,mainhand:{id:\"minecraft:netherite_sword\",count:1,components:{\"minecraft:enchantment_glint_override\":true}}},"
+              "equipment:{head:%s,chest:%s,legs:%s,feet:%s,mainhand:{id:\"minecraft:netherite_sword\",count:1,components:{\"minecraft:enchantment_glint_override\":true,\"minecraft:attribute_modifiers\":[]}}},"
               "drop_chances:{head:0f,chest:0f,legs:0f,feet:0f,mainhand:0f},"
-              "attributes:[{id:\"minecraft:scale\",base:2.6},{id:\"minecraft:max_health\",base:%d},{id:\"minecraft:attack_damage\",base:16},"
-              "{id:\"minecraft:armor\",base:20},{id:\"minecraft:armor_toughness\",base:12},{id:\"minecraft:knockback_resistance\",base:1},"
+              "attributes:[{id:\"minecraft:scale\",base:2.6},{id:\"minecraft:max_health\",base:%d},{id:\"minecraft:attack_damage\",base:9},"
+              "{id:\"minecraft:armor\",base:8},{id:\"minecraft:armor_toughness\",base:2},{id:\"minecraft:knockback_resistance\",base:1},"
               "{id:\"minecraft:movement_speed\",base:0.28},{id:\"minecraft:follow_range\",base:48},{id:\"minecraft:step_height\",base:2}],Health:%d}"
               % (NS, piece("netherite_helmet", "silence"), piece("netherite_chestplate", "eye"), piece("netherite_leggings", "ward"),
                  piece("netherite_boots", "rib"), WARDEN_HP, WARDEN_HP))
@@ -611,23 +611,23 @@ def build(NS, fn, js, txt, snbt, Build):
         f"execute store result bossbar {NS}:rift_warden value run data get entity @e[tag=cs_rift_boss,limit=1] Health",
         "scoreboard players add #rtick cs_tmp 1",
         # every 15 s: two wither skeleton guards rise beside it
-        "scoreboard players operation #m cs_tmp = #rtick cs_tmp", "scoreboard players set #k cs_tmp 15", "scoreboard players operation #m cs_tmp %= #k cs_tmp",
+        "scoreboard players operation #m cs_tmp = #rtick cs_tmp", "scoreboard players set #k cs_tmp 20", "scoreboard players operation #m cs_tmp %= #k cs_tmp",
         f"execute if score #m cs_tmp matches 0 as @e[tag=cs_rift_boss] at @s run function {NS}:zones/rift/boss_guards",
         # every 9 s: a withering shockwave hits everyone within 7 blocks
-        "scoreboard players operation #m cs_tmp = #rtick cs_tmp", "scoreboard players set #k cs_tmp 9", "scoreboard players operation #m cs_tmp %= #k cs_tmp",
+        "scoreboard players operation #m cs_tmp = #rtick cs_tmp", "scoreboard players set #k cs_tmp 12", "scoreboard players operation #m cs_tmp %= #k cs_tmp",
         f"execute if score #m cs_tmp matches 4 as @e[tag=cs_rift_boss] at @s run function {NS}:zones/rift/boss_wave",
         # it never strays far from the island
         f"execute as @e[tag=cs_rift_boss] at @s unless entity @s[{rbox}] positioned {RIFT[0] + 0.5} {RIFT[1] + 12} {RIFT[2] - 14.5} positioned over motion_blocking_no_leaves run tp @s ~ ~ ~"]))
     fn("zones/rift/boss_guards", "\n".join([
+        "execute store result score #g cs_tmp if entity @e[type=minecraft:wither_skeleton,tag=cs_zone_rift,distance=..24]",
+        "execute if score #g cs_tmp matches 3.. run return 0",
         "particle minecraft:soul ~ ~1 ~ 2 1 2 0.05 60 force", "playsound minecraft:entity.wither_skeleton.ambient hostile @a ~ ~ ~ 3 0.6",
-        "summon minecraft:wither_skeleton ~2 ~ ~ {Tags:[\"cs_zone_mob\",\"cs_zone_rift\"],PersistenceRequired:1b}",
-        "summon minecraft:wither_skeleton ~-2 ~ ~ {Tags:[\"cs_zone_mob\",\"cs_zone_rift\"],PersistenceRequired:1b}"]))
+        "summon minecraft:wither_skeleton ~2 ~ ~ {Tags:[\"cs_zone_mob\",\"cs_zone_rift\"],PersistenceRequired:1b}"]))
     fn("zones/rift/boss_wave", "\n".join([
         "particle minecraft:sculk_soul ~ ~0.5 ~ 4 0.2 4 0.02 120 force", "particle minecraft:explosion ~ ~0.5 ~ 2 0.1 2 0 6 force",
         "playsound minecraft:entity.warden.sonic_boom hostile @a ~ ~ ~ 3 0.7",
-        "execute as @a[distance=..7,gamemode=!creative,gamemode=!spectator] run damage @s 8 minecraft:sonic_boom",   # damage takes one target
-        "effect give @a[distance=..7,gamemode=!creative,gamemode=!spectator] minecraft:wither 5 1",
-        "effect give @a[distance=..7,gamemode=!creative,gamemode=!spectator] minecraft:levitation 1 3"]))
+        "execute as @a[distance=..6,gamemode=!creative,gamemode=!spectator] run damage @s 5 minecraft:sonic_boom",   # damage takes one target
+        "effect give @a[distance=..6,gamemode=!creative,gamemode=!spectator] minecraft:wither 3 0"]))
     fn("zones/rift/boss_gone", "\n".join([
         "scoreboard players set #rboss cs_tmp 0", f"scoreboard players set #rcd cs_tmp {WARDEN_COOLDOWN}", f"bossbar remove {NS}:rift_warden",
         # killed (someone's still in the Rift) or just faded away when everyone left (then no reward)
