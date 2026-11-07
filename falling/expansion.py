@@ -607,6 +607,9 @@ def build(NS, fn, js, txt, snbt, Build):
         f"bossbar set {NS}:rift_warden value {WARDEN_HP}",
         f"tellraw @a [{{text:\"☠ \",color:\"dark_purple\"}},{{text:\"The Rift Warden has risen in the Sky Lord's Rift!\",color:\"light_purple\",bold:true}}]"]))
     fn("zones/rift/boss_tick", "\n".join([
+        # (re)make the bar if it's missing (bossbar add does nothing when it already exists)
+        f"bossbar add {NS}:rift_warden {{text:\"☠ The Rift Warden\",color:\"dark_purple\",bold:true}}",
+        f"bossbar set {NS}:rift_warden color purple", f"bossbar set {NS}:rift_warden max {WARDEN_HP}",
         f"bossbar set {NS}:rift_warden players @a[{rbox}]",
         f"execute store result bossbar {NS}:rift_warden value run data get entity @e[tag=cs_rift_boss,limit=1] Health",
         "scoreboard players add #rtick cs_tmp 1",
