@@ -48,6 +48,7 @@ final class RemoteMenus {
             http.setExecutor(Executors.newFixedThreadPool(2));
             http.createContext("/open", x -> handle(x, true));
             http.createContext("/click", x -> handle(x, false));
+            http.createContext("/tag", this::tag);   // tag gates: ?uuid&name&tag=<id>&do=check|equip
             http.createContext("/close", x -> {   // the player closed the menu over there
                 try { forget(UUID.fromString(query(x).get("uuid"))); } catch (Exception ignored) {}
                 x.sendResponseHeaders(204, -1); x.close();
@@ -80,6 +81,41 @@ final class RemoteMenus {
         } catch (Exception e) {
             code = 400; out = new JsonObject(); out.addProperty("error", String.valueOf(e));
         }
+        byte[] body = out.toString().getBytes(StandardCharsets.UTF_8);
+        x.getResponseHeaders().set("Content-Type", "application/json");
+        x.sendResponseHeaders(code, body.length);
+        try (OutputStream os = x.getResponseBody()) { os.write(body); }
+    }
+
+    /** Tag gates on the other servers: {"display","equipped","can","owned","need","messages":[..]}; do=equip wears it
+     *  (claiming an earned tag, or buying a shop tag the player can afford) when it can. */
+    private void tag(HttpExchange x) throws IOException {
+        JsonObject out; int code = 200;
+        try {
+            Map<String, String> q = query(x);
+            UUID uuid = UUID.fromString(q.get("uuid"));
+            String name = q.getOrDefault("name", ""), id = q.getOrDefault("tag", ""), act = q.getOrDefault("do", "check");
+            out = Bukkit.getScheduler().callSyncMethod(plugin, () -> {
+                Votes v = plugin.votes;
+                Viewer.Remote r = new Viewer.Remote(name, uuid);
+                Votes.PD pd = v.pd(name); pd.name = name;
+                Votes.Tag t = v.tags.get(id);
+                JsonObject o = new JsonObject();
+                if (t == null) { o.addProperty("error", "no such tag"); return o; }
+                boolean on = id.equals(pd.tag);
+                if (act.equals("equip") && !on && v.canWear(r, pd, t)) { v.cosmetic(r, "tag:" + id); on = id.equals(pd.tag); }
+                o.addProperty("display", t.display());
+                o.addProperty("equipped", on);
+                o.addProperty("owned", pd.owned.contains("tag:" + id));
+                o.addProperty("can", v.canWear(r, pd, t));
+                o.addProperty("cost", pd.owned.contains("tag:" + id) || t.earned() || t.granted() ? 0 : t.cost());
+                o.addProperty("need", v.needLine(r, pd, t));
+                JsonArray msgs = new JsonArray();
+                for (Component c : r.messages) msgs.add(JsonParser.parseString(GsonComponentSerializer.gson().serialize(c)));
+                o.add("messages", msgs);
+                return o;
+            }).get(5, TimeUnit.SECONDS);
+        } catch (Exception e) { code = 400; out = new JsonObject(); out.addProperty("error", String.valueOf(e)); }
         byte[] body = out.toString().getBytes(StandardCharsets.UTF_8);
         x.getResponseHeaders().set("Content-Type", "application/json");
         x.sendResponseHeaders(code, body.length);

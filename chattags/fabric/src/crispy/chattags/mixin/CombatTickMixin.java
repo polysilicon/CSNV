@@ -12,6 +12,10 @@ import java.util.function.BooleanSupplier;
 /** Once a second (Combat counts ticks): write the combat file for the proxy. */
 @Mixin(MinecraftServer.class)
 public abstract class CombatTickMixin {
+    @org.spongepowered.asm.mixin.Unique private int crispy$ticks;
     @Inject(method = "tickServer", at = @At("TAIL"))
-    private void crispy$combatTick(BooleanSupplier hasTime, CallbackInfo ci) { Combat.tick((MinecraftServer) (Object) this); }
+    private void crispy$combatTick(BooleanSupplier hasTime, CallbackInfo ci) {
+        Combat.tick((MinecraftServer) (Object) this);
+        if (++crispy$ticks % 20 == 0) crispy.chattags.Gates.tick((MinecraftServer) (Object) this);   // tag markers (ctag.<id>)
+    }
 }

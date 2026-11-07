@@ -17,5 +17,5 @@ public abstract class CommandsMixin {
     @Shadow @Final private CommandDispatcher<CommandSourceStack> dispatcher;
 
     @Inject(method = "<init>", at = @At("TAIL"))
-    private void crispy$remoteMenus(CallbackInfo ci) { RemoteMenu.register(dispatcher); }
+    private void crispy$remoteMenus(CallbackInfo ci) { RemoteMenu.register(dispatcher); crispy.chattags.Gates.register(dispatcher); }
 }

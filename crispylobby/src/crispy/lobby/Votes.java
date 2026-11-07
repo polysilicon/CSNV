@@ -227,6 +227,14 @@ public class Votes implements Listener {
             Files.writeString(tmp, GSON.toJson(out));
             Files.move(tmp, tagsFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) { plugin.getLogger().warning("tags.json write failed: " + e); }
+        // equipped.json: name (lowercase) -> tag id, for tag-gated places on the other servers (chat-tags mod: ctag.<id>)
+        Map<String, String> ids = new TreeMap<>();
+        players.forEach((k, pd) -> { if (pd.tag != null && tags.containsKey(pd.tag)) ids.put(k, pd.tag); });
+        try {
+            Path tmp = tagsFile.resolveSibling("equipped.json.tmp");
+            Files.writeString(tmp, GSON.toJson(ids));
+            Files.move(tmp, tagsFile.resolveSibling("equipped.json"), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) { plugin.getLogger().warning("equipped.json write failed: " + e); }
         Map<String, String> cols = new TreeMap<>();   // name (lowercase) -> "&b", "&6&l" or "rainbow"
         players.forEach((k, pd) -> { NameColor c = pd.color == null ? null : colors.get(pd.color); if (c != null) cols.put(k, c.code()); });
         try {
@@ -599,6 +607,22 @@ public class Votes implements Listener {
         e.setCancelled(true);
         if (e.getClickedInventory() != e.getInventory()) return;
         click(new Viewer.Local(pl), m, e.getRawSlot(), e.isShiftClick());
+    }
+
+    // ------------------------------------------------------------------ tag gates (RemoteMenus /tag)
+    /** Can this player wear tag t right now with one click: owned, earned (requirement met), or affordable in the shop? */
+    boolean canWear(Viewer p, PD pd, Tag t) {
+        if (pd.owned.contains("tag:" + t.id())) return !(t.joinedBefore() != null && !joinedBefore(p, t.joinedBefore()));
+        if (t.granted()) return false;
+        if (t.earned()) return lockReason(p, t, advancements(p)) == null;
+        return (t.joinedBefore() == null || joinedBefore(p, t.joinedBefore())) && pd.points >= t.cost();
+    }
+    /** One line saying what it takes, for the "you need this tag" message. */
+    String needLine(Viewer p, PD pd, Tag t) {
+        if (t.granted()) return "&7Staff give this tag out.";
+        if (t.earned()) { String lock = lockReason(p, t, advancements(p)); return requirement(t).get(0) + (lock == null ? "" : " &8(" + lock.replace("&c", "") + "&8)"); }
+        String jb = t.joinedBefore() != null && !joinedBefore(p, t.joinedBefore()) ? " &8(only players who joined before " + t.joinedBefore() + ")" : "";
+        return "&7Buy it in &f/cosmetics &7for &d" + t.cost() + " vote point" + (t.cost() == 1 ? "" : "s") + jb;
     }
 
     // ------------------------------------------------------------------ cosmetics menus
