@@ -30,7 +30,7 @@ public final class Portals {
     private static final Map<ServerPlayer, Integer> cooldown = new WeakHashMap<>();
     /** Fixed overworld portals (skyblock.py HUB_ZONE_PORTALS, expansion.py): frame centre x, floor y, z, and the warp. */
     static final Object[][] FIXED = {{-13, HUB_Y, -14, "mines"}, {13, HUB_Y, -14, "woods"}, {-260, 90, -393, "hub"}, {260, 100, -391, "hub"},
-            {0, 102, 20, "rift"}, {0, 120, -671, "hub"}};   // the Sky Lord's Rift (gated in Zones.warp) and its way back
+            {13, 101, 15, "rift"}, {0, 120, -671, "hub"}};   // the Sky Lord's Rift (gated in Zones.warp) and its way back
     private static int tick;
 
     /** Centre of the island portal's frame for the plot containing (x, z), or null outside the grid. */

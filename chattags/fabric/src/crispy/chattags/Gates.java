@@ -87,37 +87,40 @@ public final class Gates {
     public static void deny(ServerPlayer p, String id, String what) {
         long now = System.currentTimeMillis();
         Long last = lastMsg.get(p.getUUID());
-        if (last != null && now - last < 2500) return;   // walking into a portal or spam-clicking: one message
+        if (last != null && now - last < 6000) return;   // walking into a portal or clicking again: one message, not a pile
         lastMsg.put(p.getUUID(), now);
         lobby(p, id, "check", o -> {
-            if (o == null) { p.sendSystemMessage(red(what + " needs a special tag equipped.")); return; }
+            if (o == null) { p.sendSystemMessage(red("🔒 " + what + " needs a special tag equipped.")); return; }
             MutableComponent tag = Tags.legacy(o.get("display").getAsString());
+            // one line: 🔒 <what> needs <tag> equipped. [Equip] (or, when they can't yet, what it takes on a hover)
             MutableComponent msg = Component.literal("🔒 ").withStyle(s -> s.withColor(0xFFAA00))
-                    .append(Component.literal(what + " needs ").withStyle(s -> s.withColor(0xFFFF55))).append(tag)
-                    .append(Component.literal(" equipped.").withStyle(s -> s.withColor(0xFFFF55)));
-            p.sendSystemMessage(msg);
+                    .append(Component.literal(what + " needs ").withStyle(s -> s.withColor(0xAAAAAA))).append(tag)
+                    .append(Component.literal(" equipped. ").withStyle(s -> s.withColor(0xAAAAAA)));
             if (o.get("can").getAsBoolean()) {
                 int cost = o.get("cost").getAsInt();
-                String label = cost > 0 ? "[Click to buy and equip it: " + cost + " vote point" + (cost == 1 ? "" : "s") + "]" : "[Click to equip it]";
-                p.sendSystemMessage(Component.literal("  ").append(Component.literal(label).withStyle(s -> s.withColor(0x55FF55).withBold(true)
+                String label = cost > 0 ? "[Buy & equip · " + cost + " pt" + (cost == 1 ? "" : "s") + "]" : "[Equip]";
+                msg.append(Component.literal(label).withStyle(s -> s.withColor(0x55FF55).withBold(true)
                         .withClickEvent(new ClickEvent.RunCommand("/crispytag equip " + id))
-                        .withHoverEvent(new HoverEvent.ShowText(Component.literal("Wear ").append(Tags.legacy(o.get("display").getAsString())).append(" now"))))));
+                        .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to wear ").append(Tags.legacy(o.get("display").getAsString()))))));
             } else {
-                p.sendSystemMessage(Component.literal("  ").append(Tags.legacy(o.get("need").getAsString())));
+                msg.append(Component.literal("[How to get it]").withStyle(s -> s.withColor(0xFF5555)
+                        .withHoverEvent(new HoverEvent.ShowText(Tags.legacy(o.get("need").getAsString())))));
             }
+            p.sendSystemMessage(msg);
         });
     }
 
     static void equip(ServerPlayer p, String id) {
         lobby(p, id, "equip", o -> {
             if (o == null) { p.sendSystemMessage(red("The lobby isn't answering, so tags can't be changed right now. Try again soon.")); return; }
-            show(p, o);
             if (o.get("equipped").getAsBoolean()) {
                 sync(p, id);   // right away, not at the next equipped.json read
+                lastMsg.remove(p.getUUID());
                 p.sendSystemMessage(Component.literal("✔ ").withStyle(s -> s.withColor(0x55FF55)).append(Tags.legacy(o.get("display").getAsString()))
-                        .append(Component.literal(" equipped. Try again now.").withStyle(s -> s.withColor(0x55FF55))));
-            } else if (!o.get("can").getAsBoolean()) {
-                p.sendSystemMessage(Component.literal("  ").append(Tags.legacy(o.get("need").getAsString())));
+                        .append(Component.literal(" equipped. You can go in now.").withStyle(s -> s.withColor(0x55FF55))));
+            } else {
+                show(p, o);
+                if (!o.get("can").getAsBoolean()) p.sendSystemMessage(Component.literal("✖ ").withStyle(s -> s.withColor(0xFF5555)).append(Tags.legacy(o.get("need").getAsString())));
             }
         });
     }

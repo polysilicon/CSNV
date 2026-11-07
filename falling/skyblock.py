@@ -890,7 +890,7 @@ scoreboard players set #t cs_tmp 0
 execute positioned 0 {Y} {HUB_PORTAL_Z} run function {NS}:portal/fx_island
 execute positioned -13 {Y} -14 run function {NS}:portal/fx_mines
 execute positioned 13 {Y} -14 run function {NS}:portal/fx_woods
-execute positioned 0 102 20 run function {NS}:portal/fx_rift
+execute positioned 13 101 15 run function {NS}:portal/fx_rift
 kill @e[type=#{NS}:hostile,x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}]
 execute as @e[tag=cs_boss] at @s run function {NS}:boss/tick
 function {NS}:gear/second

@@ -103,6 +103,15 @@ public final class Tags {
         StringBuilder run = new StringBuilder();
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
+            if ((c == '&' || c == '§') && i + 8 <= s.length() && s.charAt(i + 1) == '#') {   // &#rrggbb (gradient tags)
+                try {
+                    int rgb = Integer.parseInt(s.substring(i + 2, i + 8), 16);
+                    if (!run.isEmpty()) { out.append(Component.literal(run.toString()).setStyle(style)); run.setLength(0); }
+                    style = Style.EMPTY.withColor(rgb);
+                    i += 7;
+                    continue;
+                } catch (NumberFormatException ignored) {}
+            }
             ChatFormatting f = (c == '&' || c == '§') && i + 1 < s.length() ? ChatFormatting.getByCode(s.charAt(i + 1)) : null;
             if (f == null) { run.append(c); continue; }
             if (!run.isEmpty()) { out.append(Component.literal(run.toString()).setStyle(style)); run.setLength(0); }

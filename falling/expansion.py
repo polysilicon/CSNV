@@ -37,7 +37,7 @@ ZONES = [
      45, ["zombie", "skeleton", "silverfish", "husk"], (MINES[0] + 0.5, MINES[1] + 1, MINES[2] - 30.5, 0)),
     ("woods", "Whispering Woods", WOODS, 38, (WOODS[1] - 16, WOODS[1] + 20), LOGS,
      30, ["spider", "zombie", "witch", "skeleton"], (WOODS[0] + 0.5, WOODS[1] + 1, WOODS[2] - 27.5, 0)),
-    ("rift", "Sky Lord's Rift", RIFT, 34, (RIFT[1] - 18, RIFT[1] + 22), RIFT_RES,
+    ("rift", "Sky Lord's Rift", RIFT, 34, (RIFT[1] - 28, RIFT[1] + 22), RIFT_RES,
      90, ["wither_skeleton", "piglin_brute", "vindicator", "blaze", "wither_skeleton"], (RIFT[0] + 0.5, RIFT[1] + 1, RIFT[2] - 27.5, 0)),
 ]
 ZONE_CAP = 8          # mobs per zone at once (+2 per player there)
@@ -356,48 +356,171 @@ def build(NS, fn, js, txt, snbt, Build):
         *[f"forceload remove {c[0] - h - 2} {c[2] - h - 2} {c[0] + h + 2} {c[2] + h + 2}" for k, n, c, h, *_ in ZONES],
         "scoreboard players set #zonesv cs_cfg 1"]))
 
-    # ---- the Sky Lord's Rift: a dark floating island of blackstone and obsidian torn open by amethyst. Outcrops of rare
-    # blocks grow back after mining; a ring of basalt pillars with soul fire surrounds a sunken amethyst crater.
+    # ---- the Sky Lord's Rift: a dark floating island torn open by an amethyst geode. Rolling blackstone ground with soul
+    # soil, crimson and amethyst areas; a ring of basalt pillars hung with chains and soul lanterns; a ruined temple, a
+    # ruined portal and a fossil; small islets hovering overhead; vines and dripstone hanging under it. Outcrops of the
+    # rare minable blocks grow back (RIFT_RES).
     rnd = random.Random(1717)
-    b = Build(1717)
-    RR = 30
-    b.blob(RR, 15, "blackstone", "obsidian", "crying_obsidian")
-    for _ in range(140):   # surface texture
-        a = rnd.uniform(0, 6.283); d = rnd.uniform(0, RR - 2)
-        b.set(int(math.cos(a) * d), 0, int(math.sin(a) * d), rnd.choice(["polished_blackstone", "basalt", "blackstone", "gilded_blackstone", "smooth_basalt", "magma_block"]))
-    b.disk(0, 9, "crying_obsidian"); b.disk(-1, 8, "amethyst_block"); b.disk(0, 7, "air"); b.disk(-1, 6, "budding_amethyst")   # the crater
-    for y in (0, 1):
-        b.disk(y, 6.5, "air")
-    for _ in range(26):
-        a = rnd.uniform(0, 6.283); d = rnd.uniform(1, 6)
-        b.set(int(math.cos(a) * d), 0, int(math.sin(a) * d), "amethyst_cluster[facing=up]")
-    rift_spawns = []
-    for i in range(10):   # basalt pillars topped with soul fire, in a ring
-        a = i * 6.283 / 10 + 0.3; x, z = int(math.cos(a) * 19), int(math.sin(a) * 19)
-        h = rnd.randint(5, 10)
-        b.fill(x, 1, z, x, h, z, "polished_basalt"); b.set(x, h + 1, z, "soul_soil"); b.set(x, h + 2, z, "soul_fire")
-    outcrops = []
-    for i in range(22):   # outcrops of the minable rarities
-        a = rnd.uniform(0, 6.283); d = rnd.uniform(10, RR - 4)
-        x, z = int(math.cos(a) * d), int(math.sin(a) * d)
-        if z < -22 and abs(x) < 6: continue   # keep the arrival platform clear
+    RR = 32
+    G = {}                                   # (x, y, z) -> block, relative to the island centre (surface y 0)
+    def put(x, y, z, blk): G[(x, y, z)] = blk
+    def hgt(x, z):                           # rolling ground, 0..3, flattened near the edge
+        r = math.hypot(x, z)
+        v = 1.3 * math.sin(x * 0.21) + 1.1 * math.cos(z * 0.17) + 0.8 * math.sin((x + z) * 0.11) + 1.2
+        return max(0, min(3, int(round(v * min(1, (RR - r) / 6)))))
+    H = {}
+    for x in range(-RR - 1, RR + 2):
+        for z in range(-RR - 1, RR + 2):
+            r = math.hypot(x, z) + 0.6 * math.sin(math.atan2(z, x) * 5) + rnd.uniform(-0.4, 0.4)
+            if r > RR: continue
+            h = 0 if r < 11 or (abs(x) <= 3 and z < -24) else hgt(x, z)
+            H[(x, z)] = h
+            depth = int(17 * (1 - (r / RR) ** 1.7)) + rnd.randint(0, 2)
+            for y in range(-depth, h + 1):
+                if y == h:
+                    a_ = math.degrees(math.atan2(z, x)) % 360
+                    if 30 < a_ < 100 and r > 14: top = rnd.choice(["soul_soil", "soul_soil", "soul_sand", "blackstone"])          # soul valley
+                    elif 170 < a_ < 240 and r > 14: top = rnd.choice(["crimson_nylium", "crimson_nylium", "blackstone", "netherrack"])  # crimson
+                    elif r < 15: top = rnd.choice(["smooth_basalt", "calcite", "blackstone", "tuff"])
+                    else: top = rnd.choice(["blackstone"] * 5 + ["polished_blackstone", "basalt[axis=y]", "gilded_blackstone", "tuff", "magma_block"])
+                    put(x, y, z, top)
+                elif y >= h - 2: put(x, y, z, "blackstone")
+                else: put(x, y, z, rnd.choice(["blackstone", "basalt[axis=y]", "obsidian", "smooth_basalt", "blackstone", "crying_obsidian" if rnd.random() < 0.08 else "obsidian"]))
+            if depth > 3 and rnd.random() < 0.07:   # hanging from the underside
+                if rnd.random() < 0.5:
+                    n = rnd.randint(2, 6)
+                    for k in range(1, n): put(x, -depth - k, z, "weeping_vines_plant")
+                    put(x, -depth - n, z, "weeping_vines")
+                else:
+                    put(x, -depth - 1, z, "pointed_dripstone[thickness=frustum,vertical_direction=down]")
+                    put(x, -depth - 2, z, "pointed_dripstone[thickness=tip,vertical_direction=down]")
+    def ground(x, z): return H.get((x, z), 0)
+    # surface plants
+    for (x, z), h in list(H.items()):
+        t = G.get((x, h, z), "")
+        if t == "crimson_nylium" and rnd.random() < 0.3: put(x, h + 1, z, rnd.choice(["crimson_roots", "crimson_roots", "crimson_fungus"]))
+        elif t.startswith("soul_s") and rnd.random() < 0.05: put(x, h + 1, z, "soul_fire")
+        elif t == "blackstone" and rnd.random() < 0.04: put(x, h + 1, z, "amethyst_cluster[facing=up]" if math.hypot(x, z) < 20 else "dead_bush")
+    # the geode crater with a floating crystal spire
+    for x in range(-11, 12):
+        for z in range(-11, 12):
+            r = math.hypot(x, z)
+            if r > 10.5: continue
+            floor = -4 + int(r / 3.5)
+            for y in range(floor + 1, 4): G.pop((x, y, z), None)
+            if r > 9.5: put(x, floor, z, "smooth_basalt"); put(x, floor + 1, z, "smooth_basalt")
+            elif r > 8.5: put(x, floor, z, "calcite")
+            else:
+                put(x, floor, z, "budding_amethyst" if rnd.random() < 0.3 else "amethyst_block")
+                if rnd.random() < 0.25: put(x, floor + 1, z, rnd.choice(["amethyst_cluster[facing=up]", "large_amethyst_bud[facing=up]", "medium_amethyst_bud[facing=up]"]))
+    for y in range(4, 15):
+        w = max(0, int((15 - y) / 4))
+        for dx in range(-w, w + 1):
+            for dz in range(-w, w + 1):
+                if abs(dx) + abs(dz) <= w: put(dx, y, dz, "amethyst_block" if (y + dx + dz) % 5 else "purpur_block")
+    put(0, 15, 0, "end_rod[facing=up]"); put(0, 3, 0, "end_rod[facing=up]")
+    for i in range(6):   # shards orbiting the spire
+        a_ = i * math.pi / 3; put(int(6 * math.cos(a_)), 8 + (i % 3), int(6 * math.sin(a_)), "amethyst_block")
+    # basalt pillar ring with chains and soul lanterns
+    for i in range(10):
+        a_ = i * 2 * math.pi / 10 + 0.3; x, z = int(math.cos(a_) * 19), int(math.sin(a_) * 19)
+        g = ground(x, z); h = rnd.randint(6, 11)
+        for y in range(g + 1, g + h + 1): put(x, y, z, "polished_basalt[axis=y]")
+        put(x, g + h + 1, z, "soul_soil"); put(x, g + h + 2, z, "soul_fire")
+        for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            put(x + dx, g + h - 1, z + dz, "polished_blackstone_wall")
+            if rnd.random() < 0.6:
+                n = rnd.randint(2, 4)
+                for k in range(n): put(x + dx, g + h - 2 - k, z + dz, "chain[axis=y]")
+                put(x + dx, g + h - 2 - n, z + dz, "soul_lantern[hanging=true]")
+    # paths: from the arrival platform to the crater, and a ring road at the pillars
+    for z in range(-26, -10):
+        for x in range(-1, 2): put(x, ground(x, z), z, rnd.choice(["polished_blackstone_bricks", "polished_blackstone_bricks", "cracked_polished_blackstone_bricks"]))
+        if z % 5 == 0:
+            for x in (-2, 2): put(x, ground(x, z) + 1, z, "polished_blackstone_wall"); put(x, ground(x, z) + 2, z, "soul_lantern")
+    for i in range(160):
+        a_ = i * 2 * math.pi / 160; x, z = int(round(math.cos(a_) * 15.5)), int(round(math.sin(a_) * 15.5))
+        put(x, ground(x, z), z, rnd.choice(["polished_blackstone_bricks", "cracked_polished_blackstone_bricks", "blackstone"]))
+    # a ruined temple in the south-east
+    tx, tz = 17, 13; g = max(ground(tx + dx, tz + dz) for dx in range(-5, 6) for dz in range(-5, 6))
+    for dx in range(-5, 6):
+        for dz in range(-5, 6):
+            for y in range(ground(tx + dx, tz + dz), g + 1): put(tx + dx, y, tz + dz, "polished_blackstone_bricks" if (dx + dz) % 3 else "cracked_polished_blackstone_bricks")
+            for y in range(g + 1, g + 8): G.pop((tx + dx, y, tz + dz), None)
+            edge = abs(dx) == 5 or abs(dz) == 5
+            if edge:
+                hh = rnd.choice([0, 1, 2, 3, 4, 5, 5]) if not (dz == -5 and abs(dx) <= 1) else 0
+                for y in range(g + 1, g + 1 + hh): put(tx + dx, y, tz + dz, rnd.choice(["polished_blackstone_bricks", "cracked_polished_blackstone_bricks", "chiseled_polished_blackstone" if y == g + 3 else "polished_blackstone_bricks"]))
+    for dx, dz in ((-3, -3), (3, -3), (-3, 3), (3, 3)):
+        for y in range(g + 1, g + 7): put(tx + dx, y, tz + dz, "polished_blackstone")
+        put(tx + dx, g + 7, tz + dz, "gilded_blackstone")
+    put(tx, g + 1, tz, "crying_obsidian"); put(tx, g + 2, tz, "respawn_anchor"); put(tx - 1, g + 1, tz, "polished_blackstone_stairs[facing=east]"); put(tx + 1, g + 1, tz, "polished_blackstone_stairs[facing=west]")
+    put(tx, g + 3, tz, "soul_lantern")
+    for dx in (-1, 0, 1): put(tx + dx, g, tz - 6, "polished_blackstone_brick_stairs[facing=south]")
+    # a ruined portal in the north-west
+    px, pz = -17, -12; g = ground(px, pz)
+    frame = [(0, 0), (1, 0), (2, 0), (3, 0), (0, 1), (3, 1), (0, 2), (3, 2), (0, 3), (3, 3), (0, 4), (1, 4)]
+    for fx, fy in frame: put(px + fx, g + 1 + fy, pz, rnd.choice(["obsidian", "crying_obsidian", "obsidian"]))
+    for dx in range(-2, 6):
+        for dz in range(-2, 3):
+            if rnd.random() < 0.45: put(px + dx, ground(px + dx, pz + dz), pz + dz, rnd.choice(["netherrack", "magma_block", "netherrack", "gold_block" if rnd.random() < 0.08 else "netherrack"]))
+    # a fossil in the soul valley (north-east)
+    fx_, fz_ = 12, 22; g = ground(fx_, fz_)
+    for i in range(7):
+        x = fx_ + i - 3
+        for y in range(g + 1, g + 1 + (4 if i % 2 == 0 else 1)): put(x, y, fz_, "bone_block[axis=y]")
+        if i % 2 == 0: put(x, g + 4, fz_, "bone_block[axis=x]")
+    for x in range(fx_ - 4, fx_ + 5): put(x, g + 1, fz_ + 1, "bone_block[axis=x]")
+    # outcrops of the minable rarities (they grow back)
+    for i in range(24):
+        a_ = rnd.uniform(0, 2 * math.pi); d = rnd.uniform(11, RR - 4)
+        x, z = int(math.cos(a_) * d), int(math.sin(a_) * d)
+        if (z < -21 and abs(x) < 6) or math.hypot(x - tx, z - tz) < 8 or math.hypot(x - px, z - pz) < 5: continue
         blk = rnd.choice(["amethyst_block", "crying_obsidian", "gilded_blackstone", "nether_gold_ore", "nether_quartz_ore", "obsidian", "nether_quartz_ore", "gilded_blackstone"])
-        r = rnd.randint(1, 2)
+        r = rnd.randint(1, 2); g = ground(x, z)
         for dx in range(-r, r + 1):
             for dz in range(-r, r + 1):
                 if abs(dx) + abs(dz) > r + 1: continue
-                for dy in range(1, rnd.randint(2, 4)): b.set(x + dx, dy, z + dz, blk)
-        if i % 4 == 0: b.set(x, 1, z, "ancient_debris")   # a little debris at the heart of some
-        outcrops.append((x, z))
-    for i in range(16):   # mob spawns on open ground
-        a = i * 6.283 / 16 + 0.15; d = 13 if i % 2 else 24
-        rift_spawns.append((int(math.cos(a) * d), 1, int(math.sin(a) * d)))
+                for dy in range(1, rnd.randint(2, 4)): put(x + dx, g + dy, z + dz, blk)
+        if i % 4 == 0: put(x, g + 1, z, "ancient_debris")
+    # islets hovering overhead
+    for i in range(5):
+        a_ = i * 2 * math.pi / 5 + 0.7; cx_, cz_ = int(math.cos(a_) * 25), int(math.sin(a_) * 25); cy = rnd.randint(10, 15); rr = rnd.randint(2, 3)
+        for dx in range(-rr, rr + 1):
+            for dz in range(-rr, rr + 1):
+                if dx * dx + dz * dz > rr * rr + 1: continue
+                dep = rr - int(math.hypot(dx, dz)) + 1
+                for y in range(cy - dep, cy + 1): put(cx_ + dx, y, cz_ + dz, "blackstone" if y < cy else rnd.choice(["amethyst_block", "blackstone", "crying_obsidian"]))
+        put(cx_, cy + 1, cz_, "amethyst_cluster[facing=up]")
+        for k in range(1, 4): put(cx_, cy - rr - k, cz_, "weeping_vines_plant" if k < 3 else "weeping_vines")
+    # spawn points: open ground on two rings, away from the temple and the portal
+    rift_spawns = []
+    for i in range(16):
+        a_ = i * 2 * math.pi / 16 + 0.15; d = 13 if i % 2 else 24
+        x, z = int(math.cos(a_) * d), int(math.sin(a_) * d)
+        if math.hypot(x - tx, z - tz) < 8: x, z = int(x * 0.7), int(z * 0.7)
+        rift_spawns.append((x, ground(x, z) + 1, z))
     # arrival platform with the portal back to the hub
-    b.fill(-3, 0, -33, 3, 0, -27, "polished_blackstone_bricks")
-    b.fill(-3, 1, -33, 3, 9, -30, "air")
+    for x in range(-3, 4):
+        for z in range(-33, -26): put(x, 0, z, "polished_blackstone_bricks")
+        for z in range(-33, -29):
+            for y in range(1, 10): G.pop((x, y, z), None)
+    # emit: runs along x of the same block become one fill
+    b = Build(1717)
+    rows = {}
+    for (x, y, z), blk in G.items(): rows.setdefault((y, z), []).append((x, blk))
+    for (y, z) in sorted(rows):
+        run = sorted(rows[(y, z)])
+        i = 0
+        while i < len(run):
+            j = i
+            while j + 1 < len(run) and run[j + 1][0] == run[j][0] + 1 and run[j + 1][1] == run[i][1]: j += 1
+            if j == i: b.set(run[i][0], y, z, run[i][1])
+            else: b.fill(run[i][0], y, z, run[j][0], y, z, run[i][1])
+            i = j + 1
     fn("zones/rift_island", "\n".join(b.c))
     rift_cmds = [f"kill @e[type=minecraft:text_display,tag=cs_zonel,x={RIFT[0] - 40},y={RIFT[1] - 20},z={RIFT[2] - 42},dx=80,dy=45,dz=84]"]
-    rift_cmds += [f"fill {RIFT[0] - RR - 3} {y} {RIFT[2] - RR - 3} {RIFT[0] + RR + 3} {y} {RIFT[2] + RR + 3} minecraft:air" for y in range(RIFT[1] - 18, RIFT[1] + 22)]
+    rift_cmds += [f"fill {RIFT[0] - RR - 3} {y} {RIFT[2] - RR - 3} {RIFT[0] + RR + 3} {y} {RIFT[2] + RR + 3} minecraft:air" for y in range(RIFT[1] - 28, RIFT[1] + 22)]
     rift_cmds += [f"execute positioned {RIFT[0]} {RIFT[1]} {RIFT[2]} run function {NS}:zones/rift_island",
                   f"execute positioned {RIFT[0]} {RIFT[1]} {RIFT[2] - 31} run function {NS}:portal/style_rift",
                   f"summon minecraft:text_display {RIFT[0] + 0.5} {RIFT[1] + 3} {RIFT[2] - 26.5} {{Tags:[\"{NS}\",\"cs_zonel\"],billboard:\"center\",text:"
@@ -406,14 +529,15 @@ def build(NS, fn, js, txt, snbt, Build):
                   + snbt({"text": "Hub", "color": "gold", "bold": True, "extra": [txt("\nWalk through to go back", "gray", bold=False)]}) + "}"]
     fn("zones/build_rift", "\n".join([f"forceload add {RIFT[0] - 36} {RIFT[2] - 36} {RIFT[0] + 36} {RIFT[2] + 36}"] + rift_cmds
                                      + [f"forceload remove {RIFT[0] - 36} {RIFT[2] - 36} {RIFT[0] + 36} {RIFT[2] + 36}"]))
-    # its portal in the hub: at the end of the plaza's south path, facing the plaza (Portals.FIXED {0, 102, 20, rift})
+    # its portal in the hub: south-east of the plaza, mirroring the Woods portal (Portals.FIXED {13, 101, 15, rift})
     fn("zones/hub_rift_portal", "\n".join([
         "kill @e[type=minecraft:text_display,tag=cs_riftl]",
-        "fill -3 102 17 3 102 23 minecraft:polished_blackstone_bricks", "fill -3 101 17 3 101 23 minecraft:stone",
-        "fill -3 103 18 3 111 22 minecraft:air",
-        "fill -1 102 17 1 102 18 minecraft:polished_blackstone_brick_stairs[facing=north]",
-        f"execute positioned 0 102 20 run function {NS}:portal/style_rift",
-        "summon minecraft:text_display 0.5 109.4 20.5 {Tags:[\"" + NS + "\",\"cs_riftl\"],billboard:\"center\",text:"
+        "fill 10 100 12 16 100 18 minecraft:stone", "fill 10 101 12 16 101 18 minecraft:polished_blackstone_bricks",
+        "fill 11 101 13 15 101 17 minecraft:cracked_polished_blackstone_bricks replace minecraft:polished_blackstone_bricks",
+        "fill 10 102 12 16 110 18 minecraft:air",
+        "fill 12 101 11 14 101 11 minecraft:polished_blackstone_brick_stairs[facing=south]",
+        f"execute positioned 13 101 15 run function {NS}:portal/style_rift",
+        "summon minecraft:text_display 13.5 108.4 15.5 {Tags:[\"" + NS + "\",\"cs_riftl\"],billboard:\"center\",text:"
         + snbt({"text": "Sky Lord's Rift", "color": "light_purple", "bold": True,
                 "extra": [txt("\nOnly for those wearing ", "gray", bold=False), txt("[Sky Lord]", "aqua", bold=True), txt(" · Lv 15-30 mobs", "gray", bold=False)]}) + "}"]))
 
