@@ -3,7 +3,7 @@ outer hills of the hub island. skyblock.py's hub_build levels a pad for each (fl
 path, and places what features() returns; the plot layout goes into storage crispy_skyblock:eco cfg.hubplots, which
 the mod (HubPlots.java) reads: buying, the /plots menu, who may build where, and the plot labels.
 
-Plots are 16x16 with a build height from 4 below the floor to 32 above. The owner, players they trust and their
+Plots are 16x16 and the whole column is theirs: from the bottom of the world (under the island) to the build limit. The owner, players they trust and their
 island co-op can build there (the mod switches them to survival inside it); the rest of the hub is adventure mode.
 """
 import math
@@ -14,7 +14,8 @@ ISLAND = 92                 # the island's edge is about this far out (+ up to 8
 RING = 74                   # plot centres sit on this circle
 ROAD = 56                   # the ring path that links them
 N, PLOT = 16, 16
-DOWN, UP = 4, 32            # build height below / above the floor
+DOWN, UP = 4, 32            # the plot pad: dirt this deep under the floor, cleared this high above it
+WORLD_Y = (-64, 319)        # owners build the whole column: no height limit, down through the island and below it
 PRICE, REFUND = 20_000, 50  # coins; % back when abandoning
 REALTOR = (-6, 9)           # the Realtor NPC, just south-west of the plaza
 WARP = (-5.5, Y + 1, 7.5, 0)
@@ -35,7 +36,7 @@ def plots():
         else:
             if cz > 0: sx, sz, rot, tx, tz, yaw = mx, z1 - 1, 8, mx + 0.5, z1 - 2.5, 0
             else:      sx, sz, rot, tx, tz, yaw = mx, z2 + 1, 0, mx + 0.5, z2 + 3.5, 180
-        out.append({"n": i + 1, "x1": x1, "z1": z1, "x2": x2, "z2": z2, "y1": Y - DOWN, "y2": Y + UP,
+        out.append({"n": i + 1, "x1": x1, "z1": z1, "x2": x2, "z2": z2, "y1": WORLD_Y[0], "y2": WORLD_Y[1],
                     "sx": sx, "sy": Y + 1, "sz": sz, "rot": rot, "tx": tx, "ty": Y + 1, "tz": tz, "tyaw": yaw})
     for p in out:      # no two plots closer than 6 blocks
         for q in out:
@@ -97,4 +98,4 @@ def build(NS, fn, txt, snbt, label):
 def cfg():
     """Settings the mod reads (storage crispy_skyblock:eco cfg)."""
     return {"hubplots": PLOTS, "hubplot_price": PRICE, "hubplot_refund": REFUND,
-            "district": [-HUB_R, Y - 45, -HUB_R, HUB_R, Y + 45, HUB_R], "district_warp": list(WARP)}
+            "district": [-HUB_R, WORLD_Y[0], -HUB_R, HUB_R, WORLD_Y[1], HUB_R], "district_warp": list(WARP)}

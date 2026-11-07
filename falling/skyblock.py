@@ -858,12 +858,14 @@ execute as @a[scores={{cs_act=1..}}] at @s run function {NS}:act/dispatch
 execute as @a unless score @s cs_seen matches 1 run function {NS}:first_join
 execute as @e[type=minecraft:player,scores={{cs_die=1..}}] run function {NS}:p/respawned
 # hub = adventure, everywhere else = survival
-execute as @a[gamemode=survival,tag=!cs_hpbuild] at @s if dimension minecraft:overworld if entity @s[x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}] run gamemode adventure @s
-execute as @a[gamemode=adventure] at @s unless entity @s[x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}] run gamemode survival @s
+execute as @a[gamemode=survival,tag=!cs_hpbuild] at @s if dimension minecraft:overworld if entity @s[x=-{HUB_R},y=-64,z=-{HUB_R},dx={2*HUB_R},dy=383,dz={2*HUB_R}] run gamemode adventure @s
+execute as @a[gamemode=adventure] at @s unless entity @s[x=-{HUB_R},y=-64,z=-{HUB_R},dx={2*HUB_R},dy=383,dz={2*HUB_R}] run gamemode survival @s
 # in a Market District plot they can build on (HubPlots.java tags them): survival
 execute as @a[gamemode=adventure,tag=cs_hpbuild] run gamemode survival @s
 execute as @a[gamemode=adventure] at @s unless dimension minecraft:overworld run gamemode survival @s
-execute as @e[type=minecraft:player,x=-{HUB_R},y={Y-110},z=-{HUB_R},dx={2*HUB_R},dy=64,dz={2*HUB_R}] run function {NS}:act/hub
+# falling off the hub: back to spawn (plot owners building under the island only once they're well below it)
+execute as @e[type=minecraft:player,tag=!cs_hpbuild,x=-{HUB_R},y={Y-110},z=-{HUB_R},dx={2*HUB_R},dy=64,dz={2*HUB_R}] run function {NS}:act/hub
+execute as @e[type=minecraft:player,x=-{HUB_R},y=-300,z=-{HUB_R},dx={2*HUB_R},dy=250,dz={2*HUB_R}] run function {NS}:act/hub
 scoreboard players add #t cs_tmp 1
 execute if score #t cs_tmp matches 10 run function {NS}:p/bounds_all
 execute if score #t cs_tmp matches 10 run function {NS}:p/nbounds_all
@@ -877,7 +879,7 @@ execute positioned -13 {Y} -14 run function {NS}:portal/fx_mines
 execute positioned 13 {Y} -14 run function {NS}:portal/fx_woods
 execute positioned 13 101 15 run function {NS}:portal/fx_rift
 # hostile mobs that spawn in the hub's dark corners go into the void (not /kill, which drops their loot on the hub)
-execute as @e[type=#{NS}:hostile,x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}] at @s run tp @s ~ -1000 ~
+execute as @e[type=#{NS}:hostile,x=-{HUB_R},y=-64,z=-{HUB_R},dx={2*HUB_R},dy=383,dz={2*HUB_R}] at @s run tp @s ~ -1000 ~
 execute as @e[tag=cs_boss] at @s run function {NS}:boss/tick
 function {NS}:gear/second
 function {NS}:zones/second
@@ -1473,7 +1475,7 @@ function {NS}:p/ctx
 function {NS}:p/respawned2 with storage {NS}:d cur
 """)
 fn("p/respawned2", f"$execute unless entity @s[x=$(x),y=-64,z=$(z),dx=$(sd),dy=400,dz=$(sd)] run function {NS}:p/home")
-fn("p/bounds_all", f"execute as @a[gamemode=survival,tag=!cs_staff] at @s if dimension minecraft:overworld unless entity @s[x=-{HUB_R},y={Y-45},z=-{HUB_R},dx={2*HUB_R},dy=90,dz={2*HUB_R}] {EXP['in_zone']} run function {NS}:p/bounds")
+fn("p/bounds_all", f"execute as @a[gamemode=survival,tag=!cs_staff] at @s if dimension minecraft:overworld unless entity @s[x=-{HUB_R},y=-64,z=-{HUB_R},dx={2*HUB_R},dy=383,dz={2*HUB_R}] {EXP['in_zone']} run function {NS}:p/bounds")
 fn("p/bounds", f"""
 execute unless score @s cs_plot matches 1.. run return run function {NS}:act/hub
 function {NS}:p/ctx
