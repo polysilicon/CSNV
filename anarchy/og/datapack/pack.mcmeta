@@ -1,0 +1,7 @@
+{
+  "pack": {
+    "description": "Crispy Anarchy: the [OG] Merchant (tag-gated shop in the market)",
+    "min_format": [107, 0],
+    "max_format": [107, 1]
+  }
+}
