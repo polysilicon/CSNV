@@ -1,0 +1,115 @@
+{
+ "type": "minecraft:chest",
+ "pools": [
+  {
+   "rolls": 1,
+   "entries": [
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:netherite_ingot",
+     "weight": 10,
+     "functions": [
+      {
+       "function": "minecraft:set_count",
+       "count": {
+        "type": "minecraft:uniform",
+        "min": 1,
+        "max": 2
+       }
+      }
+     ]
+    },
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:enchanted_golden_apple",
+     "weight": 10,
+     "functions": [
+      {
+       "function": "minecraft:set_count",
+       "count": {
+        "type": "minecraft:uniform",
+        "min": 1,
+        "max": 2
+       }
+      }
+     ]
+    },
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:totem_of_undying",
+     "weight": 12
+    },
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:elytra",
+     "weight": 6
+    },
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:enchanted_book",
+     "weight": 10,
+     "functions": [
+      {
+       "function": "minecraft:set_components",
+       "components": {
+        "minecraft:stored_enchantments": {
+         "minecraft:mending": 1
+        }
+       }
+      }
+     ]
+    },
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:diamond",
+     "weight": 14,
+     "functions": [
+      {
+       "function": "minecraft:set_count",
+       "count": {
+        "type": "minecraft:uniform",
+        "min": 8,
+        "max": 16
+       }
+      }
+     ]
+    },
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:shulker_box",
+     "weight": 10
+    },
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:nether_star",
+     "weight": 4
+    },
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:trident",
+     "weight": 6
+    },
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:netherite_upgrade_smithing_template",
+     "weight": 8
+    },
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:ancient_debris",
+     "weight": 10,
+     "functions": [
+      {
+       "function": "minecraft:set_count",
+       "count": {
+        "type": "minecraft:uniform",
+        "min": 2,
+        "max": 4
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

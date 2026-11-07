@@ -1,20 +1,24 @@
-# Wasteland Merchant (Anarchy)
+# Black Market (Anarchy)
 
-A shop villager in the market (`crispy:market`, -102.5 95 -68.5, on the street just outside the bank's east door)
-that only trades with players **wearing** the rare **[Wastelander]** tag (lobby tag `wastelander`).
+**The Black Market Dealer**: a shop villager in the market (`crispy:market`, -102.5 95 -68.5, on the street outside
+the bank's east door) that only trades with players **wearing** the rare **[Black Market]** tag (lobby tag
+`blackmarket`). The gate is the chat-tags mod's (`needtag.blackmarket`): anyone not wearing it gets the one-line
+"needs [Black Market] equipped" message, with a click to equip it once they've earned it.
 
-The tag comes from the **Wasteland Legend** advancement (`anarchy:wasteland_legend`, Adventure tab, in this
-datapack): kill the Ender Dragon, kill the Wither, have all four netherite armor pieces, and stand 10,000 blocks
-from spawn in the Overworld (any direction). Anyone can earn it; each part counts once and progress is kept. The
-lobby sees it through `cosmetics.earned-sources` (Anarchy's advancements) and lists the tag under Achievements.
+**Earning the tag**: find the hidden dealer. Crouching for 4 seconds on one ordinary block somewhere in the market
+(the spot is only in `data/og/function/bm/second.mcfunction`) makes a hooded "???" appear for 5 seconds, whisper,
+hand over one random item (`loot_table/black_market`) and grant the hidden advancement `anarchy:black_market`,
+which the lobby turns into the tag. Once per player.
 
-The gate is the chat-tags mod's: the villager is tagged `needtag.wastelander`, so anyone not wearing it gets
-"This Wasteland Merchant needs [Wastelander] equipped", with a click to equip it once they've earned it.
+Built so cheats can't find it: no block, sign, chest or entity marks the spot (nothing for x-ray or entity ESP),
+the dealer only exists for the 5 seconds after someone triggers it, and the advancement is hidden with a vague
+description. The location is only in the server's datapack files, so keep this repository private.
 
-Trades (Gold Coins, the market currency): Wasteland Blade (netherite sword, Sharpness V, Looting III) 48, Wasteland
-Pickaxe (Efficiency V, Fortune III) 48, Wasteland Wings (elytra) 32, Mending book 16, enchanted golden apple 12,
-totem 8, Wasteland Stash (shulker box) 10, 64 rockets 4.
+Dealer trades (Gold Coins, the market currency): Contraband Blade (netherite sword, Sharpness V, Looting III) 48,
+Contraband Pickaxe (Efficiency V, Fortune III) 48, Contraband Wings (elytra) 32, Mending book 16, enchanted golden
+apple 12, totem 8, Contraband Stash (shulker box) 10, 64 rockets 4.
 
-- Install: `datapack/` as `world/datapacks/crispy_og`, `/reload`, then `/function og:place`.
+- Install: `datapack/` as `world/datapacks/crispy_og`, `/reload` (og:load starts the once-a-second check), then
+  `/function og:place` for the dealer.
 - The market's own `spawn_shops`/reinstall kills every `crispy_shop` villager, so run `/function og:place` again after.
-- `/function og:remove` takes it away.
+- `/function og:remove` takes the dealer away. To test: `/advancement revoke <player> only anarchy:black_market`.
