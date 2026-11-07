@@ -407,7 +407,7 @@ import gear
 GEAR = gear.build(NS, fn, js, txt, [f"{NS}:minion_{k}" for k, *_r in MINIONS])
 import expansion   # pets, resource zones, warps (the mod does the Bazaar, upgrades, pets and zone regrowth)
 EXP = expansion.build(NS, fn, js, txt, snbt, Build)
-import district    # hub plots: 16 plots players buy, in a ring round the hub's hills (HubPlots.java runs them)
+import district, hubdeco    # hub plots: 16 plots players buy, in a ring round the hub's hills (HubPlots.java runs them)
 ECO.update(district.cfg())
 ECO.update(EXP["cfg"])
 
@@ -481,7 +481,7 @@ data modify storage {NS}:eco cfg set value {snbt(ECO)}
 execute unless score #hubv cs_cfg matches 2.. run function {NS}:hub
 execute if score #hubv cs_cfg matches 2 run function {NS}:hub_v3
 # hub v4 (new portals): rebuilt once the hub's entities have loaded, so the old labels are cleared first
-execute if score #hubv cs_cfg matches 2..8 run schedule function {NS}:hub_v4 160t replace
+execute if score #hubv cs_cfg matches 2..9 run schedule function {NS}:hub_v4 160t replace
 # respawn the merchants once the hub's entities are loaded (at startup they load after this runs)
 schedule function {NS}:npcs 100t replace
 execute unless data storage {NS}:d plots run function {NS}:setup
@@ -537,7 +537,7 @@ def hub_build():
           f"kill @e[type=minecraft:text_display,tag={NS},x=-{HUB_R},y=0,z=-{HUB_R},dx={2 * HUB_R},dy=320,dz={2 * HUB_R}]"]
     for y in range(Y - 40, Y + 34):     # two halves: a fill can't cover the whole area at once
         c += [f"fill -{HUB_R} {y} -{HUB_R} -1 {y} {HUB_R} minecraft:air", f"fill 0 {y} -{HUB_R} {HUB_R} {y} {HUB_R} minecraft:air"]
-    top, edge = {}, {}
+    top, edge, under_y = {}, {}, {}
     pond = (-36, 0, 11.5)     # the fishing pond, out in the western hills between two of the diagonal paths
     def hills(x, z, lim):
         inner = max(0.0, min(1.0, (math.hypot(x, z) - 16) / 7)) * max(0.0, min(1.0, (lim - math.hypot(x, z)) / 5))
@@ -556,6 +556,7 @@ def hub_build():
             depth = int(3 + 32 * (1 - r / lim) ** 0.9 + 5 * noise(x * 0.15, z * 0.15, 3))
             t = Y + h
             top[(x, z)] = t
+            under_y[(x, z)] = t - depth
             c.append(f"fill {x} {t - depth} {z} {x} {t - 4} {z} minecraft:stone")
             c.append(f"fill {x} {t - 3} {z} {x} {t - 1} {z} minecraft:dirt")
             c.append(f"setblock {x} {t} {z} minecraft:grass_block")
@@ -627,12 +628,13 @@ def hub_build():
                 "extra": [txt("\nCast a line · Fishing skill XP", "gray", bold=False)]}), 0.8, bill="center")]
     for x in range(pw + 1, dx0 + 1):
         for z in range(pond[1] - 1, pond[1] + 2): used.add((x, z))
-    # plaza: polished andesite with a stone brick ring
+    # cliffs, hanging vines and the underside's dripstone, roots and lichen
+    hubdeco.cliffs(c, top, under_y, rnd, noise, Y)
+    # the plaza's floor area is kept for hubdeco.plaza (laid after the paths)
     for (x, z) in top:
-        r = math.hypot(x, z)
-        if r <= 8.5: surf(x, z, "polished_andesite"); used.add((x, z))
-        elif r <= 9.6: surf(x, z, "stone_bricks"); used.add((x, z))
+        if math.hypot(x, z) <= 10.6: used.add((x, z))
     # paths: north to the portal, east and west to the stalls, south past spawn, and four out into the hills
+    pathcells = set()
     def path(points, width=1, block="dirt_path"):
         for (ax, az), (bx, bz) in zip(points, points[1:]):
             n = max(abs(bx - ax), abs(bz - az))
@@ -641,7 +643,9 @@ def hub_build():
                 for dx in range(-width, width + 1):
                     for dz in range(-width, width + 1):
                         if (x + dx, z + dz) in top and (x + dx, z + dz) not in used:
-                            surf(x + dx, z + dz, block); used.add((x + dx, z + dz))
+                            kind = "stone" if block == "stone_bricks" else "dirt" if block == "dirt_path" else block
+                            surf(x + dx, z + dz, hubdeco.path_block(kind, rnd)); used.add((x + dx, z + dz))
+                        if (x + dx, z + dz) in top: pathcells.add((x + dx, z + dz))
     path([(0, -9), (0, HUB_PORTAL_Z + 1)], 1, "stone_bricks")
     path([(0, 9), (0, 17)], 1, "stone_bricks")
     # the plots: a ring path round the hills with a spur to the front of each plot
@@ -668,51 +672,29 @@ def hub_build():
                 t = top[(lx, lz)]
                 c += [f"setblock {lx} {t + 1} {lz} minecraft:oak_fence", f"setblock {lx} {t + 2} {lz} minecraft:lantern[hanging=false]"]
                 used.add((lx, lz))
-    # fountain
-    for (x, z) in list(top):
-        r = math.hypot(x, z)
-        if r <= 2.6: c += [f"setblock {x} {Y} {z} minecraft:water", f"setblock {x} {Y - 1} {z} minecraft:stone_bricks"]
-        elif r <= 3.6: c += [f"setblock {x} {Y} {z} minecraft:stone_bricks", f"setblock {x} {Y + 1} {z} minecraft:stone_brick_wall"]
-    c += [f"fill 0 {Y} 0 0 {Y + 2} 0 minecraft:chiseled_stone_bricks", f"setblock 0 {Y + 3} 0 minecraft:water"]
-    # trees around the hills
-    trees = []
-    keys = sorted(top)
-    rnd.shuffle(keys)
-    for (x, z) in keys:
-        r = math.hypot(x, z)
-        if not (17 < r < district.ISLAND - 4) or (x, z) in used or district.in_plot(x, z, 4): continue
-        if any(math.hypot(x - a, z - b) < 7 for a, b in trees): continue
-        if len(trees) >= 90: break
-        trees.append((x, z))
-    for i, (x, z) in enumerate(trees):
-        t = top[(x, z)]
-        log, leaves = [("oak_log", "oak_leaves"), ("birch_log", "birch_leaves"), ("oak_log", "oak_leaves"), ("cherry_log", "cherry_leaves")][i % 4]
-        h = 4 + rnd.randint(0, 2)
-        L = f"minecraft:{leaves}[persistent=true]"
-        for dy in (h - 2, h - 1):
-            c.append(f"fill {x - 2} {t + dy} {z - 2} {x + 2} {t + dy} {z + 2} {L} replace minecraft:air")
-        c.append(f"fill {x - 1} {t + h} {z - 1} {x + 1} {t + h} {z + 1} {L} replace minecraft:air")
-        c.append(f"setblock {x} {t + h + 1} {z} {L}")
-        c.append(f"fill {x} {t + 1} {z} {x} {t + h - 1} {z} minecraft:{log}")
-        for dx in range(-2, 3):
-            for dz in range(-2, 3): used.add((x + dx, z + dz))
-    # flowers and grass
-    flowers = ["short_grass"] * 6 + ["poppy", "dandelion", "oxeye_daisy", "cornflower", "allium", "azure_bluet", "fern"]
-    for (x, z), t in top.items():
-        if (x, z) in used or math.hypot(x, z) < 11: continue
-        if rnd.random() < 0.16: c.append(f"setblock {x} {t + 1} {z} minecraft:{rnd.choice(flowers)}")
+    # landmarks: a lookout tower up north behind the portal, a gazebo south of spawn, a waterfall off the east edge
+    path([(0, HUB_PORTAL_Z - 3), (0, -38)], 1, "stone_bricks")
+    path([(0, 17), (0, 30)], 1, "dirt_path")
+    avoid = set()
+    hubdeco.lookout(c, top, used, Y, 0, -42)
+    hubdeco.gazebo(c, top, used, Y, 0, 34)
+    (wx, wz), _wt = hubdeco.waterfall(c, top, used, rnd, Y, 0)
+    for a_ in range(-10, 11):   # keep trees' canopies off the landmarks
+        for b_ in range(-10, 11): avoid |= {(a_, -42 + b_), (a_, 34 + b_), (wx + a_, wz + b_)}
+    avoid |= {(x_, z_) for x_ in range(wx, 110) for z_ in range(-4, 5)}
+    # the plaza: patterned floor, benches, planters and lamp posts; the fountain in the middle
+    keep = set(pathcells) | {(nx, nz) for nx, nz in ((6, -9), (-6, -9), (6, 9), (-6, 9), (0, 5), (0, 6))}
+    keep -= {(x, z) for (x, z) in top if math.hypot(x, z) <= 10.6 and (x, z) not in pathcells}
+    hubdeco.plaza(c, top, used, rnd, surf, Y, keep)
+    hubdeco.fountain(c, top, Y)
+    hubdeco.ground(c, top, used, rnd, noise, surf)
+    hubdeco.plants(c, top, used, rnd, noise, Y, district, avoid | pathcells)
     # no monsters: light blocks every 10 blocks (invisible, you walk through them)
     for x in range(-HUB_R + 4, HUB_R - 3, 10):
         for z in range(-HUB_R + 4, HUB_R - 3, 10):
             if (x, z) in top: c.append(f"setblock {x} {top[(x, z)] + 3} {z} minecraft:light[level=15]")
     # market stalls with the merchants
-    for key, sx, sz, wool, prof in STALLS:
-        yaw = math.degrees(math.atan2(-sx, sz))   # face the plaza centre
-        c += [f"fill {sx - 1} {Y} {sz - 1} {sx + 1} {Y} {sz + 1} minecraft:spruce_planks"]
-        for cx_, cz_ in ((-1, -1), (-1, 1), (1, -1), (1, 1)):
-            c.append(f"fill {sx + cx_} {Y + 1} {sz + cz_} {sx + cx_} {Y + 3} {sz + cz_} minecraft:spruce_fence")
-        c += [f"fill {sx - 1} {Y + 4} {sz - 1} {sx + 1} {Y + 4} {sz + 1} minecraft:{wool}_wool",
-              f"setblock {sx} {Y + 5} {sz} minecraft:{wool}_carpet", f"setblock {sx} {Y + 3} {sz} minecraft:light[level=13]"]
+    hubdeco.stalls(c, used, Y, STALLS)
     # the portal to your island
     c += portal_blocks(0, Y, HUB_PORTAL_Z, platform=False)
     c.append(f"execute positioned 0 {Y} {HUB_PORTAL_Z} run function {NS}:portal/style_island")
@@ -736,7 +718,7 @@ def hub_build():
               txt("Craft one: 8 of a resource around a wooden pickaxe.\nPlace it on your island; it gathers while you're offline.\nRight-click it to collect, upgrade (I to V) or pick it up.", "gray", bold=False)]}),
                 0.8, yaw=0)]
     c += district.features(txt, snbt, label, hsign)
-    c += [f"setworldspawn 0 {Y + 1} 5", "scoreboard players set #hubv cs_cfg 9"]
+    c += [f"setworldspawn 0 {Y + 1} 5", "scoreboard players set #hubv cs_cfg 10"]
     return c
 
 def portal_blocks(x, y, z, platform=True):
@@ -834,7 +816,7 @@ STALLS = [("farming", 12, -5, "lime", "farmer"), ("mining", 12, 5, "light_gray",
 _hub = hub_build()
 _parts = [_hub[i:i + 20000] for i in range(0, len(_hub), 20000)]
 for _i, _p in enumerate(_parts, 1):
-    fn(f"hub/p{_i}", "\n".join(_p + ([f"schedule function {NS}:hub/p{_i + 1} 2t"] if _i < len(_parts) else [f"function {NS}:npcs"])))
+    fn(f"hub/p{_i}", "\n".join(_p + ([f"schedule function {NS}:hub/p{_i + 1} 2t"] if _i < len(_parts) else [f"function {NS}:npcs", f"function {NS}:zones/hub_rift_portal"])))
 fn("hub", f"function {NS}:hub/p1")
 # hub v3: the stall lanterns sat where the merchants' labels go
 fn("hub_v4", f"function {NS}:hub")
