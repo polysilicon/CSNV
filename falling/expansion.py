@@ -38,7 +38,8 @@ ZONES = [
     ("woods", "Whispering Woods", WOODS, 38, (WOODS[1] - 16, WOODS[1] + 20), LOGS,
      30, ["spider", "zombie", "witch", "skeleton"], (WOODS[0] + 0.5, WOODS[1] + 1, WOODS[2] - 27.5, 0)),
     ("rift", "Sky Lord's Rift", RIFT, 34, (RIFT[1] - 28, RIFT[1] + 22), RIFT_RES,
-     90, ["wither_skeleton", "pillager", "vindicator", "blaze", "wither_skeleton"],   # no piglins: they fight wither skeletons (RIFT[0] + 0.5, RIFT[1] + 1, RIFT[2] - 27.5, 0)),
+     # no piglins in the Rift: brutes fight wither skeletons and zombify in the overworld
+     90, ["wither_skeleton", "pillager", "vindicator", "blaze", "wither_skeleton"], (RIFT[0] + 0.5, RIFT[1] + 1, RIFT[2] - 27.5, 0)),
 ]
 ZONE_CAP = 8          # mobs per zone at once (+2 per player there)
 SPAWN_EVERY = {"mines": 8, "woods": 3, "rift": 4}   # a new mob about every N seconds per zone (a 1-in-N roll each second) until the cap
