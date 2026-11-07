@@ -4,6 +4,8 @@ scoreboard objectives add og_i dummy
 scoreboard objectives add og_size dummy
 scoreboard objectives add og_died deathCount
 scoreboard objectives add og_hn dummy
+scoreboard objectives add og_sid dummy
+scoreboard objectives add og_sk dummy
 scoreboard objectives add og_x0 dummy
 scoreboard objectives add og_x1 dummy
 scoreboard objectives add og_x2 dummy
@@ -21,3 +23,4 @@ scoreboard objectives add og_z3 dummy
 scoreboard objectives add og_z4 dummy
 execute unless score #spot bm matches 1..8 store result score #spot bm run random value 1..8
 schedule function og:bm/loop 20t replace
+schedule function og:item/tick 1t replace

@@ -139,6 +139,8 @@ POTIONS = {   # key: (name, colour, rgb, lore, attribute modifiers, sound, (coun
                [], ("block.beacon.deactivate", 1.2), (2, 2)),
 }
 SIZE_SECONDS = 180
+SPLASH_R = 4
+SPLASH_EXTRA = 2   # splash costs this many Gold Coins more than the drink
 MODS = sorted({a for p in POTIONS.values() for a, _ in p[4]})
 
 
@@ -152,9 +154,14 @@ def ability_item(k, count):
             f'"minecraft:use_cooldown":{{seconds:{cd}f,cooldown_group:"og:{k}"}}}}}}')
 
 
-def potion_item(k, count):
+def splash_lore(lore): return [l.replace("Drink:", "Throw:").replace("your", "everyone's") if i == 0 else l for i, l in enumerate(lore)] + [SPLASH_LINE]
+SPLASH_LINE = f"Splash: hits everyone within {SPLASH_R} blocks, mobs too"
+
+
+def potion_item(k, count, splash=False):
     name, color, rgb, lore, *_ = POTIONS[k]
-    return (f'{{id:"minecraft:potion",count:{count},components:{{"minecraft:custom_data":{{bm:"{k}"}},'
+    if splash: name, lore = "Splash " + name, splash_lore(lore)
+    return (f'{{id:"minecraft:{"splash_potion" if splash else "potion"}",count:{count},components:{{"minecraft:custom_data":{{bm:"{k}"}},'
             f'"minecraft:custom_name":{txt(name, color, bold=True)},"minecraft:potion_contents":{{custom_color:{rgb}}},'
             f'"minecraft:lore":[{",".join(txt(l) for l in lore)},{TAG_LINE}],"minecraft:max_stack_size":4}}}}')
 
@@ -233,18 +240,48 @@ w(f"{F}item/size_reset.mcfunction", [f"attribute @s minecraft:{a} modifier remov
   + ["scoreboard players reset @s og_size", "tag @s remove og.sized"])
 w(f"{F}item/second.mcfunction", [
     "# once a second (og:bm/loop): brews run out, and dying ends them; the Chrono Clock's position history",
-    "scoreboard players remove @a[tag=og.sized] og_size 1",
+    "scoreboard players remove @e[tag=og.sized] og_size 1",
     'title @a[tag=og.sized,scores={og_size=10}] actionbar {"text":"◆ Your brew wears off in 10 s","color":"gray"}',
     "execute as @a[tag=og.sized,scores={og_died=1..}] run function og:item/size_reset",
-    "execute as @a[tag=og.sized] unless score @s og_size matches 1.. run function og:item/size_reset",
+    "execute as @e[tag=og.sized] unless score @s og_size matches 1.. run function og:item/size_reset",
     "execute as @a[scores={og_died=1..}] run scoreboard players set @s og_hn 0",
     "scoreboard players reset @a og_died",
     "execute as @a[gamemode=!spectator] run function og:item/history"])
+# ------------------------------------------------------------------ splash brews
+# A thrown Black Market splash potion gets a marker that follows it every tick (og_sid links them); when the potion is
+# gone (it broke), the marker applies the brew to every living thing within SPLASH_R blocks and goes too.
+KEYS = list(POTIONS)
+w(f"{F}item/tick.mcfunction", ["# every tick (schedules itself; started by og:load): splash brews in flight",
+                               "execute as @e[type=minecraft:splash_potion,tag=!og.sp] at @s run function og:item/sp_new",
+                               "execute as @e[type=minecraft:marker,tag=og.spm] at @s run function og:item/sp_follow",
+                               "schedule function og:item/tick 1t replace"])
+w(f"{F}item/sp_new.mcfunction", ["tag @s add og.sp", "scoreboard players set #k og_i 0",
+    *[f'execute if entity @s[nbt={{Item:{{components:{{"minecraft:custom_data":{{bm:"{k}"}}}}}}}}] run scoreboard players set #k og_i {i}'
+      for i, k in enumerate(KEYS, 1)],
+    "execute if score #k og_i matches 0 run return 0",
+    "scoreboard players add #sid og_i 1", "scoreboard players operation @s og_sid = #sid og_i",
+    "summon minecraft:marker ~ ~ ~ {Tags:[\"og.spm\",\"og.new\"]}",
+    "scoreboard players operation @n[type=minecraft:marker,tag=og.new] og_sid = #sid og_i",
+    "scoreboard players operation @n[type=minecraft:marker,tag=og.new] og_sk = #k og_i",
+    "tag @e[type=minecraft:marker,tag=og.new] remove og.new"])
+w(f"{F}item/sp_follow.mcfunction", ["# as a splash marker: keep up with its potion, or burst where it was last seen",
+    "scoreboard players operation #id og_i = @s og_sid",
+    "execute as @e[type=minecraft:splash_potion,tag=og.sp] if score @s og_sid = #id og_i run tag @s add og.me",
+    "tag @s add og.f",   # (not @n: from the schedule that would only look in the overworld)
+    "execute as @e[type=minecraft:splash_potion,tag=og.me] at @s run tp @e[type=minecraft:marker,tag=og.f,limit=1] ~ ~ ~",
+    "tag @s remove og.f",
+    "execute unless entity @e[type=minecraft:splash_potion,tag=og.me] at @s run function og:item/sp_burst",
+    "tag @e[tag=og.me] remove og.me"])
+w(f"{F}item/sp_burst.mcfunction", ["# the potion broke here: its brew hits everything living nearby (the thrower too, like any splash)",
+    *[f"execute if score @s og_sk matches {i} as @e[distance=..{SPLASH_R},type=!#og:not_target] at @s run function og:item/size_{k}"
+      for i, k in enumerate(KEYS, 1)],
+    "kill @s"])
+
 gives = []
 for k in ABILITIES:
     gives.append(f"loot give @s loot og:item/{k}")
 for k in POTIONS:
-    gives.append(f"loot give @s loot og:item/{k}")
+    gives += [f"loot give @s loot og:item/{k}", f"loot give @s loot og:item/splash_{k}"]
 w(f"{F}give_all.mcfunction", ["# ops: one of every Black Market contraband item, to test"] + gives)
 
 json.dump({"values": ["#minecraft:air", "#minecraft:replaceable", "#minecraft:flowers", "#minecraft:saplings",
@@ -264,7 +301,7 @@ json.dump({"values": [f"minecraft:{t}" for t in [
 
 
 # ------------------------------------------------------------------ loot tables (one item each, for give_all and the dealer's loot)
-def loot_entry(k, count, weight=None):
+def loot_entry(k, count, weight=None, splash=False):
     if k in ABILITIES:
         name, color, model, cd, lore, _, _ = ABILITIES[k]
         comps = {"minecraft:item_model": f"minecraft:{model}", "minecraft:custom_data": {"bm": k},
@@ -279,13 +316,14 @@ def loot_entry(k, count, weight=None):
         base = "minecraft:clay_ball"
     else:
         name, color, rgb, lore, *_ = POTIONS[k]
+        if splash: name, lore = "Splash " + name, splash_lore(lore)
         comps = {"minecraft:custom_data": {"bm": k},
                  "minecraft:custom_name": {"text": name, "color": color, "bold": True, "italic": False},
                  "minecraft:potion_contents": {"custom_color": rgb},
                  "minecraft:lore": [{"text": l, "color": "gray", "italic": False} for l in lore]
                  + [{"text": "Crispy Anarchy · Black Market", "color": "dark_gray", "italic": False}],
                  "minecraft:max_stack_size": 4}
-        base = "minecraft:potion"
+        base = "minecraft:splash_potion" if splash else "minecraft:potion"
     e = {"type": "minecraft:item", "name": base, "functions": [
         {"function": "minecraft:set_components", "components": comps},
         {"function": "minecraft:set_count", "count": count}]}
@@ -297,6 +335,9 @@ os.makedirs(f"{D}og/loot_table/item", exist_ok=True)
 for k in {**ABILITIES, **POTIONS}:
     json.dump({"type": "minecraft:command", "pools": [{"rolls": 1, "entries": [loot_entry(k, 1)]}]},
               open(f"{D}og/loot_table/item/{k}.json", "w"), indent=1)
+for k in POTIONS:
+    json.dump({"type": "minecraft:command", "pools": [{"rolls": 1, "entries": [loot_entry(k, 1, splash=True)]}]},
+              open(f"{D}og/loot_table/item/splash_{k}.json", "w"), indent=1)
 
 # the hidden dealer's once-per-player gift: one random stack of contraband
 U = lambda lo, hi: {"type": "minecraft:uniform", "min": lo, "max": hi}
@@ -305,12 +346,13 @@ json.dump({"type": "minecraft:chest", "pools": [{"rolls": 1, "entries": [
     loot_entry("smoke", U(2, 4), 8), loot_entry("snare", U(4, 8), 8), loot_entry("frost", U(2, 3), 8),
     loot_entry("tesla", 2, 6), loot_entry("gravity", 2, 6), loot_entry("siphon", 2, 6), loot_entry("swap", 2, 6),
     loot_entry("chrono", 2, 6), loot_entry("grow", 2, 6), loot_entry("shrink", 2, 6), loot_entry("moon", 2, 6),
-    loot_entry("normal", 2, 6)]}]}, open(f"{D}og/loot_table/black_market.json", "w"), indent=1)
+    loot_entry("normal", 2, 6), loot_entry("grow", 2, 4, True), loot_entry("shrink", 2, 4, True),
+    loot_entry("moon", 2, 4, True)]}]}, open(f"{D}og/loot_table/black_market.json", "w"), indent=1)
 
 # ------------------------------------------------------------------ the dealer
 TRADES = ([trade(price, ability_item(k, n)) for k, (*_, (n, price)) in ABILITIES.items()]
           + [trade(price, potion_item(k, n)) for k, (*_, (n, price)) in POTIONS.items()]
-)
+          + [trade(price + SPLASH_EXTRA, potion_item(k, n, True)) for k, (*_, (n, price)) in POTIONS.items()])
 w(F + "place.mcfunction", [
     "# /function og:place (ops, on Anarchy): put the Black Market Dealer in the market, on the street outside the bank's door.",
     "# Written by gen_items.py. Tagged crispy_shop (or the market moves it out) and needtag.blackmarket (only players wearing",

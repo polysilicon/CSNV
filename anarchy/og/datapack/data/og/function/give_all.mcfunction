@@ -11,6 +11,10 @@ loot give @s loot og:item/chrono
 loot give @s loot og:item/frost
 loot give @s loot og:item/siphon
 loot give @s loot og:item/grow
+loot give @s loot og:item/splash_grow
 loot give @s loot og:item/shrink
+loot give @s loot og:item/splash_shrink
 loot give @s loot og:item/moon
+loot give @s loot og:item/splash_moon
 loot give @s loot og:item/normal
+loot give @s loot og:item/splash_normal

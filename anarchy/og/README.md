@@ -34,6 +34,7 @@ and `/function og:place`):
 | Shrink Potion ×2 | drink: 0.35x size (fits through 1-block gaps, hard to hit) | 6 |
 | Moon Juice ×2 | drink: low gravity, huge floaty jumps, no fall damage | 6 |
 | Restoring Draught ×2 | drink: back to normal size, ends any brew | 2 |
+| Splash versions of all four | throw: the brew hits every player and mob within 4 blocks (you too) | drink price + 2 |
 
 Brews last 3 minutes, one at a time (a new one replaces the old). No generic items: everything sold, and the hidden
 dealer's once-per-player gift (`loot_table/black_market`, one random stack), is Black Market contraband.
@@ -57,3 +58,8 @@ of the eight spots. `render.py` reads the market's top blocks from its region fi
 colours (the palette is MapColor's, taken from the server jar) and draws the dots. Hand it out with
 `give <player> minecraft:filled_map[minecraft:map_id=90001,...]` (see the item name and lore used in chat history).
 If the spots change, re-run compose.py with the new list and upload 90001.dat again.
+
+**Splash brews**: a thrown Black Market splash potion gets a marker (`og:item/sp_new`) that follows it every tick
+(`og:item/tick`, which schedules itself every tick, started by `og:load`, not `#minecraft:tick`). When the potion breaks,
+the marker applies the brew to every living thing within 4 blocks (`sp_burst`), mobs included; brews on mobs wear off
+too. Note: Anarchy pauses when nobody is online, so nothing ticks (and splash brews can't be tested) while it's empty.

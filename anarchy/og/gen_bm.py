@@ -17,9 +17,9 @@ F = "datapack/data/og/function/bm/"
 open("datapack/data/og/function/load.mcfunction", "w").write("\n".join([
     "scoreboard objectives add bm_sneak dummy", "scoreboard objectives add bm dummy",
     "scoreboard objectives add og_i dummy", "scoreboard objectives add og_size dummy", "scoreboard objectives add og_died deathCount",
-    "scoreboard objectives add og_hn dummy", *[f"scoreboard objectives add og_{c}{i} dummy" for c in "xyz" for i in range(5)],
+    "scoreboard objectives add og_hn dummy", "scoreboard objectives add og_sid dummy", "scoreboard objectives add og_sk dummy", *[f"scoreboard objectives add og_{c}{i} dummy" for c in "xyz" for i in range(5)],
     f"execute unless score #spot bm matches 1..{N} store result score #spot bm run random value 1..{N}",
-    "schedule function og:bm/loop 20t replace", ""]))
+    "schedule function og:bm/loop 20t replace", "schedule function og:item/tick 1t replace", ""]))
 sneak = 'if predicate {condition:"minecraft:entity_properties",entity:"this",predicate:{"minecraft:flags":{is_sneaking:true}}}'
 open(F + "second.mcfunction", "w").write("\n".join(
     ["# The Black Market: crouch 4 seconds on today's spot (#spot bm, one of the nooks in gen_bm.py). Nothing marks it",

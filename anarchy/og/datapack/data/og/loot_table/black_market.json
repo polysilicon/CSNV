@@ -876,6 +876,159 @@
       }
      ],
      "weight": 6
+    },
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:splash_potion",
+     "functions": [
+      {
+       "function": "minecraft:set_components",
+       "components": {
+        "minecraft:custom_data": {
+         "bm": "grow"
+        },
+        "minecraft:custom_name": {
+         "text": "Splash Growth Potion",
+         "color": "green",
+         "bold": true,
+         "italic": false
+        },
+        "minecraft:potion_contents": {
+         "custom_color": 4182346
+        },
+        "minecraft:lore": [
+         {
+          "text": "Throw: grow to twice everyone's size for 3 minutes.",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "+4 hearts \u00b7 +1.5 blocks reach",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Splash: hits everyone within 4 blocks, mobs too",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Crispy Anarchy \u00b7 Black Market",
+          "color": "dark_gray",
+          "italic": false
+         }
+        ],
+        "minecraft:max_stack_size": 4
+       }
+      },
+      {
+       "function": "minecraft:set_count",
+       "count": 2
+      }
+     ],
+     "weight": 4
+    },
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:splash_potion",
+     "functions": [
+      {
+       "function": "minecraft:set_components",
+       "components": {
+        "minecraft:custom_data": {
+         "bm": "shrink"
+        },
+        "minecraft:custom_name": {
+         "text": "Splash Shrink Potion",
+         "color": "light_purple",
+         "bold": true,
+         "italic": false
+        },
+        "minecraft:potion_contents": {
+         "custom_color": 11820287
+        },
+        "minecraft:lore": [
+         {
+          "text": "Throw: shrink to a third of everyone's size for 3 minutes.",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Fit through 1-block gaps \u00b7 far harder to hit",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Splash: hits everyone within 4 blocks, mobs too",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Crispy Anarchy \u00b7 Black Market",
+          "color": "dark_gray",
+          "italic": false
+         }
+        ],
+        "minecraft:max_stack_size": 4
+       }
+      },
+      {
+       "function": "minecraft:set_count",
+       "count": 2
+      }
+     ],
+     "weight": 4
+    },
+    {
+     "type": "minecraft:item",
+     "name": "minecraft:splash_potion",
+     "functions": [
+      {
+       "function": "minecraft:set_components",
+       "components": {
+        "minecraft:custom_data": {
+         "bm": "moon"
+        },
+        "minecraft:custom_name": {
+         "text": "Splash Moon Juice",
+         "color": "white",
+         "bold": true,
+         "italic": false
+        },
+        "minecraft:potion_contents": {
+         "custom_color": 14213360
+        },
+        "minecraft:lore": [
+         {
+          "text": "Throw: low gravity for 3 minutes.",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Huge, floaty jumps \u00b7 no fall damage",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Splash: hits everyone within 4 blocks, mobs too",
+          "color": "gray",
+          "italic": false
+         },
+         {
+          "text": "Crispy Anarchy \u00b7 Black Market",
+          "color": "dark_gray",
+          "italic": false
+         }
+        ],
+        "minecraft:max_stack_size": 4
+       }
+      },
+      {
+       "function": "minecraft:set_count",
+       "count": 2
+      }
+     ],
+     "weight": 4
     }
    ]
   }
