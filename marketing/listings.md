@@ -19,18 +19,24 @@ in the title and description for players to type.
 
 ## Title (pick the longest the site allows)
 
-- 60 chars: `Crispy Network | Skyblock, Anarchy, Factions, PvP Minigames`
-- 45 chars: `Crispy Network | Skyblock, Anarchy, Factions`
-- 30 chars: `Crispy Network | Skyblock + PvP`
+- 60 chars: `Crispy Network | Anarchy, Skyblock, Factions, PvP Minigames`
+- 45 chars: `Crispy Network | Anarchy, Skyblock, Factions`
+- 30 chars: `Crispy Network | Anarchy + PvP`
 
 ## Short description (under 160 characters, for sites with a one-liner)
 
-> Skyblock with skills and pets, no-rules anarchy since 2020, old-school factions and 36-character PvP. Java + Bedrock, no mods needed.
+> No-rules anarchy since 2020, Skyblock with skills and pets, old-school factions and 36-character PvP. Java + Bedrock, no mods needed.
 
 ## Long description
 
 ```
 CRISPY NETWORK: one network, every playstyle. Java and Bedrock, no mods needed.
+
+CRISPY ANARCHY (since 2020)
+- No rules, no claims, one huge old map
+- Custom enchantments and cyberpunk implants
+- A market full of shops, and a black market you'll have to find
+- Prefer it pure? Vanilla Anarchy is plain survival, no custom items
 
 SKYBLOCK
 - 7 themed starter islands to grow
@@ -40,12 +46,6 @@ SKYBLOCK
 - Loot and dungeons fall from the sky onto your island
 - Buy a plot in the hub for your shop or house
 - No pay-to-win
-
-CRISPY ANARCHY (since 2020)
-- No rules, no claims, one huge old map
-- Custom enchantments and cyberpunk implants
-- A market full of shops, and a black market you'll have to find
-- Prefer it pure? Vanilla Anarchy is plain survival, no custom items
 
 MULTIVERSE
 - 36 playable characters, each with their own abilities and gear
@@ -73,7 +73,7 @@ Discord: discord.gg/hF2bQgU
 
 ## Tags / categories
 
-Survival, Skyblock, Anarchy, Factions, PvP, Minigames, Economy, Crossplay (Java + Bedrock), Vanilla, McMMO, Custom
+Anarchy, Survival, Skyblock, Factions, PvP, Minigames, Economy, Crossplay (Java + Bedrock), Vanilla, McMMO, Custom
 Enchants. Pick the ones each site offers; most allow 5-10.
 
 ## Banners

@@ -18,9 +18,9 @@ f = lambda path, size: ImageFont.truetype(path, max(8, round(size * S)))
 
 PINK, CYAN, YELLOW, WHITE, GREY = (255, 60, 200), (40, 230, 255), (255, 220, 60), (245, 245, 255), (150, 160, 190)
 SLIDES = [  # (headline, sub-line, headline colour)
-    ("SKYBLOCK · ANARCHY · FACTIONS · PVP", "one network, Java + Bedrock, no mods needed", WHITE),
-    ("SKYBLOCK, NO PAY-TO-WIN", "skills · pets · bazaar · minions · a boss rift", (120, 255, 120)),
+    ("ANARCHY · SKYBLOCK · FACTIONS · PVP", "one network, Java + Bedrock, no mods needed", WHITE),
     ("ANARCHY SINCE 2020", "no rules · cyberware implants · custom enchants", PINK),
+    ("SKYBLOCK, NO PAY-TO-WIN", "skills · pets · bazaar · minions · a boss rift", (120, 255, 120)),
     ("MULTIVERSE: 36 CHARACTERS", "kit PvP · ranked duels · co-op zombie waves", (255, 150, 60)),
     ("OLD-SCHOOL FACTIONS", "1.8 combat · cannons · set raid windows", YELLOW),
     (ADDRESS.upper(), "JAVA + BEDROCK · JOIN NOW", CYAN),
