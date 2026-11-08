@@ -1928,7 +1928,7 @@ def build_pve():
             f"execute if items entity @s weapon.offhand {abilities.sel(k)} run return run {have}",
             f"execute if score @s pve.pts matches ..{cost - 1} run return run {afford(gname, cost)}",
             f"scoreboard players remove @s pve.pts {cost}", abilities.give(k),
-            f"tellraw @s [{{\"text\":\"Bought \",\"color\":\"green\"}},{{\"text\":\"{gname}\",\"color\":\"{gcolor}\"}},{{\"text\":\" off the wall\",\"color\":\"green\"}}]",
+            f"tellraw @s [{{\"text\":\"Bought the \",\"color\":\"green\"}},{{\"text\":\"{gname}\",\"color\":\"{gcolor}\"}},{{\"text\":\". Pack-a-Punch it at the Arsenal.\",\"color\":\"green\"}}]",
             "playsound minecraft:item.armor.equip_chain player @s ~ ~ ~ 1 0.8", "playsound minecraft:entity.villager.yes neutral @s ~ ~ ~ 0.6 0.8"])
     box = ["execute store result score #r pve run random value 1..%d" % len(BOX),
            "playsound minecraft:block.chest.open player @s ~ ~ ~ 1 0.8"]

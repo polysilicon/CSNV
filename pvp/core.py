@@ -19,6 +19,7 @@
   (keep_inventory is on). When the core is destroyed the run is over.
 - The map is rebuilt (pve/core_reset) when a run starts and when it ends, so every run starts on a fresh meadow.
 """
+import abilities
 import random
 
 CORE_ID = 7
@@ -68,6 +69,7 @@ CORE_SHOP = [
     (53, "Repair Core", "aqua", "beacon", 1000, "+25 core HP", ["function pvp:pve/core_repair"]),
 ]
 SHOP_SLOTS = [10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 23, 24, 25]
+GUN_ID0 = 54            # the Arsenal's guns: pve.buy 54.. (one per wall-buy gun, build.WALL_BUYS)
 # the Warlord: this map's boss (every 5th wave) instead of the Abomination, which got stuck in the trees.
 # 2026-11-02: nerfed (was 160 health, full netherite, no knockback): 100 health, netherite helmet + chainmail, 60% knockback resistance
 WARLORD = ('{Tags:["pve.mob","pve.boss","pve.new"],PersistenceRequired:1b,CanPickUpLoot:0b,DeathLootTable:"minecraft:empty",IsBaby:0b,'
@@ -202,6 +204,10 @@ def build(b):
                                     f"scoreboard players remove @s pve.pts {cost}", *cmds,
                                     "tellraw @s " + tj([{"text": "Bought ", "color": "green"}, {"text": name, "color": color}]),
                                     "playsound minecraft:entity.villager.yes neutral @s ~ ~ ~ 1 0.8"])
+    # guns (pve.buy 54..): this map has no walls to hang wall-buys on, so the Arsenal sells them (same prices, one each,
+    # Pack-a-Punch upgrades them), giving melee characters a ranged option
+    for n, (k, cost) in enumerate(b.WALL_BUYS, 1):
+        buy.append(f"execute if score #n pve matches {GUN_ID0 + n - 1} run return run function {P}/wallbuy/{n}")
     fn("pve/core_buy", [f"execute unless score #map pve matches {CORE_ID} run return run " + b.say("@s", "That's only sold in Core Defense.", "red"), *buy])
     fn("pve/core_repair", [f"scoreboard players add #core pve 25",
                            f"execute if score #core pve matches {CORE_HP + 1}.. run scoreboard players set #core pve {CORE_HP}",
@@ -212,6 +218,10 @@ def build(b):
     # one big Arsenal on this map: a row each for weapons, perks, blocks and traps, labelled on the left
     shop = {i[0]: i for i in b.SHOP}
     core_items = {i[0]: i for i in CORE_SHOP}
+    gun_items = {}
+    for n, (k, cost) in enumerate(b.WALL_BUYS, 1):
+        gname, gcolor, gmodel, _cd, glore, _ = abilities.ABILITIES[k]
+        gun_items[GUN_ID0 + n - 1] = (GUN_ID0 + n - 1, gname, gcolor, gmodel, cost, glore[-1])
     def entry(slot, it, core):
         sid, name, color, ic, cost, lore = it[:6]
         return {"slot": slot, "item": b.icon(ic, f"{name}" + (f" · {cost:,}" if cost else ""), color, [lore], False), "cmd": f"trigger pve.buy set {sid}"}
@@ -222,13 +232,14 @@ def build(b):
         (("honey_bottle", "Perks & healing", "light_purple", ["Perks last until you die"]), [("s", k) for k in (5, 6, 12, 13, 1, 2, 4, 9)]),
         (("bricks", "Building blocks", "gold", ["Walls for your base"]), [("c", k) for k in (41, 42, 43, 44, 45, 46, 51, 52)]),
         (("lava_bucket", "Traps & the core", "aqua", ["Slow them down, keep the core up"]), [("c", k) for k in (47, 48, 49, 50, 53)]),
+        (("crossbow", "Guns", "dark_green", ["A ranged weapon for any character", "Pack-a-Punch upgrades them"]), [("g", k) for k in gun_items]),
     ]
     items = [{"slot": 4, "item": b.icon("beacon", "Arsenal", "aqua", [
         ["Your points: ", {"score": {"name": "@s", "objective": "pve.pts"}, "color": "gold"}], "", "Click anything to buy it"]), "cmd": ""}]
     for r, (lab, its) in enumerate(rows, 1):
         items.append(label(r * 9, *lab))
         for c, (kind, k) in enumerate(its, 1):
-            items.append(entry(r * 9 + c, shop[k] if kind == "s" else core_items[k], kind == "c"))
+            items.append(entry(r * 9 + c, shop[k] if kind == "s" else gun_items[k] if kind == "g" else core_items[k], kind == "c"))
     shop_menu = {"title": {"text": "⚡ Arsenal (points)", "color": "dark_aqua"}, "rows": 6, "fill": b.PANE, "items": items}
     fn("pve/shop_open", [f"execute if score #map pve matches {CORE_ID} run return run pvpmenu core_shop", "pvpmenu pve_shop"])
     # the Warlord: at a random mob window (cleared of trees), on the ground

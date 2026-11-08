@@ -452,6 +452,10 @@ Random). Waves, points, power-ups, the Arsenal, bosses and drop-ins work as on t
   - fences + gates 350, cobwebs 600, magma blocks 450, scaffolding 250, ladders + torches 150;
   - water bucket 300, lava bucket 800;
   - Repair Core (+25 HP) 1,000.
+- **Guns** (Arsenal row 5, `pve.buy` 54..59): this map has no walls for wall-buys, so the Arsenal sells the six
+  wall-buy guns at the same prices (M1911 500, Olympia 750, MP40 1,000, Kar98k 1,250, Stakeout 1,500, STG-44 1,750;
+  `build.WALL_BUYS`, bought through `pve/wallbuy/<n>`): one of each per player, Pack-a-Punch upgrades them. Every
+  character, melee ones included, can get a ranged weapon.
 - **Guard the core**: a beacon on the pad.
   It has 100 HP (boss bar "⚡ Core") and gets +20 back after every wave. Every mob within ~2.5 blocks of it takes 1 HP
   a second (the Warlord 5). At 0 the core blows up and the run is over. A player who breaks the core gets it
