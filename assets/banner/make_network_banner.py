@@ -104,5 +104,20 @@ durations = [FPS_MS] * FRAMES
 for n in range(len(SLIDES)):                    # hold each slide's last frame, longest on the IP
     durations[n * PER_SLIDE + PER_SLIDE - 1] = 1800 if n == len(SLIDES) - 1 else 900
 frames[0].save(OUT, save_all=True, append_images=frames[1:], duration=durations, loop=0, optimize=True, disposal=1)   # delta frames keep it small
-frames[-1].convert("RGB").save(OUT.rsplit(".", 1)[0] + ".png")
-print(f"wrote {OUT}: {W}x{H}, {FRAMES} frames, {sum(durations) / 1000:.1f} s loop, + still .png")
+# the still (.png and .jpg, for sites that won't take animation): the gamemodes and the address in one frame
+img = background(0)
+left = logo(img, 2)
+d = ImageDraw.Draw(img)
+room = W - left - 8 * S
+hf, sf = f(BOLD, 17), f(BOLD, 13)
+head, sub = "ANARCHY · SKYBLOCK · FACTIONS · PVP", ADDRESS.upper() + "  ·  JAVA + BEDROCK"
+while d.textlength(head, font=hf) > room and hf.size > 9: hf = ImageFont.truetype(BOLD, hf.size - 1)
+while d.textlength(sub, font=sf) > room and sf.size > 8: sf = ImageFont.truetype(BOLD, sf.size - 1)
+d.text((left + 1.5 * S, 9 * S), head, font=hf, fill=PINK)
+d.text((left, 9 * S), head, font=hf, fill=WHITE)
+d.text((left, 34 * S), sub, font=sf, fill=CYAN)
+still = scanlines(img).convert("RGB")
+base = OUT.rsplit(".", 1)[0]
+still.save(base + ".png")
+still.save(base + ".jpg", quality=95, subsampling=0)
+print(f"wrote {OUT}: {W}x{H}, {FRAMES} frames, {sum(durations) / 1000:.1f} s loop, + still .png/.jpg")

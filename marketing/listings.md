@@ -79,7 +79,7 @@ Enchants. Pick the ones each site offers; most allow 5-10.
 ## Banners
 
 `assets/banner/network/`: `crispy_playcrispy_468x60.gif` (the standard list size) and `crispy_playcrispy_728x90.gif`,
-each with a still `.png` and an `.mp4` (H.264, same 13.3 s loop; `assets/banner/gif2mp4.py` makes it from the GIF). Use the `crispy_crispyanarchy_*` files until playcrispy.com works. Regenerate with
+each with a still `.png`/`.jpg` (the gamemodes and the address in one frame, for sites that only take still images, like Minecraft-Server-List) and an `.mp4` (H.264, same 13.3 s loop; `assets/banner/gif2mp4.py` makes it from the GIF). Use the `crispy_crispyanarchy_*` files until playcrispy.com works. Regenerate with
 `python3 assets/banner/make_network_banner.py <out.gif> <w> <h> <address>`.
 
 ## The 7 sites
