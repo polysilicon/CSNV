@@ -7,6 +7,7 @@ import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.command.CommandExecuteEvent;
 import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
+import com.velocitypowered.api.event.player.ServerPostConnectEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.ServerConnection;
@@ -14,6 +15,9 @@ import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.TextDecoration;
 import me.neznamy.tab.api.TabAPI;
 import me.neznamy.tab.api.TabPlayer;
 import me.neznamy.tab.api.nametag.NameTagManager;
@@ -65,6 +69,22 @@ public class CrispyTags {
         cm.register(cm.metaBuilder("lobby").aliases("hub").plugin(this).build(), new ToLobby());
         proxy.getScheduler().buildTask(this, this::tick).delay(10, TimeUnit.SECONDS).repeat(3, TimeUnit.SECONDS).schedule();
     }
+
+    /** The vote reminder (1.9.0): once per connection to the network, a few seconds after the player lands on their first
+     *  server (so it comes after the lobby's join title and welcome). Switching servers never shows it again. */
+    @Subscribe public void onPostConnect(ServerPostConnectEvent e) {
+        if (e.getPreviousServer() != null) return;   // a server switch, not a new connection
+        Player p = e.getPlayer();
+        proxy.getScheduler().buildTask(this, () -> { if (p.isActive()) p.sendMessage(VOTE_REMINDER); }).delay(6, TimeUnit.SECONDS).schedule();
+    }
+
+    static final Component VOTE_REMINDER = Component.text()
+            .append(Component.text("★ Vote for Crispy! ", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
+            .append(Component.text("Free rewards every day on the server you pick, plus points for tags and colours. ", NamedTextColor.GRAY))
+            .append(Component.text("[Vote now]", NamedTextColor.GREEN, TextDecoration.BOLD, TextDecoration.UNDERLINED)
+                    .clickEvent(ClickEvent.runCommand("/vote"))
+                    .hoverEvent(HoverEvent.showText(Component.text("Open /vote: the vote links and your rewards", NamedTextColor.GRAY))))
+            .build();
 
     /** Velocity's own /server would be a way out of a fight: refuse it while combat-tagged, like /lobby and /vote. */
     @Subscribe public void onCommand(CommandExecuteEvent e) {
