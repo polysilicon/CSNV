@@ -58,10 +58,10 @@ public final class IslandLevels {
             + "soul_soil snow_block ice cobblestone_slab cobblestone_stairs cobblestone_wall stone_slab stone_stairs "
             + "cobbled_deepslate_slab cobbled_deepslate_stairs cobbled_deepslate_wall").split(" ")));
     static final int CURVE_START = 1000;   // points at level 10: linear (100 a level) up to here, then the curve
-    static final double CURVE_POW = 0.7;
+    static final double CURVE_POW = 0.8;
 
-    /** Level for a point total: pts/100 up to level 10, then 10 * (pts/1000)^0.7. Level 20 = 2,700 points, 30 = 4,800,
-     *  50 = 10,000, 100 = 26,800, 150 = 47,900. */
+    /** Level for a point total: pts/100 up to level 10, then 10 * (pts/1000)^0.8. Level 20 = 2,379 points, 30 = 3,949,
+     *  50 = 7,477, 100 = 17,783, 150 = 29,520. */
     static int level(long pts) {
         if (pts < CURVE_START) return (int) (pts / POINTS_PER_LEVEL);
         return (int) Math.min(100_000, Math.floor(10 * Math.pow(pts / (double) CURVE_START, CURVE_POW) + 1e-9));
