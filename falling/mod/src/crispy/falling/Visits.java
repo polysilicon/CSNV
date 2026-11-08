@@ -33,6 +33,8 @@ import static crispy.falling.Ui.t;
  * traveller moves, so nobody can use them to dodge a fight.
  * Island protection: on an overworld island, only its members (cs_plot) and staff in creative can break, place, use
  * blocks, buckets or entities there. Visitors (and anyone who got there by /tpa) can look but not touch.
+ * A traveller gets a visitor's pass for the island they arrive on (cs_vis, see pass()), so the island-bounds check
+ * doesn't send them straight back home.
  */
 final class Visits {
     private Visits() {}
@@ -119,11 +121,12 @@ final class Visits {
             return 1;
         }
         switch (req.kind()) {
-            case TPA -> travel(asker, () -> run(server, "tp " + asker.getUUID() + " " + me.getUUID()), "to " + me.getScoreboardName());
-            case TPAHERE -> travel(me, () -> run(server, "tp " + me.getUUID() + " " + asker.getUUID()), "to " + asker.getScoreboardName());
+            case TPA -> travel(asker, () -> { pass(server, asker, island(server, me)); run(server, "tp " + asker.getUUID() + " " + me.getUUID()); }, "to " + me.getScoreboardName());
+            case TPAHERE -> travel(me, () -> { pass(server, me, island(server, asker)); run(server, "tp " + me.getUUID() + " " + asker.getUUID()); }, "to " + asker.getScoreboardName());
             case VISIT -> {
                 int island = req.island();
                 travel(asker, () -> {
+                    pass(server, asker, island);
                     run(server, "execute as " + asker.getUUID() + " run function " + SkyblockMod.NS + ":p/home2 with storage " + SkyblockMod.NS + ":d plots[" + island + "]");
                     asker.sendSystemMessage(t("Welcome to " + me.getScoreboardName() + "'s island! You can look around, but not build or open anything. /island home takes you back.", ChatFormatting.AQUA));
                 }, "to " + me.getScoreboardName() + "'s island");
@@ -159,6 +162,20 @@ final class Visits {
         pending.remove(p.getUUID());
         reqs.removeIf(r -> r.from().equals(p.getUUID()) || r.to().equals(p.getUUID()));
         lastSent.remove(p.getUUID());
+    }
+
+    /** The island a player is on as far as visits go: the one they're visiting (cs_vis), else their own. */
+    static int island(MinecraftServer server, ServerPlayer p) {
+        int v = SkyblockMod.score(server, p, "cs_vis");
+        return v > 0 ? v : SkyblockMod.plot(server, p);
+    }
+
+    /** A visitor's pass (2.15.3): cs_vis = the island they may stay on. The datapack's island-bounds checks (p/bounds,
+     *  p/nbounds, p/ebounds) let them stay while they're inside that island's space and drop the pass once they leave
+     *  it; before this, an accepted /tpa or /visit was undone a moment later by the bounds check. */
+    static void pass(MinecraftServer server, ServerPlayer p, int island) {
+        if (island > 0 && island != SkyblockMod.plot(server, p)) run(server, "scoreboard players set " + p.getUUID() + " cs_vis " + island);
+        else run(server, "scoreboard players reset " + p.getUUID() + " cs_vis");
     }
 
     static void run(MinecraftServer server, String cmd) {

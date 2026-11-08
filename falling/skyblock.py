@@ -440,6 +440,7 @@ MENUS = {
 CH_OBJS = "\n".join(f"scoreboard objectives add cs_c{i} dummy" for i in range(len(CH)))
 fn("load", f"""
 scoreboard objectives add cs_plot dummy
+scoreboard objectives add cs_vis dummy
 scoreboard objectives add cs_act trigger
 scoreboard objectives add cs_inv dummy
 scoreboard objectives add cs_on dummy
@@ -1345,6 +1346,7 @@ particle minecraft:explosion_emitter ~ ~2 ~ 0 0 0 0 1 force
 """)
 fn("p/nbounds_all", f"execute as @a[gamemode=survival,tag=!cs_staff] at @s if dimension minecraft:the_nether run function {NS}:p/nbounds")
 fn("p/nbounds", f"""
+execute if score @s cs_vis matches 1.. if function {NS}:p/nvis_in run return 0
 execute unless score @s cs_plot matches 1.. run return run function {NS}:act/hub
 function {NS}:p/ctx
 function {NS}:p/nbounds2 with storage {NS}:d cur
@@ -1459,6 +1461,7 @@ function {NS}:p/respawned2 with storage {NS}:d cur
 fn("p/respawned2", f"$execute unless entity @s[x=$(x),y=-64,z=$(z),dx=$(sd),dy=400,dz=$(sd)] run function {NS}:p/home")
 fn("p/bounds_all", f"execute as @a[gamemode=survival,tag=!cs_staff] at @s if dimension minecraft:overworld unless entity @s[x=-{HUB_R},y=-64,z=-{HUB_R},dx={2*HUB_R},dy=383,dz={2*HUB_R}] {EXP['in_zone']} run function {NS}:p/bounds")
 fn("p/bounds", f"""
+execute if score @s cs_vis matches 1.. if function {NS}:p/vis_in run return 0
 execute unless score @s cs_plot matches 1.. run return run function {NS}:act/hub
 function {NS}:p/ctx
 function {NS}:p/bounds2 with storage {NS}:d cur
@@ -1471,7 +1474,31 @@ tellraw @s {{text:"That's the edge of your island's space.",color:"red"}}
 # the island's End: same 128x128 square as the island (End islands sit at the island's x/z), so nobody can fly
 # (elytra from the End bosses) over to another island's End
 fn("p/ebounds_all", f"execute as @a[gamemode=survival,tag=!cs_staff] at @s if dimension {NS}:end run function {NS}:p/ebounds")
+# a visitor's pass (cs_vis, set by the mod's Visits when a /tpa or /visit goes through): inside that island's space
+# (overworld or End: the same square; Nether: its own) they may stay; outside it the pass is dropped and the normal
+# own-island check runs
+fn("p/vis_in", f"""
+execute store result storage {NS}:d q.i int 1 run scoreboard players get @s cs_vis
+function {NS}:p/ctx2 with storage {NS}:d q
+return run function {NS}:p/vis_in2 with storage {NS}:d cur
+""")
+fn("p/vis_in2", f"""
+$execute if entity @s[x=$(x),y=-128,z=$(z),dx=$(sd),dy=500,dz=$(sd)] run return 1
+scoreboard players reset @s cs_vis
+return 0
+""")
+fn("p/nvis_in", f"""
+execute store result storage {NS}:d q.i int 1 run scoreboard players get @s cs_vis
+function {NS}:p/ctx2 with storage {NS}:d q
+return run function {NS}:p/nvis_in2 with storage {NS}:d cur
+""")
+fn("p/nvis_in2", f"""
+$execute if entity @s[x=$(nx),y=-64,z=$(nz),dx=63,dy=400,dz=63] run return 1
+scoreboard players reset @s cs_vis
+return 0
+""")
 fn("p/ebounds", f"""
+execute if score @s cs_vis matches 1.. if function {NS}:p/vis_in run return 0
 execute unless score @s cs_plot matches 1.. run return run function {NS}:act/hub
 function {NS}:p/ctx
 function {NS}:p/ebounds2 with storage {NS}:d cur
