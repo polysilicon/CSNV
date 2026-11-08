@@ -50,8 +50,12 @@ SEEK_RANGE = 20         # core mobs only go after players this close (follow ran
 B_EXTRA = ',CustomName:{text:"Builder",color:"gold"},equipment:{mainhand:{id:"minecraft:cobblestone",count:1}},drop_chances:{mainhand:0.0f}'
 K_EXTRA = ',CustomName:{text:"Breaker",color:"red"},equipment:{mainhand:{id:"minecraft:iron_axe",count:1}},drop_chances:{mainhand:0.0f}'
 # this map's whole roster (rolls up to 100, so the normal pool, which has mobs that ignore villagers, is never used)
+# Firewalker (wave 6+): fire can't hurt it (lava moats, magma, fire, sunlight), it looks like it's always burning
+F_EXTRA = (',CustomName:{text:"Firewalker",color:"gold"},HasVisualFire:1b,'
+           'active_effects:[{id:"minecraft:fire_resistance",amplifier:0b,duration:-1,show_particles:0b}],'
+           'equipment:{chest:{id:"minecraft:leather_chestplate",count:1,components:{"minecraft:dyed_color":16733440}}},drop_chances:{chest:0.0f}')
 POOL = [(1, 18, "zombie", B_EXTRA), (1, 50, "zombie", ""), (2, 64, "husk", ""), (3, 76, "zombie_villager", ""),
-        (4, 86, "vindicator", K_EXTRA), (6, 93, "zombie", K_EXTRA), (1, 100, "zombie", "")]
+        (4, 86, "vindicator", K_EXTRA), (6, 93, "zombie", K_EXTRA), (6, 100, "zombie", F_EXTRA), (1, 100, "zombie", "")]
 # the Arsenal's Base Defense page (pve.buy 41..): id, name, colour, icon, cost, lore, commands
 CORE_SHOP = [
     (41, "Oak Planks", "gold", "oak_planks", 150, "64 planks: quick walls", ["give @s minecraft:oak_planks 64"]),

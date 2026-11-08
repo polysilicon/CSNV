@@ -468,7 +468,9 @@ Random). Waves, points, power-ups, the Arsenal, bosses and drop-ins work as on t
 - **Mobs head for the core**: they're tagged `pve.seek`, and the server mod (`CoreSeek`, spawnmod 1.5.1+) walks any
   of them that isn't after a player to the core (`#corex/#corey/#corez pve`). Their follow range is cut to 20, so only
   players close by pull them off. The roster is melee only: zombies, husks, zombie villagers, Builders (zombies holding
-  cobblestone), Breakers (vindicators from wave 4, zombies from wave 6, holding an iron axe).
+  cobblestone), Breakers (vindicators from wave 4, zombies from wave 6, holding an iron axe), and from wave 6
+  Firewalkers (7% of mobs: zombies with permanent Fire Resistance, so lava moats, magma, fire and sunlight don't hurt
+  them; always shown on fire, orange chestplate).
 - **Mobs dig**: a mob that isn't getting any closer to the core than it already has been (pushing at a wall, or sliding along it),
   with a block between it and the core, chews through it,
   head height first and then feet, leaving a 2-high tunnel. That takes 3 s per block, 5 s for stone-type blocks,
