@@ -172,16 +172,21 @@ final class Guide {
                 String name = nice(e.getKey()) + (e.getKey().equals("shulker_box") ? " (any colour)" : "");
                 m.put(slot++, Ui.item(icon(e.getKey()), t(name, ChatFormatting.YELLOW), List.of(
                         t(pts + " points", ChatFormatting.GOLD),
-                        t(pts >= IslandLevels.POINTS_PER_LEVEL ? String.format("= %.1f island levels", pts / (double) IslandLevels.POINTS_PER_LEVEL)
-                                : "1 level = " + (IslandLevels.POINTS_PER_LEVEL + pts - 1) / pts + " of these", ChatFormatting.GRAY)), false), null);
+                        t((IslandLevels.CURVE_START + pts - 1) / pts + " of these = level 10", ChatFormatting.GRAY)), false), null);
             }
             List<Component> twoLore = new ArrayList<>(List.of(t("2 points each:", ChatFormatting.GOLD)));
             for (var e : two) twoLore.add(t(" " + nice(e.getKey()), ChatFormatting.GRAY));
             m.put(44, Ui.item(Items.STONE_BRICKS, t("Building blocks", ChatFormatting.YELLOW), twoLore, false), null);
             m.put(45, back(), (pl, c) -> open(pl));
-            m.put(48, Ui.item(Items.COBBLESTONE, t("Everything else: 1 point", ChatFormatting.YELLOW), List.of(
-                    t("Dirt, cobblestone, wood, planks,", ChatFormatting.GRAY), t("wool, ores, crops and the rest", ChatFormatting.GRAY)), false), null);
-            m.put(49, Ui.item(Items.NETHER_STAR, t(IslandLevels.POINTS_PER_LEVEL + " points = 1 island level", ChatFormatting.GOLD, ChatFormatting.BOLD), List.of(
+            m.put(47, Ui.item(Items.COBBLESTONE, t("Filler: 1/4 point", ChatFormatting.YELLOW), List.of(
+                    t("Dirt, grass, stone, cobblestone,", ChatFormatting.GRAY), t("deepslate, sand, gravel, netherrack,", ChatFormatting.GRAY),
+                    t("andesite/diorite/granite, tuff,", ChatFormatting.GRAY), t("basalt, blackstone, ice and leaves", ChatFormatting.GRAY)), false), null);
+            m.put(48, Ui.item(Items.OAK_PLANKS, t("Everything else: 1 point", ChatFormatting.YELLOW), List.of(
+                    t("Wood, planks, wool, ores,", ChatFormatting.GRAY), t("crops and the rest", ChatFormatting.GRAY)), false), null);
+            m.put(49, Ui.item(Items.NETHER_STAR, t("Island levels", ChatFormatting.GOLD, ChatFormatting.BOLD), List.of(
+                    t("100 points a level up to level 10,", ChatFormatting.GRAY), t("then each level takes a bit more:", ChatFormatting.GRAY),
+                    t("level 20 = " + IslandLevels.pointsFor(20) + ", 50 = " + IslandLevels.pointsFor(50) + ",", ChatFormatting.GRAY),
+                    t("100 = " + IslandLevels.pointsFor(100) + " points.", ChatFormatting.GRAY), Component.empty(),
                     t("Only blocks inside your island's", ChatFormatting.GRAY), t("plot count. /island level recounts it", ChatFormatting.GRAY),
                     t("(once a minute); /island top shows", ChatFormatting.GRAY), t("the best islands.", ChatFormatting.GRAY), Component.empty(),
                     t("Tip: storage blocks are the cheapest", ChatFormatting.AQUA), t("big jumps: a diamond block is 150,", ChatFormatting.AQUA),
@@ -211,7 +216,7 @@ final class Guide {
                     pg("Next steps", "Hand in challenges for rewards, craft minions to gather while you're away, level up your skills and climb the island leaderboard with /island level."))),
             new Topic("Islands & portals", Items.CRYING_OBSIDIAN, "Your island, its portals and its realms", List.of(
                     pg("Hub portal", "Every island has a portal 14 blocks north of its centre, out over the void. Build a bridge to it and walk through to reach the hub. The hub's purple portal takes you home."),
-                    pg("Island level", "/island level counts the blocks on your island: 100 points make a level. Valuable blocks like diamond or netherite blocks count for more: see Block values in the guide. /island top shows the best islands."),
+                    pg("Island level", "/island level counts the blocks on your island: 100 points a level up to level 10, then each level takes a bit more. Valuable blocks like diamond or netherite blocks count for more, and filler (dirt, stone, cobblestone, leaves) only 1/4: see Block values in the guide. /island top shows the best islands."),
                     pg("Co-op", "/invite <player> lets a friend join your island. Upgrade co-op slots for up to 8 members."),
                     pg("Your Nether", "Build a Nether portal to reach your island's own Nether. Fortress wrecks with blaze spawners and bastion chunks crash in over time."),
                     pg("Your End", "The End portal appears east of your island after 150 min of play. Fill it with 12 Eyes of Ender to reach your island's own End, with a boss altar in the middle."))),
@@ -252,7 +257,7 @@ final class Guide {
                     pg("Trading", "/bazaar (/bz), /plots"),
                     pg("Travel", "/warp hub, /warp home, /warp mines, /warp woods, /warp plots"),
                     pg("Players", "/tpa <player> asks to teleport to someone, /tpahere <player> asks them to come to you. They click Accept, then stand still for 3 seconds."),
-                    pg("Visiting", "/island visit <player> takes you to anyone's island, even when they're offline, unless it's private. /visit <player> asks to visit a private one. Visitors can look around but can't build, break or open anything. /island public on|off sets yours."),
+                    pg("Visiting", "/island visit <player> takes you to anyone's island, even when they're offline, unless it's private. /visit <player> asks to visit a private one. Visitors can look around but can't build, break, open anything or use the island's Nether and End portals. /island public on|off sets yours."),
                     pg("Homes", "/island home takes you to your island. /island sethome moves your island's spawn spot to where you stand. /sethome [name] saves up to 3 homes of your own on your island (or its Nether or End); /home [name] goes back, /homes lists them, /delhome <name> removes one."),
                     pg("Portals & drops", "/island moveportal hub (or end) moves your Hub Portal or End portal to where you stand, if there's room. /island droppad makes sky drops land near where you stand; /island droppad reset puts them back. /island drops turns each kind on or off."))));
 

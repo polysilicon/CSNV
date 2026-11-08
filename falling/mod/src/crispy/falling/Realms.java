@@ -71,10 +71,27 @@ public final class Realms {
         ServerLevel end = server.getLevel(END);
         int id = plotAt(pos.getX(), pos.getZ());
         if (end == null || !exists(server, id)) return null;
+        if (visitorBlocked(from, entity, pos, "End")) return null;
         prepare(server, end, id);
         Vec3 to = new Vec3(cx(id) + 0.5, END_Y + 1, cz(id) + 6.5);
         if (entity instanceof ServerPlayer p) p.sendSystemMessage(Component.literal("Welcome to your island's End. Right-click the altar to call its boss.").withStyle(ChatFormatting.LIGHT_PURPLE));
         return new TeleportTransition(end, to, Vec3.ZERO, 180f, 0f, TeleportTransition.PLAY_PORTAL_SOUND);
+    }
+
+    private static final Map<ServerPlayer, Long> warned = new WeakHashMap<>();
+    /** True when `entity` is a player standing in a portal on an island that isn't theirs (2.16.0: visitors can't use
+     *  an island's Nether or End portal). Members and admins in creative pass. Tells them at most every 5 s. */
+    public static boolean visitorBlocked(ServerLevel level, Entity entity, BlockPos pos, String kind) {
+        if (!(entity instanceof ServerPlayer p) || level.dimension() != Level.OVERWORLD) return false;
+        int id = Visits.islandAt(level, pos);
+        if (id <= 0 || SkyblockMod.plot(level.getServer(), p) == id) return false;
+        if (p.isCreative() && net.minecraft.commands.Commands.hasPermission(net.minecraft.commands.Commands.LEVEL_GAMEMASTERS).test(p.createCommandSourceStack())) return false;
+        long now = System.currentTimeMillis();
+        if (warned.getOrDefault(p, 0L) + 5000 < now) {
+            warned.put(p, now);
+            p.sendSystemMessage(Component.literal("Only this island's members can use its " + kind + " portal.").withStyle(ChatFormatting.RED));
+        }
+        return true;
     }
 
     /** Build island `id`'s End island the first time (chunks are loaded on the spot). */

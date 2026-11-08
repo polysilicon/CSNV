@@ -20,8 +20,10 @@ import net.minecraft.world.scores.ScoreHolder;
 import java.util.*;
 
 /**
- * Island levels: every block in an island's 128x128 plot is worth points (most blocks 1, valuable ones more, fluids and
- * plants nothing); 100 points make a level. /island level counts the caller's island (once a minute per island), and
+ * Island levels: every block in an island's 128x128 plot is worth points (most blocks 1, valuable ones more, common
+ * filler like dirt, stone, cobblestone and leaves only 1/4, fluids and plants nothing). 2.16.0: levels follow a curve
+ * (see level()): 100 points a level up to level 10, then each level takes a little more, so a huge island is ahead
+ * without being out of sight. /island level counts the caller's island (once a minute per island), and
  * every 5 minutes the islands of online players are recounted quietly. Results go to the cs_lvl score of "#p<id>" and
  * of each member (the datapack's level challenges read it), to storage crispy_skyblock:levels, and to the Top Islands
  * board in the hub (the text_display tagged cs_top).
@@ -49,8 +51,36 @@ public final class IslandLevels {
         };
         for (Object[] e : v) VALUE.put((String) e[0], (Integer) e[1]);
     }
+    /** Common filler, worth 1/4 point each (2.16.0: big cobblestone and dirt builds used to outscore real progress). */
+    static final Set<String> FILLER = new HashSet<>(List.of((
+            "stone cobblestone cobbled_deepslate deepslate dirt coarse_dirt rooted_dirt grass_block podzol mycelium dirt_path farmland "
+            + "mud sand red_sand gravel netherrack andesite diorite granite tuff calcite basalt smooth_basalt blackstone soul_sand "
+            + "soul_soil snow_block ice cobblestone_slab cobblestone_stairs cobblestone_wall stone_slab stone_stairs "
+            + "cobbled_deepslate_slab cobbled_deepslate_stairs cobbled_deepslate_wall").split(" ")));
+    static final int CURVE_START = 1000;   // points at level 10: linear (100 a level) up to here, then the curve
+    static final double CURVE_POW = 0.7;
+
+    /** Level for a point total: pts/100 up to level 10, then 10 * (pts/1000)^0.7. Level 20 = 2,700 points, 30 = 4,800,
+     *  50 = 10,000, 100 = 26,800, 150 = 47,900. */
+    static int level(long pts) {
+        if (pts < CURVE_START) return (int) (pts / POINTS_PER_LEVEL);
+        return (int) Math.min(100_000, Math.floor(10 * Math.pow(pts / (double) CURVE_START, CURVE_POW) + 1e-9));
+    }
+    /** Points needed for level `lvl` (the inverse of level()). */
+    static long pointsFor(int lvl) {
+        if (lvl <= 10) return (long) lvl * POINTS_PER_LEVEL;
+        return (long) Math.ceil(CURVE_START * Math.pow(lvl / 10.0, 1 / CURVE_POW) - 1e-6);
+    }
+
     static final Map<Integer, Long> lastRun = new HashMap<>();
     private static int tick;
+
+    /** Quarter-points for a block (what points() adds up; filler is 1, a 1-point block 4). */
+    static int quarters(Block b) {
+        String id = BuiltInRegistries.BLOCK.getKey(b).getPath();
+        if (FILLER.contains(id) || id.endsWith("_leaves")) return 1;
+        return 4 * value(b);
+    }
 
     static int value(Block b) {
         String id = BuiltInRegistries.BLOCK.getKey(b).getPath();
@@ -80,11 +110,11 @@ public final class IslandLevels {
                 for (LevelChunkSection sec : chunk.getSections()) {
                     if (sec.hasOnlyAir()) continue;
                     // count by palette entry (block type x how many), not block by block
-                    sec.getStates().count((st, n) -> { if (!st.isAir()) sum[0] += (long) n * cache.computeIfAbsent(st.getBlock(), IslandLevels::value); });
+                    sec.getStates().count((st, n) -> { if (!st.isAir()) sum[0] += (long) n * cache.computeIfAbsent(st.getBlock(), IslandLevels::quarters); });
                 }
                 total += sum[0];
             }
-        return total;
+        return total / 4;
     }
 
     /** Recount island `id`, store the result everywhere it's shown; returns the level (or -1). */
@@ -92,7 +122,7 @@ public final class IslandLevels {
     static int update(MinecraftServer server, int id, boolean loadedOnly) {
         long pts = points(server, id, loadedOnly);
         if (pts < 0) return (int) pts;
-        int lvl = (int) Math.min(Integer.MAX_VALUE, pts / POINTS_PER_LEVEL);
+        int lvl = level(pts);
         Objective lvlObj = server.getScoreboard().getObjective("cs_lvl");
         if (lvlObj != null) {
             server.getScoreboard().getOrCreatePlayerScore(ScoreHolder.forNameOnly("#p" + id), lvlObj).set(lvl);
@@ -152,6 +182,7 @@ public final class IslandLevels {
         int lvl;
         if (wait > 0) lvl = SkyblockMod.score(server, p, "cs_lvl");
         else lvl = update(server, id);
+        long pts = server.getCommandStorage().get(LEVELS).getCompoundOrEmpty("islands").getCompoundOrEmpty(String.valueOf(id)).getLongOr("points", 0);
         int rank = 0;
         List<int[]> r = ranking(server);
         for (int i = 0; i < r.size(); i++) if (r.get(i)[0] == id) rank = i + 1;
@@ -160,7 +191,9 @@ public final class IslandLevels {
                 .append(Component.literal(rank > 0 ? "   #" + rank + " on the server" : "").withStyle(net.minecraft.ChatFormatting.GRAY))
                 .append(Component.literal(wait > 0 ? "  (counted " + (COOLDOWN_MS - wait) / 1000 + "s ago)" : "").withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
         s.sendSuccess(() -> msg, false);
-        s.sendSuccess(() -> Component.literal("Every block counts; valuable blocks (iron, gold, diamond blocks, beacons...) count for more. 100 points = 1 level.")
+        long next = pointsFor(lvl + 1);
+        s.sendSuccess(() -> Component.literal(pts + " points; level " + (lvl + 1) + " at " + next + ".").withStyle(net.minecraft.ChatFormatting.GRAY), false);
+        s.sendSuccess(() -> Component.literal("Valuable blocks (iron, gold, diamond blocks, beacons...) count for more; dirt, stone, cobblestone and leaves only 1/4. /guide shows block values.")
                 .withStyle(net.minecraft.ChatFormatting.DARK_GRAY), false);
         return lvl;
     }
