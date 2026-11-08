@@ -26,10 +26,8 @@ METEOR_EVERY = 2700        # meteor every 45 min
 ANIMAL_EVERY = 900         # an animal every 15 min
 DUNGEON_AGES = [1800, 5400, 10800]   # 30, 90, 180 min
 PORTAL_AGE = 9000                    # End portal at 150 min
-HOSTILE_CAP = 10
 FORTRESS_AGES = [(120, "blaze"), (1200, "blaze"), (3600, "wither_skeleton")]   # seconds spent in the island's Nether
 BASTION_AGES = [600, 2400]
-NHOSTILE_CAP = 10
 NHOSTILES = ["zombified_piglin", "ghast", "magma_cube", "hoglin", "enderman", "skeleton", "strider"]
 HOSTILES = ["zombie", "husk", "drowned", "zombie_villager", "skeleton", "stray", "bogged", "spider", "cave_spider", "creeper",
             "enderman", "witch", "slime", "silverfish", "phantom"]
@@ -937,15 +935,7 @@ execute if data storage {NS}:d cur{{portal:1b}} run function {NS}:portal/restyle
 $execute if score #p$(id) cs_bce matches 1.. run scoreboard players remove #p$(id) cs_bce 1
 $execute if score #p$(id) cs_bcn matches 1.. run scoreboard players remove #p$(id) cs_bcn 1
 $execute positioned $(cx) {ISLAND_Y} $(cz) positioned ~ ~ ~{PORTAL_DZ} run function {NS}:portal/fx_island
-# hostile cap: mobs already here stay; brand-new spawns over the cap are sent into the void
-$execute store result score #h cs_tmp if entity @e[type=#{NS}:hostile,x=$(x),y=-64,z=$(z),dx=$(sd),dy=400,dz=$(sd)]
-$execute if score #h cs_tmp matches {HOSTILE_CAP+1}.. as @e[type=#{NS}:hostile,tag=!cs_old,x=$(x),y=-64,z=$(z),dx=$(sd),dy=400,dz=$(sd)] run function {NS}:mob_cull
-$tag @e[type=#{NS}:hostile,tag=!cs_old,x=$(x),y=-64,z=$(z),dx=$(sd),dy=400,dz=$(sd)] add cs_old
-""")
-fn("mob_cull", f"""
-execute if score #h cs_tmp matches ..{HOSTILE_CAP} run return 0
-execute at @s run tp @s ~ -200 ~
-scoreboard players remove #h cs_tmp 1
+# hostile mobs: vanilla spawning and mob cap (the per-island cap of 10 was removed on 2026-11-08 so mob farms work)
 """)
 
 # ======================================================================= sky events (all land near the island centre)
@@ -1307,14 +1297,6 @@ $execute unless data storage {NS}:d plots[$(id)].narena run function {NS}:nether
 $execute if score #p$(id) cs_nage matches 1 run tellraw @a[scores={{cs_plot=$(id)}}] [{{text:"🔥 ",color:"gold"}},{{text:"Welcome to your island's Nether. A fortress wreck with a blaze spawner crashes in after 2 minutes here; a bastion after 10.",color:"gold"}}]
 {fort}
 {bast}
-$execute in minecraft:the_nether store result score #h cs_tmp if entity @e[type=#{NS}:nhostile,x=$(nx),y=0,z=$(nz),dx=63,dy=256,dz=63]
-$execute in minecraft:the_nether if score #h cs_tmp matches {NHOSTILE_CAP+1}.. as @e[type=#{NS}:nhostile,tag=!cs_old,x=$(nx),y=0,z=$(nz),dx=63,dy=256,dz=63] run function {NS}:nmob_cull
-$execute in minecraft:the_nether run tag @e[type=#{NS}:nhostile,tag=!cs_old,x=$(nx),y=0,z=$(nz),dx=63,dy=256,dz=63] add cs_old
-""")
-fn("nmob_cull", f"""
-execute if score #h cs_tmp matches ..{NHOSTILE_CAP} run return 0
-execute at @s run tp @s ~ -100 ~
-scoreboard players remove #h cs_tmp 1
 """)
 def nspot():
     return (f"$execute store result storage {NS}:d ev.x int 1 run random value $(nix)..$(nix1)\n"
