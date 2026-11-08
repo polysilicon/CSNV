@@ -8,13 +8,14 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Interaction;
 
 /**
- * Crispy Anarchy: chest-menu shops for the market's Ripperdoc (crispy_cyberware) and Enchanter (crispy_enchants).
+ * Crispy Anarchy: clans (Clans.java), and chest-menu shops for the market's Ripperdoc (crispy_cyberware) and Enchanter (crispy_enchants).
  * Right-clicking a vendor's interaction box (tag cy.doc / ce.enchanter) opens its menu instead of the datapack's
  * dialog; buying runs the datapack's own buy function, which checks you're near the vendor and takes the price.
  */
 public final class AnarchyMod implements ModInitializer {
     @Override
     public void onInitialize() {
+        Clans.init();
         UseEntityCallback.EVENT.register((player, world, hand, entity, hit) -> {
             if (!(entity instanceof Interaction) || !(player instanceof ServerPlayer p)) return InteractionResult.PASS;
             boolean doc = entity.entityTags().contains("cy.doc"), ench = entity.entityTags().contains("ce.enchanter");

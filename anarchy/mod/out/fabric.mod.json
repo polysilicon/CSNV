@@ -1,14 +1,26 @@
 {
   "schemaVersion": 1,
   "id": "crispy_anarchy",
-  "version": "1.0.0",
-  "name": "Crispy Anarchy (market shop menus)",
-  "description": "Chest-menu shops for the Ripperdoc (crispy_cyberware) and the Enchanter (crispy_enchants) in the CrispyAnarchy market.",
+  "version": "1.1.0",
+  "name": "Crispy Anarchy (clans, market shop menus)",
+  "description": "Clans (tag in chat via %crispy:clan%, private clan chat, kills; no claims) and chest-menu shops for the Ripperdoc and the Enchanter in the CrispyAnarchy market.",
   "environment": "server",
-  "entrypoints": { "main": ["crispy.anarchy.AnarchyMod"] },
+  "entrypoints": {
+    "main": [
+      "crispy.anarchy.AnarchyMod"
+    ]
+  },
   "depends": {
     "fabricloader": ">=0.19.0",
     "minecraft": "26.2",
-    "fabric-events-interaction-v0": "*"
+    "fabric-events-interaction-v0": "*",
+    "fabric-command-api-v2": "*",
+    "fabric-message-api-v1": "*",
+    "fabric-entity-events-v1": "*",
+    "fabric-lifecycle-events-v1": "*",
+    "fabric-networking-api-v1": "*"
+  },
+  "suggests": {
+    "placeholder-api": "*"
   }
 }
