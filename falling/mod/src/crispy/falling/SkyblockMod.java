@@ -133,6 +133,7 @@ public class SkyblockMod implements ModInitializer {
                 .then(Commands.literal("refreshboard").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .executes(c -> { IslandLevels.updateBoard(c.getSource().getServer()); return 1; }));
         IslandHomes.island(root);   // home, sethome, visit, public
+        IslandPortals.island(root); // moveportal, droppad
         d.register(root);
     }
 

@@ -935,7 +935,8 @@ $execute unless data storage {NS}:d plots[$(id)].portal run function {NS}:portal
 execute if data storage {NS}:d cur{{portal:1b}} run function {NS}:portal/restyle with storage {NS}:d cur
 $execute if score #p$(id) cs_bce matches 1.. run scoreboard players remove #p$(id) cs_bce 1
 $execute if score #p$(id) cs_bcn matches 1.. run scoreboard players remove #p$(id) cs_bcn 1
-$execute positioned $(cx) {ISLAND_Y} $(cz) positioned ~ ~ ~{PORTAL_DZ} run function {NS}:portal/fx_island
+$execute unless data storage {NS}:d plots[$(id)].hp positioned $(cx) {ISLAND_Y} $(cz) positioned ~ ~ ~{PORTAL_DZ} run function {NS}:portal/fx_island
+$execute if data storage {NS}:d plots[$(id)].hp run function {NS}:portal/fx_at with storage {NS}:d plots[$(id)].hp
 # hostile mobs: vanilla spawning and mob cap (the per-island cap of 10 was removed on 2026-11-08 so mob farms work)
 """)
 
@@ -1017,9 +1018,10 @@ epb.fill(-1, 1, 2, 1, 1, 2, "end_portal_frame[facing=north]")
 epb.fill(-2, 1, -1, -2, 1, 1, "end_portal_frame[facing=east]")
 epb.fill(2, 1, -1, 2, 1, 1, "end_portal_frame[facing=west]")
 for cx_, cz_ in ((-3, -3), (-3, 3), (3, -3), (3, 3)): epb.set(cx_, 1, cz_, "end_rod[facing=up]")
-fn("ev/portal_build", "\n".join(epb.c) + "\nparticle minecraft:portal ~ ~2 ~ 1.5 1 1.5 0.5 200 force\n" + "summon minecraft:text_display ~0.5 ~3.2 ~0.5 " + snbt({
+_epbuild = ("\n".join(epb.c) + "\nparticle minecraft:portal ~ ~2 ~ 1.5 1 1.5 0.5 200 force\n" + "summon minecraft:text_display ~0.5 ~3.2 ~0.5 " + snbt({
     "Tags": [NS], "billboard": "center", "background": 1073741824,
     "text": {"text": "End Portal", "color": "dark_purple", "bold": True, "extra": [txt("\n12 Eyes of Ender: your own End and its boss", "gray", bold=False)]}}))
+fn("ev/portal_build", _epbuild)
 
 # ======================================================================= each island's own End: a void dimension, one sky island per island
 END_Y = 64
@@ -1418,10 +1420,28 @@ pb.fill(-2, 0, -2, 2, 0, 2, "reinforced_deepslate")
 pb.fill(-1, 0, -1, 1, 0, 1, "obsidian")
 pb.fill(-1, -1, -1, 1, -1, 1, "reinforced_deepslate")
 pb.c += portal_style("island")
-fn("portal/build", "\n".join(pb.c) + "\n" + "summon minecraft:text_display ~0.5 ~6 ~0.5 " + snbt({
+_pbuild = ("\n".join(pb.c) + "\n" + "summon minecraft:text_display ~0.5 ~6 ~0.5 " + snbt({
     "Tags": [NS, "cs_portall"], "billboard": "center", "background": 1073741824, "shadow": True,
     "text": {"text": "Hub Portal", "color": "light_purple", "bold": True, "extra": [txt("\nBuild a bridge, then walk through", "gray", bold=False)]},
     "transformation": {"left_rotation": [0.0, 0.0, 0.0, 1.0], "right_rotation": [0.0, 0.0, 0.0, 1.0], "translation": [0.0, 0.0, 0.0], "scale": [0.9, 0.9, 0.9]}}).replace("0.0,", "0.0f,").replace("1.0]", "1.0f]").replace("0.9,", "0.9f,").replace("0.9]", "0.9f]").replace("0.0]", "0.0f]"))
+fn("portal/build", _pbuild)
+# /island moveportal hub|end (the mod's IslandPortals, 2.16.0): run positioned at the floor block under the portal's centre.
+# A portal still at its original spot has its own platform (cleared with it, "_plat"); a moved one stands on the
+# player's floor, which is left alone.
+fn("portal/clear_hub_plat", "kill @e[type=minecraft:block_display,tag=cs_portalfx,distance=..3]\nkill @e[type=minecraft:text_display,tag=cs_portall,distance=..7]\nfill ~-2 ~-1 ~-2 ~2 ~5 ~2 minecraft:air")
+fn("portal/clear_hub", "kill @e[type=minecraft:block_display,tag=cs_portalfx,distance=..3]\nkill @e[type=minecraft:text_display,tag=cs_portall,distance=..7]\nfill ~-2 ~1 ~-2 ~2 ~5 ~2 minecraft:air")
+fn("portal/place_hub", f"function {NS}:portal/style_island\n" + _pbuild.splitlines()[-1])
+fn("portal/clear_end_plat", f"execute positioned ~0.5 ~3.2 ~0.5 run kill @e[type=minecraft:text_display,tag={NS},distance=..1.5]\nfill ~-3 ~-1 ~-3 ~3 ~1 ~3 minecraft:air")
+fn("portal/clear_end", f"execute positioned ~0.5 ~3.2 ~0.5 run kill @e[type=minecraft:text_display,tag={NS},distance=..1.5]\nfill ~-3 ~1 ~-3 ~3 ~1 ~3 minecraft:air")
+fn("portal/place_end", "\n".join([
+    "$fill ~-1 ~1 ~-2 ~1 ~1 ~-2 minecraft:end_portal_frame[facing=south,eye=$(e)]",
+    "$fill ~-1 ~1 ~2 ~1 ~1 ~2 minecraft:end_portal_frame[facing=north,eye=$(e)]",
+    "$fill ~-2 ~1 ~-1 ~-2 ~1 ~1 minecraft:end_portal_frame[facing=east,eye=$(e)]",
+    "$fill ~2 ~1 ~-1 ~2 ~1 ~1 minecraft:end_portal_frame[facing=west,eye=$(e)]",
+    *[f"setblock ~{a} ~1 ~{b} minecraft:end_rod[facing=up]" for a, b in ((-3, -3), (-3, 3), (3, -3), (3, 3))],
+    "particle minecraft:portal ~ ~2 ~ 1.5 1 1.5 0.5 200 force",
+    _epbuild.splitlines()[-1]]))
+fn("portal/fx_at", f"$execute positioned $(x) $(y) $(z) run function {NS}:portal/fx_island")
 fn("portal/restyle", f"""
 # portals built before the v2 style get the new frame and swirl
 $execute positioned $(cx) {ISLAND_Y} $(cz) positioned ~ ~ ~{PORTAL_DZ} run function {NS}:portal/style_island

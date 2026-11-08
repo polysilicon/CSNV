@@ -253,7 +253,8 @@ final class Guide {
                     pg("Travel", "/warp hub, /warp home, /warp mines, /warp woods, /warp plots"),
                     pg("Players", "/tpa <player> asks to teleport to someone, /tpahere <player> asks them to come to you. They click Accept, then stand still for 3 seconds."),
                     pg("Visiting", "/island visit <player> takes you to anyone's island, even when they're offline, unless it's private. /visit <player> asks to visit a private one. Visitors can look around but can't build, break or open anything. /island public on|off sets yours."),
-                    pg("Homes", "/island home takes you to your island. /island sethome moves your island's spawn spot to where you stand. /sethome [name] saves up to 3 homes of your own on your island (or its Nether or End); /home [name] goes back, /homes lists them, /delhome <name> removes one."))));
+                    pg("Homes", "/island home takes you to your island. /island sethome moves your island's spawn spot to where you stand. /sethome [name] saves up to 3 homes of your own on your island (or its Nether or End); /home [name] goes back, /homes lists them, /delhome <name> removes one."),
+                    pg("Portals & drops", "/island moveportal hub (or end) moves your Hub Portal or End portal to where you stand, if there's room. /island droppad makes sky drops land near where you stand; /island droppad reset puts them back. /island drops turns each kind on or off."))));
 
     // ------------------------------------------------------------------ recipes
     static List<RecipeHolder<?>> recipes(MinecraftServer server, String prefix) {

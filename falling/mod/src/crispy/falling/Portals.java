@@ -3,6 +3,7 @@ package crispy.falling;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -64,8 +65,9 @@ public final class Portals {
                 continue;
             }
             else {
-                int[] pt = portalFor(x, z);
-                if (pt != null && z == pt[1] && Math.abs(x - pt[0]) <= 1 && y >= ISLAND_Y + 1 && y <= ISLAND_Y + 3) fn = "act/hub";
+                int id = Visits.islandAt(p.level(), p.blockPosition());
+                int[] hp = id > 0 ? IslandPortals.hub(Upgrades.rec(server, id)) : null;   // moved with /island moveportal hub (2.16.0)
+                if (hp != null && z == hp[2] && Math.abs(x - hp[0]) <= 1 && y >= hp[1] + 1 && y <= hp[1] + 3) fn = "act/hub";
             }
             if (fn == null) continue;
             cooldown.put(p, tick + 60);
@@ -94,9 +96,14 @@ public final class Portals {
     /** An island's hub portal or End portal platform, or an altar / the End's gateway home. */
     static boolean isProtected(Level world, BlockPos pos) {
         if (world.dimension() != Level.OVERWORLD) return Realms.isProtected(world, pos);
-        int[] pt = portalFor(pos.getX(), pos.getZ());
-        if (pt == null || pos.getY() < ISLAND_Y - 1 || pos.getY() > ISLAND_Y + 5) return false;
-        if (Math.abs(pos.getX() - pt[0]) <= 2 && Math.abs(pos.getZ() - pt[1]) <= 2) return true;                      // hub portal
-        return Math.abs(pos.getX() - (pt[0] + END_DX)) <= 3 && Math.abs(pos.getZ() - (pt[1] - PORTAL_DZ)) <= 3;       // End portal
+        int id = Visits.islandAt(world, pos);
+        if (id <= 0 || world.getServer() == null) return false;
+        CompoundTag r = Upgrades.rec(world.getServer(), id);
+        int[] hp = IslandPortals.hub(r), ep = IslandPortals.end(r);   // their own spots if moved (2.16.0)
+        int dy = pos.getY() - hp[1];
+        // with its own platform (the original spot): from the platform's underside up; moved: just the frame above your floor
+        if (Math.abs(pos.getX() - hp[0]) <= 2 && Math.abs(pos.getZ() - hp[2]) <= 2 && dy >= (hp[3] > 0 ? -1 : 1) && dy <= 5) return true;   // hub portal
+        dy = pos.getY() - ep[1];
+        return Math.abs(pos.getX() - ep[0]) <= 3 && Math.abs(pos.getZ() - ep[2]) <= 3 && dy >= (ep[3] > 0 ? -1 : 1) && dy <= (ep[3] > 0 ? 5 : 2);   // End portal
     }
 }
