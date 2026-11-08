@@ -89,16 +89,19 @@ final class Visits {
             case VISIT -> " wants to visit your island. Visitors can look around but can't build, break or open anything.";
         };
         String yes = kind == Kind.VISIT ? "Allow" : "Accept";
-        run(server, "tellraw " + target.getUUID() + " [{\"text\":\"✈ \",\"color\":\"aqua\"},{\"text\":\"" + n + "\",\"color\":\"yellow\"},{\"text\":\"" + what + " \",\"color\":\"aqua\"},"
-                + button("[" + yes + "]", "green", "/tpaccept " + n, yes + " " + n + "'s request") + ",{\"text\":\" \"},"
-                + button("[Deny]", "red", "/tpdeny " + n, "Deny " + n + "'s request") + "]");
+        // sent straight to the player (a tellraw aimed at a UUID is refused: "the provided selector includes entities",
+        // which is why requests never arrived before 2.15.3)
+        target.sendSystemMessage(t("✈ ", ChatFormatting.AQUA).append(t(n, ChatFormatting.YELLOW)).append(t(what + " ", ChatFormatting.AQUA))
+                .append(button("[" + yes + "]", ChatFormatting.GREEN, "/tpaccept " + n, yes + " " + n + "'s request"))
+                .append(t(" ", ChatFormatting.AQUA))
+                .append(button("[Deny]", ChatFormatting.RED, "/tpdeny " + n, "Deny " + n + "'s request")));
         me.sendSystemMessage(t("Request sent to " + target.getScoreboardName() + ". It expires in 60 seconds.", ChatFormatting.AQUA));
         return 1;
     }
 
-    private static String button(String label, String color, String cmd, String hover) {
-        return "{\"text\":\"" + label + "\",\"color\":\"" + color + "\",\"bold\":true,\"click_event\":{\"action\":\"run_command\",\"command\":\"" + cmd
-                + "\"},\"hover_event\":{\"action\":\"show_text\",\"value\":\"" + hover + "\"}}";
+    private static net.minecraft.network.chat.MutableComponent button(String label, ChatFormatting color, String cmd, String hover) {
+        return t(label, color).withStyle(st -> st.withBold(true).withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand(cmd))
+                .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(t(hover, ChatFormatting.GRAY))));
     }
 
     static int answer(CommandSourceStack s, ServerPlayer from, boolean accept) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
@@ -174,8 +177,8 @@ final class Visits {
      *  p/nbounds, p/ebounds) let them stay while they're inside that island's space and drop the pass once they leave
      *  it; before this, an accepted /tpa or /visit was undone a moment later by the bounds check. */
     static void pass(MinecraftServer server, ServerPlayer p, int island) {
-        if (island > 0 && island != SkyblockMod.plot(server, p)) run(server, "scoreboard players set " + p.getUUID() + " cs_vis " + island);
-        else run(server, "scoreboard players reset " + p.getUUID() + " cs_vis");
+        if (island > 0 && island != SkyblockMod.plot(server, p)) run(server, "scoreboard players set " + p.getScoreboardName() + " cs_vis " + island);
+        else run(server, "scoreboard players reset " + p.getScoreboardName() + " cs_vis");   // by name: a UUID here is a separate score holder
     }
 
     static void run(MinecraftServer server, String cmd) {
