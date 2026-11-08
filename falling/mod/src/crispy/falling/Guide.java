@@ -225,7 +225,7 @@ final class Guide {
                     pg("Using them", "Place a minion on your island. It gathers on its own, even while you're offline. Right-click it to collect, upgrade it (I to V) or pick it up."),
                     pg("Slots", "Every island has 5 minion slots. Island upgrades add 2 more per tier."))),
             new Topic("Merchants & Bazaar", Items.EMERALD, "Earning and spending coins", List.of(
-                    pg("Merchants", "Five merchants stand in market stalls round the hub's plaza: Farming, Mining, Foraging, Combat and Supplies. Click one to buy or sell."),
+                    pg("Merchants", "Five merchants stand in market stalls round the hub's plaza: Farming, Mining, Foraging, Combat and Supplies. Click one to buy or sell, or use /shop from anywhere."),
                     pg("The Bazaar", "/bz or the Bazaar NPC. Place sell offers or buy orders at your own price; they fill against other players' orders. Sellers pay a 1% tax. Claim your coins and items under My orders."))),
             new Topic("Skills", Items.EXPERIENCE_BOTTLE, "Five skills that level as you play", List.of(
                     pg("Farming", "XP from fully grown crops. Perk: a chance of double crops."),

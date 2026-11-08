@@ -102,6 +102,17 @@ public class SkyblockMod implements ModInitializer {
             d.register(Commands.literal("challenges")
                     .executes(c -> menu(c.getSource(), "challenges")));
             d.register(Commands.literal("skills").executes(c -> Skills.command(c.getSource())));
+            // 2.16.1: the merchants' shop from anywhere (/shop, or /shop <category> for one tab)
+            d.register(Commands.literal("shop")
+                    .executes(c -> { Shop.open(c.getSource().getServer(), c.getSource().getPlayerOrException(), ""); return 1; })
+                    .then(Commands.argument("category", com.mojang.brigadier.arguments.StringArgumentType.word())
+                            .suggests((c, b) -> {
+                                var cats = Economy.cfg(c.getSource().getServer()).getListOrEmpty("shop");
+                                for (int i = 0; i < cats.size(); i++) b.suggest(cats.getCompoundOrEmpty(i).getStringOr("key", ""));
+                                return b.buildFuture();
+                            })
+                            .executes(c -> { Shop.open(c.getSource().getServer(), c.getSource().getPlayerOrException(),
+                                    com.mojang.brigadier.arguments.StringArgumentType.getString(c, "category")); return 1; })));
             d.register(Commands.literal("gear")
                     .executes(c -> menu(c.getSource(), "gear")));
             register(d, "island");
