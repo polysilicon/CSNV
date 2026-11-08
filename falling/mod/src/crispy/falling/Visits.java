@@ -140,7 +140,7 @@ final class Visits {
     }
 
     /** Teleport after WARMUP ticks if `who` stays put. */
-    private static void travel(ServerPlayer who, Runnable go, String where) {
+    static void travel(ServerPlayer who, Runnable go, String where) {
         pending.put(who.getUUID(), new Pending(who.getUUID(), who.position(), who.level().getServer().getTickCount() + WARMUP, go));
         who.sendSystemMessage(t("Teleporting " + where + " in 3 seconds. Don't move.", ChatFormatting.AQUA));
     }

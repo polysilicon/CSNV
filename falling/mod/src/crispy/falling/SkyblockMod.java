@@ -96,6 +96,7 @@ public class SkyblockMod implements ModInitializer {
             HubPlots.register(d);
             Guide.register(d);
             Visits.register(d);
+            IslandHomes.register(d);
             d.register(Commands.literal("invite").then(Commands.argument("player", EntityArgument.player())
                     .executes(c -> invite(c.getSource(), EntityArgument.getPlayer(c, "player")))));
             d.register(Commands.literal("challenges")
@@ -131,6 +132,7 @@ public class SkyblockMod implements ModInitializer {
                 // run by the datapack after a new island, so an island left empty drops off the board right away
                 .then(Commands.literal("refreshboard").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .executes(c -> { IslandLevels.updateBoard(c.getSource().getServer()); return 1; }));
+        IslandHomes.island(root);   // home, sethome, visit, public
         d.register(root);
     }
 

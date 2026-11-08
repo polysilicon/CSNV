@@ -218,7 +218,7 @@ final class Guide {
             new Topic("Minions", Items.ARMOR_STAND, "Helpers that gather while you're offline", List.of(
                     pg("Crafting", "Put 8 of a resource around a wooden pickaxe at a crafting table. There are minions for crops, wood, ores, sand, clay and mobs. See Recipes."),
                     pg("Using them", "Place a minion on your island. It gathers on its own, even while you're offline. Right-click it to collect, upgrade it (I to V) or pick it up."),
-                    pg("Slots", "Islands have a limited number of minion slots. Island upgrades add 2 more per tier."))),
+                    pg("Slots", "Every island has 5 minion slots. Island upgrades add 2 more per tier."))),
             new Topic("Merchants & Bazaar", Items.EMERALD, "Earning and spending coins", List.of(
                     pg("Merchants", "Five merchants stand in market stalls round the hub's plaza: Farming, Mining, Foraging, Combat and Supplies. Click one to buy or sell."),
                     pg("The Bazaar", "/bz or the Bazaar NPC. Place sell offers or buy orders at your own price; they fill against other players' orders. Sellers pay a 1% tax. Claim your coins and items under My orders."))),
@@ -252,7 +252,8 @@ final class Guide {
                     pg("Trading", "/bazaar (/bz), /plots"),
                     pg("Travel", "/warp hub, /warp home, /warp mines, /warp woods, /warp plots"),
                     pg("Players", "/tpa <player> asks to teleport to someone, /tpahere <player> asks them to come to you. They click Accept, then stand still for 3 seconds."),
-                    pg("Visiting", "/visit <player> asks to visit their island. If they allow it you land on their island. Visitors can look around but can't build, break or open anything."))));
+                    pg("Visiting", "/island visit <player> takes you to anyone's island, even when they're offline, unless it's private. /visit <player> asks to visit a private one. Visitors can look around but can't build, break or open anything. /island public on|off sets yours."),
+                    pg("Homes", "/island home takes you to your island. /island sethome moves your island's spawn spot to where you stand. /sethome [name] saves up to 3 homes of your own on your island (or its Nether or End); /home [name] goes back, /homes lists them, /delhome <name> removes one."))));
 
     // ------------------------------------------------------------------ recipes
     static List<RecipeHolder<?>> recipes(MinecraftServer server, String prefix) {

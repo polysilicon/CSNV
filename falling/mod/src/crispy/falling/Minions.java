@@ -81,7 +81,9 @@ public final class Minions {
             if (info != null) lvl = info.value();
         }
         int bonus = 2 * Upgrades.tier(server, plot, "um");   // island upgrade: +2 slots per tier
-        return Math.min(l.getIntOr("max", 15) + bonus, l.getIntOr("base", 5) + lvl / Math.max(1, l.getIntOr("per_levels", 20)) + bonus);
+        // 2.15.3: a flat base plus what's bought in /island upgrades (it used to grow with island level too, which made the
+        // upgrade pointless). Minions already placed over the limit keep working; new ones can't be placed until under it.
+        return l.getIntOr("base", 5) + bonus;
     }
     static int count(MinecraftServer server, int plot) {
         CompoundTag list = all(server);

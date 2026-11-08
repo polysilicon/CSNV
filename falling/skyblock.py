@@ -374,7 +374,7 @@ MINIONS = [
 ROMAN = ["", "I", "II", "III", "IV", "V"]
 # seconds per action, storage (items), upgrade cost from the tier below (coins, items of the minion's recipe item)
 TIERS = [(30, 64, 0, 0), (25, 128, 500, 64), (20, 192, 2000, 160), (15, 256, 8000, 320), (10, 384, 25000, 640)]
-MINION_BASE_LIMIT, MINION_MAX_LIMIT, LEVELS_PER_MINION = 5, 15, 20
+MINION_BASE_LIMIT, MINION_MAX_LIMIT, LEVELS_PER_MINION = 5, 15, 20   # since 2.15.3 only "base" is used (+2 per /island upgrades tier); max and per_levels are ignored
 ECO = {
     "shop": [{"key": k, "name": n, "icon": f"minecraft:{ic}", "npc": npc,
               "items": [{"id": f"minecraft:{i}", "buy": b, "sell": sv} for i, b, sv in items]} for k, n, ic, npc, items in SHOP],
@@ -1446,6 +1446,10 @@ function {NS}:p/home2 with storage {NS}:d cur
 """)
 fn("p/home2", f"""
 $forceload add $(x) $(z) $(x1) $(z1)
+# the island's own spawn spot (/island sethome, 2.15.3), if it's still clear
+scoreboard players set #hok cs_tmp 0
+$execute if data storage {NS}:d plots[$(id)].home run function {NS}:p/home_set with storage {NS}:d plots[$(id)].home
+execute if score #hok cs_tmp matches 1 run return run gamemode survival @s
 # the spawn spot on top of the starter island; if something was built there, the highest block instead
 $execute in minecraft:overworld positioned $(cx) {ISLAND_Y + 1} $(cz) if block ~ ~ ~ minecraft:air if block ~ ~1 ~ minecraft:air unless block ~ ~-1 ~ minecraft:air run return run function {NS}:p/home3
 $execute in minecraft:overworld positioned $(cx) 318 $(cz) positioned over motion_blocking run tp @s ~0.5 ~ ~0.5
@@ -1477,6 +1481,10 @@ fn("p/ebounds_all", f"execute as @a[gamemode=survival,tag=!cs_staff] at @s if di
 # a visitor's pass (cs_vis, set by the mod's Visits when a /tpa or /visit goes through): inside that island's space
 # (overworld or End: the same square; Nether: its own) they may stay; outside it the pass is dropped and the normal
 # own-island check runs
+fn("p/home_set", f"""
+$execute in minecraft:overworld positioned $(x) $(y) $(z) if block ~ ~ ~ #minecraft:replaceable if block ~ ~1 ~ #minecraft:replaceable run scoreboard players set #hok cs_tmp 1
+$execute if score #hok cs_tmp matches 1 in minecraft:overworld run tp @s $(x) $(y) $(z) $(yaw) 0
+""")
 fn("p/vis_in", f"""
 execute store result storage {NS}:d q.i int 1 run scoreboard players get @s cs_vis
 function {NS}:p/ctx2 with storage {NS}:d q
