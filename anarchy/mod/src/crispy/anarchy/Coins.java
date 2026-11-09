@@ -58,13 +58,17 @@ final class Coins {
         }
     }
 
+    static ItemStack coinStack() { return coin == null ? ItemStack.EMPTY : coin; }
+    static ItemStack bagStack() { return bag == null ? ItemStack.EMPTY : bag; }
+
     static void fix(Container c) {
         if (coin.isEmpty()) return;
         boolean changed = false;
         for (int i = 0; i < c.getContainerSize(); i++) {
             ItemStack s = c.getItem(i);
             if (s.isEmpty()) continue;
-            ItemStack want = isCoin(s) ? coin : isBag(s) ? bag : null;
+            ItemStack want = isCoin(s) ? coin : isBag(s) ? bag
+                    : Crypto.btc != null && !Crypto.btc.isEmpty() && Crypto.isBtc(s) ? Crypto.btc : null;   // old-format Bitcoins too (1.2.0)
             if (want == null || ItemStack.isSameItemSameComponents(s, want)) continue;
             c.setItem(i, want.copyWithCount(s.getCount()));
             changed = true;
