@@ -392,6 +392,18 @@ MINIONS = [
     ("slime", "Slime", "slime_block", "wooden_sword", 0x7CC66A, [("slime_ball", 1)], "slime_ball"),
     ("fishing", "Fishing", "cod", "fishing_rod", 0x3A7AB8, [("cod", 1), ("salmon", 1)], "cod"),
 ]
+# 2.16.3: mob-head skins for some minions (textures from Just Mob Heads, which also runs on this server)
+MINION_SKINS = {
+    "chicken": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTYzODQ2OWE1OTljZWVmNzIwNzUzNzYwMzI0OGE5YWIxMWZmNTkxZmQzNzhiZWE0NzM1YjM0NmE3ZmFlODkzIn19fQ==",
+    "cow": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNWQ2YzZlZGE5NDJmN2Y1ZjcxYzMxNjFjNzMwNmY0YWVkMzA3ZDgyODk1ZjlkMmIwN2FiNDUyNTcxOGVkYzUifX19",
+    "pig": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNjIxNjY4ZWY3Y2I3OWRkOWMyMmNlM2QxZjNmNGNiNmUyNTU5ODkzYjZkZjRhNDY5NTE0ZTY2N2MxNmFhNCJ9fX0=",
+    "sheep": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNmRmZTdjYzQ2ZDc0OWIxNTMyNjFjMWRjMTFhYmJmMmEzMTA4ZWExYmEwYjI2NTAyODBlZWQxNTkyZGNmYzc1YiJ9fX0=",
+    "rabbit": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNWE2NjAwNjgwZjRmNWIxMzIxNTRlMzQxM2UyOWM5M2NmOTZmZjJmMjIyNGFiODdiZWU1MDk1OWUwYjBlZTkyOSJ9fX0=",
+    "spider": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvY2Q1NDE1NDFkYWFmZjUwODk2Y2QyNThiZGJkZDRjZjgwYzNiYTgxNjczNTcyNjA3OGJmZTM5MzkyN2U1N2YxIn19fQ==",
+    "slime": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYWRjYjcyYmVjZTZkMzkwMjYyNWY3OWNkNzNhNzlmOTRlZGI2MTMyNmQ1MTBiODAwZTM4ZDJiNDNhZjkxNDhkZSJ9fX0",
+    "mushroom": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZDBiYzYxYjk3NTdhN2I4M2UwM2NkMjUwN2EyMTU3OTEzYzJjZjAxNmU3YzA5NmE0ZDZjZjFmZTFiOGRiIn19fQ==",
+    "fishing": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNzg5MmQ3ZGQ2YWFkZjM1Zjg2ZGEyN2ZiNjNkYTRlZGRhMjExZGY5NmQyODI5ZjY5MTQ2MmE0ZmIxY2FiMCJ9fX0="
+}
 ROMAN = ["", "I", "II", "III", "IV", "V"]
 # seconds per action, storage (items), upgrade cost from the tier below (coins, items of the minion's recipe item)
 TIERS = [(30, 64, 0, 0), (25, 128, 500, 64), (20, 192, 2000, 160), (15, 256, 8000, 320), (10, 384, 25000, 640)]
@@ -400,7 +412,8 @@ ECO = {
     "shop": [{"key": k, "name": n, "icon": f"minecraft:{ic}", "npc": npc,
               "items": [{"id": f"minecraft:{i}", "buy": b, "sell": sv} for i, b, sv in items]} for k, n, ic, npc, items in SHOP],
     "minions": [{"key": k, "name": n, "head": f"minecraft:{h}", "tool": f"minecraft:{t}", "color": c, "recipe": f"minecraft:{r}",
-                 "drops": [{"id": f"minecraft:{i}", "n": q} for i, q in d]} for k, n, h, t, c, d, r in MINIONS],
+                 "drops": [{"id": f"minecraft:{i}", "n": q} for i, q in d], **({"skin": MINION_SKINS[k]} if k in MINION_SKINS else {})}
+                for k, n, h, t, c, d, r in MINIONS],
     "tiers": [{"secs": a, "cap": b, "coins": c, "items": d} for a, b, c, d in TIERS],
     "limit": {"base": MINION_BASE_LIMIT, "max": MINION_MAX_LIMIT, "per_levels": LEVELS_PER_MINION},
 }
@@ -411,7 +424,8 @@ def minion_item(key, name, head, tier=1):
                            txt("you're offline, until its storage is full.", "gray"), txt(""),
                            txt(f"Tier {ROMAN[tier]}: one action every {TIERS[tier - 1][0]}s, holds {TIERS[tier - 1][1]}", "dark_aqua"),
                            txt("Right-click it to collect or upgrade.", "yellow")],
-        "minecraft:item_model": f"minecraft:{head}",
+        "minecraft:item_model": "minecraft:player_head" if key in MINION_SKINS else f"minecraft:{head}",
+        **({"minecraft:profile": {"properties": [{"name": "textures", "value": MINION_SKINS[key]}]}} if key in MINION_SKINS else {}),
         "minecraft:enchantment_glint_override": True,
         "minecraft:max_stack_size": 1,
         "minecraft:custom_data": {"cs_minion": {"type": key, "tier": tier}}}}

@@ -125,6 +125,36 @@ public final class Minions {
         return done;
     }
 
+    // ------------------------------------------------------------------ mob-head skins (2.16.3)
+    /** The type's mob-head texture (Just Mob Heads' skins, set by the datapack as "skin"), or null for a plain head block. */
+    static String skin(CompoundTag ty) { String v = ty.getStringOr("skin", ""); return v.isEmpty() ? null : v; }
+    static ItemStack withSkin(ItemStack s, String skin) {
+        if (skin == null) return s;
+        CompoundTag prop = new CompoundTag(), tag = new CompoundTag();
+        prop.putString("name", "textures"); prop.putString("value", skin);
+        ListTag props = new ListTag(); props.add(prop);
+        tag.put("properties", props);
+        net.minecraft.world.item.component.ResolvableProfile.CODEC.parse(net.minecraft.nbt.NbtOps.INSTANCE, tag).result()
+                .ifPresent(pr -> s.set(DataComponents.PROFILE, pr));
+        return s;
+    }
+    /** The head a placed minion of this type wears. */
+    static ItemStack headItem(CompoundTag ty) {
+        String skin = skin(ty);
+        if (skin != null) return withSkin(new ItemStack(Items.PLAYER_HEAD), skin);
+        return new ItemStack(Economy.item(ty.getStringOr("head", "minecraft:cobblestone")));
+    }
+    /** Give a placed minion its type's current head (mob heads replaced plain blocks for some types in 2.16.3). */
+    static void refreshHead(MinecraftServer server, Entity e) {
+        if (!(e instanceof ArmorStand stand) || !e.entityTags().contains("cs_minion")) return;
+        CompoundTag rec = all(server).getCompoundOrEmpty(e.getStringUUID());
+        if (rec.isEmpty()) return;
+        CompoundTag ty = type(server, rec.getStringOr("type", ""));
+        if (ty.isEmpty()) return;
+        ItemStack want = headItem(ty), have = stand.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD);
+        if (!ItemStack.isSameItemSameComponents(want, have)) stand.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, want);
+    }
+
     // ------------------------------------------------------------------ items
     static ItemStack item(MinecraftServer server, String key, int tier) {
         CompoundTag ty = type(server, key), t = tier(server, tier);
@@ -138,7 +168,8 @@ public final class Minions {
                 .withStyle(st -> st.withItalic(false).withColor(ChatFormatting.DARK_AQUA)));
         lore.add(Component.literal("Right-click it to collect or upgrade.").withStyle(st -> st.withItalic(false).withColor(ChatFormatting.YELLOW)));
         s.set(DataComponents.LORE, new ItemLore(lore));
-        s.set(DataComponents.ITEM_MODEL, Identifier.parse(ty.getStringOr("head", "minecraft:cobblestone")));
+        s.set(DataComponents.ITEM_MODEL, Identifier.parse(skin(ty) != null ? "minecraft:player_head" : ty.getStringOr("head", "minecraft:cobblestone")));
+        withSkin(s, skin(ty));
         s.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
         s.set(DataComponents.MAX_STACK_SIZE, 1);
         CompoundTag data = new CompoundTag(), m = new CompoundTag();
@@ -188,7 +219,7 @@ public final class Minions {
         String armor = ",{id:\"minecraft:leather_%s\",components:{\"minecraft:dyed_color\":" + color + "}}";
         String snbt = "{Small:1b,ShowArms:1b,NoBasePlate:1b,Invulnerable:1b,DisabledSlots:4144959,Tags:[\"cs_minion\",\"cs_m_new\"],"
                 + "Rotation:[" + yaw + "f,0f],Pose:{RightArm:[-30f,0f,0f],LeftArm:[-15f,0f,10f],Head:[5f,0f,0f]},CustomNameVisible:1b,"
-                + "equipment:{head:{id:\"" + ty.getStringOr("head", "minecraft:cobblestone") + "\"},mainhand:{id:\"" + ty.getStringOr("tool", "minecraft:wooden_pickaxe") + "\"}"
+                + "equipment:{mainhand:{id:\"" + ty.getStringOr("tool", "minecraft:wooden_pickaxe") + "\"}"
                 + ",chest:" + String.format(armor, "chestplate").substring(1) + ",legs:" + String.format(armor, "leggings").substring(1)
                 + ",feet:" + String.format(armor, "boots").substring(1) + "}}";
         server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withLevel(level).withSuppressedOutput(),
@@ -196,6 +227,7 @@ public final class Minions {
         ArmorStand stand = level.getEntitiesOfClass(ArmorStand.class, new AABB(pos).inflate(1), e -> e.entityTags().contains("cs_m_new")).stream().findFirst().orElse(null);
         if (stand == null) { p.sendSystemMessage(Component.literal("The minion couldn't be placed.").withStyle(ChatFormatting.RED)); return InteractionResult.FAIL; }
         stand.removeTag("cs_m_new");
+        stand.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, headItem(ty));
         CompoundTag rec = new CompoundTag();
         rec.putString("type", key);
         rec.putInt("tier", tier);
@@ -265,6 +297,7 @@ public final class Minions {
             p.sendSystemMessage(Component.literal("That's not your minion.").withStyle(ChatFormatting.RED));
             return InteractionResult.SUCCESS;
         }
+        refreshHead(server, entity);
         open(server, p, entity.getStringUUID());
         return InteractionResult.SUCCESS;
     }
@@ -303,11 +336,11 @@ public final class Minions {
             ItemStack pane = Shop.named(Economy.item("minecraft:black_stained_glass_pane"), Component.literal(""), List.of(), false);
             for (int i = 0; i < 45; i++) box.setItem(i, pane.copy());
             for (int s : STORE_SLOTS) box.setItem(s, ItemStack.EMPTY);
-            box.setItem(INFO, Shop.named(Economy.item(ty.getStringOr("head", "minecraft:cobblestone")),
+            box.setItem(INFO, withSkin(Shop.named(skin(ty) != null ? Items.PLAYER_HEAD : Economy.item(ty.getStringOr("head", "minecraft:cobblestone")),
                     Shop.t(ty.getStringOr("name", "?") + " Minion " + ROMAN[tier], ChatFormatting.AQUA, ChatFormatting.BOLD),
                     List.of(Shop.t("One action every " + t.getIntOr("secs", 30) + " seconds", ChatFormatting.GRAY),
                             Shop.t("Storage: " + st + "/" + cap, st >= cap ? ChatFormatting.RED : ChatFormatting.GRAY),
-                            Shop.t(st >= cap ? "Full! Collect to keep it working." : "Works while you're offline, too.", st >= cap ? ChatFormatting.RED : ChatFormatting.DARK_GRAY)), true));
+                            Shop.t(st >= cap ? "Full! Collect to keep it working." : "Works while you're offline, too.", st >= cap ? ChatFormatting.RED : ChatFormatting.DARK_GRAY)), true), skin(ty)));
             int slot = 0;
             CompoundTag items = rec.getCompoundOrEmpty("items");
             for (String id : items.keySet()) {

@@ -46,6 +46,7 @@ public class SkyblockMod implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(ZoneRules::onTick);
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register(ZoneRules::onEntityLoad);
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register(Pets::onEntityLoad);
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register((e, lvl) -> Minions.refreshHead(lvl.getServer(), e));
         ServerTickEvents.END_SERVER_TICK.register(HubPlots::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Visits::onTick);
         net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((h, server) -> Visits.forget(h.player));
