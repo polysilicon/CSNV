@@ -32,19 +32,17 @@ import java.util.*;
 import static crispy.falling.Ui.t;
 
 /**
- * Enchanted resources (2.16.5), crafted like Hypixel SkyBlock's: the resource in a plus shape at a crafting table with
- * 32 in each of the 5 slots (160 in all) makes one glowing "Enchanted <resource>" (the same item with custom_data
- * cs_ench). The recipes are the datapack's crispy_skyblock:enchanted/<item>; a recipe can't ask for 32 per slot, so
- * CraftingMenuMixin (check) hides the result until every slot has 32, and ResultSlotMixin (consume) takes the other 31. The newer gear recipes (the datapack's eco cfg "ench": recipe id -> the
- * items that must be enchanted) only craft when those slots hold enchanted ones; a recipe can't check custom data, so
- * CraftingMenuMixin calls check() after vanilla works out the result and clears it if the ingredients are wrong. Every
- * other recipe refuses enchanted items, so nobody turns 64 logs into 4 planks by mistake. Crafters can't make the
- * enchanted-gear recipes at all (CrafterBlockMixin).
+ * Enchanted resources (2.16.5): /compact (or the guide's Recipes page) turns 160 of a resource into one glowing
+ * "Enchanted <resource>" (the same item with custom_data cs_ench) with a click; shift-click makes as many as you can.
+ * The newer gear recipes (the datapack's eco cfg "ench": recipe id -> the items that must be enchanted) only craft
+ * when those slots hold enchanted ones; a recipe can't check custom data, so CraftingMenuMixin calls check() after
+ * vanilla works out the result and clears it if the ingredients are wrong. Every other recipe refuses enchanted items,
+ * so nobody turns 160 logs into 4 planks by mistake. Crafters can't make the enchanted-gear recipes (CrafterBlockMixin).
  */
 public final class Compact {
     private Compact() {}
 
-    static final int PER_SLOT = 32, SLOTS = 5, PER = PER_SLOT * SLOTS;
+    static final int PER = 160;
     private static final Map<UUID, Long> told = new HashMap<>();
 
     public static boolean enchanted(ItemStack s) {
@@ -58,7 +56,7 @@ public final class Compact {
         ItemStack s = new ItemStack(item, count);
         s.set(DataComponents.CUSTOM_NAME, Component.literal("Enchanted " + nice(item)).withStyle(st -> st.withItalic(false).withColor(ChatFormatting.GREEN)));
         s.set(DataComponents.LORE, new ItemLore(List.of(
-                Component.literal(PER + " " + nice(item) + " crafted into one.").withStyle(st -> st.withItalic(false).withColor(ChatFormatting.GRAY)),
+                Component.literal(PER + " " + nice(item) + " pressed into one.").withStyle(st -> st.withItalic(false).withColor(ChatFormatting.GRAY)),
                 Component.literal("Used to craft gear (see /guide > Recipes).").withStyle(st -> st.withItalic(false).withColor(ChatFormatting.DARK_GRAY)))));
         s.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
         CompoundTag tag = new CompoundTag();
@@ -94,6 +92,60 @@ public final class Compact {
         return h != null && rules(server).containsKey(h.id().identifier().toString());
     }
 
+    // ------------------------------------------------------------------ /compact
+    static void register(CommandDispatcher<CommandSourceStack> d) {
+        d.register(Commands.literal("compact").executes(c -> { open(c.getSource().getPlayerOrException()); return 1; }));
+    }
+
+    static int plainCount(Inventory inv, Item item) {
+        int n = 0;
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack s = inv.getItem(i);
+            if (s.is(item) && Economy.plain(s)) n += s.getCount();
+        }
+        return n;
+    }
+    static void takePlain(Inventory inv, Item item, int n) {
+        for (int i = 0; i < inv.getContainerSize() && n > 0; i++) {
+            ItemStack s = inv.getItem(i);
+            if (!s.is(item) || !Economy.plain(s)) continue;
+            int k = Math.min(n, s.getCount());
+            s.shrink(k);
+            n -= k;
+        }
+        inv.setChanged();
+    }
+
+    static void open(ServerPlayer p) {
+        List<Item> items = pressable(p.level().getServer());
+        Ui.open(p, t("Compactor", ChatFormatting.DARK_GRAY), 6, m -> {
+            for (int i = 0; i < items.size() && i < 45; i++) {
+                Item item = items.get(i);
+                int have = plainCount(p.getInventory(), item);
+                ItemStack icon = make(item, 1);
+                icon.set(DataComponents.LORE, new ItemLore(List.of(
+                        t(PER + " " + nice(item) + " = 1 Enchanted", ChatFormatting.GRAY),
+                        t("You have " + have + " (enough for " + have / PER + ")", have >= PER ? ChatFormatting.GREEN : ChatFormatting.RED),
+                        Component.empty(),
+                        t("Click: make one", ChatFormatting.YELLOW), t("Shift-click: make as many as you can", ChatFormatting.YELLOW))));
+                m.put(i, icon, (pl, c) -> press(pl, item, c.shift()));
+            }
+            m.put(49, Ui.item(Items.BOOK, t("Compactor", ChatFormatting.GOLD, ChatFormatting.BOLD), List.of(
+                    t("Turns " + PER + " of a resource into one", ChatFormatting.GRAY), t("Enchanted item. The newer armor,", ChatFormatting.GRAY),
+                    t("weapons and tools are made from these.", ChatFormatting.GRAY)), false), null);
+        });
+    }
+
+    static void press(ServerPlayer p, Item item, boolean all) {
+        Inventory inv = p.getInventory();
+        int n = Math.min(plainCount(inv, item) / PER, all ? 64 : 1);
+        if (n <= 0) { p.sendSystemMessage(t("You need " + PER + " " + nice(item) + " to make one.", ChatFormatting.RED)); return; }
+        takePlain(inv, item, n * PER);
+        ItemStack out = make(item, n);
+        if (!inv.add(out)) p.drop(out, false);
+        p.sendSystemMessage(t("Made " + n + " Enchanted " + nice(item) + ".", ChatFormatting.GREEN));
+    }
+
     // ------------------------------------------------------------------ crafting checks (mixins)
     /** After vanilla works out a crafting grid's result: clear it when the recipe needs enchanted resources it hasn't
      *  got, or when enchanted items are used in any other recipe. */
@@ -104,23 +156,12 @@ public final class Compact {
                 level.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, level, (RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>) null);
         Set<Item> need = found.map(h -> rules(level.getServer()).get(h.id().identifier().toString())).orElse(null);
         String why = null;
-        if (found.isPresent() && isEnchantRecipe(found.get())) {   // 32 plain ones in every slot
-            for (int i = 0; i < grid.getContainerSize(); i++) {
-                ItemStack s = grid.getItem(i);
-                if (s.isEmpty()) continue;
-                if (enchanted(s) || !Economy.plain(s)) { why = "Use plain " + nice(s.getItem()) + " here."; break; }
-                if (s.getCount() < PER_SLOT) { why = "Enchanted " + nice(s.getItem()) + " needs " + PER_SLOT + " in each of the 5 slots (" + PER + " in all)."; break; }
-            }
-            if (why == null) return;
-            need = Set.of();
-        }
-        else
         for (int i = 0; i < grid.getContainerSize() && why == null; i++) {
             ItemStack s = grid.getItem(i);
             if (s.isEmpty()) continue;
             boolean ench = enchanted(s);
             if (need == null && ench) { why = "Enchanted items only go into the gear that needs them."; break; }
-            if (need != null && need.contains(s.getItem()) && !ench) { why = "This needs Enchanted " + nice(s.getItem()) + " (" + PER + " crafted into one: see /guide > Recipes)."; break; }
+            if (need != null && need.contains(s.getItem()) && !ench) { why = "This needs Enchanted " + nice(s.getItem()) + ": make it with /compact (" + PER + " into one)."; break; }
             if (need != null && !need.contains(s.getItem()) && ench) { why = "Only the " + names(need) + " should be enchanted here."; break; }
         }
         if (why == null) return;
@@ -138,23 +179,6 @@ public final class Compact {
         for (Item i : items) l.add(nice(i));
         Collections.sort(l);
         return String.join(" and ", l);
-    }
-
-    public static boolean isEnchantRecipe(RecipeHolder<?> h) {
-        var id = h.id().identifier();
-        return id.getNamespace().equals(SkyblockMod.NS) && id.getPath().startsWith("enchanted/");
-    }
-    /** ResultSlot.onTake, before vanilla takes one from each slot: take the other 31 of an enchanted-resource craft. */
-    public static void consume(Player player, CraftingContainer grid) {
-        if (!(player.level() instanceof ServerLevel level)) return;
-        CraftingInput input = grid.asCraftInput();
-        var found = level.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, level,
-                (RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>) null);
-        if (found.isEmpty() || !isEnchantRecipe(found.get())) return;
-        for (int i = 0; i < grid.getContainerSize(); i++) {
-            ItemStack s = grid.getItem(i);
-            if (!s.isEmpty()) s.shrink(Math.min(PER_SLOT - 1, s.getCount() - 1));
-        }
     }
 
     /** The guide's recipe view: the stack to show for an ingredient of recipe h. */

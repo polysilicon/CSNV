@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Optional;
 
-/** Crafters can't make enchanted resources (they'd take 1 per slot, not 32) or gear that needs them, nor use enchanted items in other recipes. */
+/** Crafters can't make gear that needs enchanted resources, nor use enchanted items in other recipes. */
 @Mixin(CrafterBlock.class)
 public abstract class CrafterBlockMixin {
     @Inject(method = "getPotentialResults", at = @At("RETURN"), cancellable = true)
@@ -22,6 +22,6 @@ public abstract class CrafterBlockMixin {
         if (found == null || found.isEmpty()) return;
         boolean anyEnchanted = false;
         for (var s : input.items()) if (Compact.enchanted(s)) { anyEnchanted = true; break; }
-        if (anyEnchanted || Compact.needsEnchanted(level.getServer(), found.get()) || Compact.isEnchantRecipe(found.get())) cir.setReturnValue(Optional.empty());
+        if (anyEnchanted || Compact.needsEnchanted(level.getServer(), found.get())) cir.setReturnValue(Optional.empty());
     }
 }

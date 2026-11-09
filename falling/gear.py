@@ -13,9 +13,8 @@
 
 RARITY = {"UNCOMMON": "green", "RARE": "blue", "EPIC": "dark_purple", "LEGENDARY": "gold"}
 RANK = {"UNCOMMON": 1, "RARE": 2, "EPIC": 3, "LEGENDARY": 4}
-# 2.16.5: these need ENCHANTED resources (crafted Hypixel-style: 32 of the resource in each of 5 slots in a plus shape;
-# the mod checks the custom data and the 32 per slot, since a recipe can't): sets -> their main block (#), weapons/tools -> the listed recipe letters
-ENCH_PER = 160   # 32 in each of 5 slots
+# 2.16.5: these need ENCHANTED resources (160 of the resource made into one in /compact; the mod checks the custom
+# data, since a recipe can't): sets -> their main block (#), weapons/tools -> the listed recipe letters
 ENCH_SETS = {"lumberjack", "copper", "frost", "slime", "demolition", "wildwood"}
 ENCH_WEAPONS = {"thornfang": "BC", "cleaver": "L", "frostbite": "I", "blaster": "T", "harvester": "M", "excavator": "C"}
 # recipe ids (2.16.4): gear/armor/<rank>_<set>_<piece>, gear/weapon/<rank>_<key>, gear/tool/<rank>_<key>, so the
@@ -288,20 +287,6 @@ def build(NS, fn, js, txt, extra_recipes=()):
         recipes.append(rid)
         if key in ENCH_WEAPONS: ench[f"{NS}:gear/{rid}"] = sorted({f"minecraft:{rkey_map[ch]}" for ch in ENCH_WEAPONS[key]})
 
-    # ---------------------------------------------------------------- enchanted resources (Hypixel style)
-    # 32 in each of 5 slots in a plus shape = 1 Enchanted <resource>; the mod enforces the 32 (Compact.java)
-    ench_items = sorted({i.removeprefix("minecraft:") for v in ench.values() for i in v})
-    VANILLA_NAME = {"slime_ball": "Slimeball"}
-    for i in ench_items:
-        nm = VANILLA_NAME.get(i, i.replace("_", " ").title())
-        it = {"id": f"minecraft:{i}", "count": 1, "components": {
-            "minecraft:custom_name": txt(f"Enchanted {nm}", "green"),
-            "minecraft:lore": [txt(f"{ENCH_PER} {nm} crafted into one.", "gray"), txt("Used to craft gear (see /guide > Recipes).", "dark_gray")],
-            "minecraft:enchantment_glint_override": True,
-            "minecraft:custom_data": {"cs_ench": True}}}
-        js(f"data/{NS}/recipe/enchanted/{i}.json", {"type": "minecraft:crafting_shaped", "category": "misc", "group": "crispy_enchanted",
-            "pattern": [" X ", "XXX", " X "], "key": {"X": f"minecraft:{i}"}, "result": it})
-
     # ---------------------------------------------------------------- set bonuses
     js(f"data/{NS}/tags/entity_type/gear_targets.json", {"values": [f"minecraft:{m}" for m in dict.fromkeys(GEAR_TARGETS)]})
     js(f"data/{NS}/tags/block/passable.json", {"values": PASSABLE})
@@ -313,9 +298,9 @@ def build(NS, fn, js, txt, extra_recipes=()):
 scoreboard players add #gear30 cs_tmp 1
 execute if score #gear30 cs_tmp matches 30.. run scoreboard players set #gear30 cs_tmp 0
 execute as @a[gamemode=!spectator] at @s run function {NS}:gear/bonus
-execute as @a unless score @s cs_gearv matches {len(recipes) + len(ench_items) + len(extra_recipes)} run function {NS}:gear/unlock
+execute as @a unless score @s cs_gearv matches {len(recipes) + len(extra_recipes)} run function {NS}:gear/unlock
 """)
-    unlock = [f"{NS}:gear/{r}" for r in recipes] + [f"{NS}:enchanted/{i}" for i in ench_items] + list(extra_recipes)
+    unlock = [f"{NS}:gear/{r}" for r in recipes] + list(extra_recipes)
     fn("gear/unlock", "\n".join(f"recipe give @s {r}" for r in unlock) + f"\nscoreboard players set @s cs_gearv {len(unlock)}")
 
     # ---------------------------------------------------------------- abilities (as and at the player)
@@ -425,7 +410,7 @@ playsound minecraft:block.glass.break player @a[distance=..16] ~ ~ ~ 1 0.6
         main = ("Enchanted " if key in ENCH_SETS else "") + nice(block)
         pages.append(preview(chest, [f"{main} + {nice(core)} in the piece's shape:"] +
                              [f"{pn}: {cnt(pat, '#')} {main}, {cnt(pat, 'C')} {nice(core)}" for _s, _x, pn, pat in PIECES] +
-                             (["Enchanted = 160 crafted into one"] if key in ENCH_SETS else []) +
+                             (["Enchanted: 160 made into one (/compact)"] if key in ENCH_SETS else []) +
                              ["Shown: the chestplate. All four", "pieces give the set bonus."]))
     for (key, name, rar, base, dmg, speed, enchs, ab, lore, pattern, rkey_map) in by_rank(WEAPONS):
         n = {}
@@ -434,7 +419,7 @@ playsound minecraft:block.glass.break player @a[distance=..16] ~ ~ ~ 1 0.6
                 if ch != " ": n[ch] = n.get(ch, 0) + 1
         en = ENCH_WEAPONS.get(key, "")
         pages.append(preview(items[key], [f"{c} {'Enchanted ' if ch in en else ''}{nice(rkey_map[ch])}" for ch, c in n.items()] +
-                             [" / ".join(r.replace(" ", "·") for r in pattern)] + (["Enchanted = 160 crafted into one"] if en else [])))
+                             [" / ".join(r.replace(" ", "·") for r in pattern)] + (["Enchanted: 160 made into one (/compact)"] if en else [])))
     # sets on the top two rows, weapons and tools from the third row (54-slot chest, bottom row for the back button)
     slots = list(range(0, len(SETS))) + list(range(18, 18 + len(WEAPONS)))
     assert len(SETS) <= 18 and len(WEAPONS) <= 27

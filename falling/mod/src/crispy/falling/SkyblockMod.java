@@ -98,6 +98,7 @@ public class SkyblockMod implements ModInitializer {
             Guide.register(d);
             Visits.register(d);
             IslandHomes.register(d);
+            Compact.register(d);
             d.register(Commands.literal("invite").then(Commands.argument("player", EntityArgument.player())
                     .executes(c -> invite(c.getSource(), EntityArgument.getPlayer(c, "player")))));
             d.register(Commands.literal("challenges")
