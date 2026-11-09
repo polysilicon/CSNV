@@ -7,15 +7,13 @@ against the live servers on 2026-11-08; if a feature changes, update this file f
 
 | | |
 |---|---|
-| Java | **playcrispy.com** (works once its SRV record is live; until then use **crispyanarchy.net**, which already works without a port) |
+| Java | **crispyanarchy.net** (no port needed: its SRV record points players' games at port 13134) |
 | Bedrock | **crispyanarchy.net**, port **19100** (Bedrock ignores SRV records, so it always needs the port) |
 | Discord | **discord.gg/hF2bQgU** (permanent invite) |
 | Versions | Java: built on 26.2; any version from 1.13 to 26.3 can join. Bedrock: current version |
 
 Sites with separate **IP and port fields** (used to check the server is online): IP `crispyanarchy.net`, port
-`13134`. Not `playcrispy.com`: on its own that name points at your website, and only players' games follow the SRV
-record to the server; a site that checks the IP and port directly would show you as offline. Put `playcrispy.com`
-in the title and description for players to type.
+`13134`.
 
 ## Title (pick the longest the site allows)
 
@@ -66,7 +64,7 @@ EVERYWHERE
 - Tags, name colours and chat colours that show on every server
 - Chat linked across all servers and our Discord
 
-Java: playcrispy.com
+Java: crispyanarchy.net
 Bedrock: crispyanarchy.net, port 19100
 Discord: discord.gg/hF2bQgU
 ```
@@ -78,8 +76,8 @@ Enchants. Pick the ones each site offers; most allow 5-10.
 
 ## Banners
 
-`assets/banner/network/`: `crispy_playcrispy_468x60.gif` (the standard list size) and `crispy_playcrispy_728x90.gif`,
-each with a still `.png`/`.jpg` (the gamemodes and the address in one frame, for sites that only take still images, like Minecraft-Server-List) and an `.mp4` (H.264, same 13.3 s loop; `assets/banner/gif2mp4.py` makes it from the GIF). Use the `crispy_crispyanarchy_*` files until playcrispy.com works. Regenerate with
+`assets/banner/network/`: `crispy_crispyanarchy_468x60.gif` (the standard list size) and `crispy_crispyanarchy_728x90.gif`,
+each with a still `.png`/`.jpg` (the gamemodes and the address in one frame, for sites that only take still images, like Minecraft-Server-List) and an `.mp4` (H.264, same 13.3 s loop; `assets/banner/gif2mp4.py` makes it from the GIF). Regenerate with
 `python3 assets/banner/make_network_banner.py <out.gif> <w> <h> <address>`.
 
 ## The 7 sites
