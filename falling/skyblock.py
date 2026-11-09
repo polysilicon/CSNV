@@ -890,14 +890,15 @@ for (nx, nz, tag, prof, who, line) in ((6, -9, "cs_bazaar", "cartographer", "Baz
         + f",Rotation:[{yaw}f,0f]}}")
     npc_lines.append(label(nx + 0.5, Y + 3.15, nz + 0.5, snbt({"text": who, "color": "gold", "bold": True,
                      "extra": [txt(f"\n{line} · click", "gray", bold=False)]}), 0.7, bill="center", tag="cs_npcl"))
-# 2.16.5: the Compactor (opens /compact), across the plaza from the Bazaar, with an info board beside him
-npc_lines.append(f"summon minecraft:villager 6.5 {Y+1} 9.5 " + snbt({
+# 2.16.5: the Compactor (opens /compact), between the Farming and Mining stalls (the booth round him is hand-built),
+# with an info board beside him
+npc_lines.append(f"summon minecraft:villager 12.5 {Y+1} 0.5 " + snbt({
     "NoAI": True, "Invulnerable": True, "Silent": True, "PersistenceRequired": True, "Tags": [NS, "cs_npc", "cs_compact"],
     "VillagerData": {"profession": "minecraft:cleric", "level": 5, "type": "minecraft:plains"}, "Offers": {"Recipes": []}})[:-1]
-    + f",Rotation:[{round(_m.degrees(_m.atan2(6, -9)), 1)}f,0f]}}")
-npc_lines.append(label(6.5, Y + 3.15, 9.5, snbt({"text": "Compactor", "color": "gold", "bold": True,
+    + ",Rotation:[90f,0f]}")
+npc_lines.append(label(12.5, Y + 3.15, 0.5, snbt({"text": "Compactor", "color": "gold", "bold": True,
                  "extra": [txt("\nenchanted resources · click", "gray", bold=False)]}), 0.7, bill="center", tag="cs_npcl"))
-npc_lines.append(label(8.6, Y + 2.2, 9.5, snbt({"text": "Enchanted Resources\n", "color": "green", "bold": True, "extra": [
+npc_lines.append(label(12.5, Y + 2.2, 2.7, snbt({"text": "Enchanted Resources\n", "color": "green", "bold": True, "extra": [
     txt("160 of a resource = 1 Enchanted\n", "white", bold=False),
     txt("Click: make one\nShift-click: make as many as you can\n\n", "gray", bold=False),
     txt("The newer armor, weapons and tools\nare crafted from these. Recipes:\n/guide > Recipes\n\n", "gray", bold=False),
