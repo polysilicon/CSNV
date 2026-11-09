@@ -50,3 +50,22 @@ UDP. LocalXpose can't run a TCP and a UDP tunnel on the same public port, so the
 (crispyanarchy.net and us.loclx.io are the same IP). Players still use **crispyanarchy.net, port 19100**; a one-time
 "trust this server" prompt on first join is normal. Backup of the pre-change config: `config.yml.bak-nethernet`;
 the old jar is `Geyser-Velocity-2.11.3.jar.bak`. If Bedrock shows "Terracotta", Geyser is too old for the client.
+
+## Per-mode addresses + first-join welcome (CrispyTags 1.10.0) — staged 2026-11-09, deploy at night
+
+**Addresses:** `anarchy|skyblock|multiverse|factions|vanilla.crispyanarchy.net` go straight to that server
+(velocity.toml `[forced-hosts]`, falling back to the lobby if the server is down). Plain `crispyanarchy.net` still goes
+to the lobby. Each needs a DNS SRV record like the main one: `_minecraft._tcp.<mode>` → priority 0, weight 5,
+port 13134, target `us.loclx.io` (Java only).
+
+**Welcome:** `Newcomers.java` marks a player new at login when no server has a saved file for their UUID
+(`<instance>/Minecraft/world/players/data` or `world/playerdata`). If they land anywhere but the lobby they get a
+welcome with [Other modes] (/lobby), [Discord] and [Vote rewards], and everyone else online sees "<name> just joined
+Crispy for the first time, on <mode>. Say hi!". Lobby arrivals keep CrispyLobby's own welcome. The lobby's
+`cosmetics.joined-sources.player-data` now also lists Skyblock, Multiverse and Factions, so a player who started
+on one of those isn't treated as new when they first visit the lobby.
+
+Deploy (files are staged under inactive names):
+1. Proxy (test01): `plugins/CrispyTags-1.9.0.jar` → `.bak`, `CrispyTags-1.10.0.jar.pending` → `.jar`;
+   `velocity.toml` → `velocity.toml.bak-forcedhosts`, `velocity.toml.tonight` → `velocity.toml`; restart the proxy.
+2. Lobby: `plugins/CrispyLobby/config.yml` → `config.yml.bak-joined`, `config.yml.tonight` → `config.yml`; `vote reload`.
