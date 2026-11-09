@@ -76,6 +76,7 @@ public class SkyblockMod implements ModInitializer {
                         else if (t.equals("cs_bazaar")) Bazaar.open(p);
                         else if (t.equals("cs_warps")) Zones.openWarps(p);
                         else if (t.equals("cs_realtor")) HubPlots.open(p);
+                        else if (t.equals("cs_compact")) Compact.open(p);
                     }
                 return InteractionResult.SUCCESS;
             }
