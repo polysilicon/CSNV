@@ -370,6 +370,27 @@ MINIONS = [
     ("zombie", "Zombie", "zombie_head", "wooden_sword", 0x426E35, [("rotten_flesh", 1)], "rotten_flesh"),
     ("skeleton", "Skeleton", "skeleton_skull", "bow", 0xBCBCBC, [("bone", 1), ("arrow", 1)], "bone"),
     ("spider", "Spider", "cobweb", "wooden_sword", 0x332A23, [("string", 1), ("spider_eye", 1)], "string"),
+    # 2.16.3: more foraging, farming, mining, combat and a fishing minion (all common resources)
+    ("spruce", "Spruce", "spruce_log", "wooden_axe", 0x3B2A17, [("spruce_log", 1)], "spruce_log"),
+    ("dark_oak", "Dark Oak", "dark_oak_log", "wooden_axe", 0x3C2A14, [("dark_oak_log", 1)], "dark_oak_log"),
+    ("jungle", "Jungle", "jungle_log", "wooden_axe", 0x8A6A3A, [("jungle_log", 1)], "jungle_log"),
+    ("acacia", "Acacia", "acacia_log", "wooden_axe", 0xA8582C, [("acacia_log", 1)], "acacia_log"),
+    ("cherry", "Cherry", "cherry_log", "wooden_axe", 0xE7A3B7, [("cherry_log", 1)], "cherry_log"),
+    ("mangrove", "Mangrove", "mangrove_log", "wooden_axe", 0x6E2E2A, [("mangrove_log", 1)], "mangrove_log"),
+    ("beetroot", "Beetroot", "beetroot", "wooden_hoe", 0x9E2A2A, [("beetroot", 1), ("beetroot_seeds", 1)], "beetroot"),
+    ("cactus", "Cactus", "cactus", "wooden_hoe", 0x5A8A2E, [("cactus", 1)], "cactus"),
+    ("mushroom", "Mushroom", "red_mushroom_block", "wooden_hoe", 0xC23B32, [("red_mushroom", 1), ("brown_mushroom", 1)], "red_mushroom"),
+    ("cocoa", "Cocoa", "cocoa_beans", "wooden_hoe", 0x7A4A22, [("cocoa_beans", 2)], "cocoa_beans"),
+    ("bamboo", "Bamboo", "bamboo", "wooden_hoe", 0x7FA03A, [("bamboo", 2)], "bamboo"),
+    ("berry", "Sweet Berry", "sweet_berries", "wooden_hoe", 0xB0263A, [("sweet_berries", 2)], "sweet_berries"),
+    ("pig", "Pig", "pink_terracotta", "wooden_sword", 0xF0A0A8, [("porkchop", 1)], "porkchop"),
+    ("rabbit", "Rabbit", "rabbit_hide", "wooden_sword", 0xA88A6A, [("rabbit", 1), ("rabbit_hide", 1)], "rabbit_hide"),
+    ("copper", "Copper", "copper_ore", "stone_pickaxe", 0xC06A40, [("raw_copper", 2)], "copper_ingot"),
+    ("gravel", "Gravel", "gravel", "wooden_shovel", 0x837E7C, [("gravel", 1), ("flint", 1)], "gravel"),
+    ("ice", "Ice", "ice", "wooden_pickaxe", 0x9CC4F5, [("ice", 1), ("snowball", 2)], "ice"),
+    ("creeper", "Creeper", "creeper_head", "wooden_sword", 0x5FB04A, [("gunpowder", 1)], "gunpowder"),
+    ("slime", "Slime", "slime_block", "wooden_sword", 0x7CC66A, [("slime_ball", 1)], "slime_ball"),
+    ("fishing", "Fishing", "cod", "fishing_rod", 0x3A7AB8, [("cod", 1), ("salmon", 1)], "cod"),
 ]
 ROMAN = ["", "I", "II", "III", "IV", "V"]
 # seconds per action, storage (items), upgrade cost from the tier below (coins, items of the minion's recipe item)
