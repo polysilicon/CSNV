@@ -59,6 +59,8 @@ public final class Compact {
                 Component.literal(PER + " " + nice(item) + " pressed into one.").withStyle(st -> st.withItalic(false).withColor(ChatFormatting.GRAY)),
                 Component.literal("Used to craft gear (see /guide > Recipes).").withStyle(st -> st.withItalic(false).withColor(ChatFormatting.DARK_GRAY)))));
         s.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
+        s.remove(DataComponents.CONSUMABLE);   // an Enchanted Porkchop or Chorus Fruit isn't eaten by mistake
+        s.remove(DataComponents.FOOD);
         CompoundTag tag = new CompoundTag();
         tag.putBoolean("cs_ench", true);
         s.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
@@ -90,6 +92,14 @@ public final class Compact {
     }
     public static boolean needsEnchanted(MinecraftServer server, RecipeHolder<?> h) {
         return h != null && rules(server).containsKey(h.id().identifier().toString());
+    }
+
+    /** Right-click with an enchanted resource does nothing (no throwing an Enchanted Ender Pearl, no placing an
+     *  Enchanted Oak Log as a plain log). */
+    static net.minecraft.world.InteractionResult onUse(Player player, net.minecraft.world.InteractionHand hand) {
+        if (!enchanted(player.getItemInHand(hand))) return net.minecraft.world.InteractionResult.PASS;
+        if (player instanceof ServerPlayer sp) sp.sendOverlayMessage(t("Enchanted resources are only for crafting.", ChatFormatting.YELLOW));
+        return net.minecraft.world.InteractionResult.FAIL;
     }
 
     // ------------------------------------------------------------------ /compact

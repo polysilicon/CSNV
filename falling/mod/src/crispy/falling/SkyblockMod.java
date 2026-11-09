@@ -64,6 +64,7 @@ public class SkyblockMod implements ModInitializer {
         UseBlockCallback.EVENT.register(Zones::onUseBlock);
         UseBlockCallback.EVENT.register(Realms::onUseBlock);
         UseBlockCallback.EVENT.register(Minions::onUseBlock);
+        UseItemCallback.EVENT.register((player, world, hand) -> Compact.onUse(player, hand));
         UseItemCallback.EVENT.register(Visits::onUseItem);
         UseItemCallback.EVENT.register(Guide::onUseItem);
         UseItemCallback.EVENT.register(Gear::onUseItem);

@@ -15,8 +15,14 @@ RARITY = {"UNCOMMON": "green", "RARE": "blue", "EPIC": "dark_purple", "LEGENDARY
 RANK = {"UNCOMMON": 1, "RARE": 2, "EPIC": 3, "LEGENDARY": 4}
 # 2.16.5: these need ENCHANTED resources (160 of the resource made into one in /compact; the mod checks the custom
 # data, since a recipe can't): sets -> their main block (#), weapons/tools -> the listed recipe letters
-ENCH_SETS = {"lumberjack", "copper", "frost", "slime", "demolition", "wildwood"}
-ENCH_WEAPONS = {"thornfang": "BC", "cleaver": "L", "frostbite": "I", "blaster": "T", "harvester": "M", "excavator": "C"}
+# 2.16.7: one cost rule for all gear -- Uncommon: plain resources; Rare: the core (C) is enchanted, the main block
+# plain; Epic: the main material (#) is enchanted; Legendary: boss loot, nothing enchanted. ENCH_SETS: set -> the
+# recipe letters that must be enchanted. ENCH_WEAPONS: the same for weapons and tools.
+ENCH_SETS = {"lapis": "C", "miner": "C", "golem": "C", "frost": "C", "slime": "C", "demolition": "C",
+             "blaze": "#", "ender": "#", "wildwood": "#"}
+ENCH_WEAPONS = {"zombie_sword": "F", "golem_sword": "I", "leaping_sword": "F", "aote": "E", "runaan": "B", "stonk": "G",
+                "cleaver": "L", "frostbite": "I", "harvester": "M", "excavator": "C",
+                "ember_rod": "M", "pigman_sword": "PG", "treecapitator": "O", "blaster": "T"}
 # recipe ids (2.16.4): gear/armor/<rank>_<set>_<piece>, gear/weapon/<rank>_<key>, gear/tool/<rank>_<key>, so the
 # guide can list each kind on its own, rarest last
 PIECES = [  # slot, vanilla piece suffix, armor slot name, recipe pattern (# = main block, C = core item)
@@ -52,32 +58,33 @@ SETS = [
     ("pumpkin", "Pumpkin Armor", "UNCOMMON", "leather", 0xE38A1D, "pumpkin", "jack_o_lantern",
      [2, 5, 4, 2], 0, {"max_health": ("add_value", 1.0)},
      {"chest": {"crispy_enchants:hardened": 1}},
-     "Squash Buckler", ["Resistance I: you take", "20% less damage."],
-     ["effect give @s minecraft:resistance 3 0 true"]),
+     "Squash Buckler", ["At night: Resistance I (you", "take 20% less damage)."],
+     ["execute store result score #tod cs_tmp run time query minecraft:day",
+      "execute if score #tod cs_tmp matches 13000..23000 run effect give @s minecraft:resistance 3 0 true"]),
     ("angler", "Angler Armor", "UNCOMMON", "leather", 0x2B8C8C, "dried_kelp_block", "cod",
      [2, 4, 3, 2], 0, {"oxygen_bonus": ("add_value", 1.0)},
      {"head": {"crispy_enchants:aquatic": 1, "minecraft:respiration": 3}, "feet": {"minecraft:depth_strider": 3}},
      "Deep Sea Diver", ["Water Breathing, Dolphin's Grace", "and Luck II (better fishing loot)."],
      ["effect give @s minecraft:water_breathing 3 0 true", "effect give @s minecraft:dolphins_grace 3 0 true",
       "effect give @s minecraft:luck 3 1 true"]),
-    ("lapis", "Lapis Armor", "RARE", "leather", 0x1E3FAD, "lapis_block", "diamond",
+    ("lapis", "Lapis Armor", "RARE", "leather", 0x1E3FAD, "lapis_block", "lapis_lazuli",
      [3, 6, 5, 2], 0, {"max_health": ("add_value", 2.0)},
      {"head": {"crispy_enchants:implants": 1}, "chest": {"minecraft:protection": 2}},
      "Deep Core", ["+4 hearts and Luck II.", "Each piece gives +1 heart too."],
      ["effect give @s minecraft:health_boost 3 1 true", "effect give @s minecraft:luck 3 1 true"]),
-    ("miner", "Miner's Outfit", "RARE", "leather", 0x5A5A5A, "coal_block", "iron_pickaxe",
+    ("miner", "Miner's Outfit", "RARE", "leather", 0x5A5A5A, "coal_block", "coal",
      [3, 6, 5, 2], 0, {"mining_efficiency": ("add_value", 4.0)},
      {"head": {"crispy_enchants:glowing": 1}, "chest": {"crispy_enchants:explosiveimmunity": 1},
       "feet": {"crispy_enchants:balancedlanding": 1}},
      "Pickaxe Prodigy", ["Haste II. Each piece mines", "a bit faster."],
      ["effect give @s minecraft:haste 3 1 true"]),
-    ("golem", "Golem Armor", "RARE", "iron", ("iron", "sentry"), "iron_block", "carved_pumpkin",
-     [3, 7, 6, 3], 1.0, {"knockback_resistance": ("add_value", 0.1)},
+    ("golem", "Golem Armor", "RARE", "iron", ("iron", "sentry"), "iron_block", "iron_ingot",
+     [3, 6, 5, 2], 0, {"knockback_resistance": ("add_value", 0.1)},
      {"chest": {"crispy_enchants:guardians": 2, "minecraft:protection": 3}, "legs": {"minecraft:protection": 2}},
      "Iron Skin", ["Resistance I. Every 30s you", "get Absorption II."],
      ["effect give @s minecraft:resistance 3 0 true",
       "execute if score #gear30 cs_tmp matches 0 run effect give @s minecraft:absorption 30 1 true"]),
-    ("blaze", "Blaze Armor", "EPIC", "leather", 0xF5A623, "magma_block", "blaze_rod",
+    ("blaze", "Blaze Armor", "EPIC", "leather", 0xF5A623, "magma_cream", "blaze_rod",
      [3, 7, 6, 3], 1.0, {"attack_damage": ("add_value", 0.5)},
      {"head": {"crispy_enchants:molten": 2}, "chest": {"crispy_enchants:molten": 2, "minecraft:fire_protection": 4},
       "legs": {"crispy_enchants:molten": 2}, "feet": {"crispy_enchants:molten": 2}},
@@ -85,7 +92,7 @@ SETS = [
      ["effect give @s minecraft:fire_resistance 3 0 true",
       "execute if dimension minecraft:the_nether run effect give @s minecraft:strength 3 0 true",
       "execute if dimension minecraft:the_nether run effect give @s minecraft:speed 3 0 true"]),
-    ("ender", "Ender Armor", "EPIC", "leather", 0x3B1E5C, "purpur_block", "ender_eye",
+    ("ender", "Ender Armor", "EPIC", "leather", 0x3B1E5C, "chorus_fruit", "ender_eye",
      [3, 7, 6, 3], 1.0, {"max_health": ("add_value", 2.0)},
      {"head": {"crispy_enchants:endershift": 2}, "chest": {"crispy_enchants:trickster": 2},
       "feet": {"crispy_enchants:endershift": 2, "minecraft:feather_falling": 4}},
@@ -100,13 +107,13 @@ SETS = [
      "Timberland", ["Haste II. Holding an axe:", "Strength I too."],
      ["effect give @s minecraft:haste 3 1 true",
       "execute if items entity @s weapon.mainhand #minecraft:axes run effect give @s minecraft:strength 3 0 true"]),
-    ("copper", "Copper Armor", "UNCOMMON", "iron", ("copper", "bolt"), "raw_copper", "lightning_rod",
+    ("copper", "Copper Armor", "UNCOMMON", "iron", ("copper", "bolt"), "copper_block", "lightning_rod",
      [2, 5, 4, 2], 0, {"movement_speed": ("add_multiplied_base", 0.02)},
      {"chest": {"minecraft:protection": 2}, "feet": {"crispy_enchants:gears": 1}},
      "Live Wire", ["Speed I. Every 30s you get", "a jolt: Speed II for 8 seconds."],
      ["effect give @s minecraft:speed 3 0 true",
       "execute if score #gear30 cs_tmp matches 0 run effect give @s minecraft:speed 8 1 true"]),
-    ("frost", "Frost Armor", "RARE", "leather", 0x9CD6F5, "ice", "blue_ice",
+    ("frost", "Frost Armor", "RARE", "leather", 0x9CD6F5, "packed_ice", "ice",
      [3, 6, 5, 2], 0, {"max_health": ("add_value", 1.0)},
      {"head": {"crispy_enchants:frozen": 1}, "chest": {"crispy_enchants:frozen": 2}, "legs": {"crispy_enchants:frozen": 1},
       "feet": {"minecraft:frost_walker": 2}},
@@ -115,12 +122,12 @@ SETS = [
       "execute if block ~ ~-0.5 ~ #minecraft:ice run effect give @s minecraft:speed 3 0 true",
       "execute if block ~ ~-0.5 ~ minecraft:snow_block run effect give @s minecraft:speed 3 0 true",
       "execute if block ~ ~ ~ minecraft:snow run effect give @s minecraft:speed 3 0 true"]),
-    ("slime", "Slime Armor", "RARE", "leather", 0x7CC66A, "slime_ball", "rabbit_hide",
+    ("slime", "Slime Armor", "RARE", "leather", 0x7CC66A, "slime_block", "slime_ball",
      [3, 6, 5, 2], 0, {"safe_fall_distance": ("add_value", 6.0)},
      {"feet": {"crispy_enchants:springs": 2, "minecraft:feather_falling": 4}},
      "Bouncy", ["Jump Boost II, and you take", "far less fall damage."],
      ["effect give @s minecraft:jump_boost 3 1 true"]),
-    ("demolition", "Demolition Armor", "RARE", "leather", 0x4E7A3A, "gunpowder", "tnt",
+    ("demolition", "Demolition Armor", "RARE", "leather", 0x4E7A3A, "tnt", "gunpowder",
      [3, 6, 5, 2], 0, {"explosion_knockback_resistance": ("add_value", 0.5)},
      {"head": {"minecraft:blast_protection": 4}, "chest": {"minecraft:blast_protection": 4, "crispy_enchants:explosiveimmunity": 1},
       "legs": {"minecraft:blast_protection": 4}, "feet": {"minecraft:blast_protection": 4}},
@@ -159,20 +166,20 @@ WEAPONS = [
      [], ["FIF", "FIF", " S "], {"F": "rotten_flesh", "I": "iron_block", "S": "stick"}),
     ("golem_sword", "Golem Sword", "RARE", "iron_sword", 9, 1.4,
      {"minecraft:knockback": 2, "crispy_enchants:obliterate": 1}, ("iron_punch", "Iron Punch", ["Slam the ground: 10 damage to", "every enemy within 5 blocks", "and knocks them into the air."], 8),
-     [], [" I ", " I ", "PSP"], {"I": "iron_block", "P": "carved_pumpkin", "S": "stick"}),
+     [], [" I ", " I ", "PSP"], {"I": "iron_ingot", "P": "carved_pumpkin", "S": "stick"}),
     ("leaping_sword", "Leaping Sword", "RARE", "iron_sword", 8, 1.6,
      {"minecraft:sharpness": 2, "crispy_enchants:shackle": 1}, ("leap", "Leap", ["Launch yourself forward and", "fall slowly for a moment."], 4),
      [], ["F F", " L ", " S "], {"F": "feather", "L": "slime_block", "S": "stick"}),
     ("aote", "Aspect of the End", "RARE", "diamond_sword", 9, 1.6,
      {"minecraft:sharpness": 3, "crispy_enchants:enderslayer": 3}, ("aote", "Instant Transmission", ["Teleport 8 blocks ahead of you", "and gain Speed II for 3 seconds."], 2),
-     [], [" E ", " E ", " D "], {"E": "ender_eye", "D": "diamond_sword"}),
+     [], [" E ", " E ", " D "], {"E": "ender_pearl", "D": "diamond_sword"}),
     ("ember_rod", "Ember Rod", "EPIC", "blaze_rod", 5, 1.6,
      {"crispy_enchants:scorch": 2}, ("ember", "Fire Blast", ["Shoot a blast of flame at the", "first enemy in your sight", "(12 damage, up to 16 blocks)."], 3),
-     [], [" M ", " B ", " B "], {"M": "magma_block", "B": "blaze_rod"}),
+     [], [" M ", "MBM", " B "], {"M": "coal", "B": "blaze_rod"}),
     ("pigman_sword", "Pigman Sword", "EPIC", "golden_sword", 10, 1.6,
      {"minecraft:fire_aspect": 2, "minecraft:unbreaking": 5, "crispy_enchants:netherslayer": 3},
      ("burning_souls", "Burning Souls", ["8 damage to enemies within 6", "blocks, then Absorption II", "for 15 seconds."], 20),
-     [], ["PGP", " G ", " R "], {"P": "cooked_porkchop", "G": "gold_block", "R": "blaze_rod"}),
+     [], ["PGP", " G ", " R "], {"P": "porkchop", "G": "raw_gold", "R": "blaze_rod"}),
     ("voidedge", "Voidedge", "LEGENDARY", "netherite_sword", 13, 1.6,
      {"minecraft:sharpness": 5, "crispy_enchants:lifesteal": 2, "crispy_enchants:execute": 3},
      ("shadow_step", "Shadow Step", ["Teleport behind the nearest", "enemy within 12 blocks and", "strike it for 16 damage."], 8),
@@ -180,19 +187,19 @@ WEAPONS = [
     ("runaan", "Runaan's Crossbow", "RARE", "crossbow", 0, 0,
      {"minecraft:multishot": 1, "minecraft:quick_charge": 3, "minecraft:unbreaking": 3, "crispy_enchants:snare": 2}, None,
      ["Fires three arrows at once and", "reloads in a flash."],
-     ["BBB", "SCS", " B "], {"B": "bone_block", "S": "string", "C": "crossbow"}),
+     ["BBB", "SCS", " B "], {"B": "bone", "S": "string", "C": "crossbow"}),
     ("stonk", "Stonk", "RARE", "golden_pickaxe", 0, 0,
      {"minecraft:efficiency": 6, "crispy_enchants:telepathy": 1, "crispy_enchants:autosmelt": 1, "crispy_enchants:experience": 3}, None,
      ["Mines faster than any vanilla", "pickaxe, smelts ores and puts", "the drops straight in your bag."],
-     ["GGG", " S ", " S "], {"G": "gold_block", "S": "stick"}),
+     ["GGG", " S ", " S "], {"G": "raw_gold", "S": "stick"}),
     ("treecapitator", "Treecapitator", "EPIC", "golden_axe", 0, 0,
      {"minecraft:efficiency": 5, "crispy_enchants:timber": 3, "crispy_enchants:telepathy": 1}, None,
      ["A good chance to fell a whole", "tree with one swing."],
-     ["OO", "OS", " S"], {"O": "obsidian", "S": "stick"}),
+     ["OO", "OS", " S"], {"O": "oak_log", "S": "stick"}),
     # 2.16.4: from the newer minions
     ("thornfang", "Thornfang Dagger", "UNCOMMON", "iron_sword", 6, 2.0,
      {"crispy_enchants:poison": 1}, ("thorn_burst", "Thorn Burst", ["Poison every enemy within", "4 blocks for 5 seconds."], 12),
-     [], [" B ", " C ", " S "], {"B": "sweet_berries", "C": "cactus", "S": "stick"}),
+     [], ["BBB", " C ", " S "], {"B": "sweet_berries", "C": "cactus", "S": "stick"}),
     ("cleaver", "Woodsman's Cleaver", "RARE", "iron_axe", 10, 0.9,
      {"minecraft:sharpness": 3, "crispy_enchants:timber": 2, "crispy_enchants:telepathy": 1}, None,
      ["Hits hard and fells trees too."],
@@ -262,7 +269,11 @@ def build(NS, fn, js, txt, extra_recipes=()):
             js(f"data/{NS}/recipe/gear/{rkey_id}.json", {"type": "minecraft:crafting_shaped", "category": "equipment", "group": f"crispy_gear_{key}",
                 "pattern": pattern, "key": {"#": f"minecraft:{block}", "C": f"minecraft:{core}"}, "result": it})
             recipes.append(rkey_id)
-            if key in ENCH_SETS: ench[f"{NS}:gear/{rkey_id}"] = [f"minecraft:{block}"]
+            if key in ENCH_SETS:
+                letters = ENCH_SETS[key]
+                used = "".join(pattern)
+                ench[f"{NS}:gear/{rkey_id}"] = sorted({f"minecraft:{block}"} if "#" in letters else set() |
+                                                     ({f"minecraft:{core}"} if "C" in letters and "C" in used else set()))
     for (key, name, rar, base, dmg, speed, enchs, ab, lore, pattern, rkey_map) in WEAPONS:
         comp = {"minecraft:custom_name": txt(name, RARITY[rar]), "minecraft:enchantments": enchs, "minecraft:unbreakable": {}}
         if dmg:
@@ -407,9 +418,11 @@ playsound minecraft:block.glass.break player @a[distance=..16] ~ ~ ~ 1 0.6
     for (key, name, rar, mat, look, block, core, *_r) in by_rank(SETS):
         chest = items[f"{key}_chestplate"]
         cnt = lambda pat, ch: sum(row.count(ch) for row in pat)
-        main = ("Enchanted " if key in ENCH_SETS else "") + nice(block)
-        pages.append(preview(chest, [f"{main} + {nice(core)} in the piece's shape:"] +
-                             [f"{pn}: {cnt(pat, '#')} {main}, {cnt(pat, 'C')} {nice(core)}" for _s, _x, pn, pat in PIECES] +
+        el = ENCH_SETS.get(key, "")
+        main = ("Enchanted " if "#" in el else "") + nice(block)
+        cor = ("Enchanted " if "C" in el else "") + nice(core)
+        pages.append(preview(chest, [f"{main} + {cor} in the piece's shape:"] +
+                             [f"{pn}: {cnt(pat, '#')} {main}, {cnt(pat, 'C')} {cor}" for _s, _x, pn, pat in PIECES] +
                              (["Enchanted: 160 made into one (/compact)"] if key in ENCH_SETS else []) +
                              ["Shown: the chestplate. All four", "pieces give the set bonus."]))
     for (key, name, rar, base, dmg, speed, enchs, ab, lore, pattern, rkey_map) in by_rank(WEAPONS):
