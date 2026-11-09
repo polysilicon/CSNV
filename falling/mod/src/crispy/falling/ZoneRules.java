@@ -179,20 +179,46 @@ public final class ZoneRules {
         if (!s.has(DataComponents.CUSTOM_DATA)) return s;
         CompoundTag tag = s.get(DataComponents.CUSTOM_DATA).copyTag();
         tag.remove(MARK);
-        if (tag.isEmpty()) s.remove(DataComponents.CUSTOM_DATA); else s.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+        if (tag.isEmpty()) reset(s, DataComponents.CUSTOM_DATA); else s.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         List<Component> lore = new ArrayList<>(s.getOrDefault(DataComponents.LORE, ItemLore.EMPTY).lines());
         lore.removeIf(l -> l.getString().equals(MARK_LINE));
-        if (lore.isEmpty()) s.remove(DataComponents.LORE); else s.set(DataComponents.LORE, new ItemLore(lore));
+        if (lore.isEmpty()) reset(s, DataComponents.LORE); else s.set(DataComponents.LORE, new ItemLore(lore));
         return s;
+    }
+    /** Put a component back to the item's default. (2.16.2: remove() on a component every item has by default, like
+     *  lore in 26.2, leaves a "!lore" removal behind, and those stacks then wouldn't stack with normal ones.) */
+    static <T> void reset(ItemStack s, net.minecraft.core.component.DataComponentType<T> type) {
+        T def = s.getItem().components().get(type);
+        if (def != null) s.set(type, def); else s.remove(type);
+    }
+    /** Undo the removal patches older unmarks left (true if it changed anything). */
+    static boolean repair(ItemStack s) {
+        if (s.isEmpty()) return false;
+        boolean changed = false;
+        for (var e : s.getComponentsPatch().entrySet()) {
+            var type = e.getKey();
+            if ((type == DataComponents.LORE || type == DataComponents.CUSTOM_DATA) && e.getValue().isEmpty() && s.getItem().components().has(type)) {
+                reset(s, type); changed = true;
+            }
+        }
+        return changed;
     }
     static void unmarkAll(ServerPlayer p) {
         var inv = p.getInventory();
         List<ItemStack> moved = new ArrayList<>();
         for (int i = 0; i < inv.getContainerSize(); i++) {
             ItemStack s = inv.getItem(i);
-            if (!s.isEmpty() && gathered(s)) { inv.setItem(i, ItemStack.EMPTY); moved.add(unmark(s)); }
+            if (s.isEmpty()) continue;
+            if (gathered(s) || repair(s)) { inv.setItem(i, ItemStack.EMPTY); moved.add(unmark(s)); }
         }
         for (ItemStack s : moved) inv.placeItemBackInInventory(s);   // merges with the unmarked stacks again
+        var ender = p.getEnderChestInventory();   // stashed there while in a zone, or an old "!lore" stack
+        for (int i = 0; i < ender.getContainerSize(); i++) {
+            ItemStack s = ender.getItem(i);
+            if (!s.isEmpty() && (gathered(s) | repair(s))) { unmark(s); ender.setChanged(); }
+        }
+        ItemStack carried = p.containerMenu.getCarried();
+        if (!carried.isEmpty() && (gathered(carried) | repair(carried))) unmark(carried);
     }
 
     // ------------------------------------------------------------------ dying in a zone
