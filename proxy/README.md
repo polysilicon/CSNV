@@ -35,3 +35,18 @@
 - Name colors in the tab list (1.3.0): reads the lobby's `namecolors.json` (set from the cosmetics menu) and sets each
   player's tab-list name to the same colors the lobby uses (`rainbow` and `|` sequences cycle per letter). Players
   without a color keep TAB's default name. The file is re-read when it changes.
+
+## Bedrock (Geyser 2.12.1+, NetherNet) — 2026-11-09
+
+Bedrock 26.60+ dropped RakNet; clients now join with NetherNet: a TCP "signaling" request, then WebRTC gameplay over
+UDP. LocalXpose can't run a TCP and a UDP tunnel on the same public port, so the two are split:
+
+| LocalXpose tunnel | Public | Local (proxy host) | Geyser config.yml |
+|---|---|---|---|
+| bedrocktcp (TCP) | us.loclx.io:19100 | :19100 | `bedrock.port: 19100` (built-in signaling) |
+| bedrockudp (UDP) | us.loclx.io:19101 | :19101 | `bedrock.webrtc-port: 19101` |
+
+`bedrock.signaling.advertise-addresses: ["crispyanarchy.net:19101"]` tells clients where the UDP side is
+(crispyanarchy.net and us.loclx.io are the same IP). Players still use **crispyanarchy.net, port 19100**; a one-time
+"trust this server" prompt on first join is normal. Backup of the pre-change config: `config.yml.bak-nethernet`;
+the old jar is `Geyser-Velocity-2.11.3.jar.bak`. If Bedrock shows "Terracotta", Geyser is too old for the client.
