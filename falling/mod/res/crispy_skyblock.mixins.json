@@ -3,6 +3,6 @@
   "minVersion": "0.8",
   "package": "crispy.falling.mixin",
   "compatibilityLevel": "JAVA_21",
-  "server": ["EndPortalMixin", "NetherPortalMixin", "BlockItemMixin", "LivingEntityMixin", "LiquidBlockMixin", "MobMixin", "ServerPlayerMixin"],
+  "server": ["EndPortalMixin", "CraftingMenuMixin", "CrafterBlockMixin", "ResultSlotMixin", "NetherPortalMixin", "BlockItemMixin", "LivingEntityMixin", "LiquidBlockMixin", "MobMixin", "ServerPlayerMixin"],
   "injectors": { "defaultRequire": 1 }
 }

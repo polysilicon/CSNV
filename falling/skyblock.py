@@ -445,6 +445,8 @@ for k, n, h, t, c, d, r in MINIONS:
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import gear
 GEAR = gear.build(NS, fn, js, txt, [f"{NS}:minion_{k}" for k, *_r in MINIONS])
+ECO["ench"] = [{"recipe": r, "items": v} for r, v in GEAR["ench"].items()]   # 2.16.5: recipes that need enchanted resources
+ECO["compact"] = GEAR["compact"]                                               # resources with an enchanted version
 import expansion   # pets, resource zones, warps (the mod does the Bazaar, upgrades, pets and zone regrowth)
 EXP = expansion.build(NS, fn, js, txt, snbt, Build)
 import district, hubdeco    # hub plots: 16 plots players buy, in a ring round the hub's hills (HubPlots.java runs them)

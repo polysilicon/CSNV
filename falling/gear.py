@@ -13,6 +13,11 @@
 
 RARITY = {"UNCOMMON": "green", "RARE": "blue", "EPIC": "dark_purple", "LEGENDARY": "gold"}
 RANK = {"UNCOMMON": 1, "RARE": 2, "EPIC": 3, "LEGENDARY": 4}
+# 2.16.5: these need ENCHANTED resources (crafted Hypixel-style: 32 of the resource in each of 5 slots in a plus shape;
+# the mod checks the custom data and the 32 per slot, since a recipe can't): sets -> their main block (#), weapons/tools -> the listed recipe letters
+ENCH_PER = 160   # 32 in each of 5 slots
+ENCH_SETS = {"lumberjack", "copper", "frost", "slime", "demolition", "wildwood"}
+ENCH_WEAPONS = {"thornfang": "BC", "cleaver": "L", "frostbite": "I", "blaster": "T", "harvester": "M", "excavator": "C"}
 # recipe ids (2.16.4): gear/armor/<rank>_<set>_<piece>, gear/weapon/<rank>_<key>, gear/tool/<rank>_<key>, so the
 # guide can list each kind on its own, rarest last
 PIECES = [  # slot, vanilla piece suffix, armor slot name, recipe pattern (# = main block, C = core item)
@@ -96,13 +101,13 @@ SETS = [
      "Timberland", ["Haste II. Holding an axe:", "Strength I too."],
      ["effect give @s minecraft:haste 3 1 true",
       "execute if items entity @s weapon.mainhand #minecraft:axes run effect give @s minecraft:strength 3 0 true"]),
-    ("copper", "Copper Armor", "UNCOMMON", "iron", ("copper", "bolt"), "copper_block", "lightning_rod",
+    ("copper", "Copper Armor", "UNCOMMON", "iron", ("copper", "bolt"), "raw_copper", "lightning_rod",
      [2, 5, 4, 2], 0, {"movement_speed": ("add_multiplied_base", 0.02)},
      {"chest": {"minecraft:protection": 2}, "feet": {"crispy_enchants:gears": 1}},
      "Live Wire", ["Speed I. Every 30s you get", "a jolt: Speed II for 8 seconds."],
      ["effect give @s minecraft:speed 3 0 true",
       "execute if score #gear30 cs_tmp matches 0 run effect give @s minecraft:speed 8 1 true"]),
-    ("frost", "Frost Armor", "RARE", "leather", 0x9CD6F5, "packed_ice", "blue_ice",
+    ("frost", "Frost Armor", "RARE", "leather", 0x9CD6F5, "ice", "blue_ice",
      [3, 6, 5, 2], 0, {"max_health": ("add_value", 1.0)},
      {"head": {"crispy_enchants:frozen": 1}, "chest": {"crispy_enchants:frozen": 2}, "legs": {"crispy_enchants:frozen": 1},
       "feet": {"minecraft:frost_walker": 2}},
@@ -111,12 +116,12 @@ SETS = [
       "execute if block ~ ~-0.5 ~ #minecraft:ice run effect give @s minecraft:speed 3 0 true",
       "execute if block ~ ~-0.5 ~ minecraft:snow_block run effect give @s minecraft:speed 3 0 true",
       "execute if block ~ ~ ~ minecraft:snow run effect give @s minecraft:speed 3 0 true"]),
-    ("slime", "Slime Armor", "RARE", "leather", 0x7CC66A, "slime_block", "rabbit_hide",
+    ("slime", "Slime Armor", "RARE", "leather", 0x7CC66A, "slime_ball", "rabbit_hide",
      [3, 6, 5, 2], 0, {"safe_fall_distance": ("add_value", 6.0)},
      {"feet": {"crispy_enchants:springs": 2, "minecraft:feather_falling": 4}},
      "Bouncy", ["Jump Boost II, and you take", "far less fall damage."],
      ["effect give @s minecraft:jump_boost 3 1 true"]),
-    ("demolition", "Demolition Armor", "RARE", "leather", 0x4E7A3A, "tnt", "gunpowder",
+    ("demolition", "Demolition Armor", "RARE", "leather", 0x4E7A3A, "gunpowder", "tnt",
      [3, 6, 5, 2], 0, {"explosion_knockback_resistance": ("add_value", 0.5)},
      {"head": {"minecraft:blast_protection": 4}, "chest": {"minecraft:blast_protection": 4, "crispy_enchants:explosiveimmunity": 1},
       "legs": {"minecraft:blast_protection": 4}, "feet": {"minecraft:blast_protection": 4}},
@@ -195,19 +200,19 @@ WEAPONS = [
      ["LL ", "LS ", " S "], {"L": "spruce_log", "S": "stick"}),
     ("frostbite", "Frostbite Blade", "RARE", "diamond_sword", 9, 1.6,
      {"minecraft:sharpness": 2, "crispy_enchants:iceaspect": 2}, ("ice_spike", "Ice Spike", ["8 damage to enemies within 5", "blocks and freeze them in place", "for 3 seconds."], 10),
-     [], [" I ", " I ", " S "], {"I": "blue_ice", "S": "stick"}),
+     [], [" I ", " B ", " S "], {"I": "ice", "B": "blue_ice", "S": "stick"}),
     ("blaster", "Blaster Bow", "EPIC", "bow", 0, 0,
      {"minecraft:power": 5, "minecraft:punch": 2, "minecraft:unbreaking": 3, "crispy_enchants:venom": 2}, None,
      ["Hard-hitting arrows that knock", "enemies back and poison them."],
-     [" TS", "T S", " TS"], {"T": "tnt", "S": "string"}),
+     [" TS", "T S", " TS"], {"T": "gunpowder", "S": "string"}),
     ("harvester", "Harvester's Hoe", "RARE", "diamond_hoe", 0, 0,
      {"minecraft:efficiency": 5, "minecraft:fortune": 3, "minecraft:unbreaking": 3}, None,
      ["Fortune III: more crops from", "every harvest."],
-     ["MM ", " S ", " S "], {"M": "melon", "S": "stick"}),
+     ["MM ", " S ", " S "], {"M": "melon_slice", "S": "stick"}),
     ("excavator", "Excavator Shovel", "RARE", "diamond_shovel", 0, 0,
      {"minecraft:efficiency": 6, "crispy_enchants:telepathy": 1, "minecraft:unbreaking": 3}, None,
      ["Digs sand, gravel and dirt in", "a blink, straight into your bag."],
-     [" C ", " S ", " S "], {"C": "clay", "S": "stick"}),
+     [" C ", " S ", " S "], {"C": "clay_ball", "S": "stick"}),
     ("angler_rod", "Angler's Rod", "UNCOMMON", "fishing_rod", 0, 0,
      {"minecraft:luck_of_the_sea": 4, "minecraft:lure": 4, "minecraft:unbreaking": 3}, None,
      ["Better catches, and they bite", "much sooner."],
@@ -231,7 +236,7 @@ def build(NS, fn, js, txt, extra_recipes=()):
         return [{"type": f"minecraft:{a}", "id": f"{NS}:gear_{a}_{slot}", "amount": v, "operation": op, "slot": slot}
                 for a, (op, v) in attrs.items()]
 
-    items, menu_items, recipes = {}, [], []
+    items, menu_items, recipes, ench = {}, [], [], {}
 
     for (key, name, rar, mat, look, block, core, armor, tough, extra, enchs, bname, btext, _cmds) in SETS:
         for i, (slot, suffix, pname, pattern) in enumerate(PIECES):
@@ -258,6 +263,7 @@ def build(NS, fn, js, txt, extra_recipes=()):
             js(f"data/{NS}/recipe/gear/{rkey_id}.json", {"type": "minecraft:crafting_shaped", "category": "equipment", "group": f"crispy_gear_{key}",
                 "pattern": pattern, "key": {"#": f"minecraft:{block}", "C": f"minecraft:{core}"}, "result": it})
             recipes.append(rkey_id)
+            if key in ENCH_SETS: ench[f"{NS}:gear/{rkey_id}"] = [f"minecraft:{block}"]
     for (key, name, rar, base, dmg, speed, enchs, ab, lore, pattern, rkey_map) in WEAPONS:
         comp = {"minecraft:custom_name": txt(name, RARITY[rar]), "minecraft:enchantments": enchs, "minecraft:unbreakable": {}}
         if dmg:
@@ -280,6 +286,21 @@ def build(NS, fn, js, txt, extra_recipes=()):
         js(f"data/{NS}/recipe/gear/{rid}.json", {"type": "minecraft:crafting_shaped", "category": "equipment", "group": f"crispy_gear_{key}",
             "pattern": pattern, "key": {k: f"minecraft:{v}" for k, v in rkey_map.items()}, "result": it})
         recipes.append(rid)
+        if key in ENCH_WEAPONS: ench[f"{NS}:gear/{rid}"] = sorted({f"minecraft:{rkey_map[ch]}" for ch in ENCH_WEAPONS[key]})
+
+    # ---------------------------------------------------------------- enchanted resources (Hypixel style)
+    # 32 in each of 5 slots in a plus shape = 1 Enchanted <resource>; the mod enforces the 32 (Compact.java)
+    ench_items = sorted({i.removeprefix("minecraft:") for v in ench.values() for i in v})
+    VANILLA_NAME = {"slime_ball": "Slimeball"}
+    for i in ench_items:
+        nm = VANILLA_NAME.get(i, i.replace("_", " ").title())
+        it = {"id": f"minecraft:{i}", "count": 1, "components": {
+            "minecraft:custom_name": txt(f"Enchanted {nm}", "green"),
+            "minecraft:lore": [txt(f"{ENCH_PER} {nm} crafted into one.", "gray"), txt("Used to craft gear (see /guide > Recipes).", "dark_gray")],
+            "minecraft:enchantment_glint_override": True,
+            "minecraft:custom_data": {"cs_ench": True}}}
+        js(f"data/{NS}/recipe/enchanted/{i}.json", {"type": "minecraft:crafting_shaped", "category": "misc", "group": "crispy_enchanted",
+            "pattern": [" X ", "XXX", " X "], "key": {"X": f"minecraft:{i}"}, "result": it})
 
     # ---------------------------------------------------------------- set bonuses
     js(f"data/{NS}/tags/entity_type/gear_targets.json", {"values": [f"minecraft:{m}" for m in dict.fromkeys(GEAR_TARGETS)]})
@@ -292,9 +313,9 @@ def build(NS, fn, js, txt, extra_recipes=()):
 scoreboard players add #gear30 cs_tmp 1
 execute if score #gear30 cs_tmp matches 30.. run scoreboard players set #gear30 cs_tmp 0
 execute as @a[gamemode=!spectator] at @s run function {NS}:gear/bonus
-execute as @a unless score @s cs_gearv matches {len(recipes) + len(extra_recipes)} run function {NS}:gear/unlock
+execute as @a unless score @s cs_gearv matches {len(recipes) + len(ench_items) + len(extra_recipes)} run function {NS}:gear/unlock
 """)
-    unlock = [f"{NS}:gear/{r}" for r in recipes] + list(extra_recipes)
+    unlock = [f"{NS}:gear/{r}" for r in recipes] + [f"{NS}:enchanted/{i}" for i in ench_items] + list(extra_recipes)
     fn("gear/unlock", "\n".join(f"recipe give @s {r}" for r in unlock) + f"\nscoreboard players set @s cs_gearv {len(unlock)}")
 
     # ---------------------------------------------------------------- abilities (as and at the player)
@@ -401,15 +422,19 @@ playsound minecraft:block.glass.break player @a[distance=..16] ~ ~ ~ 1 0.6
     for (key, name, rar, mat, look, block, core, *_r) in by_rank(SETS):
         chest = items[f"{key}_chestplate"]
         cnt = lambda pat, ch: sum(row.count(ch) for row in pat)
-        pages.append(preview(chest, [f"{nice(block)} + {nice(core)} in the piece's shape:"] +
-                             [f"{pn}: {cnt(pat, '#')} {nice(block)}, {cnt(pat, 'C')} {nice(core)}" for _s, _x, pn, pat in PIECES] +
+        main = ("Enchanted " if key in ENCH_SETS else "") + nice(block)
+        pages.append(preview(chest, [f"{main} + {nice(core)} in the piece's shape:"] +
+                             [f"{pn}: {cnt(pat, '#')} {main}, {cnt(pat, 'C')} {nice(core)}" for _s, _x, pn, pat in PIECES] +
+                             (["Enchanted = 160 crafted into one"] if key in ENCH_SETS else []) +
                              ["Shown: the chestplate. All four", "pieces give the set bonus."]))
     for (key, name, rar, base, dmg, speed, enchs, ab, lore, pattern, rkey_map) in by_rank(WEAPONS):
         n = {}
         for row in pattern:
             for ch in row:
                 if ch != " ": n[ch] = n.get(ch, 0) + 1
-        pages.append(preview(items[key], [f"{c} {nice(rkey_map[ch])}" for ch, c in n.items()] + [" / ".join(r.replace(" ", "·") for r in pattern)]))
+        en = ENCH_WEAPONS.get(key, "")
+        pages.append(preview(items[key], [f"{c} {'Enchanted ' if ch in en else ''}{nice(rkey_map[ch])}" for ch, c in n.items()] +
+                             [" / ".join(r.replace(" ", "·") for r in pattern)] + (["Enchanted = 160 crafted into one"] if en else [])))
     # sets on the top two rows, weapons and tools from the third row (54-slot chest, bottom row for the back button)
     slots = list(range(0, len(SETS))) + list(range(18, 18 + len(WEAPONS)))
     assert len(SETS) <= 18 and len(WEAPONS) <= 27
@@ -419,4 +444,5 @@ playsound minecraft:block.glass.break player @a[distance=..16] ~ ~ ~ 1 0.6
                      [{"slot": 49, "cmd": "trigger cs_act set 7", "item": {"id": "minecraft:arrow", "count": 1,
                        "components": {"minecraft:custom_name": txt("Island Menu", "gray")}}}]}
     assert len(pages) == len(slots)
-    return {"menu": menu, "count": len(recipes), "sets": len(SETS), "weapons": len(WEAPONS)}
+    compact = sorted({i for v in ench.values() for i in v})
+    return {"menu": menu, "count": len(recipes), "sets": len(SETS), "weapons": len(WEAPONS), "ench": ench, "compact": compact}

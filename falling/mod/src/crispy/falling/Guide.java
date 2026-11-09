@@ -321,6 +321,10 @@ final class Guide {
                     (pl, x) -> recipeList(pl, "Weapons", recipes(server, "gear/weapon/"), 0));
             m.put(33, Ui.item(Items.DIAMOND_PICKAXE, t("Tools", ChatFormatting.AQUA), List.of(t(recipes(server, "gear/tool/").size() + " tools", ChatFormatting.GRAY)), false),
                     (pl, x) -> recipeList(pl, "Tools", recipes(server, "gear/tool/"), 0));
+            m.put(40, Ui.item(Items.EXPERIENCE_BOTTLE, t("Enchanted resources", ChatFormatting.GREEN), List.of(
+                    t(Compact.PER_SLOT + " of a resource in each of 5 slots", ChatFormatting.GRAY), t("(a plus shape) = 1 Enchanted. The", ChatFormatting.GRAY),
+                    t("newer gear is made from these.", ChatFormatting.GRAY)), true),
+                    (pl, c) -> recipeList(pl, "Enchanted resources", recipes(pl.level().getServer(), "enchanted/"), 0));
             m.put(36, back(), (pl, c) -> open(pl));
         });
     }
@@ -410,7 +414,8 @@ final class Guide {
                 List<Optional<Ingredient>> ings = s.getIngredients();
                 for (int y = 0; y < s.getHeight(); y++)
                     for (int x = 0; x < s.getWidth(); x++) {
-                        ItemStack st = ingredient(ings.get(y * s.getWidth() + x));
+                        ItemStack st = Compact.guideIngredient(p.level().getServer(), h, ingredient(ings.get(y * s.getWidth() + x)));
+                        if (!st.isEmpty() && Compact.isEnchantRecipe(h)) st.setCount(Compact.PER_SLOT);
                         if (!st.isEmpty()) m.put(grid[y * 3 + x], st, null);
                     }
             } else {
@@ -422,6 +427,10 @@ final class Guide {
                 m.put(4, Ui.item(Items.PAPER, t("Shapeless: any arrangement", ChatFormatting.GRAY), List.of(), false), null);
             }
             m.put(23, Ui.item(Items.CRAFTING_TABLE, t("Craft at a crafting table →", ChatFormatting.YELLOW), List.of(), false), null);
+            if (Compact.needsEnchanted(p.level().getServer(), h))
+                m.put(5, Ui.item(Items.ENCHANTED_BOOK, t("Needs Enchanted resources", ChatFormatting.GREEN), List.of(
+                        t("The glowing ingredients are Enchanted:", ChatFormatting.GRAY), t(Compact.PER + " of the resource crafted into one.", ChatFormatting.GRAY),
+                        t("Click for those recipes", ChatFormatting.YELLOW)), true), (pl, c) -> recipeList(pl, "Enchanted resources", recipes(pl.level().getServer(), "enchanted/"), 0));
             m.put(25, out, null);
             m.put(36, back(), (pl, c) -> backTo.accept(pl));
         });
