@@ -17,6 +17,7 @@ public final class AnarchyMod implements ModInitializer {
     public void onInitialize() {
         Clans.init();
         Coins.init();
+        OpTools.init();
         UseEntityCallback.EVENT.register((player, world, hand, entity, hit) -> {
             if (!(entity instanceof Interaction) || !(player instanceof ServerPlayer p)) return InteractionResult.PASS;
             boolean doc = entity.entityTags().contains("cy.doc"), ench = entity.entityTags().contains("ce.enchanter");
