@@ -131,8 +131,8 @@ public final class Compact {
                 m.put(i, icon, (pl, c) -> press(pl, item, c.shift()));
             }
             m.put(49, Ui.item(Items.BOOK, t("Compactor", ChatFormatting.GOLD, ChatFormatting.BOLD), List.of(
-                    t("Turns " + PER + " of a resource into one", ChatFormatting.GRAY), t("Enchanted item. The newer armor,", ChatFormatting.GRAY),
-                    t("weapons and tools are made from these.", ChatFormatting.GRAY)), false), null);
+                    t("Turns " + PER + " of a resource into one", ChatFormatting.GRAY), t("Enchanted item. Some special armor,", ChatFormatting.GRAY),
+                    t("weapons and tools need these.", ChatFormatting.GRAY)), false), null);
         });
     }
 

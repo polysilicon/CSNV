@@ -322,8 +322,8 @@ final class Guide {
             m.put(33, Ui.item(Items.DIAMOND_PICKAXE, t("Tools", ChatFormatting.AQUA), List.of(t(recipes(server, "gear/tool/").size() + " tools", ChatFormatting.GRAY)), false),
                     (pl, x) -> recipeList(pl, "Tools", recipes(server, "gear/tool/"), 0));
             m.put(40, Ui.item(Items.PISTON, t("Compactor", ChatFormatting.GREEN), List.of(
-                    t(Compact.PER + " of a resource = 1 Enchanted, in", ChatFormatting.GRAY), t("one click (/compact). The newer", ChatFormatting.GRAY),
-                    t("gear is made from these.", ChatFormatting.GRAY)), true), (pl, c) -> Compact.open(pl));
+                    t(Compact.PER + " of a resource = 1 Enchanted, in", ChatFormatting.GRAY), t("one click (/compact). Some special", ChatFormatting.GRAY),
+                    t("gear needs these.", ChatFormatting.GRAY)), true), (pl, c) -> Compact.open(pl));
             m.put(36, back(), (pl, c) -> open(pl));
         });
     }

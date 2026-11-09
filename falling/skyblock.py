@@ -901,7 +901,7 @@ npc_lines.append(label(12.5, Y + 3.15, 0.5, snbt({"text": "Compactor", "color": 
 npc_lines.append(label(12.5, Y + 3.75, 0.5, snbt({"text": "Enchanted Resources\n", "color": "green", "bold": True, "extra": [
     txt("160 of a resource = 1 Enchanted\n", "white", bold=False),
     txt("Click: make one\nShift-click: make as many as you can\n\n", "gray", bold=False),
-    txt("The newer armor, weapons and tools\nare crafted from these. Recipes:\n/guide > Recipes\n\n", "gray", bold=False),
+    txt("Some special armor, weapons and\ntools need these. Recipes:\n/guide > Recipes\n\n", "gray", bold=False),
     txt("Anywhere: /compact", "yellow", bold=False)]}), 0.5, bill="center", tag="cs_npcl"))
 npc_lines += district.build(NS, fn, txt, snbt, label)
 fn("npcs", "\n".join(npc_lines))
