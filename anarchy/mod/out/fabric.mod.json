@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "crispy_anarchy",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "name": "Crispy Anarchy (clans, market shop menus)",
   "description": "Clans (tag in chat via %crispy:clan%, private clan chat, kills; no claims) and chest-menu shops for the Ripperdoc and the Enchanter in the CrispyAnarchy market.",
   "environment": "server",

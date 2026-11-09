@@ -5,5 +5,5 @@ CP=$(find "$L" -name "*.jar" | tr '\n' ':')${3:+:$3}
 rm -rf "$D/out" && mkdir -p "$D/out"
 "$JAVAC" --release 25 -proc:none -cp "$CP" -d "$D/out" $(find "$D/src" -name "*.java")
 cp "$D"/res/*.json "$D/out/"
-(cd "$D/out" && jar cf "$D/crispy-anarchy-1.2.0.jar" .)
-echo "built $D/crispy-anarchy-1.2.0.jar"
+(cd "$D/out" && jar cf "$D/crispy-anarchy-1.2.1.jar" .)
+echo "built $D/crispy-anarchy-1.2.1.jar"
