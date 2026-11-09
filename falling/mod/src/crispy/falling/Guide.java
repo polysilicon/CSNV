@@ -221,7 +221,7 @@ final class Guide {
                     pg("Your Nether", "Build a Nether portal to reach your island's own Nether. Fortress wrecks with blaze spawners and bastion chunks crash in over time."),
                     pg("Your End", "The End portal appears east of your island after 150 min of play. Fill it with 12 Eyes of Ender to reach your island's own End, with a boss altar in the middle."))),
             new Topic("Minions", Items.ARMOR_STAND, "Helpers that gather while you're offline", List.of(
-                    pg("Crafting", "Put 8 of a resource around a wooden pickaxe at a crafting table. There are minions for crops, wood, ores, sand, clay and mobs. See Recipes."),
+                    pg("Crafting", "Put 8 of a resource around a wooden pickaxe at a crafting table. There are minions for ores, crops, animals, wood, mobs and fishing. See Recipes for every one, by kind."),
                     pg("Using them", "Place a minion on your island. It gathers on its own, even while you're offline. Right-click it to collect, upgrade it (I to V) or pick it up."),
                     pg("Slots", "Every island has 5 minion slots. Island upgrades add 2 more per tier."))),
             new Topic("Merchants & Bazaar", Items.EMERALD, "Earning and spending coins", List.of(
@@ -279,34 +279,110 @@ final class Guide {
         return new ItemStack(Items.BARRIER);
     }
 
+    // 2.16.4: recipes by kind. Minions by what they gather (the datapack's "cat" on each minion type); gear as armor
+    // sets (one entry per set, opening its four pieces), weapons and tools, each sorted by rarity (the recipe ids start
+    // with the rarity rank: gear/armor/<rank>_<set>_<n><piece>, gear/weapon/<rank>_<key>, gear/tool/<rank>_<key>).
+    static final String[][] MINION_CATS = {
+            {"mining", "Mining minions", "minecraft:iron_pickaxe"}, {"farming", "Farming minions", "minecraft:wheat"},
+            {"foraging", "Foraging minions", "minecraft:oak_log"}, {"combat", "Combat minions", "minecraft:bone"},
+            {"fishing", "Fishing minions", "minecraft:fishing_rod"}};
+
+    static List<RecipeHolder<?>> minionRecipes(MinecraftServer server, String cat) {
+        Set<String> keys = new HashSet<>();
+        var types = Economy.cfg(server).getListOrEmpty("minions");
+        for (int i = 0; i < types.size(); i++) {
+            var t = types.getCompoundOrEmpty(i);
+            if (t.getStringOr("cat", "").equals(cat)) keys.add(t.getStringOr("key", ""));
+        }
+        List<RecipeHolder<?>> out = new ArrayList<>();
+        for (RecipeHolder<?> h : recipes(server, "minion_"))
+            if (keys.contains(h.id().identifier().getPath().substring("minion_".length()))) out.add(h);
+        return out;
+    }
+
     static void recipeCats(ServerPlayer p) {
         MinecraftServer server = p.level().getServer();
-        Ui.open(p, t("Guide: Recipes", ChatFormatting.DARK_GRAY), 3, m -> {
-            m.put(11, Ui.item(Items.ARMOR_STAND, t("Minions", ChatFormatting.GREEN, ChatFormatting.BOLD), List.of(
-                    t(recipes(server, "minion_").size() + " recipes", ChatFormatting.GRAY)), false), (pl, c) -> recipeList(pl, "minion_", "Minions", 0));
-            m.put(15, Ui.item(Items.DIAMOND_CHESTPLATE, t("Armor, weapons & tools", ChatFormatting.AQUA, ChatFormatting.BOLD), List.of(
-                    t(recipes(server, "gear/").size() + " recipes", ChatFormatting.GRAY)), false), (pl, c) -> recipeList(pl, "gear/", "Gear", 0));
-            m.put(18, back(), (pl, c) -> open(pl));
+        Ui.open(p, t("Guide: Recipes", ChatFormatting.DARK_GRAY), 5, m -> {
+            m.put(4, Ui.item(Items.ARMOR_STAND, t("Minions", ChatFormatting.GREEN, ChatFormatting.BOLD), List.of(
+                    t("8 of a resource around a wooden", ChatFormatting.GRAY), t("pickaxe. Pick a kind below.", ChatFormatting.GRAY)), false), null);
+            int[] slots = {11, 12, 13, 14, 15};
+            for (int i = 0; i < MINION_CATS.length; i++) {
+                String[] c = MINION_CATS[i];
+                List<RecipeHolder<?>> list = minionRecipes(server, c[0]);
+                m.put(slots[i], Ui.item(Economy.item(c[2]), t(c[1], ChatFormatting.GREEN), List.of(t(list.size() + " minions", ChatFormatting.GRAY)), false),
+                        (pl, x) -> recipeList(pl, c[1], minionRecipes(server, c[0]), 0));
+            }
+            m.put(22, Ui.item(Items.ANVIL, t("Armor, weapons & tools", ChatFormatting.AQUA, ChatFormatting.BOLD), List.of(
+                    t("Crafted from what you farm.", ChatFormatting.GRAY), t("Sorted from Uncommon to Legendary.", ChatFormatting.GRAY)), false), null);
+            int sets = setChests(server).size();
+            m.put(29, Ui.item(Items.DIAMOND_CHESTPLATE, t("Armor sets", ChatFormatting.AQUA), List.of(t(sets + " sets, each with a", ChatFormatting.GRAY),
+                    t("full set bonus", ChatFormatting.GRAY)), false), (pl, x) -> setList(pl));
+            m.put(31, Ui.item(Items.DIAMOND_SWORD, t("Weapons", ChatFormatting.AQUA), List.of(t(recipes(server, "gear/weapon/").size() + " weapons", ChatFormatting.GRAY)), false),
+                    (pl, x) -> recipeList(pl, "Weapons", recipes(server, "gear/weapon/"), 0));
+            m.put(33, Ui.item(Items.DIAMOND_PICKAXE, t("Tools", ChatFormatting.AQUA), List.of(t(recipes(server, "gear/tool/").size() + " tools", ChatFormatting.GRAY)), false),
+                    (pl, x) -> recipeList(pl, "Tools", recipes(server, "gear/tool/"), 0));
+            m.put(36, back(), (pl, c) -> open(pl));
         });
     }
 
-    static void recipeList(ServerPlayer p, String prefix, String title, int page) {
-        MinecraftServer server = p.level().getServer();
-        List<RecipeHolder<?>> all = recipes(server, prefix);
+    /** One clickable entry per recipe; back goes to the categories. */
+    static void recipeList(ServerPlayer p, String title, List<RecipeHolder<?>> all, int page) {
         int pages = Math.max(1, (all.size() + 44) / 45);
         Ui.open(p, t("Recipes: " + title + (pages > 1 ? " (" + (page + 1) + "/" + pages + ")" : ""), ChatFormatting.DARK_GRAY), 6, m -> {
             for (int i = 0; i < 45 && page * 45 + i < all.size(); i++) {
                 RecipeHolder<?> h = all.get(page * 45 + i);
-                ItemStack icon = result(h.value()).copy();
-                List<Component> lore = new ArrayList<>(icon.getOrDefault(DataComponents.LORE, net.minecraft.world.item.component.ItemLore.EMPTY).lines());
-                lore.add(Component.empty());
-                lore.add(t("Click to see the recipe", ChatFormatting.YELLOW));
-                icon.set(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(lore));
-                m.put(i, icon, (pl, c) -> recipe(pl, h, prefix, title, page));
+                m.put(i, clickIcon(result(h.value()), "Click to see the recipe"), (pl, c) -> recipe(pl, h, pl2 -> recipeList(pl2, title, all, page)));
             }
             m.put(45, back(), (pl, c) -> recipeCats(pl));
-            if (page > 0) m.put(48, Ui.item(Items.ARROW, t("Previous page", ChatFormatting.YELLOW), List.of(), false), (pl, c) -> recipeList(pl, prefix, title, page - 1));
-            if (page + 1 < pages) m.put(50, Ui.item(Items.ARROW, t("Next page", ChatFormatting.YELLOW), List.of(), false), (pl, c) -> recipeList(pl, prefix, title, page + 1));
+            if (page > 0) m.put(48, Ui.item(Items.ARROW, t("Previous page", ChatFormatting.YELLOW), List.of(), false), (pl, c) -> recipeList(pl, title, all, page - 1));
+            if (page + 1 < pages) m.put(50, Ui.item(Items.ARROW, t("Next page", ChatFormatting.YELLOW), List.of(), false), (pl, c) -> recipeList(pl, title, all, page + 1));
+        });
+    }
+
+    static ItemStack clickIcon(ItemStack base, String hint) {
+        ItemStack icon = base.copy();
+        List<Component> lore = new ArrayList<>(icon.getOrDefault(DataComponents.LORE, net.minecraft.world.item.component.ItemLore.EMPTY).lines());
+        lore.add(Component.empty());
+        lore.add(t(hint, ChatFormatting.YELLOW));
+        icon.set(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(lore));
+        return icon;
+    }
+
+    /** The chestplate recipe of each armor set, rarest last: set key = what follows "<rank>_" up to "_1chestplate". */
+    static List<RecipeHolder<?>> setChests(MinecraftServer server) {
+        List<RecipeHolder<?>> out = new ArrayList<>();
+        for (RecipeHolder<?> h : recipes(server, "gear/armor/")) if (h.id().identifier().getPath().endsWith("_1chestplate")) out.add(h);
+        return out;
+    }
+    static String setOf(RecipeHolder<?> chest) {
+        String path = chest.id().identifier().getPath().substring("gear/armor/".length());
+        return path.substring(0, path.length() - "_1chestplate".length());   // "<rank>_<set>"
+    }
+
+    static void setList(ServerPlayer p) {
+        MinecraftServer server = p.level().getServer();
+        List<RecipeHolder<?>> chests = setChests(server);
+        Ui.open(p, t("Recipes: Armor sets", ChatFormatting.DARK_GRAY), 6, m -> {
+            for (int i = 0; i < chests.size() && i < 45; i++) {
+                RecipeHolder<?> h = chests.get(i);
+                String set = setOf(h);
+                m.put(i, clickIcon(result(h.value()), "Click to see all four pieces"), (pl, c) -> setPage(pl, set));
+            }
+            m.put(45, back(), (pl, c) -> recipeCats(pl));
+        });
+    }
+
+    static void setPage(ServerPlayer p, String set) {
+        MinecraftServer server = p.level().getServer();
+        List<RecipeHolder<?>> pieces = recipes(server, "gear/armor/" + set + "_");
+        Ui.open(p, t("Recipes: " + result(pieces.isEmpty() ? null : pieces.get(0).value()).getHoverName().getString().replaceAll(" \\S+$", "") + " set",
+                ChatFormatting.DARK_GRAY), 3, m -> {
+            int[] slots = {10, 12, 14, 16};
+            for (int i = 0; i < pieces.size() && i < 4; i++) {
+                RecipeHolder<?> h = pieces.get(i);
+                m.put(slots[i], clickIcon(result(h.value()), "Click to see the recipe"), (pl, c) -> recipe(pl, h, pl2 -> setPage(pl2, set)));
+            }
+            m.put(18, back(), (pl, c) -> setList(pl));
         });
     }
 
@@ -325,7 +401,7 @@ final class Guide {
         return s;
     }
 
-    static void recipe(ServerPlayer p, RecipeHolder<?> h, String prefix, String title, int page) {
+    static void recipe(ServerPlayer p, RecipeHolder<?> h, java.util.function.Consumer<ServerPlayer> backTo) {
         Recipe<?> r = h.value();
         ItemStack out = result(r);
         Ui.open(p, t("Recipe: " + out.getHoverName().getString(), ChatFormatting.DARK_GRAY), 5, m -> {
@@ -347,7 +423,7 @@ final class Guide {
             }
             m.put(23, Ui.item(Items.CRAFTING_TABLE, t("Craft at a crafting table →", ChatFormatting.YELLOW), List.of(), false), null);
             m.put(25, out, null);
-            m.put(36, back(), (pl, c) -> recipeList(pl, prefix, title, page));
+            m.put(36, back(), (pl, c) -> backTo.accept(pl));
         });
     }
 

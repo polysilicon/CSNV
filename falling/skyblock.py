@@ -392,6 +392,13 @@ MINIONS = [
     ("slime", "Slime", "slime_block", "wooden_sword", 0x7CC66A, [("slime_ball", 1)], "slime_ball"),
     ("fishing", "Fishing", "cod", "fishing_rod", 0x3A7AB8, [("cod", 1), ("salmon", 1)], "cod"),
 ]
+# 2.16.4: which guide page each minion is listed on
+MINION_CAT = {**{k: "mining" for k in "cobblestone coal iron gold diamond lapis redstone sand clay copper gravel ice".split()},
+              **{k: "farming" for k in "wheat carrot potato cane melon pumpkin beetroot cactus mushroom cocoa bamboo berry chicken cow sheep pig rabbit".split()},
+              **{k: "foraging" for k in "oak birch spruce dark_oak jungle acacia cherry mangrove".split()},
+              **{k: "combat" for k in "zombie skeleton spider creeper slime".split()},
+              "fishing": "fishing"}
+assert all(k in MINION_CAT for k, *_r in MINIONS), [k for k, *_r in MINIONS if k not in MINION_CAT]
 # 2.16.3: mob-head skins for some minions (textures from Just Mob Heads, which also runs on this server)
 MINION_SKINS = {
     "chicken": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTYzODQ2OWE1OTljZWVmNzIwNzUzNzYwMzI0OGE5YWIxMWZmNTkxZmQzNzhiZWE0NzM1YjM0NmE3ZmFlODkzIn19fQ==",
@@ -412,7 +419,7 @@ ECO = {
     "shop": [{"key": k, "name": n, "icon": f"minecraft:{ic}", "npc": npc,
               "items": [{"id": f"minecraft:{i}", "buy": b, "sell": sv} for i, b, sv in items]} for k, n, ic, npc, items in SHOP],
     "minions": [{"key": k, "name": n, "head": f"minecraft:{h}", "tool": f"minecraft:{t}", "color": c, "recipe": f"minecraft:{r}",
-                 "drops": [{"id": f"minecraft:{i}", "n": q} for i, q in d], **({"skin": MINION_SKINS[k]} if k in MINION_SKINS else {})}
+                 "drops": [{"id": f"minecraft:{i}", "n": q} for i, q in d], **({"skin": MINION_SKINS[k]} if k in MINION_SKINS else {}), "cat": MINION_CAT[k]}
                 for k, n, h, t, c, d, r in MINIONS],
     "tiers": [{"secs": a, "cap": b, "coins": c, "items": d} for a, b, c, d in TIERS],
     "limit": {"base": MINION_BASE_LIMIT, "max": MINION_MAX_LIMIT, "per_levels": LEVELS_PER_MINION},
