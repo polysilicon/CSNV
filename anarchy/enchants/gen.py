@@ -508,7 +508,7 @@ scoreboard players enable @a ce.buy
 execute as @a[scores={{ce.buy=1..}}] at @s run function {NS}:enchanter/buy
 {used_checks}
 execute as @a[scores={{ce.death=1..}}] at @s run function {NS}:death/died
-execute as @e[type=minecraft:player,tag=ce.sb] run function {NS}:death/respawned
+execute as @e[type=minecraft:player,tag=ce.sb] at @s run function {NS}:death/respawned
 execute as @e[type=minecraft:ender_pearl] on origin if entity @s[tag=ce.tblock] run tag @s add ce.pearlowner
 execute as @e[type=minecraft:ender_pearl] if function {NS}:lib/pearl_blocked run kill @s
 tag @a remove ce.pearlowner
