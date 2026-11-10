@@ -210,7 +210,7 @@ def home():
     <p>The spawn area has been fought over since 2020. We rendered two square kilometres around spawn as a 3D map you can fly through in your browser: lava casts, pillars, wither holes and what is left of the old builds.</p>
     <p><a class="btn" href="/spawn-map/">Open the 3D map</a></p>
   </div>
-  <img src="/img/overview.webp" alt="Aerial 3D view of the Crispy Anarchy spawn region with oceans and islands around the griefed spawn" width="1600" height="740" loading="lazy">
+  <img src="/img/low.webp" alt="Ground-level 3D view of Crispy Anarchy spawn: ruined stone walls, water and lava flows" width="1600" height="900" loading="lazy">
 </section>
 <section class="wrap block">
   <h2>Quick answers</h2>
@@ -355,11 +355,11 @@ def spawn_map():
   <h2>Want to see it in person?</h2>
   <p>Join <code>{JAVA}</code> on Java Edition, or <code>{JAVA}</code> port <code>{BEDROCK_PORT}</code> on Bedrock, and pick Anarchy in the lobby.</p>
 </section>
-<figure class="wrap shot"><img src="/img/overview.webp" alt="Bird's-eye 3D render of Crispy Anarchy spawn and the surrounding islands" width="1600" height="740" loading="lazy"></figure>
+<figure class="wrap shot"><img src="/img/spawn.webp" alt="3D render of Crispy Anarchy spawn: a towering griefed pillar, lava casts and ruined walls surrounded by ocean" width="1600" height="825" loading="lazy"></figure>
 """
     return page("/spawn-map/", "Crispy Anarchy Spawn 3D Map – Minecraft Anarchy Server Map",
                 "Fly through a 3D render of Crispy Anarchy spawn: two square kilometres of a Minecraft anarchy world that has never been reset since 2020.",
-                body, crumbs=[("/spawn-map/", "3D Map")], image="/img/overview.webp")
+                body, crumbs=[("/spawn-map/", "3D Map")], image="/img/og.jpg")
 
 
 def join():
