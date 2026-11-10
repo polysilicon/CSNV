@@ -391,7 +391,7 @@ def join():
   <div><h2>Bedrock Edition</h2>{ol(steps_bedrock)}<p class="note">Works on Windows, phones and tablets. Consoles need a workaround: see the <a href="/bedrock-anarchy/">Bedrock guide</a>.</p></div>
 </section>
 <section class="wrap block prose">
-  <p>By joining you agree to the <a href="/rules/">rules</a>: no gameplay rules on Anarchy, but no hate speech, harassment, sexual content or spam anywhere.</p>
+  <p>Before you join, read the <a href="/rules/">rules</a>: no gameplay rules and no bans on Anarchy, but no hate speech, harassment, sexual content or spam anywhere.</p>
   <h2>Trouble connecting?</h2>
   <ul>
     <li><b>Java says "outdated client" or "outdated server":</b> use a version between 1.13 and 26.3.</li>
@@ -613,7 +613,7 @@ def rules():
 <section class="wrap block head">
   <p class="kicker">Rules</p>
   <h1>Crispy Anarchy rules</h1>
-  <p class="lede measure">Gameplay on Crispy Anarchy is anarchy: no claims, no protected bases, and nobody will step in if your base gets griefed. The rules below are about people, not gameplay, and they apply everywhere on the network: Anarchy, Vanilla Anarchy, Skyblock, Multiverse, Factions, the lobby and our Discord.</p>
+  <p class="lede measure">Gameplay on Crispy Anarchy is anarchy: no claims, no protected bases, no bans, and nobody will step in if your base gets griefed. The rules below are about people, not gameplay. They apply everywhere on the network: Anarchy, Vanilla Anarchy, Skyblock, Multiverse, Factions and the lobby. Our Discord has its own moderation.</p>
 </section>
 <section class="wrap block prose">
   <h2>1. Follow Microsoft's rules</h2>
@@ -634,15 +634,12 @@ def rules():
   <h2>What's still fine on Anarchy</h2>
   <p>Griefing, raiding, stealing, killing, traps, lying and betrayal are all part of the game. Other modes have their own gameplay rules where they need them, like the raid windows on Factions.</p>
 
-  <h2>Reporting</h2>
-  <p>Seen something that breaks these rules? Tell staff in our <a href="{DISCORD}" rel="noopener">Discord</a> with a screenshot, the server, and where it is. We remove hateful builds, signs and map art when we find them or they're reported.</p>
-
-  <h2>What happens if you break them</h2>
-  <p>The content is removed, and depending on how serious it is you get a warning, a mute, or a temporary or permanent ban from the network.</p>
+  <h2>How this works</h2>
+  <p>There are no bans, mutes or player reports on our Minecraft servers. These rules are here so everyone knows what is expected, not so we can punish people. Instead, we keep the worst content out with roadblocks rather than staff: hateful builds, signs and map art are cleared away when we come across them.</p>
 </section>
 """
     return page("/rules/", "Crispy Anarchy Rules – Community Rules for an Anarchy Server",
-                "Crispy Anarchy has no gameplay rules, but everyone must follow the Minecraft Usage Guidelines and Community Standards: no hate speech or hateful builds, no real-life harassment, no sexual content, no spam.",
+                "Crispy Anarchy has no gameplay rules and no bans, but everyone is expected to follow the Minecraft Usage Guidelines and Community Standards: no hate speech or hateful builds, no real-life harassment, no sexual content, no spam.",
                 body, crumbs=[("/rules/", "Rules")])
 
 
