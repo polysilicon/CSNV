@@ -92,7 +92,7 @@ def page(path, title, desc, body, crumbs=None, extra_ld=(), image="/img/og.jpg",
 <a class="skip" href="#main">Skip to content</a>
 <header class="site">
   <div class="wrap hdr">
-    <a class="logo" href="/"><img src="/img/icon-64.png" alt="" width="32" height="32"><span>Crispy <b>Anarchy</b></span></a>
+    <a class="logo" href="/"><img src="/img/mark.svg" alt="" width="28" height="28"><span>Crispy <b>Anarchy</b></span></a>
     <button type="button" class="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
     <nav id="nav" aria-label="Main">{nav}</nav>
   </div>

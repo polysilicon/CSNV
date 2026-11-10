@@ -27,7 +27,7 @@ header.site { position: sticky; top: 0; z-index: 10; background: #0d1016ee; back
 .hdr { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 10px; }
 .logo { display: flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font: 700 19px var(--display); }
 .logo b { color: var(--lava); }
-.logo img { image-rendering: pixelated; border-radius: 6px; }
+.logo img { image-rendering: pixelated; }
 nav { display: flex; gap: 4px; flex-wrap: wrap; }
 nav a { color: var(--dim); text-decoration: none; font-size: 14px; padding: 6px 9px; border-radius: 4px; }
 nav a:hover, nav a[aria-current] { color: var(--ink); background: var(--raise); }
