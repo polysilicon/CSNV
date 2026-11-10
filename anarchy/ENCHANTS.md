@@ -240,7 +240,7 @@ Heroic enchants are upgrades: each needs its base enchant at max level (see its 
 | Reinforced Tank | IV | Armor | Decreases damage from enemy axes by 6% + 2% per level. Requires Tank IV to apply. | `reinforcedtank` |
 | Shadow Assassin | V | Swords | Heroic Enchantment. The closer you are to your enemy, the more damage you deal (up to 1.875x). However, if you are more than 2 blocks away, you will deal LESS damage than normal. Requires Assassin V. | `shadowassassin` |
 | Soul Hardened | III | Armor | Up to 50% chance to block enemy soul trap, armor takes less durability damage. Requires Hardened III to apply. | `soulhardened` |
-| Soulbound | IV | Weapons + Tools + Bows | A chance to keep item on death. | `soulbound` |
+| Soulbound | IV | Weapons + Tools + Bows | A chance to keep the item on death: 25% / 50% / 75% / 100% by level. | `soulbound` |
 | Titan Trap | III | Swords | Heroic Enchantment. A chance to give a longer lasting buffed slowness effect. Requires Trap III to apply. | `titantrap` |
 | Vengeful Diminish | VI | Chestplate | Ensures that the next strike against you only deals 50% of the damage inflicted and any extra above that will be returned to the attacker. Requires Diminish VI enchant on item to apply. | `vengefuldiminish` |
 

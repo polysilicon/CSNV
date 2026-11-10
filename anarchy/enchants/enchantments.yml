@@ -6283,22 +6283,22 @@ soulbound:
   - CROSSBOW
   levels:
     '1':
-      chance: 4
+      chance: 25
       cooldown: 300
       effects:
       - KEEP_ON_DEATH
     '2':
-      chance: 6
+      chance: 50
       cooldown: 300
       effects:
       - KEEP_ON_DEATH
     '3':
-      chance: 8
+      chance: 75
       cooldown: 300
       effects:
       - KEEP_ON_DEATH
     '4':
-      chance: 75
+      chance: 100
       cooldown: 300
       effects:
       - KEEP_ON_DEATH
