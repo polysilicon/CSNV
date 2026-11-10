@@ -9,6 +9,8 @@ Every claim here was checked against the live servers (see marketing/listings.md
 no "biggest/best", no franchise names).
 """
 import json, os, shutil, sys, html
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from news import NEWS
 from datetime import date
 
 SITE = "https://www.crispyanarchy.net"
@@ -29,8 +31,8 @@ VOTE = [
 ]
 
 NAV = [("/", "Home"), ("/anarchy/", "Anarchy"), ("/skyblock/", "Skyblock"), ("/pvp/", "PvP"),
-       ("/factions/", "Factions"), ("/spawn-map/", "3D Map"), ("/join/", "How to join"), ("/vote/", "Vote"),
-       ("/faq/", "FAQ")]
+       ("/factions/", "Factions"), ("/spawn-map/", "3D Map"), ("/join/", "How to join"), ("/news/", "News"),
+       ("/vote/", "Vote"), ("/faq/", "FAQ")]
 
 e = html.escape
 
@@ -109,6 +111,7 @@ def page(path, title, desc, body, crumbs=None, extra_ld=(), image="/img/og.jpg",
     </div>
     <div class="foot-links">
       {''.join(f'<a href="{p}">{n}</a>' for p, n in NAV[1:])}
+      <a href="/bedrock-anarchy/">Bedrock anarchy</a>
       <a href="{DISCORD}" rel="noopener">Discord</a>
     </div>
   </div>
@@ -175,8 +178,10 @@ def home():
         ("/pvp/", "Multiverse PvP", "36 playable characters, kit PvP, ranked duels and co-op zombie waves."),
         ("/factions/", "Factions", "1.8-style combat, cannons and obsidian walls, with set raid windows."),
         ("/spawn-map/", "3D spawn map", "Fly over two square kilometres of spawn, wrecked by six years of anarchy."),
+        ("/bedrock-anarchy/", "Bedrock anarchy", "Play anarchy from Windows, phone, tablet or console, in the same world as Java players."),
     ]
     cards = "".join(f'<a class="card" href="{u}"><h3>{n}</h3><p>{d}</p></a>' for u, n, d in modes)
+    latest = "".join(f'''<article class="post-card"><p class="date"><time datetime="{n['date']}">{fmt_date(n['date'])}</time></p><h3><a href="/news/{n['slug']}/">{e(n['title'])}</a></h3><p>{e(n['summary'])}</p></article>''' for n in NEWS[:3])
     body = f"""
 <section class="hero">
   <div class="wrap hero-in">
@@ -209,6 +214,11 @@ def home():
     <p><a class="btn" href="/spawn-map/">Open the 3D map</a></p>
   </div>
   <img src="/img/low.webp" alt="Ground-level 3D view of Crispy Anarchy spawn: ruined stone walls, water and lava flows" width="1600" height="900" loading="lazy">
+</section>
+<section class="wrap block">
+  <h2>Latest news</h2>
+  <div class="posts">{latest}</div>
+  <p><a href="/news/">All news</a></p>
 </section>
 <section class="wrap block">
   <h2>Quick answers</h2>
@@ -376,7 +386,7 @@ def join():
 </section>
 <section class="wrap block two">
   <div><h2>Java Edition</h2>{ol(steps_java)}</div>
-  <div><h2>Bedrock Edition</h2>{ol(steps_bedrock)}<p class="note">Works on Windows, phones and tablets. On consoles, Bedrock only lets you add servers through a workaround such as a DNS or LAN-proxy app.</p></div>
+  <div><h2>Bedrock Edition</h2>{ol(steps_bedrock)}<p class="note">Works on Windows, phones and tablets. Consoles need a workaround: see the <a href="/bedrock-anarchy/">Bedrock guide</a>.</p></div>
 </section>
 <section class="wrap block prose">
   <h2>Trouble connecting?</h2>
@@ -447,6 +457,8 @@ Key facts:
 ## Pages
 - [Anarchy server]({SITE}/anarchy/): rules, enchantments, implants, market, Vanilla Anarchy
 - [How to join]({SITE}/join/): Java and Bedrock steps and troubleshooting
+- [Bedrock anarchy]({SITE}/bedrock-anarchy/): joining from Windows, mobile and console
+- [News]({SITE}/news/): updates and new features
 - [FAQ]({SITE}/faq/)
 - [3D spawn map]({SITE}/spawn-map/)
 - [Skyblock]({SITE}/skyblock/)
@@ -480,23 +492,136 @@ Sitemap: {SITE}/sitemap.xml
 """
 
 
+def fmt_date(d):
+    y, m, dd = d.split("-")
+    return f"{int(dd)} {['January','February','March','April','May','June','July','August','September','October','November','December'][int(m)-1]} {y}"
+
+
+def news_index():
+    items = "".join(f"""<article class="post-card"><p class="date"><time datetime="{n['date']}">{fmt_date(n['date'])}</time></p>
+<h2><a href="/news/{n['slug']}/">{e(n['title'])}</a></h2><p>{e(n['summary'])}</p></article>""" for n in NEWS)
+    body = f"""
+<section class="wrap block head">
+  <p class="kicker">News</p>
+  <h1>Crispy Anarchy news and updates</h1>
+  <p class="lede measure">What's new on Anarchy, Skyblock, Multiverse PvP and Factions.</p>
+</section>
+<section class="wrap block"><div class="posts">{items}</div></section>
+"""
+    blog = {"@type": "Blog", "name": "Crispy Anarchy news", "url": SITE + "/news/", "publisher": {"@id": SITE + "/#org"},
+            "blogPost": [{"@type": "BlogPosting", "headline": n["title"], "url": f"{SITE}/news/{n['slug']}/", "datePublished": n["date"]} for n in NEWS]}
+    return page("/news/", "Crispy Anarchy News & Updates – Minecraft Anarchy Server",
+                "Updates from the Crispy Anarchy Minecraft network: new features, fixes and events on Anarchy, Skyblock, PvP and Factions.",
+                body, crumbs=[("/news/", "News")], extra_ld=[blog])
+
+
+def news_post(n):
+    path = f"/news/{n['slug']}/"
+    i = NEWS.index(n)
+    others = [m for m in NEWS if m is not n][:3]
+    more = "".join(f'<li><a href="/news/{m["slug"]}/">{e(m["title"])}</a> <span class="date">{fmt_date(m["date"])}</span></li>' for m in others)
+    body = f"""
+<article class="wrap block head prose">
+  <p class="kicker"><a href="/news/">News</a> · <time datetime="{n['date']}">{fmt_date(n['date'])}</time></p>
+  <h1>{e(n['title'])}</h1>
+  <p class="lede">{e(n['summary'])}</p>
+  {n['body']}
+</article>
+<section class="wrap block">
+  <h2>Come and see</h2>
+  {join_box(True)}
+  <h2>More news</h2><ul class="more">{more}</ul>
+</section>
+"""
+    post = {"@type": "BlogPosting", "headline": n["title"], "description": n["summary"], "datePublished": n["date"], "dateModified": n["date"],
+            "url": SITE + path, "mainEntityOfPage": SITE + path, "author": {"@id": SITE + "/#org"}, "publisher": {"@id": SITE + "/#org"},
+            "image": SITE + "/img/og.jpg"}
+    return page(path, f"{n['title']} | Crispy Anarchy", n["summary"], body,
+                crumbs=[("/news/", "News"), (path, n["title"])], extra_ld=[post])
+
+
+BEDROCK_STEPS = {
+    "Windows, Android, iPhone and iPad": [
+        "Open Minecraft and go to Play, then the Servers tab.",
+        "Scroll to the bottom and choose Add Server.",
+        f"Server Name: Crispy Anarchy. Server Address: {JAVA}. Port: {BEDROCK_PORT}.",
+        "Save, then tap the server to join. You arrive in the lobby: pick Anarchy."],
+    "Xbox, PlayStation and Nintendo Switch": [
+        "Consoles only show Mojang's featured servers, so you need a server-list helper to reach any other server.",
+        "The usual way is a BedrockConnect DNS server: in your console's network settings, set the primary DNS to a public BedrockConnect address (search for the current list).",
+        "Open Minecraft, go to Servers and join any featured server: a server list opens instead.",
+        f"Choose to connect to a server, enter {JAVA} and port {BEDROCK_PORT}, and join."],
+}
+
+
+def bedrock():
+    blocks = "".join(f"<div><h2>{e(k)}</h2><ol class='steps'>{''.join(f'<li>{e(x)}</li>' for x in v)}</ol></div>" for k, v in BEDROCK_STEPS.items())
+    qas = [
+        ("Is there a Minecraft Bedrock anarchy server?",
+         f"Yes. Crispy Anarchy is an anarchy server that Bedrock Edition players can join at {JAVA}, port {BEDROCK_PORT}. It has been running since 2020 without a reset."),
+        ("Can Bedrock and Java players play together on Crispy Anarchy?",
+         "Yes. Bedrock and Java players share the same anarchy world, the same market and the same chat."),
+        ("What port does Crispy Anarchy use on Bedrock?",
+         f"Port {BEDROCK_PORT}, not the default 19132. The address is {JAVA}."),
+        ("Do I need Xbox Live or a paid account on Bedrock?",
+         "You sign in with the Microsoft account you already use for Minecraft Bedrock. Nothing else is needed."),
+    ]
+    howtos = [{"@type": "HowTo", "name": f"Join Crispy Anarchy on Minecraft Bedrock ({k})",
+               "step": [{"@type": "HowToStep", "position": i + 1, "text": x} for i, x in enumerate(v)]} for k, v in BEDROCK_STEPS.items()]
+    body = f"""
+<section class="wrap block head">
+  <p class="kicker">Bedrock anarchy · crossplay with Java</p>
+  <h1>A Minecraft Bedrock anarchy server, shared with Java players</h1>
+  <p class="lede measure">Most anarchy servers are Java only. Crispy Anarchy lets Bedrock Edition players on Windows, phones, tablets and consoles join the same no-rules world as Java players, a world that has been running since 2020 without a reset.</p>
+  {join_box(True)}
+</section>
+<section class="wrap block two">{blocks}</section>
+<section class="wrap block prose">
+  <h2>What Bedrock players get</h2>
+  <ul>
+    <li>The same anarchy world as Java players: no rules, no claims, never reset.</li>
+    <li>The market, the Banker and the Crypto Exchange, the Enchanter's 193 custom enchantments and the Ripperdoc's implants.</li>
+    <li>Every other mode on the network too: Vanilla Anarchy, Skyblock, Multiverse PvP and Factions.</li>
+    <li>One chat with Java players and our Discord.</li>
+  </ul>
+  <p>Bedrock players connect through a translation layer, so a few things look slightly different from Java, such as some custom menus and item textures. If something doesn't work on Bedrock, tell us in the <a href="{DISCORD}" rel="noopener">Discord</a>.</p>
+  <h2>Can't connect?</h2>
+  <ul>
+    <li>Check the port is <b>{BEDROCK_PORT}</b>. The default 19132 won't work.</li>
+    <li>Update Minecraft: the server supports the current Bedrock version.</li>
+    <li>On a console, make sure the DNS change saved and that you joined a featured server to open the list.</li>
+  </ul>
+</section>
+<section class="wrap block"><h2>Bedrock questions</h2><div class="faq">{faq_html(qas)}</div></section>
+"""
+    return page("/bedrock-anarchy/", "Bedrock Anarchy Server – Crossplay with Java Since 2020 | Crispy Anarchy",
+                f"Crispy Anarchy is a Minecraft Bedrock anarchy server shared with Java players. No rules, never reset since 2020. Join at {JAVA} port {BEDROCK_PORT} on Windows, mobile and console.",
+                body, crumbs=[("/bedrock-anarchy/", "Bedrock anarchy")], extra_ld=howtos + [faq_ld(qas)])
+
+
 def main(out):
     if os.path.exists(out):
         shutil.rmtree(out)
     os.makedirs(out)
     pages = {"/": home, "/anarchy/": anarchy, "/skyblock/": skyblock, "/pvp/": pvp, "/factions/": factions,
-             "/spawn-map/": spawn_map, "/join/": join, "/vote/": vote, "/faq/": faq}
+             "/spawn-map/": spawn_map, "/join/": join, "/vote/": vote, "/faq/": faq,
+             "/bedrock-anarchy/": bedrock, "/news/": news_index}
+    for n in NEWS:
+        pages[f"/news/{n['slug']}/"] = (lambda n=n: news_post(n))
     for path, fn in pages.items():
         d = os.path.join(out, path.strip("/"))
         os.makedirs(d, exist_ok=True)
         open(os.path.join(d, "index.html"), "w").write(fn())
     open(os.path.join(out, "404.html"), "w").write(notfound())
-    prio = {"/": "1.0", "/anarchy/": "0.9", "/join/": "0.9"}
-    sm = "".join(f"<url><loc>{SITE}{p}</loc><lastmod>{UPDATED}</lastmod><priority>{prio.get(p, '0.7')}</priority></url>" for p in pages)
+    prio = {"/": "1.0", "/anarchy/": "0.9", "/join/": "0.9", "/bedrock-anarchy/": "0.8"}
+    mod = {f"/news/{n['slug']}/": n["date"] for n in NEWS}
+    sm = "".join(f"<url><loc>{SITE}{p}</loc><lastmod>{mod.get(p, UPDATED)}</lastmod><priority>{prio.get(p, '0.6' if p in mod else '0.7')}</priority></url>" for p in pages)
     open(os.path.join(out, "sitemap.xml"), "w").write(
         f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{sm}</urlset>\n')
     open(os.path.join(out, "robots.txt"), "w").write(ROBOTS)
     open(os.path.join(out, "llms.txt"), "w").write(LLMS)
+    key = open(os.path.join(HERE, "indexnow_key.txt")).read().strip()   # IndexNow (Bing, Yandex, ...): public by design
+    open(os.path.join(out, key + ".txt"), "w").write(key)
     open(os.path.join(out, "_headers"), "w").write(
         "/img/*\n  Cache-Control: public, max-age=2592000\n/*.css\n  Cache-Control: public, max-age=86400\n/*.js\n  Cache-Control: public, max-age=86400\n"
         "/map/*\n  X-Robots-Tag: noindex\n"

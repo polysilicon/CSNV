@@ -1,0 +1,89 @@
+"""News posts for www.crispyanarchy.net/news/. Newest first. Each post gets its own page at /news/<slug>/.
+
+Body is HTML (paragraphs and lists). Keep it factual: only what is live on the servers. Never publish Black Market
+spots or anything else players are meant to find.
+"""
+
+NEWS = [
+    {
+        "slug": "website-and-3d-spawn-map",
+        "date": "2026-11-10",
+        "title": "New website and a 3D map of six years of anarchy",
+        "summary": "Crispy Anarchy has a website, with a 3D map of two square kilometres around spawn you can fly through in your browser.",
+        "body": """
+<p>Crispy Anarchy now has a proper home on the web at <a href="/">www.crispyanarchy.net</a>, with how to join on Java and Bedrock, every game mode on the network and answers to the usual questions.</p>
+<p>The centrepiece is the <a href="/spawn-map/">3D spawn map</a>: about two square kilometres around world spawn (X 287, Z -207), rendered block for block. The world has never been reset since 2020, so it shows everything players have done to spawn: lava casts, towers, wither holes and the ruins of old builds. Drag to look around, scroll to zoom, or switch to free-flight from the map's menu.</p>
+""",
+    },
+    {
+        "slug": "soulbound-buffed-and-kit-shulkers-fixed",
+        "date": "2026-11-10",
+        "title": "Soulbound fixed and buffed, market kit shulkers restocked",
+        "summary": "Soulbound now really returns your item, with a much better chance per level, and the market's kit shulkers contain full stacks again.",
+        "body": """
+<p><b>Soulbound.</b> Soulbound items were being saved when you died but not handed back properly, so they could vanish. That is fixed: the item now drops at your feet when you respawn. The chance to keep the item has also gone up a lot:</p>
+<ul><li>Soulbound I: 25%</li><li>Soulbound II: 50%</li><li>Soulbound III: 75%</li><li>Soulbound IV: 100%</li></ul>
+<p>Enchantment books come from the Enchanter in the market, bought with XP.</p>
+<p><b>Kit shulkers.</b> The Building Kits and Shulker Kits villagers in the market were selling shulkers with one item per slot after the move to the new Minecraft version. Every kit has its full stacks back, and the letter-block heads in the letter kits have their textures and names again.</p>
+""",
+    },
+    {
+        "slug": "crypto-exchange-and-banker",
+        "date": "2026-11-09",
+        "title": "Anarchy: a Crypto Exchange with live prices, and a new Banker menu",
+        "summary": "Trade Bitcoin at a price that moves like a real cryptocurrency, and exchange diamonds, emeralds and coins at the Banker's new menu.",
+        "body": """
+<p>A <b>Crypto Exchange</b> trader has opened next to the bank in the market. It buys and sells Bitcoin at a price that rises and falls on its own, like a real cryptocurrency, and its menu shows a price chart so you can time your trades. Buy low, sell high, or lose your shirt.</p>
+<p>The <b>Banker</b> now has a chest menu too. Exchange rates:</p>
+<ul><li>36 diamonds or 36 emeralds = 1 Gold Coin</li><li>16 Gold Coins = 1 block of netherite</li><li>64 Gold Coins = 1 Coin Bag</li></ul>
+<p>Old Gold Coins, Coin Bags and Bitcoins saved by earlier Minecraft versions are converted automatically when they are in your inventory or ender chest, so the market accepts them again.</p>
+""",
+    },
+    {
+        "slug": "skyblock-minions-compactor-gear",
+        "date": "2026-11-09",
+        "title": "Skyblock: 20 new minions, the Compactor and gear crafted from your farms",
+        "summary": "Skyblock now has 43 minions, a Compactor that turns stacks into enchanted resources, and new armour and weapons crafted from them.",
+        "body": """
+<p><b>20 new minions</b> bring Skyblock to 43: six kinds of logs, eight farming minions, copper, gravel, ice, creeper, slime and fishing. Several of them wear mob-head skins.</p>
+<p><b>The Compactor</b> stands in the hub between the Farming and Mining stalls. Use <code>/compact</code> to turn big stacks of farmed resources into enchanted versions. Some special armour, weapons and tools need these to craft.</p>
+<p><b>New gear:</b> armour sets, weapons and tools crafted from what your minions collect, all on one cost rule so better gear means more farming, not real money. The <code>/guide</code> recipe pages are now sorted by kind.</p>
+""",
+    },
+    {
+        "slug": "skyblock-homes-visits-portals",
+        "date": "2026-11-08",
+        "title": "Skyblock: island homes, visits and movable portals",
+        "summary": "Set homes on your island, visit any island (unless it's private), move your island's portals, and play with a gentler island-level curve.",
+        "body": """
+<ul>
+<li><code>/island home</code> and <code>/island sethome</code> set where you arrive on your island, plus up to three personal homes with <code>/sethome</code> and <code>/home</code>.</li>
+<li><code>/island visit</code> takes you to any island, even when its owner is offline, unless they made it private with <code>/island public off</code>. Visitors can't use an island's Nether or End portals.</li>
+<li>Island portals and the sky-drop landing pad can be moved.</li>
+<li>Island level now climbs on a gentler curve, and <code>/shop</code> opens the merchants' shop from anywhere.</li>
+</ul>
+""",
+    },
+    {
+        "slug": "anarchy-clans",
+        "date": "2026-11-08",
+        "title": "Anarchy: clans are back",
+        "summary": "Clans return on Anarchy with a clan tag in chat, private clan chat, ranks and a friendly-fire toggle. No claims: it's still anarchy.",
+        "body": """
+<p>Clans are back on Crispy Anarchy, with the 24 clans from the old clans plugin carried over.</p>
+<ul><li>Your clan tag shows in chat.</li><li>Private clan chat.</li><li>Ranks inside the clan.</li><li>A friendly-fire toggle, so you can stop hitting your own clanmates.</li><li>Clan kill counts and a top list.</li></ul>
+<p>Clans don't come with land claims. Your base is only as safe as you keep it hidden.</p>
+""",
+    },
+    {
+        "slug": "the-black-market",
+        "date": "2026-11-07",
+        "title": "Anarchy: the Black Market opens",
+        "summary": "A dealer hides somewhere in the market. Find the spot and you get a random piece of contraband and the [Black Market] tag. Then it moves.",
+        "body": """
+<p>Somewhere in the market there is a hidden spot. Find it and crouch there, and the Black Market Dealer appears for a moment, hands you a random piece of contraband and gives you the <b>[Black Market]</b> chat tag. Then the spot moves somewhere else, so the next person has to find it all over again.</p>
+<p>Contraband includes ability items like the Phase Shard, Jump Jet, Smoke Bomb, Tesla Coil, Gravity Bomb, Swap Orb, Chrono Clock and Frost Nova, plus Growth and Shrink potions and their splash versions.</p>
+<p>We're not saying where it is.</p>
+""",
+    },
+]
