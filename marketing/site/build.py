@@ -181,7 +181,6 @@ def home():
     cards = "".join(f'<a class="card" href="{u}"><h3>{n}</h3><p>{d}</p></a>' for u, n, d in modes)
     body = f"""
 <section class="hero">
-  <img class="hero-img" src="/img/spawn.webp" alt="3D render of Crispy Anarchy spawn: lava-scarred stone, giant pillars and ruined walls around spawn" width="1600" height="825" fetchpriority="high">
   <div class="wrap hero-in">
     <p class="kicker">Minecraft anarchy server · since 2020 · never reset</p>
     <h1>Crispy Anarchy: a no-rules Minecraft anarchy server for Java and Bedrock</h1>
@@ -189,6 +188,7 @@ def home():
     {join_box()}
   </div>
 </section>
+<img class="banner" src="/img/wide.webp" alt="Wide 3D view of Crispy Anarchy spawn: a griefed tower and ruined walls rising out of lava-scarred stone and ocean" width="2400" height="675" fetchpriority="high">
 <section class="wrap block">
   <h2>What is Crispy Anarchy?</h2>
   <p class="measure">Crispy Anarchy is a free Minecraft anarchy server that has been running since 2020 without a map reset. There are no rules and no land claims: players grief, raid, fight and build wherever they like, and everything that happens stays in the world. Java Edition players join at <code>{JAVA}</code>; Bedrock Edition players join at <code>{JAVA}</code> on port <code>{BEDROCK_PORT}</code>.</p>
