@@ -1,0 +1,169 @@
+<title>Crispy Anarchy Spawn Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: full-screen pannable map; a slim top bar (name, join address) and a bottom instrument strip (live block coords, scale, zoom). Single dark look on purpose: a night-time cartographer's console. */
+:root {
+  --ground: #0d1016;      /* page / unexplored */
+  --panel: #151a23ee;     /* floating bars */
+  --line: #2a3242;        /* hairlines */
+  --ink: #e7ecf3;         /* main text */
+  --dim: #8b96a8;         /* secondary text */
+  --lava: #ff7a2f;        /* accent: lava orange, the colour of spawn */
+  --obsidian: #a98bff;    /* highway marker */
+  --display: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+[hidden] { display: none !important; }
+body { background: var(--ground); color: var(--ink); font-family: var(--mono); overflow: hidden; }
+#stage { position: fixed; inset: 0; touch-action: none; cursor: grab; }
+#stage.drag { cursor: grabbing; }
+canvas { display: block; width: 100%; height: 100%; }
+
+.bar {
+  position: fixed; left: 0; right: 0; z-index: 5;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--panel); backdrop-filter: blur(6px); border-color: var(--line); border-style: solid; border-width: 0;
+}
+.top { top: 0; padding-block: calc(10px + env(safe-area-inset-top, 0px)) 10px; border-bottom-width: 1px; }
+.bottom { bottom: 0; padding-block: 8px calc(8px + env(safe-area-inset-bottom, 0px)); border-top-width: 1px; font-size: 12px; color: var(--dim); }
+.brand { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+h1 { margin: 0; font-family: var(--display); font-weight: 700; font-size: 20px; letter-spacing: .02em; text-wrap: balance; }
+h1 span { color: var(--lava); }
+.sub { font-size: 11px; color: var(--dim); letter-spacing: .08em; text-transform: uppercase; }
+.join { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.join .lbl { font-size: 11px; color: var(--dim); letter-spacing: .08em; text-transform: uppercase; }
+.addr { font-weight: 600; font-size: 15px; user-select: all; color: var(--ink); }
+button {
+  font: 600 12px var(--mono); color: var(--ground); background: var(--lava); border: 0; border-radius: 4px;
+  padding: 7px 10px; cursor: pointer;
+}
+button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.coords { display: flex; gap: 14px; font-variant-numeric: tabular-nums; }
+.coords b { color: var(--ink); font-weight: 600; }
+.ctrl { display: flex; gap: 6px; align-items: center; }
+.legend { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+#toast { position: fixed; left: 50%; top: 84px; transform: translateX(-50%); z-index: 6; background: var(--panel); border: 1px solid var(--line);
+  padding: 6px 12px; border-radius: 4px; font-size: 12px; }
+#loading { position: fixed; inset: 0; display: grid; place-items: center; color: var(--dim); font-size: 13px; }
+@media (max-width: 560px) { .legend { display: none; } h1 { font-size: 17px; } }
+</style>
+
+<div id="stage"><canvas id="c"></canvas></div>
+<div id="loading">Loading 12.8 million blocks…</div>
+
+<header class="bar top">
+  <div class="brand">
+    <h1>Crispy Anarchy <span>Spawn</span></h1>
+    <div class="sub">Never reset · 3.5 × 3.5 km around spawn · 1 pixel = 1 block</div>
+  </div>
+  <div class="join">
+    <span class="lbl">Join (Java)</span>
+    <span class="addr" id="addr">crispyanarchy.net</span>
+    <button id="copy" type="button">Copy</button>
+  </div>
+</header>
+
+<footer class="bar bottom">
+  <div class="coords"><span>X <b id="x">—</b></span><span>Z <b id="z">—</b></span><span id="zoomlbl">1:1</span></div>
+  <div class="legend">
+    <span><i class="dot" style="background:var(--lava)"></i>World spawn</span>
+    <span><i class="dot" style="background:var(--obsidian)"></i>Axis highways (X = 0, Z = 0)</span>
+  </div>
+  <div class="ctrl">
+    <button class="ghost" id="out" type="button" aria-label="Zoom out">−</button>
+    <button class="ghost" id="in" type="button" aria-label="Zoom in">+</button>
+    <button class="ghost" id="home" type="button">Spawn</button>
+  </div>
+</footer>
+<div id="toast" hidden></div>
+
+<script>
+// World geometry of the rendered image: pixel (0,0) is block X = -1536, Z = -2048; spawn is at 287, -207.
+const ORIGIN_X = -1536, ORIGIN_Z = -2048, SPAWN = { x: 287, z: -207 };
+const cv = document.getElementById('c'), ctx = cv.getContext('2d'), stage = document.getElementById('stage');
+const img = new Image();
+let scale = 1, cx = SPAWN.x, cz = SPAWN.z;   // view centre in block coords, scale = screen px per block
+const MIN = 0.12, MAX = 16;
+const dpr = () => Math.min(window.devicePixelRatio || 1, 2);
+
+function resize() { cv.width = innerWidth * dpr(); cv.height = innerHeight * dpr(); draw(); }
+function toScreen(bx, bz) { return [(bx - cx) * scale + innerWidth / 2, (bz - cz) * scale + innerHeight / 2]; }
+function toBlock(sx, sy) { return [Math.floor((sx - innerWidth / 2) / scale + cx), Math.floor((sy - innerHeight / 2) / scale + cz)]; }
+
+function draw() {
+  const r = dpr();
+  ctx.setTransform(r, 0, 0, r, 0, 0);
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--ground');
+  ctx.fillRect(0, 0, innerWidth, innerHeight);
+  if (!img.complete || !img.naturalWidth) return;
+  ctx.imageSmoothingEnabled = scale < 1;
+  const [ix, iy] = toScreen(ORIGIN_X, ORIGIN_Z);
+  ctx.drawImage(img, ix, iy, img.naturalWidth * scale, img.naturalHeight * scale);
+  // spawn marker
+  const [sx, sy] = toScreen(SPAWN.x + 0.5, SPAWN.z + 0.5);
+  const css = getComputedStyle(document.documentElement);
+  ctx.lineWidth = 2; ctx.strokeStyle = css.getPropertyValue('--lava');
+  ctx.beginPath(); ctx.arc(sx, sy, 9, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(sx, sy, 3, 0, Math.PI * 2); ctx.fillStyle = css.getPropertyValue('--lava'); ctx.fill();
+  ctx.font = '600 12px ' + css.getPropertyValue('--mono'); ctx.fillStyle = css.getPropertyValue('--ink');
+  ctx.strokeStyle = 'rgba(13,16,22,.85)'; ctx.lineWidth = 3;
+  ctx.strokeText('SPAWN', sx + 13, sy + 4); ctx.fillText('SPAWN', sx + 13, sy + 4);
+  document.getElementById('zoomlbl').textContent = scale >= 1 ? `${+scale.toFixed(1)} px/block` : `1 px = ${+(1 / scale).toFixed(1)} blocks`;
+}
+
+function zoomAt(f, sx = innerWidth / 2, sy = innerHeight / 2) {
+  const before = [(sx - innerWidth / 2) / scale + cx, (sy - innerHeight / 2) / scale + cz];
+  scale = Math.min(MAX, Math.max(MIN, scale * f));
+  cx = before[0] - (sx - innerWidth / 2) / scale; cz = before[1] - (sy - innerHeight / 2) / scale;
+  draw();
+}
+
+// pointer: drag to pan, pinch to zoom, hover for coordinates
+const pts = new Map(); let pinch = 0;
+stage.addEventListener('pointerdown', e => { stage.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); stage.classList.add('drag'); });
+stage.addEventListener('pointermove', e => {
+  const [bx, bz] = toBlock(e.clientX, e.clientY);
+  document.getElementById('x').textContent = bx; document.getElementById('z').textContent = bz;
+  if (!pts.has(e.pointerId)) return;
+  const prev = pts.get(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
+  if (pts.size === 2) {
+    const [a, b] = [...pts.values()]; const d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+    if (pinch) zoomAt(d / pinch, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
+    pinch = d; return;
+  }
+  cx -= (e.clientX - prev[0]) / scale; cz -= (e.clientY - prev[1]) / scale; draw();
+});
+const up = e => { pts.delete(e.pointerId); if (pts.size < 2) pinch = 0; if (!pts.size) stage.classList.remove('drag'); };
+stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up);
+stage.addEventListener('wheel', e => { e.preventDefault(); zoomAt(Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY); }, { passive: false });
+document.getElementById('in').onclick = () => zoomAt(1.6);
+document.getElementById('out').onclick = () => zoomAt(1 / 1.6);
+document.getElementById('home').onclick = () => { cx = SPAWN.x; cz = SPAWN.z; scale = 2; draw(); };
+addEventListener('keydown', e => {
+  if (e.key === '+' || e.key === '=') zoomAt(1.4); else if (e.key === '-') zoomAt(1 / 1.4);
+  else if (e.key.startsWith('Arrow')) { const s = 60 / scale; if (e.key === 'ArrowLeft') cx -= s; if (e.key === 'ArrowRight') cx += s; if (e.key === 'ArrowUp') cz -= s; if (e.key === 'ArrowDown') cz += s; draw(); }
+});
+
+const toast = document.getElementById('toast');
+function say(t) { toast.textContent = t; toast.hidden = false; clearTimeout(say.t); say.t = setTimeout(() => toast.hidden = true, 1800); }
+document.getElementById('copy').onclick = () => {
+  const t = document.getElementById('addr').textContent;
+  navigator.clipboard?.writeText(t).then(() => say('Copied ' + t), () => { getSelection().selectAllChildren(document.getElementById('addr')); say('Press Ctrl+C to copy'); })
+    ?? (getSelection().selectAllChildren(document.getElementById('addr')), say('Press Ctrl+C to copy'));
+};
+
+img.onload = () => {
+  document.getElementById('loading').hidden = true;
+  scale = Math.max(MIN, Math.min(innerWidth, innerHeight) / 1400);  // open on spawn with the wasteland and its surroundings in view
+  resize();
+};
+img.src = 'spawn.webp';
+addEventListener('resize', resize); resize();
+</script>
