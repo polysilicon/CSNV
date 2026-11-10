@@ -451,7 +451,7 @@ Key facts:
 - Server address (Java): {JAVA}
 - Server address (Bedrock): {JAVA} port {BEDROCK_PORT}
 - Running since 2020, never reset. World spawn: X 287, Z -207.
-- Rules: no gameplay rules on Anarchy (griefing, raiding and PvP allowed). Community rules on every server: follow the Minecraft Usage Guidelines and Minecraft/Xbox Community Standards; no hate speech or hateful builds, no real-life harassment, threats or doxxing, no spam. Chat reports are disabled.
+- Rules: no gameplay rules and no bans on Anarchy (griefing, raiding and PvP allowed). Community rules on every server: follow the Minecraft Usage Guidelines and Minecraft/Xbox Community Standards; no hate speech or hateful builds, no real-life harassment, threats or doxxing, no spam. Slurs are automatically starred in chat, signs, books and item names. Chat reports are disabled.
 - Requires a paid Java account (not cracked); Bedrock uses Microsoft accounts.
 - Anarchy extras: 193 custom enchantments in 9 tiers, cyberpunk implants from a Ripperdoc, a villager market with Gold Coins, a bank, a crypto (Bitcoin) trader with a fluctuating price, and a hidden black market.
 - Other modes on the same network: Vanilla Anarchy (plain survival anarchy), Skyblock (5 skills, 43 minions, pets, Bazaar, craftable gear), Multiverse PvP (36 characters, kit PvP, Elo duels, co-op zombie waves, Core Defense), Factions (1.8 combat, cannons, set raid windows).
@@ -635,7 +635,7 @@ def rules():
   <p>Griefing, raiding, stealing, killing, traps, lying and betrayal are all part of the game. Other modes have their own gameplay rules where they need them, like the raid windows on Factions.</p>
 
   <h2>How this works</h2>
-  <p>There are no bans, mutes or player reports on our Minecraft servers. These rules are here so everyone knows what is expected, not so we can punish people. Instead, we keep the worst content out with roadblocks rather than staff: hateful builds, signs and map art are cleared away when we come across them.</p>
+  <p>There are no bans, mutes or player reports on our Minecraft servers. These rules are here so everyone knows what is expected, not so we can punish people. Instead, we keep the worst content out with roadblocks rather than staff: slurs and hate slogans are automatically replaced with stars in chat, private messages, signs, books and item names on every server, and hateful builds and map art are cleared away when we come across them.</p>
 </section>
 """
     return page("/rules/", "Crispy Anarchy Rules – Community Rules for an Anarchy Server",
