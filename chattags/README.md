@@ -41,3 +41,25 @@ plugin turns hex colours into Spigot's `§x` form for SaberFactions' legacy chat
 event's message where SaberFactions is installed (`legacy-chat-colors`): EssentialsChat on the Lobby stripped the codes
 from it and left the "x" of each hex colour behind.
 
+
+## Slur filter (Fabric 1.9.0, Paper 1.7.0)
+
+Listed slurs are replaced with stars (`you're a ******`), never blocked, so chat keeps flowing. One word list for
+everything: the Discord bot's `/opt/crispybot/censor_words.txt` (all servers run as `amp` on the same host and can
+read it; `-Dcrispy.censor=<path>` to change). Edit that file and every server and the Discord relay pick it up within
+seconds. `Censor.java` is a line-for-line copy of the bot's `censor.py` matching (checked identical on 1,437 test
+lines): leetspeak, repeated letters and junk between letters are seen through, words inside longer words are not
+(raccoon, Scunthorpe). List syntax: `word` (plus s/es/ed/ing/y/ies endings), `stem*` (any word starting with it),
+`=word` (only the word or its plural, for short slurs whose endings are real words: spicy, tardy; the bot reads it as
+`word`), multi-word entries match with or without spaces. Both copies of `Censor.java` (fabric/ and paper/) must stay
+identical.
+
+- Fabric: public chat is starred before it is coloured (ChatNameMixin, or the Styled Chat hook), so colours stay;
+  `CensorChatMixin` stars anything else a client receives (/msg, /me, /teammsg, /say); `CensorLogMixin` stars the
+  log line (the bot's cross-server chat reads it); `CensorTextMixin` stars sign lines and book pages/titles before
+  they are stored; `CensorAnvilMixin` stars anvil names.
+- Paper (`CensorListener`): chat at LOWEST (legacy and Paper events, before the colour/tag passes), private-message
+  commands (`/msg`, `/tell`, `/w`, `/r`, `/me`, `/mail`, `/f` ...), `SignChangeEvent`, `PlayerEditBookEvent`,
+  `PrepareAnvilEvent`.
+- Not covered: messages typed in Discord and sent into the game (Discord has its own moderation), and anything
+  already in the world before 1.9.0 (old signs, books, item names).

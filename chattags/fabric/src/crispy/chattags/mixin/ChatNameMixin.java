@@ -1,5 +1,6 @@
 package crispy.chattags.mixin;
 
+import crispy.chattags.Censor;
 import crispy.chattags.Tags;
 import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.Component;
@@ -25,9 +26,10 @@ public abstract class ChatNameMixin {
     @ModifyVariable(method = "broadcastChatMessage", at = @At("HEAD"), argsOnly = true)
     private PlayerChatMessage crispy$chatColor(PlayerChatMessage message) {
         if (FabricLoader.getInstance().isModLoaded("styledchat")) return message;
-        String text = message.signedContent();
-        String code = Tags.chatCode(player.getGameProfile().name(), text);
-        return code == null ? message : message.withUnsignedContent(Tags.colored(code, text));
+        String text = message.signedContent(), clean = Censor.apply(text);   // slurs starred (Censor), then coloured
+        String code = Tags.chatCode(player.getGameProfile().name(), clean);
+        if (code == null) return clean == text ? message : message.withUnsignedContent(Component.literal(clean));
+        return message.withUnsignedContent(Tags.colored(code, clean));
     }
 
     @Redirect(method = "broadcastChatMessage", at = @At(value = "INVOKE",

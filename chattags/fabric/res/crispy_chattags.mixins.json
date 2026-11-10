@@ -8,7 +8,11 @@
     "CombatHitMixin",
     "CombatTickMixin",
     "CommandsMixin",
-    "GateInteractMixin"
+    "GateInteractMixin",
+    "CensorTextMixin",
+    "CensorAnvilMixin",
+    "CensorChatMixin",
+    "CensorLogMixin"
   ],
   "injectors": {
     "defaultRequire": 1

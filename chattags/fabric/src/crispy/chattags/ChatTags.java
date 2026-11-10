@@ -40,10 +40,11 @@ public class ChatTags implements ModInitializer {
         }
 
         static TextNode recolor(TextNode node, PlaceholderContext ctx) {
-            if (ctx == null || !ctx.hasPlayer()) return node;
-            String text = node.toComponent(ctx).getString();
-            String code = Tags.chatCode(ctx.player().getGameProfile().name(), text);
-            return code == null ? node : TextNode.convert(Tags.colored(code, text));
+            if (ctx == null || !ctx.hasPlayer()) return node;   // (non-player messages are left alone)
+            String text = node.toComponent(ctx).getString(), clean = Censor.apply(text);   // slurs starred, then coloured
+            String code = Tags.chatCode(ctx.player().getGameProfile().name(), clean);
+            if (code == null) return clean == text ? node : TextNode.convert(Component.literal(clean));
+            return TextNode.convert(Tags.colored(code, clean));
         }
     }
 

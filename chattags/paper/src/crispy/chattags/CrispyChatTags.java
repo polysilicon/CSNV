@@ -71,6 +71,7 @@ public class CrispyChatTags extends JavaPlugin implements Listener {
         // Elsewhere EssentialsChat would strip the codes from that copy and leave the "x" of each hex colour behind.
         legacyColors = getConfig().getBoolean("legacy-chat-colors", getServer().getPluginManager().getPlugin("Factions") != null);
         getServer().getPluginManager().registerEvents(this, this);
+        getServer().getPluginManager().registerEvents(new CensorListener(), this);   // slur filter (1.7.0)
         // /vote and /cosmetics drawn here from the lobby's menus, on servers without CrispyLobby (Factions)
         if (getServer().getPluginManager().getPlugin("CrispyLobby") == null) getServer().getPluginManager().registerEvents(new RemoteMenu(this), this);
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> { tags.reload(); colors.reload(); chat.reload(); }, 20L, 60L);

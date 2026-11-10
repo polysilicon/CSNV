@@ -1,7 +1,7 @@
 name: CrispyChatTags
-version: 1.6.0
+version: 1.7.0
 softdepend: [Essentials, EssentialsChat]
 main: crispy.chattags.CrispyChatTags
 api-version: '1.21'
 author: CrispyAnarchy
-description: Vote-cosmetic tags before names in chat
+description: Vote-cosmetic tags before names in chat; slur filter for chat, signs, books and anvil names
