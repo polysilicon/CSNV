@@ -42,7 +42,7 @@ event's message where SaberFactions is installed (`legacy-chat-colors`): Essenti
 from it and left the "x" of each hex colour behind.
 
 
-## Slur filter (Fabric 1.9.0, Paper 1.7.0)
+## Slur filter (Fabric 1.9.0+, Paper 1.7.0+)
 
 Listed slurs are replaced with stars (`you're a ******`), never blocked, so chat keeps flowing. One word list for
 everything: the Discord bot's `/opt/crispybot/censor_words.txt` (all servers run as `amp` on the same host and can
@@ -63,3 +63,8 @@ identical.
   `PrepareAnvilEvent`.
 - Not covered: messages typed in Discord and sent into the game (Discord has its own moderation), and anything
   already in the world before 1.9.0 (old signs, books, item names).
+- 1.9.1 / 1.7.1: a starred chat message is sent as a system message (formatted the same as chat), not as signed
+  player chat. With a signed message, Java clients keep the original text and show it on hover ("Message modified by
+  the server"). Fabric: `CensorChatMixin` checks the signed original on every outgoing player message. Paper:
+  `CensorListener` marks starred events and `onChat` sends those through the system-chat path (Factions already
+  sends all chat that way). Unstarred chat is untouched.

@@ -15,8 +15,10 @@ import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 /** Slur filter (1.7.0): listed words are starred (Censor, the same list and matching as the Discord bot and the
  *  Fabric mod) in chat, private-message commands, signs, books and anvil names. Chat is starred first (LOWEST), so
@@ -26,6 +28,10 @@ final class CensorListener implements Listener {
     /** Commands whose arguments are a message to other players (Essentials and vanilla names). */
     static final Set<String> MSG = Set.of("msg", "tell", "w", "whisper", "m", "pm", "dm", "t", "r", "reply", "me", "say",
             "mail", "emsg", "etell", "ewhisper", "er", "ereply", "eme", "broadcast", "bc", "helpop", "ac", "f", "fac", "factions");
+
+    /** Chat events whose message was starred: CrispyChatTags.onChat sends those as system messages, because a signed
+     *  message lets Java clients show the original text on hover ("modified by the server"). */
+    static final Set<AsyncChatEvent> CENSORED = Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()));
 
     @SuppressWarnings("deprecation")
     @EventHandler(priority = EventPriority.LOWEST)
@@ -37,7 +43,8 @@ final class CensorListener implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     public void chat(AsyncChatEvent e) {
         String text = PLAIN.serialize(e.message()), c = Censor.apply(text);
-        if (c != text) e.message(Component.text(c));
+        if (c != text) { e.message(Component.text(c)); CENSORED.add(e); }
+        else if (Censor.dirty(PLAIN.serialize(e.originalMessage()))) CENSORED.add(e);   // starred earlier (legacy event)
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

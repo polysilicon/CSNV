@@ -204,7 +204,8 @@ public class CrispyChatTags extends JavaPlugin implements Listener {
         Component msgColored = code == null || text.isBlank() ? null : colored(code, text);
         if (msgColored != null) e.message(msgColored);
         Component tagged = chatName(name, Component.text(name));
-        if (tagged == null && msgColored == null) return;
+        boolean censored = CensorListener.CENSORED.remove(e);   // starred: never send the signed original (see CensorListener)
+        if (tagged == null && msgColored == null && !censored) return;
         String taggedText = tagged == null ? null : PLAIN.serialize(tagged);
         ChatRenderer inner = e.renderer();
         ChatRenderer r = (source, displayName, message, viewer) -> {
@@ -216,7 +217,7 @@ public class CrispyChatTags extends JavaPlugin implements Listener {
                     .replacement(b -> { hit[0] = true; return tagged; }).build());
             return hit[0] ? out : tagged.append(Component.text(" ")).append(line);
         };
-        if (!systemChat) { e.renderer(r); return; }
+        if (!systemChat && !censored) { e.renderer(r); return; }
         Set<Audience> viewers = new HashSet<>(e.viewers());
         Player src = e.getPlayer();
         Component dn = src.displayName(), msg = e.message();
