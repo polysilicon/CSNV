@@ -112,6 +112,7 @@ def page(path, title, desc, body, crumbs=None, extra_ld=(), image="/img/og.jpg",
     <div class="foot-links">
       {''.join(f'<a href="{p}">{n}</a>' for p, n in NAV[1:])}
       <a href="/bedrock-anarchy/">Bedrock anarchy</a>
+      <a href="/rules/">Rules</a>
       <a href="{DISCORD}" rel="noopener">Discord</a>
     </div>
   </div>
@@ -141,10 +142,10 @@ FAQ = [
     ("What is the Crispy Anarchy server IP?",
      f"Java Edition: {JAVA} (no port needed). Bedrock Edition: {JAVA}, port {BEDROCK_PORT}."),
     ("What is a Minecraft anarchy server?",
-     "An anarchy server is a Minecraft survival server with no rules: no land claims, no protected bases and no staff stepping in. "
+     "An anarchy server is a Minecraft survival server with no gameplay rules: no land claims, no protected bases and no staff stepping in to stop griefing or PvP. "
      "Griefing, raiding and PvP are all part of the game, and the world is never reset, so it keeps years of history."),
     ("Does Crispy Anarchy have rules?",
-     "No. Crispy Anarchy has no gameplay rules and no land claims. Anything you build can be found, raided or griefed by other players."),
+     "Crispy Anarchy has no gameplay rules and no land claims: anything you build can be found, raided or griefed by other players. The only rules are community rules that apply everywhere: no hate speech or hateful builds, no real-life harassment, threats or doxxing, and no spam. See www.crispyanarchy.net/rules/."),
     ("Has the Crispy Anarchy map ever been reset?",
      "No. The anarchy world has been running since 2020 and has never been reset."),
     ("Can Bedrock players join Crispy Anarchy?",
@@ -160,7 +161,7 @@ FAQ = [
     ("Are chat reports turned off?",
      "Yes. The anarchy server runs No Chat Reports, so chat messages cannot be reported to Mojang through the game's chat reporting."),
     ("How is Crispy Anarchy different from 2b2t?",
-     "Same idea: no rules and a world that is never reset. Different: Bedrock players can join too, the server adds 193 custom enchantments, "
+     "Same idea: no gameplay rules and a world that is never reset. Different: Bedrock players can join too, the server adds 193 custom enchantments, "
      "cyberpunk implants and a market economy with a crypto exchange, and the community is smaller, so you meet people quickly."),
     ("What other game modes does the network have?",
      "Besides Anarchy there is Vanilla Anarchy (plain survival), Skyblock with skills, pets and minions, a PvP server called Multiverse "
@@ -172,7 +173,7 @@ FAQ = [
 
 def home():
     modes = [
-        ("/anarchy/", "Anarchy", "No rules, no claims, one world since 2020. Custom enchantments, implants, a market and a hidden black market."),
+        ("/anarchy/", "Anarchy", "No gameplay rules, no claims, one world since 2020. Custom enchantments, implants, a market and a hidden black market."),
         ("/anarchy/#vanilla", "Vanilla Anarchy", "Plain survival anarchy with no custom items, for people who like it pure."),
         ("/skyblock/", "Skyblock", "Grow your island with skills, pets, 43 minions, a Bazaar and gear crafted from what you farm."),
         ("/pvp/", "Multiverse PvP", "36 playable characters, kit PvP, ranked duels and co-op zombie waves."),
@@ -186,15 +187,15 @@ def home():
 <section class="hero">
   <div class="wrap hero-in">
     <p class="kicker">Minecraft anarchy server · since 2020 · never reset</p>
-    <h1>Crispy Anarchy: a no-rules Minecraft anarchy server for Java and Bedrock</h1>
-    <p class="lede">One world, running since 2020 and never reset. No rules, no claims, no protected bases. Custom enchantments, cyberpunk implants and a player market on top, and no mods needed.</p>
+    <h1>Crispy Anarchy: a Minecraft anarchy server for Java and Bedrock, since 2020</h1>
+    <p class="lede">One world, running since 2020 and never reset. No gameplay rules, no claims, no protected bases. Custom enchantments, cyberpunk implants and a player market on top, and no mods needed.</p>
     {join_box()}
   </div>
 </section>
 <img class="banner" src="/img/wide.webp" alt="Wide 3D view of Crispy Anarchy spawn: a griefed tower and ruined walls rising out of lava-scarred stone and ocean" width="2400" height="675" fetchpriority="high">
 <section class="wrap block">
   <h2>What is Crispy Anarchy?</h2>
-  <p class="measure">Crispy Anarchy is a free Minecraft anarchy server that has been running since 2020 without a map reset. There are no rules and no land claims: players grief, raid, fight and build wherever they like, and everything that happens stays in the world. Java Edition players join at <code>{JAVA}</code>; Bedrock Edition players join at <code>{JAVA}</code> on port <code>{BEDROCK_PORT}</code>.</p>
+  <p class="measure">Crispy Anarchy is a free Minecraft anarchy server that has been running since 2020 without a map reset. There are no gameplay rules and no land claims: players grief, raid, fight and build wherever they like, and everything that happens stays in the world. Java Edition players join at <code>{JAVA}</code>; Bedrock Edition players join at <code>{JAVA}</code> on port <code>{BEDROCK_PORT}</code>.</p>
   <p class="measure">Crispy Anarchy is also the name of the wider Crispy network, which adds Vanilla Anarchy, Skyblock, a PvP server and Factions, linked by one chat and one Discord.</p>
   <ul class="facts">
     <li><b>2020</b><span>world started, never reset</span></li>
@@ -227,7 +228,7 @@ def home():
 </section>
 """
     return page("/", "Crispy Anarchy – Minecraft Anarchy Server (Java & Bedrock) | crispyanarchy.net",
-                "Crispy Anarchy is a no-rules Minecraft anarchy server since 2020, never reset. Java and Bedrock crossplay, 193 custom enchantments, implants and a market. IP: crispyanarchy.net",
+                "Crispy Anarchy is a Minecraft anarchy server with no gameplay rules, running since 2020 and never reset. Java and Bedrock crossplay, 193 custom enchantments, implants and a market. IP: crispyanarchy.net",
                 body, extra_ld=[GAMESERVER, faq_ld(FAQ[:5])])
 
 
@@ -235,14 +236,15 @@ def anarchy():
     body = f"""
 <section class="wrap block head">
   <p class="kicker">Anarchy · Java + Bedrock</p>
-  <h1>Minecraft anarchy server with no rules, running since 2020</h1>
-  <p class="lede measure">Crispy Anarchy is our main server: a survival world with no rules and no land claims that has never been reset since it started in 2020. On top of plain anarchy it adds custom enchantments, cyberpunk implants and a player market, all without mods.</p>
+  <h1>Minecraft anarchy server with no gameplay rules, running since 2020</h1>
+  <p class="lede measure">Crispy Anarchy is our main server: a survival world with no gameplay rules and no land claims that has never been reset since it started in 2020. On top of plain anarchy it adds custom enchantments, cyberpunk implants and a player market, all without mods.</p>
   {join_box(True)}
 </section>
 <figure class="wrap shot"><img src="/img/low.webp" alt="Ground-level 3D view of Crispy Anarchy spawn: ruined stone walls, water and lava flows" width="1600" height="900" loading="lazy"><figcaption>Spawn today, from the <a href="/spawn-map/">3D map</a>.</figcaption></figure>
 <section class="wrap block prose">
-  <h2>No rules, no claims, no resets</h2>
+  <h2>No gameplay rules, no claims, no resets</h2>
   <p>There are no gameplay rules on Crispy Anarchy. Nothing is protected: bases can be found and raided, builds can be griefed, and anyone can kill anyone. Chat reports are off (the server runs No Chat Reports).</p>
+  <p>The few <a href="/rules/">community rules</a> are about people, not gameplay: no hate speech or hateful builds, no real-life harassment, threats or doxxing, and no spam.</p>
   <p>The world started in 2020 and has never been wiped, so the land around spawn carries six years of history. Spawn itself is at X 287, Z -207, and the closer you get the less is left standing. Most players head out along the axis highways to find space to build.</p>
 
   <h2>193 custom enchantments</h2>
@@ -264,8 +266,8 @@ def anarchy():
 """
     qas = [FAQ[2], FAQ[3], FAQ[10]]
     body += f'<section class="wrap block"><h2>Anarchy questions</h2><div class="faq">{faq_html(qas)}</div></section>'
-    return page("/anarchy/", "Minecraft Anarchy Server – No Rules, Never Reset Since 2020 | Crispy Anarchy",
-                "A Minecraft anarchy server with no rules and no claims, running since 2020 and never reset. 193 custom enchantments, implants, a market and crypto. Java & Bedrock: crispyanarchy.net",
+    return page("/anarchy/", "Minecraft Anarchy Server – No Gameplay Rules, Never Reset Since 2020 | Crispy Anarchy",
+                "A Minecraft anarchy server with no gameplay rules and no claims, running since 2020 and never reset. 193 custom enchantments, implants, a market and crypto. Java & Bedrock: crispyanarchy.net",
                 body, crumbs=[("/anarchy/", "Anarchy")], extra_ld=[GAMESERVER, faq_ld(qas)], image="/img/low.webp")
 
 
@@ -389,6 +391,7 @@ def join():
   <div><h2>Bedrock Edition</h2>{ol(steps_bedrock)}<p class="note">Works on Windows, phones and tablets. Consoles need a workaround: see the <a href="/bedrock-anarchy/">Bedrock guide</a>.</p></div>
 </section>
 <section class="wrap block prose">
+  <p>By joining you agree to the <a href="/rules/">rules</a>: no gameplay rules on Anarchy, but no hate speech, harassment, sexual content or spam anywhere.</p>
   <h2>Trouble connecting?</h2>
   <ul>
     <li><b>Java says "outdated client" or "outdated server":</b> use a version between 1.13 and 26.3.</li>
@@ -442,13 +445,13 @@ def notfound():
 
 LLMS = f"""# Crispy Anarchy
 
-> Crispy Anarchy is a free Minecraft anarchy server that has run since 2020 without a map reset. No rules and no land claims. Java Edition address: {JAVA} (versions 1.13 to 26.3). Bedrock Edition address: {JAVA}, port {BEDROCK_PORT}. Java and Bedrock players share the same worlds. No mods needed.
+> Crispy Anarchy is a free Minecraft anarchy server that has run since 2020 without a map reset. No gameplay rules and no land claims (community rules against hate speech, harassment and spam apply). Java Edition address: {JAVA} (versions 1.13 to 26.3). Bedrock Edition address: {JAVA}, port {BEDROCK_PORT}. Java and Bedrock players share the same worlds. No mods needed.
 
 Key facts:
 - Server address (Java): {JAVA}
 - Server address (Bedrock): {JAVA} port {BEDROCK_PORT}
 - Running since 2020, never reset. World spawn: X 287, Z -207.
-- Rules: none on Anarchy (griefing, raiding and PvP allowed). Chat reports are disabled.
+- Rules: no gameplay rules on Anarchy (griefing, raiding and PvP allowed). Community rules on every server: follow the Minecraft Usage Guidelines and Minecraft/Xbox Community Standards; no hate speech or hateful builds, no real-life harassment, threats or doxxing, no spam. Chat reports are disabled.
 - Requires a paid Java account (not cracked); Bedrock uses Microsoft accounts.
 - Anarchy extras: 193 custom enchantments in 9 tiers, cyberpunk implants from a Ripperdoc, a villager market with Gold Coins, a bank, a crypto (Bitcoin) trader with a fluctuating price, and a hidden black market.
 - Other modes on the same network: Vanilla Anarchy (plain survival anarchy), Skyblock (5 skills, 43 minions, pets, Bazaar, craftable gear), Multiverse PvP (36 characters, kit PvP, Elo duels, co-op zombie waves, Core Defense), Factions (1.8 combat, cannons, set raid windows).
@@ -459,6 +462,7 @@ Key facts:
 - [How to join]({SITE}/join/): Java and Bedrock steps and troubleshooting
 - [Bedrock anarchy]({SITE}/bedrock-anarchy/): joining from Windows, mobile and console
 - [News]({SITE}/news/): updates and new features
+- [Rules]({SITE}/rules/): community rules (Minecraft Usage Guidelines, no hate, no harassment)
 - [FAQ]({SITE}/faq/)
 - [3D spawn map]({SITE}/spawn-map/)
 - [Skyblock]({SITE}/skyblock/)
@@ -572,14 +576,14 @@ def bedrock():
 <section class="wrap block head">
   <p class="kicker">Bedrock anarchy · crossplay with Java</p>
   <h1>A Minecraft Bedrock anarchy server, shared with Java players</h1>
-  <p class="lede measure">Most anarchy servers are Java only. Crispy Anarchy lets Bedrock Edition players on Windows, phones, tablets and consoles join the same no-rules world as Java players, a world that has been running since 2020 without a reset.</p>
+  <p class="lede measure">Most anarchy servers are Java only. Crispy Anarchy lets Bedrock Edition players on Windows, phones, tablets and consoles join the same anarchy world as Java players, a world that has been running since 2020 without a reset.</p>
   {join_box(True)}
 </section>
 <section class="wrap block two">{blocks}</section>
 <section class="wrap block prose">
   <h2>What Bedrock players get</h2>
   <ul>
-    <li>The same anarchy world as Java players: no rules, no claims, never reset.</li>
+    <li>The same anarchy world as Java players: no gameplay rules, no claims, never reset.</li>
     <li>The market, the Banker and the Crypto Exchange, the Enchanter's 193 custom enchantments and the Ripperdoc's implants.</li>
     <li>Every other mode on the network too: Vanilla Anarchy, Skyblock, Multiverse PvP and Factions.</li>
     <li>One chat with Java players and our Discord.</li>
@@ -595,8 +599,51 @@ def bedrock():
 <section class="wrap block"><h2>Bedrock questions</h2><div class="faq">{faq_html(qas)}</div></section>
 """
     return page("/bedrock-anarchy/", "Bedrock Anarchy Server – Crossplay with Java Since 2020 | Crispy Anarchy",
-                f"Crispy Anarchy is a Minecraft Bedrock anarchy server shared with Java players. No rules, never reset since 2020. Join at {JAVA} port {BEDROCK_PORT} on Windows, mobile and console.",
+                f"Crispy Anarchy is a Minecraft Bedrock anarchy server shared with Java players. No gameplay rules, never reset since 2020. Join at {JAVA} port {BEDROCK_PORT} on Windows, mobile and console.",
                 body, crumbs=[("/bedrock-anarchy/", "Bedrock anarchy")], extra_ld=howtos + [faq_ld(qas)])
+
+
+MUG = "https://www.minecraft.net/en-us/usage-guidelines"
+MCS = "https://www.minecraft.net/en-us/community-standards"
+XCS = "https://www.xbox.com/en-US/legal/community-standards"
+
+
+def rules():
+    body = f"""
+<section class="wrap block head">
+  <p class="kicker">Rules</p>
+  <h1>Crispy Anarchy rules</h1>
+  <p class="lede measure">Gameplay on Crispy Anarchy is anarchy: no claims, no protected bases, and nobody will step in if your base gets griefed. The rules below are about people, not gameplay, and they apply everywhere on the network: Anarchy, Vanilla Anarchy, Skyblock, Multiverse, Factions, the lobby and our Discord.</p>
+</section>
+<section class="wrap block prose">
+  <h2>1. Follow Microsoft's rules</h2>
+  <p>All players must follow the <a href="{MUG}" rel="noopener">Minecraft Usage Guidelines</a>, the <a href="{MCS}" rel="noopener">Minecraft Community Standards</a> and the <a href="{XCS}" rel="noopener">Xbox Community Standards</a>, which you agreed to when you created your Minecraft account.</p>
+
+  <h2>2. No hate</h2>
+  <p>No slurs, hate speech or attacks on people for their race, ethnicity, nationality, religion, gender, gender identity, sexual orientation or disability. That covers chat, private messages, signs, books, item names, usernames, skins, builds, banners and map art. Hate symbols, such as swastikas, count as hate speech wherever they are built, however far from spawn.</p>
+
+  <h2>3. No real-life harm</h2>
+  <p>No harassment, bullying or threats against real people, on the server or in any other community. No doxxing: never share anyone's real name, address, photos, school or other personal information. Don't tell people to kill themselves.</p>
+
+  <h2>4. No sexual content</h2>
+  <p>No sexually explicit chat, builds, map art or skins, and nothing sexual involving minors, ever.</p>
+
+  <h2>5. No spam, ads or scams</h2>
+  <p>Don't flood chat with repeated messages, don't advertise other servers or third-party shops, and don't scam anyone for real money, accounts or personal information.</p>
+
+  <h2>What's still fine on Anarchy</h2>
+  <p>Griefing, raiding, stealing, killing, traps, lying and betrayal are all part of the game. Other modes have their own gameplay rules where they need them, like the raid windows on Factions.</p>
+
+  <h2>Reporting</h2>
+  <p>Seen something that breaks these rules? Tell staff in our <a href="{DISCORD}" rel="noopener">Discord</a> with a screenshot, the server, and where it is. We remove hateful builds, signs and map art when we find them or they're reported.</p>
+
+  <h2>What happens if you break them</h2>
+  <p>The content is removed, and depending on how serious it is you get a warning, a mute, or a temporary or permanent ban from the network.</p>
+</section>
+"""
+    return page("/rules/", "Crispy Anarchy Rules – Community Rules for an Anarchy Server",
+                "Crispy Anarchy has no gameplay rules, but everyone must follow the Minecraft Usage Guidelines and Community Standards: no hate speech or hateful builds, no real-life harassment, no sexual content, no spam.",
+                body, crumbs=[("/rules/", "Rules")])
 
 
 def main(out):
@@ -605,7 +652,7 @@ def main(out):
     os.makedirs(out)
     pages = {"/": home, "/anarchy/": anarchy, "/skyblock/": skyblock, "/pvp/": pvp, "/factions/": factions,
              "/spawn-map/": spawn_map, "/join/": join, "/vote/": vote, "/faq/": faq,
-             "/bedrock-anarchy/": bedrock, "/news/": news_index}
+             "/bedrock-anarchy/": bedrock, "/news/": news_index, "/rules/": rules}
     for n in NEWS:
         pages[f"/news/{n['slug']}/"] = (lambda n=n: news_post(n))
     for path, fn in pages.items():
