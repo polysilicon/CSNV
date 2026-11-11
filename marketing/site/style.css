@@ -123,3 +123,10 @@ table.modes th { font: 600 12px var(--mono); letter-spacing: .08em; text-transfo
 table.modes td:first-child { white-space: nowrap; font-weight: 600; }
 table.modes td:nth-child(2) { white-space: nowrap; color: var(--dim); }
 .prose h3 { margin-top: 1.2em; }
+.pic { margin: 18px 0; }
+.pic img { width: 100%; border-radius: 8px; border: 1px solid var(--line); }
+.pic figcaption, .shot figcaption { color: var(--dim); font-size: 14px; margin-top: 6px; }
+.pics { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
+.pics .pic { margin: 0; }
+@media (max-width: 640px) { .pics { grid-template-columns: 1fr; } }
+.prose .pic, .prose .pics { max-width: 860px; }

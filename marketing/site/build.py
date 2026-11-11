@@ -124,6 +124,17 @@ def page(path, title, desc, body, crumbs=None, extra_ld=(), image="/img/og.jpg",
 """
 
 
+def fig(name, alt, cap):
+    """A screenshot from images/shots/ (1600x900 webp) with a caption."""
+    return (f'<figure class="pic"><img src="/img/shots/{name}.webp" alt="{e(alt)}" width="1600" height="900" loading="lazy">'
+            f'<figcaption>{cap}</figcaption></figure>')
+
+
+def figs(*items):
+    """Two or more screenshots side by side (stacked on phones)."""
+    return '<div class="pics">' + "".join(fig(*i) for i in items) + '</div>'
+
+
 def faq_ld(qas):
     return {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in qas]}
 
@@ -255,7 +266,9 @@ def anarchy():
 
   <h2>The market, the bank and crypto</h2>
   <p>The market is a separate area full of villager shops that trade in Gold Coins and Coin Bags. The Banker exchanges 36 emeralds or 36 diamonds for one Gold Coin, 16 coins for a block of netherite, and 64 coins for a Coin Bag. Next to the bank, a crypto trader buys and sells Bitcoin at a price that moves up and down like a real cryptocurrency, with its own price chart.</p>
-  <p>Somewhere in the world there is also a black market. Its location is not published: you have to find it.</p>
+  {fig("anarchy-crypto", "The Crypto Exchange trader at his desk in the Crispy Anarchy market, with a Bitcoin on the counter", "The Crypto Exchange: buy and sell Bitcoin at a live, moving price.")}
+  <p>Somewhere in the world there is also a black market. Its location is not published: you have to find it. Find it once and you earn the [Black Market] tag, which opens doors that stay shut for everyone else.</p>
+  {fig("anarchy-blackmarket", "A market merchant on Crispy Anarchy who only trades with players wearing the Black Market tag", "Some merchants only deal with players who have found the black market.")}
 
   <h2 id="vanilla">Vanilla Anarchy</h2>
   <p>Prefer anarchy without custom items? Vanilla Anarchy is a separate server with plain survival anarchy: no custom enchantments, no implants, no shops. Pick it from the lobby.</p>
@@ -279,6 +292,7 @@ def skyblock():
   <p class="lede measure">Crispy Skyblock starts you on one of seven themed islands and gives you plenty to grow into: five skills, 43 kinds of minions, pets, a player-run Bazaar and gear you craft from what you farm. No pay-to-win.</p>
   {join_box(True)}
 </section>
+<figure class="wrap shot"><img src="/img/shots/skyblock-hub.webp" alt="Aerial view of the Crispy Skyblock hub island: cherry trees, market stalls, a central plaza and a lookout tower" width="1600" height="900"><figcaption>The Skyblock hub: market stalls, NPCs, plots and the island portal.</figcaption></figure>
 <section class="wrap block prose">
   <h2>Islands and upgrades</h2>
   <p>Choose one of seven themed starter islands. Upgrade its size, minion slots, co-op slots and ore generator as you go, and invite friends to build with you. Island level grows with what you place.</p>
@@ -286,6 +300,7 @@ def skyblock():
   <p>Level Farming, Mining, Combat, Foraging and Fishing by doing them. Each level gives rewards.</p>
   <h2>43 minions</h2>
   <p>Minions collect resources for you while you play elsewhere. There are 43 kinds, from crops and ores to mob drops.</p>
+  {fig("skyblock-minion", "Minions working on a player's Skyblock island next to storage chests, with an Oak Minion label", "Minions at work on an island, filling chests while you play.")}
   <h2>Enchanted resources and crafted gear</h2>
   <p>Turn stacks of farmed resources into enchanted versions at the Compactor, then craft 17 armour sets and 19 weapons with their own abilities. Better gear needs more farming, not real money.</p>
   <h2>Bazaar, pets and the hub</h2>
@@ -298,7 +313,7 @@ def skyblock():
 """
     return page("/skyblock/", "Minecraft Skyblock Server with Skills, Pets & Minions | Crispy Network",
                 "Skyblock on the Crispy network: 7 starter islands, 5 skills, 43 minions, pets, a player Bazaar and craftable gear. No pay-to-win. Java & Bedrock at crispyanarchy.net",
-                body, crumbs=[("/skyblock/", "Skyblock")], extra_ld=[GAMESERVER])
+                body, crumbs=[("/skyblock/", "Skyblock")], extra_ld=[GAMESERVER], image="/img/shots/skyblock-hub.webp")
 
 
 def pvp():
@@ -329,6 +344,7 @@ def pvp():
   <p class="lede measure">Multiverse is the Crispy network's action server. Pick one of 36 characters from famous shows and games, each with its own weapons and abilities, then fight other players in the arena or a ranked duel, or team up against zombie waves, defend a core, or climb a roguelite tower. Most modes work solo, so there is always something to play.</p>
   {join_box(True)}
 </section>
+<figure class="wrap shot"><img src="/img/shots/mv-lobby.webp" alt="The Multiverse lobby on the Crispy network: character statues on pedestals under a purple MULTIVERSE sign" width="1600" height="900"><figcaption>The Multiverse lobby, where every mode starts.</figcaption></figure>
 <section class="wrap block">
   <h2>The modes at a glance</h2>
   <div class="tablewrap"><table class="modes"><thead><tr><th>Mode</th><th>Players</th><th>What it is</th></tr></thead><tbody>{rows}</tbody></table></div>
@@ -337,6 +353,7 @@ def pvp():
   <h2 id="characters">36 characters, each with abilities</h2>
   <p>Every kit is a character: heroes, villains, cartoon favourites, game mascots and more. Each has its own weapon and armour plus <b>two abilities</b> in the hotbar: right-click to use one, and a cooldown sweep shows when it's ready again. Abilities include force pushes, fireballs, dashes, shields, grenades, lightning and hookshots. Some characters carry <b>guns</b>: they fire instantly where you aim, with no arrows to carry, and shotguns hit everything in a short cone.</p>
   <p>Can't decide? The <b>Random character</b> button picks one for you.</p>
+  {fig("mv-characters", "The Multiverse character menu: a chest menu of 36 character heads to pick from", "Pick a character: 36 to choose from, or a random one.")}
   <h3>Character mastery</h3>
   <p>Every character levels up separately. You earn mastery XP for that character with PvP kills (+10), Outbreak kills (+1) and Tower floors (+5). Levels I to V unlock at 50, 150, 400, 800 and 1,500 XP. Level V is <b>Master</b>: it's announced to the whole server, gives you a sparkle aura while you play that character, and earns the network-wide <b>[Kit Master]</b> chat tag.</p>
 
@@ -354,6 +371,7 @@ def pvp():
 
   <h2 id="outbreak">Outbreak: zombie wave survival</h2>
   <p>Survive as many waves as you can, alone or with friends. One player opens a lobby and picks a map, others join with a click, and the leader starts the run. Friends can also drop in to a run that's already going at the next wave break.</p>
+  {fig("mv-outbreak", "Zombies and vindicators closing in during an Outbreak wave on the Ruins map", "A wave closing in on the Ruins map.")}
   <ul>
     <li><b>Waves</b> get bigger and tougher every round, with new mob types unlocking as you go. Every fifth wave brings a giant boss.</li>
     <li><b>Points</b>: 100 per kill plus a bonus for everyone still standing when a wave is cleared.</li>
@@ -364,10 +382,12 @@ def pvp():
     <li><b>Revive</b> a downed teammate by crouching next to them for three seconds.</li>
     <li><b>A secret weapon</b>: collect power cells from boss waves and assemble something much bigger at the Arsenal.</li>
   </ul>
+  {figs(("mv-wallgun", "A rifle mounted on a pillar to buy for 1,250 points in Outbreak", "Wall guns: right-click to buy."), ("mv-arsenal", "The Outbreak Arsenal menu showing the Mystery Box for 950 points", "The Arsenal, with the Mystery Box."))}
   <p>There are five maps, each with its own layout: <b>Ruins</b> (an overgrown courtyard), <b>Toxic Mine</b> (a cave with mine-cart tracks and sludge), <b>Neon City</b> (a night-time crossroads), <b>Hellfort</b> (a keep surrounded by lava) and <b>Orbital Station</b> (a wheel-shaped space station). Your best wave goes on the lobby leaderboard, and a new server record is announced to everyone.</p>
 
   <h2 id="core">Core Defense</h2>
   <p>An Outbreak map with a twist: instead of surviving, you protect a <b>core</b> in the middle of real Minecraft terrain. You get 90 seconds to build before the first wave, in survival mode with tools and blocks, and the Arsenal sells planks, stone, obsidian, iron bars, cobwebs, magma, water and lava to build defences.</p>
+  {figs(("mv-core", "The glowing core on a mossy stone pad in a forest clearing in Core Defense", "The core you have to protect."), ("mv-core-arsenal", "The Core Defense Arsenal menu with weapons, perks, building blocks and traps", "Core Defense's Arsenal: weapons, blocks and traps."))}
   <ul>
     <li>The core has 100 health and heals a little after every wave. If it reaches zero, the run is over.</li>
     <li>Mobs head straight for the core and <b>dig through your walls</b>, slower through stone and obsidian. Builders bridge gaps and cover lava, Breakers chew through walls faster, and from wave 6 Firewalkers ignore lava moats.</li>
@@ -377,6 +397,7 @@ def pvp():
 
   <h2 id="tower">The Tower: a roguelite climb</h2>
   <p>Climb as high as you can, solo or with up to three friends, starting as a random character.</p>
+  {fig("mv-tower", "Zombies coming at the player across a stone-brick floor in The Tower", "Fighting through a mob floor.")}
   <ul>
     <li><b>Mob floors</b> get harder as you go, with new mob types every five floors.</li>
     <li><b>Challenge floors</b> every third floor: a parkour run over magma, a glass bridge where one pane in every row is fake, a hedge maze against the clock, or a crafting challenge with materials hidden in barrels. Three strikes on a floor and you're out.</li>
@@ -387,6 +408,7 @@ def pvp():
 
   <h2 id="micro">Micro Outbreak</h2>
   <p>Outbreak at <b>1/16 scale</b>. You play a tiny toy soldier in a toy room built under the lobby's glass floor, so everyone in the lobby can watch from above. Bookshelves are pillars and toy blocks are platforms. You fight shrunken mobs with a bayonet and a toy rifle, earn points, and upgrade your gear at a miniature Arsenal between waves.</p>
+  {figs(("mv-micro-above", "The Micro Outbreak toy room seen from the lobby through its glass floor", "From the lobby, looking down through the glass."), ("mv-micro-inside", "Inside Micro Outbreak: a tiny toy soldier among giant bookshelves and toy blocks, with mobs in the distance", "Down at toy-soldier size."))}
 
   <h2>Leaderboards and tags</h2>
   <p>The lobby leaderboard shows the top three for kills, best kill streak, duel rating, best Outbreak wave and best Tower floor. Earned tags like <b>[Champion]</b> and <b>[Kit Master]</b> show in chat on every server on the network.</p>
@@ -398,7 +420,7 @@ def pvp():
 """
     return page("/pvp/", "Multiverse – Minecraft PvP & Zombies Server with 36 Characters | Crispy Network",
                 "Play as 36 characters with their own abilities: arena PvP, ranked duels, zombie wave survival, Core Defense and a roguelite tower. Solo or co-op, Java & Bedrock at crispyanarchy.net",
-                body, crumbs=[("/pvp/", "Multiverse")], extra_ld=[GAMESERVER, faq_ld(qas)])
+                body, crumbs=[("/pvp/", "Multiverse")], extra_ld=[GAMESERVER, faq_ld(qas)], image="/img/shots/mv-outbreak.webp")
 
 
 def factions():
