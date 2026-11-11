@@ -116,3 +116,10 @@ footer.site { border-top: 1px solid var(--line); margin-top: 40px; padding-block
 .more { padding-left: 1.2em; }
 .more li { margin-bottom: 6px; }
 .more .date { display: inline; margin-left: 6px; }
+.tablewrap { overflow-x: auto; max-width: 100%; }
+table.modes { border-collapse: collapse; width: 100%; min-width: 520px; font-size: 15px; }
+table.modes th, table.modes td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.modes th { font: 600 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
+table.modes td:first-child { white-space: nowrap; font-weight: 600; }
+table.modes td:nth-child(2) { white-space: nowrap; color: var(--dim); }
+.prose h3 { margin-top: 1.2em; }

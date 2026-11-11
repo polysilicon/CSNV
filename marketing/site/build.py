@@ -30,7 +30,7 @@ VOTE = [
     ("ServerTilt", "https://www.servertilt.com/minecraft-servers/crispy-anarchy/vote"),
 ]
 
-NAV = [("/", "Home"), ("/anarchy/", "Anarchy"), ("/skyblock/", "Skyblock"), ("/pvp/", "PvP"),
+NAV = [("/", "Home"), ("/anarchy/", "Anarchy"), ("/skyblock/", "Skyblock"), ("/pvp/", "Multiverse"),
        ("/factions/", "Factions"), ("/spawn-map/", "3D Map"), ("/join/", "How to join"), ("/news/", "News"),
        ("/vote/", "Vote"), ("/faq/", "FAQ")]
 
@@ -176,7 +176,7 @@ def home():
         ("/anarchy/", "Anarchy", "No gameplay rules, no claims, one world since 2020. Custom enchantments, implants, a market and a hidden black market."),
         ("/anarchy/#vanilla", "Vanilla Anarchy", "Plain survival anarchy with no custom items, for people who like it pure."),
         ("/skyblock/", "Skyblock", "Grow your island with skills, pets, 43 minions, a Bazaar and gear crafted from what you farm."),
-        ("/pvp/", "Multiverse PvP", "36 playable characters, kit PvP, ranked duels and co-op zombie waves."),
+        ("/pvp/", "Multiverse", "36 playable characters: arena PvP, ranked duels, zombie waves, Core Defense and a roguelite tower."),
         ("/factions/", "Factions", "1.8-style combat, cannons and obsidian walls, with set raid windows."),
         ("/spawn-map/", "3D spawn map", "Fly over two square kilometres of spawn, wrecked by six years of anarchy."),
         ("/bedrock-anarchy/", "Bedrock anarchy", "Play anarchy from Windows, phone, tablet or console, in the same world as Java players."),
@@ -302,29 +302,103 @@ def skyblock():
 
 
 def pvp():
+    modes = [
+        ("#arena", "PvP Arena", "Any number", "Drop in as any character and fight on a map that changes every 10 minutes."),
+        ("#duels", "Duels", "1 v 1", "Challenge a player, both get a random character, and the result counts toward your rating."),
+        ("#outbreak", "Outbreak", "Solo or co-op", "Survive endless zombie waves, earn points, buy guns and upgrades, and fight a boss every 5 waves."),
+        ("#core", "Core Defense", "Solo or co-op", "Build walls and traps on real terrain to keep a core alive while mobs dig toward it."),
+        ("#tower", "The Tower", "1 to 4", "A roguelite climb: fight floor after floor, beat challenges and bosses, and stack upgrades."),
+        ("#micro", "Micro Outbreak", "Solo or co-op", "Zombie waves at 1/16 scale, as toy soldiers in a giant room under the lobby."),
+    ]
+    rows = "".join(f'<tr><td><a href="{a}">{n}</a></td><td>{p}</td><td>{d}</td></tr>' for a, n, p, d in modes)
+    qas = [
+        ("Can I play Multiverse alone?",
+         "Yes. Outbreak, Core Defense, The Tower and Micro Outbreak all work solo, and get harder with more players. The PvP Arena and Duels need other players."),
+        ("How many characters are there?",
+         "36. Each has its own weapon, armour and two right-click abilities with cooldowns, and some carry guns. A Random character button picks one for you."),
+        ("Does gear carry over between games?",
+         "No. Every game starts from your character's kit, so nobody can grind an unfair advantage in PvP. Progress you keep is your mastery level for each character, your ratings and records, and the tags you earn."),
+        ("Do I need mods to play?",
+         f"No. Everything works on the normal game, on Java Edition 1.13 to 26.3 and on Bedrock ({JAVA}, port {BEDROCK_PORT})."),
+        ("Is it free?", "Yes. Every character is free to play, and everyone in a game starts from the same kit."),
+    ]
     body = f"""
 <section class="wrap block head">
-  <p class="kicker">Multiverse PvP · Java + Bedrock</p>
-  <h1>Minecraft PvP server: 36 characters, kit PvP, duels and zombie waves</h1>
-  <p class="lede measure">Multiverse is the Crispy network's PvP server. Pick one of 36 characters, each with its own abilities and gear, and fight in the arena, in ranked duels or together against waves of zombies.</p>
+  <p class="kicker">Multiverse · PvP and PvE · Java + Bedrock</p>
+  <h1>Multiverse: a Minecraft PvP and zombies server with 36 playable characters</h1>
+  <p class="lede measure">Multiverse is the Crispy network's action server. Pick one of 36 characters from famous shows and games, each with its own weapons and abilities, then fight other players in the arena or a ranked duel, or team up against zombie waves, defend a core, or climb a roguelite tower. Most modes work solo, so there is always something to play.</p>
   {join_box(True)}
 </section>
-<section class="wrap block prose">
-  <h2>Kit PvP with 36 characters</h2>
-  <p>Every kit is a character with its own weapons, armour and right-click abilities with cooldowns. Pick one from the menu and drop into one of eight arena maps. Playing a character earns mastery levels and rewards for that character.</p>
-  <h2>Ranked duels</h2>
-  <p>Challenge another player to a duel in the duel pits. Duels are ranked with an Elo rating.</p>
-  <h2>Outbreak: co-op zombie waves</h2>
-  <p>Team up against waves of zombies with guns, upgrades and bosses, across five maps, with revives and a hidden weapon quest.</p>
-  <h2>Core Defense</h2>
-  <p>Build a base and keep its core alive.</p>
-  <h2>How to get there</h2>
-  <p>Join <code>{JAVA}</code> (Bedrock: port <code>{BEDROCK_PORT}</code>) and choose Multiverse in the lobby.</p>
+<section class="wrap block">
+  <h2>The modes at a glance</h2>
+  <div class="tablewrap"><table class="modes"><thead><tr><th>Mode</th><th>Players</th><th>What it is</th></tr></thead><tbody>{rows}</tbody></table></div>
 </section>
+<section class="wrap block prose">
+  <h2 id="characters">36 characters, each with abilities</h2>
+  <p>Every kit is a character: heroes, villains, cartoon favourites, game mascots and more. Each has its own weapon and armour plus <b>two abilities</b> in the hotbar: right-click to use one, and a cooldown sweep shows when it's ready again. Abilities include force pushes, fireballs, dashes, shields, grenades, lightning and hookshots. Some characters carry <b>guns</b>: they fire instantly where you aim, with no arrows to carry, and shotguns hit everything in a short cone.</p>
+  <p>Can't decide? The <b>Random character</b> button picks one for you.</p>
+  <h3>Character mastery</h3>
+  <p>Every character levels up separately. You earn mastery XP for that character with PvP kills (+10), Outbreak kills (+1) and Tower floors (+5). Levels I to V unlock at 50, 150, 400, 800 and 1,500 XP. Level V is <b>Master</b>: it's announced to the whole server, gives you a sparkle aura while you play that character, and earns the network-wide <b>[Kit Master]</b> chat tag.</p>
+
+  <h2 id="arena">PvP Arena</h2>
+  <p>Talk to the PvP Arena NPC, pick a character, and you drop into the current arena with three seconds of spawn protection. The arena <b>rotates every 10 minutes</b> through eleven maps: a Roman colosseum and ten themed worlds, including a lava mining outpost, a swamp, a farm, a suburban street, an underwater town, a mushroom castle, a nuclear-plant town, a desert town, a checkered hill zone with a loop-de-loop and a back alley. A boss bar counts down to the next map, and everyone fighting moves across together.</p>
+  <ul>
+    <li>A kill heals you and gives you ten seconds of extra hearts and a golden apple.</li>
+    <li>Kill streaks are announced at 3, 5, 10 and up.</li>
+    <li>Watch from the stands: spectators can walk around the rim but can't be hurt.</li>
+    <li>The lobby leaderboard shows the top kills and best streaks.</li>
+  </ul>
+
+  <h2 id="duels">Duels</h2>
+  <p>Everyone in the lobby has a <b>Duel Challenge</b> item. Look at a player and right-click to challenge them; they get Accept and Decline buttons. You both fight in a private duel pit as a <b>random character</b>, rolled separately for each of you, so it comes down to skill, not a favourite pick. Duels are ranked with an Elo rating that starts at 1,000. The player with the top rating wears the <b>[Champion]</b> tag.</p>
+
+  <h2 id="outbreak">Outbreak: zombie wave survival</h2>
+  <p>Survive as many waves as you can, alone or with friends. One player opens a lobby and picks a map, others join with a click, and the leader starts the run. Friends can also drop in to a run that's already going at the next wave break.</p>
+  <ul>
+    <li><b>Waves</b> get bigger and tougher every round, with new mob types unlocking as you go. Every fifth wave brings a giant boss.</li>
+    <li><b>Points</b>: 100 per kill plus a bonus for everyone still standing when a wave is cleared.</li>
+    <li><b>The Arsenal</b> in the middle of the map sells healing, food, perk drinks (extra hearts, speed, strength and more), armour upgrades, and a <b>weapon upgrade</b> in four tiers for whatever you're holding, including guns.</li>
+    <li><b>Wall guns</b>: four guns per map are mounted on the walls to buy, from a pistol to an assault rifle.</li>
+    <li><b>The Mystery Box</b> rolls one of 19 prizes: powerful wonder weapons, character gear and abilities, guns, or a teddy bear and half your points back.</li>
+    <li><b>Power-ups</b> drop from kills: revive the whole team, one-hit kills, double points, or a nuke that wipes the wave.</li>
+    <li><b>Revive</b> a downed teammate by crouching next to them for three seconds.</li>
+    <li><b>A secret weapon</b>: collect power cells from boss waves and assemble something much bigger at the Arsenal.</li>
+  </ul>
+  <p>There are five maps, each with its own layout: <b>Ruins</b> (an overgrown courtyard), <b>Toxic Mine</b> (a cave with mine-cart tracks and sludge), <b>Neon City</b> (a night-time crossroads), <b>Hellfort</b> (a keep surrounded by lava) and <b>Orbital Station</b> (a wheel-shaped space station). Your best wave goes on the lobby leaderboard, and a new server record is announced to everyone.</p>
+
+  <h2 id="core">Core Defense</h2>
+  <p>An Outbreak map with a twist: instead of surviving, you protect a <b>core</b> in the middle of real Minecraft terrain. You get 90 seconds to build before the first wave, in survival mode with tools and blocks, and the Arsenal sells planks, stone, obsidian, iron bars, cobwebs, magma, water and lava to build defences.</p>
+  <ul>
+    <li>The core has 100 health and heals a little after every wave. If it reaches zero, the run is over.</li>
+    <li>Mobs head straight for the core and <b>dig through your walls</b>, slower through stone and obsidian. Builders bridge gaps and cover lava, Breakers chew through walls faster, and from wave 6 Firewalkers ignore lava moats.</li>
+    <li>Every fifth wave the <b>Warlord</b> arrives: he digs four times as fast and calls in Builders.</li>
+    <li>While the core stands, dying just sends you back after five seconds with your inventory.</li>
+  </ul>
+
+  <h2 id="tower">The Tower: a roguelite climb</h2>
+  <p>Climb as high as you can, solo or with up to three friends, starting as a random character.</p>
+  <ul>
+    <li><b>Mob floors</b> get harder as you go, with new mob types every five floors.</li>
+    <li><b>Challenge floors</b> every third floor: a parkour run over magma, a glass bridge where one pane in every row is fake, a hedge maze against the clock, or a crafting challenge with materials hidden in barrels. Three strikes on a floor and you're out.</li>
+    <li><b>Bosses</b> every fifth floor: the Brute, the Bone King, the Warlord and the Beast, each tougher than the last.</li>
+    <li><b>Upgrades</b>: after each floor, pick 1 of 3. They stack for the whole climb and come in four rarities, from common boosts like extra health and speed to rare lifesteal and critical hits, epic extra lives and lightning, and legendary attack drones and black holes.</li>
+  </ul>
+  <p>Your best floor goes on the lobby leaderboard.</p>
+
+  <h2 id="micro">Micro Outbreak</h2>
+  <p>Outbreak at <b>1/16 scale</b>. You play a tiny toy soldier in a toy room built under the lobby's glass floor, so everyone in the lobby can watch from above. Bookshelves are pillars and toy blocks are platforms. You fight shrunken mobs with a bayonet and a toy rifle, earn points, and upgrade your gear at a miniature Arsenal between waves.</p>
+
+  <h2>Leaderboards and tags</h2>
+  <p>The lobby leaderboard shows the top three for kills, best kill streak, duel rating, best Outbreak wave and best Tower floor. Earned tags like <b>[Champion]</b> and <b>[Kit Master]</b> show in chat on every server on the network.</p>
+
+  <h2>How to get there</h2>
+  <p>Join <code>{JAVA}</code> on Java Edition, or <code>{JAVA}</code> port <code>{BEDROCK_PORT}</code> on Bedrock, and choose <b>Multiverse</b> in the lobby. See <a href="/join/">how to join</a> for step-by-step instructions.</p>
+</section>
+<section class="wrap block"><h2>Multiverse questions</h2><div class="faq">{faq_html(qas)}</div></section>
 """
-    return page("/pvp/", "Minecraft PvP Server – Kit PvP, Ranked Duels & Zombie Waves | Crispy Network",
-                "Multiverse PvP on the Crispy network: 36 playable characters with abilities, kit PvP, Elo-ranked duels, co-op zombie waves and Core Defense. Java & Bedrock at crispyanarchy.net",
-                body, crumbs=[("/pvp/", "PvP")], extra_ld=[GAMESERVER])
+    return page("/pvp/", "Multiverse – Minecraft PvP & Zombies Server with 36 Characters | Crispy Network",
+                "Play as 36 characters with their own abilities: arena PvP, ranked duels, zombie wave survival, Core Defense and a roguelite tower. Solo or co-op, Java & Bedrock at crispyanarchy.net",
+                body, crumbs=[("/pvp/", "Multiverse")], extra_ld=[GAMESERVER, faq_ld(qas)])
 
 
 def factions():
