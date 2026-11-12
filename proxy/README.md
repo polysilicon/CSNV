@@ -80,5 +80,5 @@ Deploy (files are staged under inactive names):
 
 velocity.toml (2026-11-12, live after `velocity reload`): `kick-existing-players = true` (a reconnect replaces a stale
 session instead of "You are already connected to this proxy!") and `try = ["lobby", "multiverse"]` (if the lobby is
-down, players land on Multiverse instead of "Unable to connect you to lobby"). Lobby `allow-flight=true` (no flying
-kicks in the hub), from its next restart.
+down, players land on Multiverse instead of "Unable to connect you to lobby"). Lobby allow-flight on (no flying kicks in the
+hub): set in AMP (CrispyLobby01 > Allow Flight), because AMP rewrites server.properties at every start.
