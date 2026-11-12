@@ -23,7 +23,7 @@ RAID_SECS = 25 * 60
 EX_HOLD = 30            # seconds on an extraction point
 EX_R = 4                # its radius
 ZONE_DIM = "lostcities:lostcity"   # The Lost Cities' city dimension (profile "extraction"); the mod turns its chests and spawners into ours
-ZONE = (-400, -400, 800, 800)          # x, z, dx, dz
+ZONE = (48, 48, 800, 800)          # x, z, dx, dz: centre 448 448 (the zone map's grid), see the mod's Zone.CX/CZ
 SPAWN_EVERY = 20        # raider spawner check (s)
 CRATE_EVERY = 600       # crate refill (s, counted while loaded)
 
@@ -450,6 +450,7 @@ def build(out):
                         "scoreboard players add @s ez.raids 1",
                         "effect clear @s", "effect give @s minecraft:resistance 8 4 true",
                         "tp @s @e[type=minecraft:marker,tag=ez.insert,sort=random,limit=1]",
+                        "ezmapgive",   # a zone map if they don't carry one (mod)
                         "scoreboard players set @s ez.dead 0",
                         *title("@s", "DEPLOYED", f"{RAID_SECS // 60}:00 to reach an extraction point"),
                         say("@s", "Loot what you can and reach an extraction point (the flare columns). Die and you lose everything you carry.", "yellow"),
