@@ -70,9 +70,14 @@ final class ZoneMap {
         ServerLevel lvl = server.getLevel(Zone.CITY);
         MapItemSavedData m = MapItem.getSavedData(rendering, lvl);
         if (m == null) { rendering = null; return; }
-        long until = System.nanoTime() + 25_000_000L;   // at most ~25 ms a tick
+        // Drawing loads (and the first time generates) ~4,000 city chunks. Going flat out filled the heap faster than
+        // the chunk system could save and unload them (OutOfMemoryError, 2026-11-12), so: one map row every 10 ticks,
+        // and wait while the heap is more than 60% used so unloads can catch up.
+        Runtime rt = Runtime.getRuntime();
+        if (server.getTickCount() % 10 != 0 || rt.totalMemory() - rt.freeMemory() > rt.maxMemory() * 0.6) return;
+        if (row % 16 == 0) System.out.println("[crispy-extraction] zone map row " + row + "/128");
         int scale = 8, left = m.centerX - 512, top = m.centerZ - 512;
-        while (row < 128 && System.nanoTime() < until) {
+        for (int once = 0; once < 1 && row < 128; once++) {
             int z = top + row * scale + scale / 2;
             int prev = Integer.MIN_VALUE;
             for (int px = 0; px < 128; px++) {
