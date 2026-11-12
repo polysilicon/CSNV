@@ -15,7 +15,7 @@ NEWS = [
 <p>Skyblock has <b>collections</b>. Every resource you gather counts toward its own collection, and each one has nine tiers (I to IX). Every new tier pays coins and XP in that resource's skill.</p>
 <ul>
 <li><b>68 collections:</b> 23 farming, 20 mining, 8 foraging, 10 combat and 7 fishing.</li>
-<li><b>What counts:</b> what you pick up from mining, chopping, farming, mob drops and fishing, what a resource zone hands you, and what you collect from your minions.</li>
+<li><b>What counts:</b> what you pick up from mining, chopping, farming, mob drops and fishing, what a resource zone hands you, and half of what you collect from your minions (gathering yourself is twice as fast).</li>
 <li><b>What doesn't:</b> anything bought, crafted or dropped by another player, and drops from blocks you placed yourself.</li>
 <li><b>A head start:</b> collections started from what you had already picked up before the update, and any tiers that reached paid their coins straight away.</li>
 </ul>

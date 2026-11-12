@@ -101,11 +101,11 @@ Skyblock on `Falling01` (Fabric 26.2, Velocity name `skyblock`, was `falling`). 
 
 `ItemCollections.java`; `/collections` (`/collection`, `/island collections`, Island Menu > Collections, Guide topic).
 68 resources (23 farming, 20 mining, 8 foraging, 10 combat, 7 fishing), each with nine tiers. Thresholds are
-50 / 100 / 250 / 500 / 1k / 2.5k / 5k / 10k / 25k times a rarity scale (diamond 0.2, emerald 0.1, ancient debris
-0.02...). Tier n pays 100 x n^2 coins and 20 x n^2 XP in the collection's skill (through pets, like any skill XP).
+50 / 100 / 250 / 500 / 1k / 2.5k / 5k / 10k / 25k times a rarity scale (diamond 0.5 and gold 1 since 2.17.1, emerald 0.1, ancient debris
+0.02...). Tier n pays 50 x n^2 coins (100 x n^2 before 2.17.1) and 20 x n^2 XP in the collection's skill (through pets, like any skill XP).
 
 - Counts: items picked up that no player dropped (`ItemEntityMixin` around `playerTouch`), zone drops handed straight
-  to a player (`ZoneRules`), and items collected from minions (`Minions.Menu.collect`).
+  to a player (`ZoneRules`), and items collected from minions (`Minions.Menu.collect`) at half rate since 2.17.1 (an odd item carries over).
 - Doesn't count: anything from `ServerPlayer.drop` (Q, closed menus, death drops are tagged `cs_nocoll`), drops from
   player-placed blocks (`Skills.Placed`, checked in a break BEFORE hook; items spawned there that tick get the tag),
   and anything bought or crafted (it never goes through a pickup). Creative players don't count.

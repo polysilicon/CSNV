@@ -236,7 +236,7 @@ final class Guide {
                     pg("Levelling", "Each skill goes to level 25 and every level pays coins. Blocks you placed yourself give no XP. /skills shows your progress."))),
             new Topic("Collections", Items.PAINTING, "Gather resources to unlock tiers", List.of(
                     pg("What they are", "Every resource has a collection with nine tiers (I to IX). Each tier pays coins and XP in its skill. /collections shows them all."),
-                    pg("What counts", "Items you pick up from mining, chopping, farming, mob loot and fishing, items a resource zone hands you, and what you collect from your minions."),
+                    pg("What counts", "Items you pick up from mining, chopping, farming, mob loot and fishing, items a resource zone hands you, and half of what you collect from your minions."),
                     pg("What doesn't", "Anything bought, crafted, or dropped by a player (including on death), and drops from blocks you placed yourself."))),
             new Topic("Pets", Items.BONE, "Companions that boost a skill", List.of(
                     pg("Buying", "Open /pets to buy a pet and choose which one follows you. It floats beside you."),

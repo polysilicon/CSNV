@@ -32,7 +32,7 @@ import java.util.*;
  * tiers (I-IX). A new tier pays coins and XP in the collection's skill. /collections (Island Menu, Guide) shows them.
  *
  * What counts: items you pick up off the ground that nobody dropped (mined, chopped, harvested, mob loot, fishing),
- * items handed straight to you in resource zones (ZoneRules), and what you collect from your minions.
+ * items handed straight to you in resource zones (ZoneRules), and half of what you collect from your minions (2.17.1).
  * What doesn't: anything a player dropped or lost on death (ServerPlayer.drop tags it cs_nocoll), drops from blocks a
  * player placed (Skills.Placed, so placing and breaking bought blocks can't farm it), and anything bought or crafted
  * (it goes straight into the inventory, never through a pickup).
@@ -79,7 +79,7 @@ public final class ItemCollections {
         c(F, Items.FEATHER, "Feather", 0.5); c(F, Items.LEATHER, "Leather", 0.5); c(F, Items.CHICKEN, "Raw Chicken", 0.5); c(F, Items.BEEF, "Raw Beef", 0.5);
         c(F, Items.PORKCHOP, "Raw Porkchop", 0.5); c(F, Items.MUTTON, "Mutton", 0.5); c(F, Items.RABBIT_HIDE, "Rabbit Hide", 0.2); c(F, Economy.item("minecraft:white_wool"), "Wool", 0.5);
         c(M, Items.COBBLESTONE, "Cobblestone", 2); c(M, Items.COAL, "Coal", 1); c(M, Items.RAW_COPPER, "Copper", 1); c(M, Items.RAW_IRON, "Iron", 1);
-        c(M, Items.RAW_GOLD, "Gold", 0.5); c(M, Items.LAPIS_LAZULI, "Lapis Lazuli", 1); c(M, Items.REDSTONE, "Redstone", 1); c(M, Items.DIAMOND, "Diamond", 0.2);
+        c(M, Items.RAW_GOLD, "Gold", 1); c(M, Items.LAPIS_LAZULI, "Lapis Lazuli", 1); c(M, Items.REDSTONE, "Redstone", 1); c(M, Items.DIAMOND, "Diamond", 0.5);
         c(M, Items.EMERALD, "Emerald", 0.1); c(M, Items.QUARTZ, "Nether Quartz", 0.5); c(M, Items.OBSIDIAN, "Obsidian", 0.2); c(M, Items.ANCIENT_DEBRIS, "Ancient Debris", 0.02);
         c(M, Items.SAND, "Sand", 1); c(M, Items.GRAVEL, "Gravel", 1); c(M, Items.FLINT, "Flint", 0.5); c(M, Items.CLAY_BALL, "Clay", 1);
         c(M, Items.ICE, "Ice", 0.5); c(M, Items.NETHERRACK, "Netherrack", 1); c(M, Items.END_STONE, "End Stone", 1); c(M, Items.GLOWSTONE_DUST, "Glowstone", 0.5);
@@ -92,11 +92,13 @@ public final class ItemCollections {
         c(X, Items.INK_SAC, "Ink Sac", 0.5); c(X, Items.LILY_PAD, "Lily Pad", 0.2); c(X, Items.NAUTILUS_SHELL, "Nautilus Shell", 0.02);
     }
 
-    static long coins(int tier) { return 100L * tier * tier; }      // I: 100 ... IX: 8,100 (28,500 for a whole collection)
+    // 2.17.1: halved (was 100 x n^2), so collections top up an income instead of replacing it
+    static long coins(int tier) { return 50L * tier * tier; }       // I: 50 ... IX: 4,050 (14,250 for a whole collection)
     static int xp(int tier) { return 20 * tier * tier; }             // I: 20 ... IX: 1,620 skill XP
 
     // ------------------------------------------------------------------ data
-    static final class PData { Map<String, Long> count = new HashMap<>(); Map<String, Integer> tier = new HashMap<>(); boolean seeded; String name; }
+    static final class PData { Map<String, Long> count = new HashMap<>(); Map<String, Integer> tier = new HashMap<>(); boolean seeded; String name;
+        Map<String, Integer> minionOdd = new HashMap<>(); }   // minion items count half: the odd one left over, per collection
     static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     static Map<String, PData> data;
     static boolean dirty;
@@ -153,6 +155,19 @@ public final class ItemCollections {
             p.playSound(SoundEvents.PLAYER_LEVELUP, 0.7f, 1.6f);
             Skills.gain(p, c.skill, xp(t));
         }
+    }
+
+    /** What a player collects from their minions counts at half rate, so gathering yourself is twice as fast as AFK
+     *  minions. An odd item carries over to the next collect. */
+    static void addFromMinion(ServerPlayer p, Item item, int n) {
+        Coll c = BY_ITEM.get(item);
+        if (c == null || n <= 0 || p.isCreative()) return;
+        PData d = of(p);
+        if (d.minionOdd == null) d.minionOdd = new HashMap<>();
+        int total = n + d.minionOdd.getOrDefault(c.key, 0);
+        d.minionOdd.put(c.key, total % 2);
+        dirty = true;
+        add(p, item, total / 2);
     }
 
     // pickup bookkeeping for ItemEntityMixin (playerTouch isn't re-entrant and the server is single-threaded)
@@ -283,7 +298,7 @@ public final class ItemCollections {
             m.put(4, Ui.item(new ItemStack(c.item), Ui.t(c.name + (t > 0 ? " " + ROMAN[t] : ""), ChatFormatting.YELLOW, ChatFormatting.BOLD), List.of(
                     Ui.t("Collected: ", ChatFormatting.GRAY).append(Ui.t(Economy.fmt(n), ChatFormatting.YELLOW)),
                     Ui.t("Counts: what you pick up from mining, farming,", ChatFormatting.DARK_GRAY),
-                    Ui.t("mobs and fishing, and what your minions gather.", ChatFormatting.DARK_GRAY),
+                    Ui.t("mobs and fishing, and half of what your minions gather.", ChatFormatting.DARK_GRAY),
                     Ui.t("Not: bought, crafted, dropped, or from placed blocks.", ChatFormatting.DARK_GRAY)), false), null);
             for (int i = 0; i < c.tiers.length; i++) {
                 boolean done = i < t;

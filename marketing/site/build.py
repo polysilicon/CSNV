@@ -299,7 +299,7 @@ def skyblock():
   <h2>Five skills</h2>
   <p>Level Farming, Mining, Combat, Foraging and Fishing by doing them. Each level gives rewards.</p>
   <h2>68 collections</h2>
-  <p>Every resource you gather counts toward its collection: crops, ores, logs, mob drops and fish, plus whatever your minions bring in. Each of the 68 collections has nine tiers, and every tier pays coins and skill XP. Only what you gather yourself counts, so buying from the Bazaar won't get you there. Open them with <code>/collections</code>.</p>
+  <p>Every resource you gather counts toward its collection: crops, ores, logs, mob drops and fish, and your minions' haul at half rate. Each of the 68 collections has nine tiers, and every tier pays coins and skill XP. Only what you gather yourself counts, so buying from the Bazaar won't get you there. Open them with <code>/collections</code>.</p>
   {fig("sb-collections", "The Crispy Skyblock Collections menu: Farming, Mining and Foraging categories, with 15 of 612 tiers unlocked", "The Collections menu: 68 resources, nine tiers each, coins and skill XP for every tier.")}
   <h2>43 minions</h2>
   <p>Minions collect resources for you while you play elsewhere. There are 43 kinds, from crops and ores to mob drops.</p>
