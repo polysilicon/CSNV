@@ -69,14 +69,14 @@ final class Storage {
                 if (plot == null) return InteractionResult.PASS;   // the plot protection refuses it anyway
                 int n = count(p.level().getServer(), plot), max = limit(plot);
                 if (n >= max) {
-                    Shops.no(p, "Your plot holds " + max + " Stash Crates" + (plot.level + 1 < LIMIT.length ? ". A bigger plot holds more (Plot Manager)." : "."));
+                    Shops.no(p, "Your bunker holds " + max + " Stash Crates" + (plot.level + 1 < LIMIT.length ? ". A bigger bunker holds more (Bunker Manager)." : "."));
                     return InteractionResult.FAIL;
                 }
                 p.sendSystemMessage(Ui.t("Stash Crate " + (n + 1) + " / " + max, net.minecraft.ChatFormatting.GOLD), true);
                 return InteractionResult.PASS;
             }
             if (banned(held)) {
-                Shops.no(p, "Storage on plots is Stash Crates only: buy them from the Builder.");
+                Shops.no(p, "Bunker storage is Stash Crates only: buy them from the Builder.");
                 return InteractionResult.FAIL;
             }
             return InteractionResult.PASS;

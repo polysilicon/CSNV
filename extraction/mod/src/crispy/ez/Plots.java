@@ -50,7 +50,10 @@ final class Plots {
     private Plots() {}
 
     static final ResourceKey<Level> CAMP = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("ez", "camp"));
-    static final int X0 = 64, Z0 = -192, CELL = 48, PER_ROW = 6, FLOOR = 63, TOP = 100;
+    // 1.3.0: plots are underground bunkers deep under camp (y 20): FLOOR is the floor layer, TOP the highest buildable block
+    static final int X0 = 64, Z0 = -192, CELL = 48, PER_ROW = 6, FLOOR = 20, TOP = FLOOR + 6;
+    static final String SHELL = "minecraft:reinforced_deepslate", FLOOR_BLOCK = "minecraft:polished_tuff";
+    static final int OLD_FLOOR = 63;   // where plots were before 1.3.0
     static final int[] SIZES = {16, 24, 32};
     static final int[] COST = {0, 150, 400};
     static final Set<String> BANNED = Set.of("minecraft:lava_bucket", "minecraft:flint_and_steel", "minecraft:fire_charge", "minecraft:tnt",
@@ -99,54 +102,78 @@ final class Plots {
     }
     static String inCamp(String cmd) { return "execute in ez:camp run " + cmd; }
 
-    /** Lay out (or grow) a plot: path around it, grass floor (only where the path was, so builds stay), a border. */
-    static void lay(MinecraftServer s, Plot p, boolean fresh) {
-        int x = cx(p.index), z = cz(p.index), h = half(p), c = CELL / 2;
+    /** Load the chunks a box of commands is about to touch. */
+    static void loadArea(MinecraftServer s, int x0, int z0, int x1, int z1) {
         ServerLevel camp = s.getLevel(CAMP);
-        if (camp != null)   // commands need the cell's chunks loaded
-            for (int qx = (x - c) >> 4; qx <= (x + c) >> 4; qx++) for (int qz = (z - c) >> 4; qz <= (z + c) >> 4; qz++) camp.getChunk(qx, qz);
-        if (fresh) {
-            run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:coarse_dirt", x - c, FLOOR, z - c, x + c - 1, FLOOR, z + c - 1)));
-            run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:dirt_path", x - c, FLOOR, z + c - 3, x + c - 1, FLOOR, z + c - 1)));
-        }
-        run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:grass_block replace minecraft:coarse_dirt", x - h, FLOOR, z - h, x + h - 1, FLOOR, z + h - 1)));
-        run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:grass_block replace minecraft:tuff_bricks", x - h, FLOOR, z - h, x + h - 1, FLOOR, z + h - 1)));
-        for (int[] e : new int[][]{{x - h - 1, z - h - 1, x + h, z - h - 1}, {x - h - 1, z + h, x + h, z + h}, {x - h - 1, z - h - 1, x - h - 1, z + h}, {x + h, z - h - 1, x + h, z + h}})
-            run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:tuff_bricks replace minecraft:coarse_dirt", e[0], FLOOR, e[1], e[2], FLOOR, e[3])));
-        if (fresh) run(s, inCamp(String.format("setblock %d %d %d %s", x - h + 1, FLOOR + 1, z - h + 1, Storage.CRATE_BLOCK)));
-        if (fresh) surround(s, p);
-        run(s, inCamp(String.format("kill @e[type=minecraft:text_display,tag=ez.plotname,x=%d,y=%d,z=%d,distance=..3]", x, FLOOR + 3, z + h + 1)));
-        run(s, inCamp(String.format("summon minecraft:text_display %d %d %d {Tags:[\"ez.plotname\"],billboard:\"center\",text:{text:\"%s's plot\",color:\"gold\",bold:true}}",
-                x, FLOOR + 3, z + h + 1, p.name.replace("\"", ""))));
+        if (camp != null) for (int qx = x0 >> 4; qx <= x1 >> 4; qx++) for (int qz = z0 >> 4; qz <= z1 >> 4; qz++) camp.getChunk(qx, qz);
     }
 
-    /** 1.2.0: the cell's island: 8 layers of ground down to bedrock (only into empty space, so nothing built is touched),
-     *  an invisible wall on the cell edge so nobody walks off, and a ring of trees around the plot with grass and ferns. */
-    static void surround(MinecraftServer s, Plot p) {
-        int x = cx(p.index), z = cz(p.index), c = CELL / 2, x0 = x - c, x1 = x + c - 1, z0 = z - c, z1 = z + c - 1;
-        for (int y = FLOOR - 1; y >= FLOOR - 4; y--) run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:dirt keep", x0, y, z0, x1, y, z1)));
-        for (int y = FLOOR - 5; y >= FLOOR - 6; y--) run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:stone keep", x0, y, z0, x1, y, z1)));
-        run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:bedrock", x0, FLOOR - 7, z0, x1, FLOOR - 7, z1)));
-        for (int[] e : new int[][]{{x0, z0, x1, z0}, {x0, z1, x1, z1}, {x0, z0, x0, z1}, {x1, z0, x1, z1}})
-            run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:barrier keep", e[0], FLOOR + 1, e[1], e[2], FLOOR + 8, e[3])));
-        // the margin outside the biggest plot size becomes grass with trees
-        int big = SIZES[SIZES.length - 1] / 2;
-        run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:grass_block replace minecraft:coarse_dirt", x0 + 1, FLOOR, z0 + 1, x1 - 1, FLOOR, z1 - 1)));
-        java.util.Random r = new java.util.Random(p.index * 7919L);
-        String[] trees = {"minecraft:oak", "minecraft:birch", "minecraft:spruce", "minecraft:fancy_oak", "minecraft:pine", "minecraft:oak"};
-        int planted = 0;
-        for (int tries = 0; tries < 200 && planted < 14; tries++) {
-            int tx = x0 + 2 + r.nextInt(CELL - 4), tz = z0 + 2 + r.nextInt(CELL - 6);
-            if (Math.abs(tx - x) < big + 2 && Math.abs(tz - z) < big + 2) continue;   // keep clear of the plot at its largest
-            run(s, inCamp(String.format("setblock %d %d %d minecraft:grass_block", tx, FLOOR, tz)));
-            run(s, inCamp(String.format("place feature %s %d %d %d", trees[r.nextInt(trees.length)], tx, FLOOR + 1, tz)));
-            planted++;
+    /**
+     * Build (or grow) a plot's bunker: a sealed room SIZE x SIZE inside, 6 high. The shell (walls, ceiling) is
+     * reinforced deepslate, which can't be mined; under the breakable tuff floor is bedrock. Ceiling lights, hazard
+     * stripes along the base of the walls, vent grates, and a blast door on the north wall. Growing it moves the walls
+     * out: the old shell inside the bigger room is cleared, nothing else is touched.
+     */
+    static void lay(MinecraftServer s, Plot p, boolean fresh) { lay(s, p, fresh, -1); }
+    static void lay(MinecraftServer s, Plot p, boolean fresh, int oldLevel) {
+        int x = cx(p.index), z = cz(p.index), h = half(p);
+        int x0 = x - h, x1 = x + h - 1, z0 = z - h, z1 = z + h - 1;
+        loadArea(s, x0 - 2, z0 - 2, x1 + 2, z1 + 2);
+        String f = "fill %d %d %d %d %d %d %s";
+        run(s, inCamp(String.format(f, x0 - 1, FLOOR - 1, z0 - 1, x1 + 1, FLOOR - 1, z1 + 1, "minecraft:bedrock")));
+        run(s, inCamp(String.format(f, x0, FLOOR, z0, x1, FLOOR, z1, FLOOR_BLOCK + " keep")));
+        run(s, inCamp(String.format(f, x0 - 1, FLOOR + 7, z0 - 1, x1 + 1, FLOOR + 7, z1 + 1, SHELL + " keep")));
+        for (int[] e : new int[][]{{x0 - 1, z0 - 1, x1 + 1, z0 - 1}, {x0 - 1, z1 + 1, x1 + 1, z1 + 1}, {x0 - 1, z0 - 1, x0 - 1, z1 + 1}, {x1 + 1, z0 - 1, x1 + 1, z1 + 1}})
+            run(s, inCamp(String.format(f, e[0], FLOOR, e[1], e[2], FLOOR + 7, e[3], SHELL)));
+        if (oldLevel >= 0 && oldLevel < p.level) {   // grown: the old walls are inside the room now
+            int oh = SIZES[oldLevel] / 2, ox0 = x - oh - 1, ox1 = x + oh, oz0 = z - oh - 1, oz1 = z + oh;
+            for (int[] e : new int[][]{{ox0, oz0, ox1, oz0}, {ox0, oz1, ox1, oz1}, {ox0, oz0, ox0, oz1}, {ox1, oz0, ox1, oz1}}) {
+                run(s, inCamp(String.format(f, e[0], FLOOR + 1, e[1], e[2], FLOOR + 6, e[3], "minecraft:air")));
+                run(s, inCamp(String.format(f, e[0], FLOOR, e[1], e[2], FLOOR, e[3], FLOOR_BLOCK)));
+            }
         }
-        for (int i = 0; i < 60; i++) {
-            int gx = x0 + 1 + r.nextInt(CELL - 2), gz = z0 + 1 + r.nextInt(CELL - 4);
-            if (Math.abs(gx - x) < big + 1 && Math.abs(gz - z) < big + 1) continue;
-            run(s, inCamp(String.format("setblock %d %d %d %s keep", gx, FLOOR + 1, gz, r.nextBoolean() ? "minecraft:short_grass" : "minecraft:fern")));
+        for (int lx = x0 + 2; lx <= x1 - 1; lx += 6)   // ceiling lights, into the shell
+            for (int lz = z0 + 2; lz <= z1 - 1; lz += 6) run(s, inCamp(String.format("setblock %d %d %d minecraft:sea_lantern", lx, FLOOR + 7, lz)));
+        int i = 0;   // hazard stripes along the base of the walls, vent grates high up
+        for (int k = x0 - 1; k <= x1 + 1; k++, i++) {
+            String c = (i / 2) % 2 == 0 ? "minecraft:yellow_concrete" : "minecraft:black_concrete";
+            run(s, inCamp(String.format("setblock %d %d %d %s", k, FLOOR + 1, z0 - 1, c)));
+            run(s, inCamp(String.format("setblock %d %d %d %s", k, FLOOR + 1, z1 + 1, c)));
+            if (Math.floorMod(k, 7) == 0) {
+                run(s, inCamp(String.format("setblock %d %d %d minecraft:iron_bars", k, FLOOR + 5, z0 - 1)));
+                run(s, inCamp(String.format("setblock %d %d %d minecraft:iron_bars", k, FLOOR + 5, z1 + 1)));
+            }
         }
+        i = 0;
+        for (int k = z0 - 1; k <= z1 + 1; k++, i++) {
+            String c = (i / 2) % 2 == 0 ? "minecraft:yellow_concrete" : "minecraft:black_concrete";
+            run(s, inCamp(String.format("setblock %d %d %d %s", x0 - 1, FLOOR + 1, k, c)));
+            run(s, inCamp(String.format("setblock %d %d %d %s", x1 + 1, FLOOR + 1, k, c)));
+            if (Math.floorMod(k, 7) == 0) {
+                run(s, inCamp(String.format("setblock %d %d %d minecraft:iron_bars", x0 - 1, FLOOR + 5, k)));
+                run(s, inCamp(String.format("setblock %d %d %d minecraft:iron_bars", x1 + 1, FLOOR + 5, k)));
+            }
+        }
+        // the blast door on the north wall: a steel frame, a sealed iron door, a warning light above
+        run(s, inCamp(String.format(f, x - 2, FLOOR + 1, z0 - 1, x + 2, FLOOR + 4, z0 - 1, "minecraft:iron_block")));
+        run(s, inCamp(String.format(f, x - 1, FLOOR + 1, z0 - 1, x + 1, FLOOR + 3, z0 - 1, "minecraft:polished_deepslate")));
+        run(s, inCamp(String.format("setblock %d %d %d minecraft:iron_door[half=lower,facing=south]", x, FLOOR + 1, z0 - 1)));
+        run(s, inCamp(String.format("setblock %d %d %d minecraft:iron_door[half=upper,facing=south]", x, FLOOR + 2, z0 - 1)));
+        run(s, inCamp(String.format("setblock %d %d %d minecraft:redstone_lamp[lit=true]", x, FLOOR + 5, z0 - 1)));
+        // the owner's name over the door; the starter crate
+        run(s, inCamp(String.format("kill @e[type=minecraft:text_display,tag=ez.plotname,x=%d,y=%d,z=%d,distance=..%d]", x, FLOOR + 5, z, h + 4)));
+        run(s, inCamp(String.format("summon minecraft:text_display %d.5 %d %d.6 {Tags:[\"ez.plotname\"],billboard:\"center\",text:{text:\"%s's bunker\",color:\"gold\",bold:true}}",
+                x, FLOOR + 5, z0, p.name.replace("\"", ""))));
+        if (fresh) run(s, inCamp(String.format("setblock %d %d %d %s", x0 + 1, FLOOR + 1, z0 + 1, Storage.CRATE_BLOCK)));
+    }
+
+    /** 1.3.0: clear a plot's old open-air cell (around OLD_FLOOR) before it moves underground. */
+    static void clearOld(MinecraftServer s, Plot p) {
+        int x = cx(p.index), z = cz(p.index), c = CELL / 2;
+        loadArea(s, x - c, z - c, x + c, z + c);
+        for (int y = OLD_FLOOR - 8; y <= OLD_FLOOR + 17; y++)
+            run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:air", x - c, y, z - c, x + c - 1, y, z + c - 1)));
+        run(s, inCamp(String.format("kill @e[type=minecraft:text_display,tag=ez.plotname,x=%d,y=%d,z=%d,distance=..40]", x, OLD_FLOOR, z)));
     }
 
     static Plot claim(ServerPlayer pl) {
@@ -163,21 +190,21 @@ final class Plots {
 
     static boolean raiding(ServerPlayer pl) { return pl.entityTags().contains("ez.raid"); }
     static void tp(ServerPlayer pl, Plot p) {
-        run(pl.level().getServer(), inCamp(String.format("tp %s %d %d %d 180 0", pl.getGameProfile().name(), cx(p.index), FLOOR + 1, cz(p.index) + half(p) + 1)));
+        run(pl.level().getServer(), inCamp(String.format("tp %s %d.5 %d %d.5 180 0", pl.getGameProfile().name(), cx(p.index), FLOOR + 1, cz(p.index) + half(p) - 3)));
     }
 
     static void menu(ServerPlayer pl) {
-        Ui.open(pl, t("Your Plot", ChatFormatting.DARK_GRAY), 4, m -> {
+        Ui.open(pl, t("Your Bunker", ChatFormatting.DARK_GRAY), 4, m -> {
             Plot p = of(pl);
             m.put(4, Shops.balanceIcon(pl), null);
             if (p == null) {
-                m.put(13, Ui.item(Items.GRASS_BLOCK, t("Claim your plot (free)", ChatFormatting.GREEN, ChatFormatting.BOLD), List.of(
-                        t("Your own " + SIZES[0] + " x " + SIZES[0] + " patch to build on and store gear.", ChatFormatting.GRAY),
+                m.put(13, Ui.item(Items.GRASS_BLOCK, t("Claim your bunker (free)", ChatFormatting.GREEN, ChatFormatting.BOLD), List.of(
+                        t("Your own " + SIZES[0] + " x " + SIZES[0] + " underground bunker to build in and store gear.", ChatFormatting.GRAY),
                         t("Only you can build or open chests there.", ChatFormatting.GRAY)), true),
-                        (q, c) -> { Plot n = claim(q); q.closeContainer(); tp(q, n); Shops.ok(q, "Welcome to your plot! Use /plot to come back, /camp to go to camp."); });
+                        (q, c) -> { Plot n = claim(q); q.closeContainer(); tp(q, n); Shops.ok(q, "Welcome to your bunker! Use /bunker (or /plot) to come back, /camp to go to camp."); });
                 return;
             }
-            m.put(11, Ui.item(Items.ENDER_PEARL, t("Go to my plot", ChatFormatting.AQUA), List.of(t("Or type /plot", ChatFormatting.GRAY)), false),
+            m.put(11, Ui.item(Items.ENDER_PEARL, t("Go to my bunker", ChatFormatting.AQUA), List.of(t("Or type /bunker", ChatFormatting.GRAY)), false),
                     (q, c) -> { q.closeContainer(); tp(q, p); });
             if (p.level + 1 < SIZES.length) {
                 int next = p.level + 1;
@@ -185,13 +212,13 @@ final class Plots {
                         t("Now " + SIZES[p.level] + " x " + SIZES[p.level], ChatFormatting.GRAY), t("Cost: " + Coins.fmt(COST[next]), ChatFormatting.GOLD)), true),
                         (q, c) -> {
                             if (!Shops.pay(q, COST[next])) { Shops.no(q, "You need " + Coins.fmt(COST[next]) + " (carry them on you)."); return; }
-                            p.level = next; save(); lay(q.level().getServer(), p, false);
-                            Shops.ok(q, "Your plot is now " + SIZES[next] + " x " + SIZES[next] + ".");
+                            p.level = next; save(); lay(q.level().getServer(), p, false, next - 1);
+                            Shops.ok(q, "Your bunker is now " + SIZES[next] + " x " + SIZES[next] + ".");
                         });
             } else m.put(13, Ui.item(Items.NETHERITE_SHOVEL, t("Max size: " + SIZES[p.level] + " x " + SIZES[p.level], ChatFormatting.GOLD), List.of(), true), null);
             int used = Storage.count(pl.level().getServer(), p), max = Storage.limit(p);
             m.put(15, Ui.item(Items.BARREL, t("Storage: " + used + " / " + max + " Stash Crates", ChatFormatting.YELLOW), List.of(
-                    t("Storage on plots is Stash Crates only", ChatFormatting.GRAY), t("(Builder, " + Coins.fmt(25) + "). Only you can open them.", ChatFormatting.GRAY),
+                    t("Bunker storage is Stash Crates only", ChatFormatting.GRAY), t("(Builder, " + Coins.fmt(25) + "). Only you can open them.", ChatFormatting.GRAY),
                     t("Size 16: 4 crates · 24: 7 · 32: 10.", ChatFormatting.GRAY)), false), null);
             if (p.perks == null) p.perks = new java.util.ArrayList<>();
             int[] slots = {29, 31, 33};
@@ -206,7 +233,7 @@ final class Plots {
                             if (!Shops.pay(q, k.cost())) { Shops.no(q, "You need " + Coins.fmt(k.cost()) + " (carry them on you)."); return; }
                             p.perks.add(k.key()); save();
                             placePerk(q.level().getServer(), p, k);
-                            Shops.ok(q, k.name() + " installed on your plot.");
+                            Shops.ok(q, k.name() + " installed in your bunker.");
                         });
             }
         });
@@ -248,7 +275,7 @@ final class Plots {
         });
 
         CommandRegistrationCallback.EVENT.register((d, ctx, env) -> {
-            d.register(Commands.literal("plot")
+            var plotNode = d.register(Commands.literal("plot")
                     .executes(c -> { ServerPlayer pl = c.getSource().getPlayerOrException();
                         if (raiding(pl)) { Shops.no(pl, "Not during a raid: extract first."); return 0; }
                         tp(pl, claim(pl)); return 1; })
@@ -260,11 +287,12 @@ final class Plots {
                         String who = StringArgumentType.getString(c, "player");
                         for (Plot p : plots.values()) if (p.name != null && p.name.equalsIgnoreCase(who)) { tp(pl, p); return 1; }
                         Shops.no(pl, who + " doesn't have a plot yet."); return 0; }))));
+            d.register(Commands.literal("bunker").executes(plotNode.getCommand()).redirect(plotNode));   // 1.3.0
             d.register(Commands.literal("ezadmin").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
-                    .then(Commands.literal("plotdecor").executes(c -> {   // 1.2.0: ground, edge wall and trees for plots made before
+                    .then(Commands.literal("bunkers").executes(c -> {   // 1.3.0: move plots made before underground (old contents cleared)
                         load(); MinecraftServer srv = c.getSource().getServer();
-                        for (Plot p : plots.values()) { lay(srv, p, false); surround(srv, p); }
-                        c.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal("Decorated " + plots.size() + " plots."), true); return 1; })));
+                        for (Plot p : plots.values()) { clearOld(srv, p); lay(srv, p, true); if (p.perks != null) for (Perk k : PERKS) if (p.perks.contains(k.key())) placePerk(srv, p, k); }
+                        c.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal("Moved " + plots.size() + " plots into bunkers."), true); return 1; })));
             d.register(Commands.literal("camp").executes(c -> { ServerPlayer pl = c.getSource().getPlayerOrException();
                 if (raiding(pl)) { Shops.no(pl, "Not during a raid: extract first."); return 0; }
                 run(pl.level().getServer(), inCamp("tp " + pl.getGameProfile().name() + " 0.5 64 6.5 180 0")); return 1; }));

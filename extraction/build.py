@@ -58,7 +58,7 @@ heal = lambda amp, extra=(): {"minecraft:consumable": {"consume_seconds": 1.6, "
                                                         "on_consume_effects": [{"type": "minecraft:apply_effects", "effects": [
                                                             {"id": "minecraft:instant_health", "amplifier": amp, "duration": 1}, *extra]}]}}
 BANDAGE = item("minecraft:paper", "Bandage", "white", "bandage", ["Hold right-click: heals 2 hearts."], heal(0))
-STASH = item("minecraft:barrel", "Stash Crate", "gold", "stash", ["Storage for your plot (27 slots).", "Your plot holds 4, 7 or 10 by size.",
+STASH = item("minecraft:barrel", "Stash Crate", "gold", "stash", ["Storage for your plot (27 slots).", "Your bunker holds 4, 7 or 10 by size.",
                                                                  "Break it to move it: you get it back."], bold=True)
 MEDKIT = item("minecraft:red_dye", "Medkit", "red", "medkit", ["Hold right-click: heals 4 hearts", "and regenerates for 5 s."],
               heal(1, [{"id": "minecraft:regeneration", "amplifier": 1, "duration": 100}]))
@@ -252,14 +252,14 @@ def npc(x, z, nm, color, prof, shop, rot, y=64):
 # ------------------------------------------------------------------ the camp (dimension ez:camp, floor y 63): a compact forward base, -18..18
 # posts: name, colour, shop, NPC x/z/yaw, label y
 POSTS = [("Quartermaster", "gold", "quartermaster", -12.5, -6.5, -90), ("Builder", "green", "builder", -12.5, 6.5, -90),
-         ("The Broker", "dark_purple", "fence", 13.5, -6.5, 90), ("Plot Manager", "aqua", "plots", 13.5, 6.5, 90),
+         ("The Broker", "dark_purple", "fence", 13.5, -6.5, 90), ("Bunker Manager", "aqua", "plots", 13.5, 6.5, 90),
          ("The Fixer", "red", "contracts", 0.5, -12.5, 0)]
 STALL_NPCS = [(x, z, nm, col, "none", shop, rot) for nm, col, shop, x, z, rot in POSTS]
 HELI = (0, 12)        # helipad centre; the deploy click box sits on it
 CAMP_SPAWN = (0.5, 64, 6.5)
 CAMP_LABELS = [
     (0.5, 67.8, -3.5, [name("☢ EXTRACTION ZONE\n", "yellow", True), {"text": "Deploy at the helipad, loot, and get out alive.\n"
-        "Die and you lose everything you carried.\nTake a job from the Fixer. Store gear on your plot.", "color": "white"}]),
+        "Die and you lose everything you carried.\nTake a job from the Fixer. Store gear in your bunker.", "color": "white"}]),
     (HELI[0] + 0.5, 66.4, HELI[1] + 0.5, [name("▶ DEPLOY\n", "red", True), {"text": "Right-click the helipad.\nYou bring what you carry.", "color": "gray"}]),
     *[(x, 67.3, z, [name(nm, col, True)]) for nm, col, shop, x, z, rot in POSTS],
 ]
@@ -299,85 +299,108 @@ def camp_commands():
     for dx, dz in [(-1, -1), (1, -1), (-1, 1), (1, 1)]: B[(dx, 64, dz)] = "minecraft:stone_brick_slab"
     for y in range(64, 72): B[(3, y, -3)] = "minecraft:iron_bars" if y > 64 else "minecraft:polished_andesite"
     fill(4, 69, -3, 6, 71, -3, "minecraft:green_wool"); fill(4, 70, -3, 6, 70, -3, "minecraft:white_wool")
-    # perimeter: HESCO barriers (two high, sand-coloured, chain-link on top), barriers above so nobody climbs out
+    # perimeter: HESCO barriers, two deep: the outer row 4 high, the inner row 2 high as a step, chain-link and
+    # razor wire on top, barriers above so nobody climbs out
+    hesco = lambda: pick("minecraft:smooth_sandstone", "minecraft:smooth_sandstone", "minecraft:sandstone", "minecraft:cut_sandstone")
     for k in range(-R, R + 1):
         for (x, z) in [(k, -R), (k, R), (-R, k), (R, k)]:
-            B[(x, 64, z)] = pick("minecraft:smooth_sandstone", "minecraft:smooth_sandstone", "minecraft:sandstone")
-            B[(x, 65, z)] = pick("minecraft:smooth_sandstone", "minecraft:cut_sandstone")
-            B[(x, 66, z)] = "minecraft:iron_bars"
-            for y in range(67, 72): B[(x, y, z)] = "minecraft:barrier"
-    # a vehicle gate on the east side (closed: plots are reached with /plot)
+            for y in (64, 65, 66, 67): B[(x, y, z)] = hesco()
+            B[(x, 68, z)] = "minecraft:iron_bars"; B[(x, 69, z)] = "minecraft:chain[axis=x]" if z in (-R, R) else "minecraft:chain[axis=z]"
+            for y in range(70, 74): B[(x, y, z)] = "minecraft:barrier"
+    for k in range(-R + 1, R):
+        for (x, z) in [(k, -R + 1), (k, R - 1), (-R + 1, k), (R - 1, k)]:
+            B[(x, 64, z)] = hesco(); B[(x, 65, z)] = hesco()
+            B[(x, 66, z)] = "minecraft:sandstone_slab[type=bottom]"
+    # buttresses every 6 blocks on the inside
+    for k in range(-R + 3, R - 2, 6):
+        for (x, z) in [(k, -R + 2), (k, R - 2), (-R + 2, k), (R - 2, k)]: B[(x, 64, z)] = "minecraft:sandstone_stairs[facing=" + ("north" if z == -R + 2 else "south" if z == R - 2 else "west" if x == -R + 2 else "east") + "]"
+    # a vehicle gate on the east side (closed: plots are reached with /plot): a steel frame with a barred gate
     for z in range(-2, 3):
-        B[(R, 64, z)] = "minecraft:spruce_fence_gate[facing=east]"; B[(R, 65, z)] = "minecraft:air"; B[(R, 66, z)] = "minecraft:air"
-    fill(R, 67, -3, R, 67, 3, "minecraft:dark_oak_planks"); B[(R, 64, -3)] = B[(R, 64, 3)] = "minecraft:stripped_dark_oak_log"
-    B[(R, 65, -3)] = B[(R, 65, 3)] = B[(R, 66, -3)] = B[(R, 66, 3)] = "minecraft:stripped_dark_oak_log"
-    # watchtowers in the corners
-    for tx in (-16, 16):
-        for tz in (-16, 16):
+        for x in (R, R - 1):
+            for y in range(64, 68): B[(x, y, z)] = "minecraft:air"
+        B[(R, 64, z)] = "minecraft:iron_bars"; B[(R, 65, z)] = "minecraft:iron_bars"; B[(R, 66, z)] = "minecraft:iron_bars"
+        B[(R - 1, 63, z)] = "minecraft:gravel"
+    for z in (-3, 3):
+        for y in range(64, 70): B[(R, y, z)] = B[(R - 1, y, z)] = "minecraft:iron_block"
+    for z in range(-3, 4): B[(R, 69, z)] = B[(R - 1, 69, z)] = "minecraft:iron_block"
+    B[(R - 1, 68, 0)] = "minecraft:lantern[hanging=true]"
+    # watchtowers: log posts, a plank back wall with a ladder, a sandbagged platform, a camo-net roof of leaves
+    for tx in (-15, 15):
+        for tz in (-15, 15):
+            sx, sz = (1 if tx > 0 else -1), (1 if tz > 0 else -1)
             for x in (tx - 1, tx + 1):
                 for z in (tz - 1, tz + 1):
-                    for y in range(64, 70): B[(x, y, z)] = "minecraft:spruce_log"
-            fill(tx - 1, 69, tz - 1, tx + 1, 69, tz + 1, "minecraft:spruce_planks")
+                    for y in range(64, 75): B[(x, y, z)] = "minecraft:spruce_log"
+            for y in range(64, 71): B[(tx, y, tz + sz)] = "minecraft:spruce_planks"            # back wall (outer side)
+            for y in range(64, 72): B[(tx, y, tz)] = f"minecraft:ladder[facing={'north' if sz > 0 else 'south'}]"
             for x in range(tx - 1, tx + 2):
                 for z in range(tz - 1, tz + 2):
-                    if (x, z) != (tx, tz): B[(x, 70, z)] = "minecraft:mud_brick_wall"
-            fill(tx - 1, 72, tz - 1, tx + 1, 72, tz + 1, "minecraft:moss_carpet")
-            for x in (tx - 1, tx + 1):
-                for z in (tz - 1, tz + 1): B[(x, 71, z)] = "minecraft:spruce_fence"
-            B[(tx, 71, tz)] = "minecraft:sea_lantern"
-            lx, lz = tx + (1 if tx < 0 else -1), tz
-            for y in range(64, 69): B[(lx + (1 if tx < 0 else -1), y, lz)] = f"minecraft:ladder[facing={'east' if tx < 0 else 'west'}]"
-    # posts: a shipping container each for the Quartermaster and the Broker, tents for the Builder and the Plot Manager
-    def container(x0, z0, x1, z1, open_x, col):   # open_x: the open long side faces the road
+                    if (x, z) != (tx, tz): B[(x, 71, z)] = "minecraft:spruce_planks"
+            for x in range(tx - 2, tx + 3):
+                for z in range(tz - 2, tz + 3):
+                    if abs(x - tx) == 2 or abs(z - tz) == 2: B[(x, 71, z)] = "minecraft:spruce_slab[type=top]"; B[(x, 72, z)] = "minecraft:mud_brick_wall"
+            for x in range(tx - 2, tx + 3):
+                for z in range(tz - 2, tz + 3): B[(x, 75, z)] = "minecraft:dark_oak_leaves[persistent=true]"
+            B[(tx, 74, tz)] = "minecraft:lantern[hanging=true]"
+            B[(tx + sx, 73, tz + sz)] = "minecraft:sea_lantern"   # searchlight facing out
+    # posts: a ribbed shipping container each for the Quartermaster and the Broker (awning over the open side),
+    # A-frame tents with closed back gables and guy ropes for the Builder and the Plot Manager
+    def container(x0, z0, x1, z1, open_x, col):
+        d = 1 if open_x > x0 else -1   # the open side faces +x when it's x1
         for x in range(x0, x1 + 1):
             for z in range(z0, z1 + 1):
                 edge = x in (x0, x1) or z in (z0, z1)
                 B[(x, 63, z)] = "minecraft:spruce_planks"
-                for y in (64, 65, 66):
-                    if edge and x != open_x: B[(x, y, z)] = f"minecraft:{col}_concrete" if (z % 2 == 0) else f"minecraft:{col}_terracotta"
-                    elif not edge: B[(x, y, z)] = "minecraft:air"
-                B[(x, 67, z)] = f"minecraft:{col}_concrete"
+                for y in (64, 65, 66, 67):
+                    if edge and x != open_x: B[(x, y, z)] = f"minecraft:{col}_concrete" if (x + z) % 2 == 0 else f"minecraft:{col}_terracotta"
+                    elif not edge or x == open_x: B[(x, y, z)] = "minecraft:air"
+                B[(x, 68, z)] = f"minecraft:{col}_concrete"
         for z in (z0, z1):
-            for y in (64, 65, 66): B[(open_x, y, z)] = "minecraft:iron_block"
+            for y in (64, 65, 66, 67): B[(open_x, y, z)] = "minecraft:iron_block"
+        for z in range(z0, z1 + 1): B[(open_x + d, 68, z)] = "minecraft:dark_oak_slab[type=top]"   # awning
+        B[(open_x + d, 67, z0)] = B[(open_x + d, 67, z1)] = "minecraft:dark_oak_fence"
+        for z in range(z0 + 1, z1): B[(x0 if open_x == x1 else x1, 66, z)] = "minecraft:iron_bars"  # a vent slit in the back wall
     def tent(x0, z0, x1, z1, open_x, col):
+        mid = (z0 + z1) / 2; half = (z1 - z0) / 2
         for x in range(x0, x1 + 1):
             for z in range(z0, z1 + 1):
                 B[(x, 63, z)] = "minecraft:spruce_planks"
-                mid = (z0 + z1) / 2
-                h = 67 - round(abs(z - mid))
-                if x != open_x: B[(x, max(64, h), z)] = f"minecraft:{col}_wool"
-                if x in (x0, x1) and x != open_x:
-                    for y in range(64, max(64, h)): B[(x, y, z)] = f"minecraft:{col}_wool"
-            B[(open_x, 67 - 0, int(mid))] = f"minecraft:{col}_wool"
-        for z in (z0, z1):
-            for y in range(64, 66): B[(open_x, y, z)] = "minecraft:spruce_fence"
-    container(-17, -9, -11, -4, -11, "green")
-    container(11, -9, 17, -4, 11, "gray")
-    tent(-17, 3, -11, 9, -11, "green")
-    tent(11, 3, 17, 9, 11, "brown")
+                h = 64 + round(3 * (1 - abs(z - mid) / half)) + 1   # roof height over this row
+                B[(x, h, z)] = f"minecraft:{col}_wool"
+                if x == (x0 if open_x == x1 else x1):                # closed back gable
+                    for y in range(64, h): B[(x, y, z)] = f"minecraft:{col}_wool"
+                elif x == open_x and abs(z - mid) >= half - 0.5:
+                    B[(x, 64, z)] = "minecraft:spruce_fence"
+        for x in range(x0, x1 + 1): B[(x, 68, int(mid))] = "minecraft:spruce_log[axis=x]"   # ridge pole
+        for (x, z) in [(x0 - 1, z0 - 1), (x0 - 1, z1 + 1), (x1 + 1, z0 - 1), (x1 + 1, z1 + 1)]: B[(x, 64, z)] = "minecraft:spruce_fence"  # guy-rope pegs
+    container(-16, -9, -10, -4, -10, "green")
+    container(10, -9, 16, -4, 10, "gray")
+    tent(-16, 3, -10, 9, -10, "green")
+    tent(10, 3, 16, 9, 10, "brown")
     # counters and props inside the posts
-    for z in (-8, -7, -5): B[(-15, 64, z)] = pick("minecraft:barrel[facing=up]", "minecraft:smithing_table", "minecraft:grindstone[face=floor,facing=east]")
-    B[(-16, 64, -6)] = "minecraft:anvil[facing=east]"; B[(-12, 64, -8)] = "minecraft:barrel[facing=up]"; B[(-12, 65, -8)] = "minecraft:lantern"
-    for z in (-8, -5): B[(15, 64, z)] = "minecraft:chiseled_bookshelf[facing=west]"
-    B[(16, 64, -6)] = "minecraft:cartography_table"; B[(12, 64, -8)] = "minecraft:barrel[facing=up]"; B[(12, 65, -8)] = "minecraft:soul_lantern"
-    for z in (4, 8): B[(-16, 64, z)] = pick("minecraft:stonecutter", "minecraft:crafting_table")
-    B[(-15, 64, 8)] = "minecraft:scaffolding"; B[(-12, 64, 4)] = "minecraft:barrel[facing=up]"
-    B[(16, 64, 5)] = "minecraft:lectern[facing=west]"; B[(16, 64, 7)] = "minecraft:crafting_table"; B[(12, 64, 8)] = "minecraft:lantern"
-    # the Fixer's booth (north): a desk under a camo net
+    for z in (-8, -5): B[(-14, 64, z)] = pick("minecraft:smithing_table", "minecraft:grindstone[face=floor,facing=east]")
+    B[(-15, 64, -6)] = "minecraft:anvil[facing=east]"; B[(-15, 64, -7)] = "minecraft:barrel[facing=up]"; B[(-15, 65, -7)] = "minecraft:lantern"
+    for x, z in [(-11, -8), (-11, -5)]: B[(x, 64, z)] = "minecraft:barrel[facing=east]"
+    for z in (-8, -5): B[(14, 64, z)] = "minecraft:chiseled_bookshelf[facing=west]"
+    B[(15, 64, -6)] = "minecraft:cartography_table"; B[(15, 64, -7)] = "minecraft:barrel[facing=up]"; B[(15, 65, -7)] = "minecraft:soul_lantern"
+    for x, z in [(11, -8), (11, -5)]: B[(x, 64, z)] = "minecraft:barrel[facing=west]"
+    B[(-15, 64, 4)] = "minecraft:stonecutter"; B[(-15, 64, 8)] = "minecraft:crafting_table"; B[(-14, 64, 8)] = "minecraft:scaffolding"; B[(-11, 64, 4)] = "minecraft:barrel[facing=up]"
+    B[(15, 64, 5)] = "minecraft:lectern[facing=west]"; B[(15, 64, 7)] = "minecraft:crafting_table"; B[(15, 65, 7)] = "minecraft:lantern"; B[(11, 64, 8)] = "minecraft:barrel[facing=up]"
+    # the Fixer's booth (north): dark oak frame, a plank back wall with a map board, a desk, a camo-net roof
     fill(-3, 63, -16, 3, 63, -11, "minecraft:dark_oak_planks")
     for x in (-3, 3):
         for z in (-16, -11):
-            for y in range(64, 68): B[(x, y, z)] = "minecraft:dark_oak_fence"
-    fill(-3, 68, -16, 3, 68, -11, "minecraft:moss_carpet")
-    for x in range(-2, 3): B[(x, 64, -14)] = "minecraft:spruce_trapdoor[half=top,open=false]" if x != 0 else "minecraft:air"
-    B[(-2, 65, -14)] = "minecraft:lantern"; B[(2, 64, -15)] = "minecraft:barrel[facing=up]"; B[(-2, 64, -16)] = "minecraft:lectern[facing=south]"
-    # sleeping tents (north-west and north-east)
-    for x0 in (-10, 6):
-        for x in range(x0, x0 + 5):
-            for z in range(-17, -12):
-                d = abs(z + 14.5)
-                B[(x, 64 + (2 - min(2, round(d))), z)] = "minecraft:green_wool" if d > 0.6 else "minecraft:green_wool"
-        B[(x0 + 1, 64, -15)] = "minecraft:green_bed[facing=east,part=foot]"; B[(x0 + 2, 64, -15)] = "minecraft:green_bed[facing=east,part=head]"
+            for y in range(64, 68): B[(x, y, z)] = "minecraft:dark_oak_log"
+    fill(-3, 64, -16, 3, 67, -16, "minecraft:spruce_planks"); fill(-2, 65, -16, 2, 66, -16, "minecraft:cartography_table")
+    fill(-3, 68, -16, 3, 68, -11, "minecraft:dark_oak_slab[type=bottom]"); fill(-2, 69, -15, 2, 69, -12, "minecraft:dark_oak_leaves[persistent=true]")
+    for x in range(-2, 3):
+        if x != 0: B[(x, 64, -14)] = "minecraft:spruce_slab[type=top]"
+    B[(-2, 65, -14)] = "minecraft:lantern"; B[(2, 65, -14)] = "minecraft:candle[candles=3,lit=true]"; B[(2, 64, -15)] = "minecraft:barrel[facing=up]"
+    # sleeping tents (north-west and north-east), smaller A-frames
+    tent(-11, -16, -6, -12, -6, "green")
+    tent(6, -16, 11, -12, 6, "green")
+    for x0 in (-10, 7):
+        B[(x0, 64, -14)] = "minecraft:green_bed[facing=east,part=foot]"; B[(x0 + 1, 64, -14)] = "minecraft:green_bed[facing=east,part=head]"
     # helipad (south): concrete pad, yellow ring, white H, edge lights, sandbags and a windsock
     hx, hz = HELI
     disc(hx, hz, 4, "minecraft:gray_concrete")
@@ -399,11 +422,11 @@ def camp_commands():
     B[(-9, 66, 12)] = B[(-9, 66, 14)] = "minecraft:tinted_glass"
     for x, z in [(-16, 12), (-16, 13), (-16, 15), (-15, 16)]: B[(x, 64, z)] = pick("minecraft:cauldron", "minecraft:blast_furnace[facing=east]", "minecraft:barrel[facing=up]")
     # supply pallets and crates along the walls
-    for x, z in [(-6, -17), (-5, -17), (5, 17), (6, 17), (12, 16), (13, 16), (-6, 17), (14, -16), (-14, -16), (4, -17)]:
+    for x, z in [(-6, -16), (-5, -16), (5, 16), (6, 16), (12, 15), (13, 15), (-6, 16), (4, -16)]:
         B[(x, 64, z)] = pick("minecraft:barrel[facing=up]", "minecraft:spruce_planks", "minecraft:hay_block", "minecraft:composter", "minecraft:scaffolding")
         if rnd.random() < 0.5: B[(x, 65, z)] = pick("minecraft:barrel[facing=up]", "minecraft:spruce_slab")
     # sandbag lines
-    for x in range(-8, -3): B[(x, 64, 17)] = "minecraft:mud_brick_wall"
+    for x in range(-8, -3): B[(x, 64, 16)] = "minecraft:mud_brick_wall"
     for z in range(-10, -4): B[(-6, 64, z)] = "minecraft:mud_brick_wall" if z % 3 else "minecraft:air"
     for z in range(4, 10): B[(6, 64, z)] = "minecraft:mud_brick_wall" if z % 3 else "minecraft:air"
     # lamp posts
@@ -412,7 +435,8 @@ def camp_commands():
         B[(x, 67, z)] = "minecraft:lantern"
     # radio mast (west of the plaza)
     for y in range(64, 74): B[(-7, y, 1)] = "minecraft:iron_bars" if y > 65 else "minecraft:polished_deepslate"
-    B[(-7, 74, 1)] = "minecraft:lightning_rod"; B[(-7, 70, 1)] = "minecraft:redstone_torch"
+    B[(-7, 74, 1)] = "minecraft:lightning_rod"; B[(-7, 70, 1)] = "minecraft:copper_bulb[lit=true]"
+    B[(-8, 64, 1)] = "minecraft:blast_furnace[facing=west]"; B[(-6, 64, 1)] = "minecraft:lever[face=floor,facing=east]"   # its generator
     # emit: clear the old camp (it was 61 x 61), then runs of the same block along x
     out = [f"execute in {CAMP} run fill -32 {y} -32 32 {y} 32 minecraft:air" for y in range(58, 76)]
     rows = {}
@@ -538,8 +562,8 @@ def build(out):
     fn("camp/player", [   # safe in camp: no damage dealt or taken, fed; fell off: back on the deck
         "effect give @s minecraft:resistance 3 255 true", "effect give @s minecraft:weakness 3 255 true",
         "effect give @s minecraft:saturation 3 0 true", "effect give @s minecraft:regeneration 3 2 true",
-        f"execute if entity @s[y=-64,dy=110] run tp @s {CAMP_SPAWN[0]} {CAMP_SPAWN[1]} {CAMP_SPAWN[2]}",
-        f"execute unless entity @s[x=-31,y=60,z=-31,dx=62,dy=40,dz=62] unless entity @s[x=40,y=55,z=-200,dx=320,dy=60,dz=420] run tp @s {CAMP_SPAWN[0]} {CAMP_SPAWN[1]} {CAMP_SPAWN[2]}",
+        f"execute if entity @s[y=-64,dy=70] run tp @s {CAMP_SPAWN[0]} {CAMP_SPAWN[1]} {CAMP_SPAWN[2]}",   # fell out (bunkers are at y 20)
+        f"execute unless entity @s[x=-31,y=60,z=-31,dx=62,dy=40,dz=62] unless entity @s[x=40,y=10,z=-200,dx=320,dy=105,dz=420] run tp @s {CAMP_SPAWN[0]} {CAMP_SPAWN[1]} {CAMP_SPAWN[2]}",
         "scoreboard players set @s truce 0", "scoreboard players enable @s truce"])
 
     # ---------------------------------------------------------------- deploy / raid
@@ -616,7 +640,7 @@ def build(out):
     fn("exfil/left", ["scoreboard players set @s ez.ex 0", 'title @s actionbar {"text":"✖ Extraction cancelled: you left the zone","color":"red"}'])
     fn("exfil/done", ["ezhook extract",   # mod, while still at the extraction point: contract, hot-extract bonus, recap
                       "scoreboard players add @s ez.extracts 1", f"function {NS}:squad/leave", f"function {NS}:to_camp",
-                      *title("@s", "EXTRACTED", "Your loot is safe. Stash it on your plot.", "green"),
+                      *title("@s", "EXTRACTED", "Your loot is safe. Stash it in your bunker (/bunker).", "green"),
                       "tellraw @a " + tj([{"text": "✈ ", "color": "green"}, {"selector": "@s", "color": "white"}, {"text": " extracted from the Zone.", "color": "green"}]),
                       "playsound minecraft:ui.toast.challenge_complete player @s ~ ~ ~ 1 1"])
 

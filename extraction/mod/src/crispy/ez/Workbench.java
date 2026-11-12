@@ -45,8 +45,8 @@ final class Workbench {
         });
         CommandRegistrationCallback.EVENT.register((d, ctx, env) -> d.register(Commands.literal("workbench").executes(c -> {
             ServerPlayer p = c.getSource().getPlayerOrException();
-            if (!p.level().dimension().equals(Plots.CAMP)) { Shops.no(p, "The workbench is on your plot in camp."); return 0; }
-            if (!Plots.hasPerk(p, "workbench")) { Shops.no(p, "Buy a Gun Workbench for your plot from the Plot Manager first."); return 0; }
+            if (!p.level().dimension().equals(Plots.CAMP)) { Shops.no(p, "The workbench is in your bunker."); return 0; }
+            if (!Plots.hasPerk(p, "workbench")) { Shops.no(p, "Buy a Gun Workbench for your bunker from the Bunker Manager first."); return 0; }
             open(p); return 1;
         })));
     }
