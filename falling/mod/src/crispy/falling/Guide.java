@@ -234,6 +234,10 @@ final class Guide {
                     pg("Combat", "XP from hostile mobs and bosses. Perk: extra damage."),
                     pg("Fishing", "XP for every catch. Perk: extra luck, so better catches."),
                     pg("Levelling", "Each skill goes to level 25 and every level pays coins. Blocks you placed yourself give no XP. /skills shows your progress."))),
+            new Topic("Collections", Items.PAINTING, "Gather resources to unlock tiers", List.of(
+                    pg("What they are", "Every resource has a collection with nine tiers (I to IX). Each tier pays coins and XP in its skill. /collections shows them all."),
+                    pg("What counts", "Items you pick up from mining, chopping, farming, mob loot and fishing, items a resource zone hands you, and what you collect from your minions."),
+                    pg("What doesn't", "Anything bought, crafted, or dropped by a player (including on death), and drops from blocks you placed yourself."))),
             new Topic("Pets", Items.BONE, "Companions that boost a skill", List.of(
                     pg("Buying", "Open /pets to buy a pet and choose which one follows you. It floats beside you."),
                     pg("Boosts", "Each pet boosts one skill's XP by 10%, plus 1% per pet level, and gives a small bonus. Pets level up from the XP they boost, up to level 30."),
@@ -253,7 +257,7 @@ final class Guide {
                     pg("Abandoning", "From /plots you can give your plot up: it's cleared and you get half the price back."))),
             new Topic("Commands", Items.COMMAND_BLOCK, "Every command in one place", List.of(
                     pg("Island", "/island (/is), /island challenges, /island level, /island top, /invite <player>, /island upgrades"),
-                    pg("Progress", "/skills, /pets, /gear, /guide"),
+                    pg("Progress", "/skills, /collections, /pets, /gear, /guide"),
                     pg("Trading", "/bazaar (/bz), /plots"),
                     pg("Travel", "/warp hub, /warp home, /warp mines, /warp woods, /warp plots"),
                     pg("Players", "/tpa <player> asks to teleport to someone, /tpahere <player> asks them to come to you. They click Accept, then stand still for 3 seconds."),

@@ -1,6 +1,9 @@
 package crispy.falling.mixin;
 
+import crispy.falling.ItemCollections;
 import crispy.falling.ZoneRules;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
@@ -17,6 +20,12 @@ public abstract class ServerPlayerMixin {
     @Inject(method = "die", at = @At("HEAD"))
     private void crispy$zoneDeath(DamageSource source, CallbackInfo ci) {
         ZoneRules.onPlayerDeath((ServerPlayer) (Object) this);
+    }
+
+    /** Collections: whatever a player drops (Q, a closed menu, death) never counts toward a collection again. */
+    @Inject(method = "drop(Lnet/minecraft/world/item/ItemStack;ZZ)Lnet/minecraft/world/entity/item/ItemEntity;", at = @At("RETURN"))
+    private void crispy$dropped(ItemStack stack, boolean randomly, boolean thrower, CallbackInfoReturnable<ItemEntity> cir) {
+        ItemCollections.markDropped(cir.getReturnValue());
     }
 
     @Inject(method = "canHarmPlayer", at = @At("HEAD"), cancellable = true)

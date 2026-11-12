@@ -380,6 +380,7 @@ public final class Minions {
                     int before = s.getCount();
                     p.getInventory().add(s);
                     int added = before - s.getCount();
+                    ItemCollections.add(p, it, added);   // what minions gather counts toward collections
                     n -= added; got += added;
                     if (added == 0 || !s.isEmpty()) break;
                 }

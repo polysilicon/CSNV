@@ -1681,6 +1681,7 @@ js(f"data/{NS}/dialog/menu.json", {
         btn({"text": "Challenges", "color": "gold"}, "island challenges", "Hand in items for rewards"),
         btn({"text": "Armor & Weapons", "color": "aqua"}, "gear", "Craftable sets and weapons, with their recipes"),
         btn({"text": "Skills", "color": "gold"}, "skills", "Farming, Mining, Foraging, Combat, Fishing: levels and perks"),
+        btn({"text": "Collections", "color": "yellow"}, "collections", "Gather resources to unlock tiers: coins and skill XP for each"),
         btn({"text": "Island upgrades", "color": "green"}, "island upgrades", "Bigger island, more minions, co-op slots, ore generator"),
         btn({"text": "Pets", "color": "light_purple"}, "pets", "Your pets: pick one to follow you and boost a skill"),
         btn({"text": "Bazaar", "color": "gold"}, "bazaar", "Buy and sell with other players"),

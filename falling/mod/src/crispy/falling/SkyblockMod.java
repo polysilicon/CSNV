@@ -41,6 +41,9 @@ public class SkyblockMod implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(Sidebar::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Portals::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Skills::onTick);
+        ServerTickEvents.END_SERVER_TICK.register(ItemCollections::onTick);
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register(ItemCollections::onEntityLoad);
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPING.register(ItemCollections::save);
         ServerTickEvents.END_SERVER_TICK.register(Pets::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Zones::onTick);
         ServerTickEvents.END_SERVER_TICK.register(ZoneRules::onTick);
@@ -51,8 +54,9 @@ public class SkyblockMod implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(Visits::onTick);
         net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((h, server) -> Visits.forget(h.player));
         net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents.AFTER_RESPAWN.register((oldP, newP, alive) -> ZoneRules.restore(newP));
-        net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((h, sender, server) -> { ZoneRules.restore(h.player); Guide.onJoin(h.player); });
+        net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((h, sender, server) -> { ZoneRules.restore(h.player); Guide.onJoin(h.player); ItemCollections.onJoin(h.player); });
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPING.register(Zones::restoreAll);
+        PlayerBlockBreakEvents.BEFORE.register(ItemCollections::beforeBreak);   // first: only notes placed blocks, never cancels
         PlayerBlockBreakEvents.BEFORE.register(Visits::canBreak);
         PlayerBlockBreakEvents.BEFORE.register(Portals::canBreak);
         PlayerBlockBreakEvents.BEFORE.register(Zones::canBreak);
@@ -106,6 +110,8 @@ public class SkyblockMod implements ModInitializer {
             d.register(Commands.literal("challenges")
                     .executes(c -> menu(c.getSource(), "challenges")));
             d.register(Commands.literal("skills").executes(c -> Skills.command(c.getSource())));
+            d.register(Commands.literal("collections").executes(c -> ItemCollections.command(c.getSource())));
+            d.register(Commands.literal("collection").executes(c -> ItemCollections.command(c.getSource())));
             // 2.16.1: the merchants' shop from anywhere (/shop, or /shop <category> for one tab)
             d.register(Commands.literal("shop")
                     .executes(c -> { Shop.open(c.getSource().getServer(), c.getSource().getPlayerOrException(), ""); return 1; })
@@ -133,6 +139,7 @@ public class SkyblockMod implements ModInitializer {
                 .then(Commands.literal("challenges").executes(c -> menu(c.getSource(), "challenges")))
                 .then(Commands.literal("gear").executes(c -> menu(c.getSource(), "gear")))
                 .then(Commands.literal("skills").executes(c -> Skills.command(c.getSource())))
+                .then(Commands.literal("collections").executes(c -> ItemCollections.command(c.getSource())))
                 .then(Commands.literal("upgrades").executes(c -> Upgrades.open(c.getSource())))
                 .then(Commands.literal("pets").executes(c -> { Pets.open(c.getSource().getPlayerOrException()); return 1; }))
                 .then(Commands.literal("level").executes(c -> IslandLevels.command(c.getSource())))

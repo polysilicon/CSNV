@@ -251,6 +251,10 @@ public final class Skills {
             set.add(pos.asLong());
             if (set.size() > CAP) { Iterator<Long> it = set.iterator(); it.next(); it.remove(); }
         }
+        static boolean has(Level level, BlockPos pos) {
+            LinkedHashSet<Long> set = BY_LEVEL.get(level.dimension());
+            return set != null && set.contains(pos.asLong());
+        }
         static boolean take(Level level, BlockPos pos) {
             LinkedHashSet<Long> set = BY_LEVEL.get(level.dimension());
             return set != null && set.remove(pos.asLong());

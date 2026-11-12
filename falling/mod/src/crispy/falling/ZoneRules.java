@@ -99,6 +99,7 @@ public final class ZoneRules {
                 to.getInventory().add(st);
                 if (st.getCount() == before) continue;   // full: leave it on the ground
                 to.take(ie, before - st.getCount());
+                ItemCollections.zonePickup(to, ie, st.getItem() == net.minecraft.world.item.Items.AIR ? ie.getItem().getItem() : st.getItem(), before - st.getCount());
                 if (st.isEmpty()) ie.discard(); else ie.setItem(st);
                 ow.playSound(null, to.getX(), to.getY(), to.getZ(), net.minecraft.sounds.SoundEvents.ITEM_PICKUP, net.minecraft.sounds.SoundSource.PLAYERS, 0.2f,
                         1.4f + ow.getRandom().nextFloat() * 0.4f);
