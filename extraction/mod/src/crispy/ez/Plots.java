@@ -202,6 +202,9 @@ final class Plots {
     /** Item frames, armour stands, paintings and the like in camp: only the plot owner (or creative staff). */
     static boolean decoAllowed(Player pl, Level world, Entity e) {
         if (!world.dimension().equals(CAMP) || pl.isCreative() || e instanceof Player) return true;
+        // the camp's own click boxes (deploy pad) and NPCs/decor are always usable
+        if (e instanceof net.minecraft.world.entity.Interaction) return true;
+        for (String tag : e.entityTags()) if (tag.startsWith("ez.")) return true;
         if (e instanceof LivingEntity && !(e instanceof net.minecraft.world.entity.decoration.ArmorStand)) return true;
         return campAllowed(pl, world, e.blockPosition());
     }
