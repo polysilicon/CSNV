@@ -20,10 +20,10 @@ import java.util.UUID;
 import static crispy.ez.Ui.t;
 
 /**
- * Relief kit: a player who has lost everything (no gun and under BROKE credits, counting both their inventory and every
+ * Relief kit: a player who has lost everything (no gun and under BROKE coins, counting both their inventory and every
  * container on their stash plot) gets a basic kit back in camp: a pistol, ammo, bandages and food (function
  * ez:kit/give). It's checked automatically after a death (the datapack runs /ezkit), and players can ask with /kit in
- * camp. At most one kit every COOLDOWN per player, and it carries no credits, so it can't be farmed for money.
+ * camp. At most one kit every COOLDOWN per player, and it carries no coins, so it can't be farmed for money.
  */
 final class Relief {
     private Relief() {}
@@ -53,7 +53,7 @@ final class Relief {
             ItemStack s = c.getItem(i);
             if (s.isEmpty()) continue;
             if (isGun(s)) acc[0]++;
-            else if (Shops.isCredit(s)) acc[1] += s.getCount();
+            else acc[1] += Coins.value(s);
         }
     }
 
@@ -76,7 +76,7 @@ final class Relief {
             where = "in your stash";
         }
         if (acc[0] > 0 || acc[1] >= BROKE) {
-            if (asked) p.sendSystemMessage(t("You still have " + (acc[0] > 0 ? "a gun" : acc[1] + " credits") + " " + where
+            if (asked) p.sendSystemMessage(t("You still have " + (acc[0] > 0 ? "a gun" : Coins.fmt(acc[1])) + " " + where
                     + ". Relief kits are for players who've lost everything.", ChatFormatting.YELLOW));
             return;
         }

@@ -84,4 +84,13 @@ final class Ui {
         SimpleContainer box = new SimpleContainer(rows * 9);
         p.openMenu(new SimpleMenuProvider((id, inv, pl) -> new Menu(id, inv, box, rows, filler), title));
     }
+
+    /** A sound only this player hears (Player.playSound leaves the player out on the server side). */
+    static void sound(net.minecraft.server.level.ServerPlayer p, net.minecraft.sounds.SoundEvent ev, float vol, float pitch) {
+        sound(p, net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.wrapAsHolder(ev), vol, pitch);
+    }
+    static void sound(net.minecraft.server.level.ServerPlayer p, net.minecraft.core.Holder<net.minecraft.sounds.SoundEvent> ev, float vol, float pitch) {
+        p.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(ev, net.minecraft.sounds.SoundSource.MASTER,
+                p.getX(), p.getY(), p.getZ(), vol, pitch, p.getRandom().nextLong()));
+    }
 }

@@ -48,7 +48,10 @@ def item(id_, nm, color, tag, lines=(), extra=None, bold=False):
     c.update(extra or {})
     return {"id": id_, "components": c}
 
-CREDIT = item("minecraft:gold_nugget", "Credits", "gold", "credit", ["Currency of the Zone.", "Spend it at the Quartermaster."], bold=True)
+# money is Anarchy's Gold Coin (exactly the same item); the mod condenses 64 into a Coin Bag (mod Coins.java)
+CREDIT = {"id": "minecraft:sunflower", "components": {"minecraft:custom_name": {"text": "Gold Coin", "italic": False, "color": "gold", "bold": True},
+          "minecraft:lore": [{"text": " -Used for special shop items", "italic": False, "color": "dark_purple"}],
+          "minecraft:enchantments": {"minecraft:unbreaking": 1}}}
 AMMO = item("minecraft:iron_nugget", "Ammo", "yellow", "ammo", ["Every gun shot uses one round."])
 heal = lambda amp, extra=(): {"minecraft:consumable": {"consume_seconds": 1.6, "animation": "bow", "sound": "minecraft:item.armor.equip_leather",
                                                         "has_consume_particles": False,
@@ -57,7 +60,7 @@ heal = lambda amp, extra=(): {"minecraft:consumable": {"consume_seconds": 1.6, "
 BANDAGE = item("minecraft:paper", "Bandage", "white", "bandage", ["Hold right-click: heals 2 hearts."], heal(0))
 MEDKIT = item("minecraft:red_dye", "Medkit", "red", "medkit", ["Hold right-click: heals 4 hearts", "and regenerates for 5 s."],
               heal(1, [{"id": "minecraft:regeneration", "amplifier": 1, "duration": 100}]))
-# valuables: key, item, name, colour, sell price (credits)
+# valuables: key, item, name, colour, sell price (coins)
 VALUABLES = [
     ("scrap", "minecraft:redstone", "Scrap Electronics", "gray", 2),
     ("wire", "minecraft:copper_ingot", "Copper Wire", "gold", 3),
@@ -69,7 +72,7 @@ VALUABLES = [
     ("drive", "minecraft:echo_shard", "Data Drive", "dark_aqua", 28),
     ("blackbox", "minecraft:recovery_compass", "Black Box", "red", 45),
 ]
-VAL = {k: item(i, n, c, k, ["Valuable: sell it to the Fence", f"for {p} credits."]) | {"price": p} for k, i, n, c, p in VALUABLES}
+VAL = {k: item(i, n, c, k, ["Valuable: sell it to the Fence", f"for {p} coins."]) | {"price": p} for k, i, n, c, p in VALUABLES}
 
 # guns used here, with neutral names (the Multiverse names stay on Multiverse): key, display name, trader price
 EZ_GUNS = [("pistol", "Pistol", 20), ("m1911", "M1911", 32), ("mp40", "MP40", 48), ("stakeout", "Pump Shotgun", 56),
@@ -106,8 +109,10 @@ def ammo_gate(name, lines):
         cap = MAGS[key][0]
         i = lines.index("scoreboard players set @s pvp.rgt 3") + 1
         lines = lines[:i] + [
+            f"scoreboard players set @s ez.cap {cap}",   # Extended Magazine (workbench): +50%
+            f"execute if items entity @s weapon.mainhand *[minecraft:custom_data~{{ezmod:{{mag:1b}}}}] run scoreboard players set @s ez.cap {cap + cap // 2}",
             'execute if score @s ez.rl matches 1.. run return run title @s actionbar {"text":"⟳ Reloading...","color":"yellow"}',
-            f"execute if predicate {NS}:sneaking unless score @s ez.m_{key} matches {cap}.. run return run function {NS}:gun/reload_{key}",
+            f"execute if predicate {NS}:sneaking if score @s ez.m_{key} < @s ez.cap run return run function {NS}:gun/reload_{key}",
             f"execute unless score @s ez.m_{key} matches 1.. run return run function {NS}:gun/reload_{key}",
             f"scoreboard players remove @s ez.m_{key} 1"] + lines[i:] + [f"function {NS}:gun/hud_{key}"]
     return lines
@@ -186,13 +191,24 @@ RAIDERS = {   # type: (mob, summon NBT, extra tags, loot table). Gunners (ez.gun
     "rifleman": ("minecraft:skeleton", {"CustomName": name("Raider Rifleman", "dark_red"),
         **soldier("elite", 0x262626, 0x333333, 0x1A1A1A, "silence", "netherite", held_gun("stg44"))}, ["ez.gunner", "ez.g_rifle"], "raider"),
 }
-GUNNERS = {"bandit": (3, 30, 0.35), "rifle": (4, 38, 0.25)}   # damage, ticks between shots, miss chance
+GUNNERS = {"bandit": (3, 30, 0.35), "rifle": (4, 38, 0.25), "boss": (5, 12, 0.2)}   # damage, ticks between shots, miss chance
 AI_RANGE = 28
 
 def loot_tables():
     for t, d in TIERS.items():
         wj(f"data/{NS}/loot_table/crate/t{t}.json", {"type": "minecraft:chest", "pools": [
             {"rolls": {"min": d["rolls"][0], "max": d["rolls"][1]}, "entries": d["entries"]}]})
+    # 1.1.0: events and the boss (mod Events.java / Boss.java)
+    pool = lambda rolls, entries: {"rolls": rolls, "entries": entries}
+    wj(f"data/{NS}/loot_table/event/supply.json", {"type": "minecraft:chest", "pools": [
+        pool({"min": 6, "max": 8}, TIERS[3]["entries"]), pool(1, [entry(MEDKIT, 1, 2, 3)]), pool(1, [entry(AMMO, 1, 32, 48)])]})
+    wj(f"data/{NS}/loot_table/event/heli.json", {"type": "minecraft:chest", "pools": [
+        pool({"min": 4, "max": 6}, TIERS[3]["entries"]),
+        pool(1, [entry(VAL["blackbox"], 1), entry(VAL["drive"], 2, 1, 2), entry(VAL["gem"], 2, 1, 2)])]})
+    wj(f"data/{NS}/loot_table/mob/boss.json", {"type": "minecraft:entity", "pools": [
+        pool(1, [entry(CREDIT, 1, 40, 70)]), pool(1, [entry(VAL["blackbox"], 1, 1, 2)]), pool(1, [entry(VAL["gem"], 1, 2, 4)]),
+        pool(1, [entry(VAL["drive"], 1, 1, 3)]), pool(1, [entry(VAL["goldbar"], 1, 2, 4)]), pool(1, [entry(MEDKIT, 1, 1, 2)]),
+        {"rolls": 1, "entries": [gentry("m60", 1), gentry("amban", 1)], "conditions": [{"condition": "minecraft:random_chance", "chance": 0.45}]}]})
     for k, drops in MOB_LOOT.items():
         wj(f"data/{NS}/loot_table/mob/{k}.json", {"type": "minecraft:entity", "pools": [
             {"rolls": 1, "entries": [e], "conditions": [{"condition": "minecraft:random_chance", "chance": c}]} for e, c in drops]})
@@ -378,7 +394,7 @@ def build(out):
              "locator_bar": "false", "command_block_output": "false", "respawn_radius": "0"}
     objs = [*ab_obj, "pvp dummy", "pve.gun dummy", "ez dummy", "ez.time dummy", "ez.mm dummy", "ez.s1 dummy", "ez.s10 dummy",
             "ez.ex dummy", "ez.dead deathCount", "ez.id dummy", "ez.sq dummy", "ez.ti dummy", "ez.tit dummy", "ez.ct dummy",
-            "truce trigger", "ez.extracts dummy", "ez.rl dummy", "ez.rlk dummy", "ez.cd dummy", *[f"ez.m_{k} dummy" for k in MAGS], "ez.kills playerKillCount", "ez.raids dummy", "ez.new dummy", "ez.out dummy"]
+            "truce trigger", "ez.extracts dummy", "ez.rl dummy", "ez.rlk dummy", "ez.cd dummy", *[f"ez.m_{k} dummy" for k in MAGS], "ez.kills playerKillCount", "ez.raids dummy", "ez.new dummy", "ez.out dummy", "ez.cap dummy"]
     fn("load", [*[f"scoreboard objectives add {o}" for o in objs],
                 *[f"gamerule {k} {v}" for k, v in rules.items()],
                 "scoreboard players set #t ez 0", "scoreboard players set #60 ez 60", "scoreboard players set #10 ez 10",
@@ -399,11 +415,12 @@ def build(out):
         fn(f"gun/reload_{k}", [
             f"execute unless items entity @s container.* {AMMO_SEL} run return run function {NS}:noammo",
             f"scoreboard players set @s ez.rl {rt}", f"scoreboard players set @s ez.rlk {i}",
+            f"execute if items entity @s weapon.mainhand *[minecraft:custom_data~{{ezmod:{{rl:1b}}}}] run scoreboard players set @s ez.rl {round(rt * 0.65)}",
             "playsound minecraft:item.crossbow.loading_start player @a[distance=..16] ~ ~ ~ 0.8 1.2",
             'title @s actionbar {"text":"⟳ Reloading...","color":"yellow"}'])
         fn(f"gun/fill_{k}", [   # top the magazine up from the Ammo in the inventory
             f"execute store result score #have ez run clear @s {AMMO_SEL} 0",
-            f"scoreboard players set #need ez {cap}", f"scoreboard players operation #need ez -= @s ez.m_{k}",
+            "scoreboard players operation #need ez = @s ez.cap", f"scoreboard players operation #need ez -= @s ez.m_{k}",
             "execute if score #have ez < #need ez run scoreboard players operation #need ez = #have ez",
             "execute store result storage ez:gun n int 1 run scoreboard players get #need ez",
             f"execute if score #need ez matches 1.. run function {NS}:gun/take with storage ez:gun",
@@ -413,7 +430,8 @@ def build(out):
         fn(f"gun/hud_{k}", ["execute store result score #have ez run clear @s " + AMMO_SEL + " 0",
                             "title @s actionbar " + tj([{"text": f"🔫 {GUN_NAME[k]}  ", "color": "gold", "bold": True},
                                                         {"score": {"name": "@s", "objective": f"ez.m_{k}"}, "color": "white", "bold": True},
-                                                        {"text": f" / {cap}", "color": "gray"}, {"text": "   ammo ", "color": "dark_gray"},
+                                                        {"text": " / ", "color": "gray"}, {"score": {"name": "@s", "objective": "ez.cap"}, "color": "gray"},
+                                                        {"text": "   ammo ", "color": "dark_gray"},
                                                         {"score": {"name": "#have", "objective": "ez"}, "color": "yellow"}])])
     fn("second", [
         f"schedule function {NS}:second 20t replace",
@@ -442,7 +460,7 @@ def build(out):
         f"execute as @e[type=minecraft:marker,tag=ez.crate] at @s run function {NS}:crate/second",
     ])
     fn("newplayer", ["scoreboard players operation @s ez.id = #nextid ez", "scoreboard players add #nextid ez 1",
-                     say("@s", "Welcome to the Extraction Zone! You got a starter kit: a pistol, ammo, bandages and some credits.", "gold"),
+                     say("@s", "Welcome to the Extraction Zone! You got a starter kit: a pistol, ammo, bandages and some Gold Coins.", "gold"),
                      "loot give @s loot pvp:ability/pistol", give(AMMO, 24), give(BANDAGE, 2), give(CREDIT, 10)])
     fn("noammo", ['title @s actionbar {"text":"✖ Out of ammo","color":"red","bold":true}',
                   "playsound minecraft:block.dispenser.fail player @s ~ ~ ~ 0.8 1.6"])
@@ -463,6 +481,7 @@ def build(out):
                         "effect clear @s", "effect give @s minecraft:resistance 8 4 true",
                         "tp @s @e[type=minecraft:marker,tag=ez.insert,sort=random,limit=1]",
                         "ezmapgive",   # a zone map if they don't carry one (mod)
+                        "ezhook deploy",   # mod: raid stats, contract set-up
                         "scoreboard players set @s ez.dead 0",
                         *title("@s", "DEPLOYED", f"{RAID_SECS // 60}:00 to reach an extraction point"),
                         say("@s", "Loot what you can and reach an extraction point (the flare columns). Die and you lose everything you carry.", "yellow"),
@@ -501,6 +520,7 @@ def build(out):
                      "scoreboard players set @s ez.rl 0", *[f"scoreboard players set @s ez.m_{k} 0" for k in MAGS],
                      f"function {NS}:squad/leave", f"function {NS}:to_camp",
                      *title("@s", "KILLED IN ACTION", "Your gear is lying where you fell.", "red"),
+                     "ezhook died",   # mod: recap, contract failed
                      "ezkit"])   # lost everything (inventory and stash)? the mod hands out a relief kit
     fn("kit/give", ["loot give @s loot pvp:ability/pistol", give(AMMO, 24), give(BANDAGE, 3), "give @s minecraft:cooked_beef 8",
                     say("@s", "📦 Relief kit: you'd lost everything, so the Quartermaster sent a pistol, 24 rounds, 3 bandages and food. "
@@ -525,8 +545,9 @@ def build(out):
         f"execute if score @s ez.ex matches {EX_HOLD}.. run function {NS}:exfil/done",
     ])
     fn("exfil/left", ["scoreboard players set @s ez.ex 0", 'title @s actionbar {"text":"✖ Extraction cancelled: you left the zone","color":"red"}'])
-    fn("exfil/done", ["scoreboard players add @s ez.extracts 1", f"function {NS}:squad/leave", f"function {NS}:to_camp",
-                      *title("@s", "EXTRACTED", "Your loot is safe. Stash it in an ender chest.", "green"),
+    fn("exfil/done", ["ezhook extract",   # mod, while still at the extraction point: contract, hot-extract bonus, recap
+                      "scoreboard players add @s ez.extracts 1", f"function {NS}:squad/leave", f"function {NS}:to_camp",
+                      *title("@s", "EXTRACTED", "Your loot is safe. Stash it on your plot.", "green"),
                       "tellraw @a " + tj([{"text": "✈ ", "color": "green"}, {"selector": "@s", "color": "white"}, {"text": " extracted from the Zone.", "color": "green"}]),
                       "playsound minecraft:ui.toast.challenge_complete player @s ~ ~ ~ 1 1"])
 
@@ -582,8 +603,25 @@ def build(out):
     fn("crate/refill", [f"scoreboard players set @s ez.ct {CRATE_EVERY}",
                         *[f"execute if score @s ez {f'matches {t}'} run function {NS}:crate/fill{t}" for t in TIERS]])
     for k, (mob, nbt, tags, loot) in RAIDERS.items():
-        n = dict(nbt, Tags=["ez.ai", "ez.newai", *tags], DeathLootTable=f"{NS}:mob/{loot}", PersistenceRequired=False)
+        n = dict(nbt, Tags=["ez.ai", "ez.newai", f"ez.t_{k}", *tags], DeathLootTable=f"{NS}:mob/{loot}", PersistenceRequired=False)
         fn(f"spawner/{k}", [f"summon {mob} ~ ~ ~ {snbt(n)}"])
+    # ---- 1.1.0 the Commander (mod Boss.java spawns it at the city centre, with three Riflemen around it)
+    boss = {"CustomName": name("☠ The Commander", "dark_red", True), "CustomNameVisible": True, "PersistenceRequired": True,
+            "Tags": ["ez.boss", "ez.gunner", "ez.g_boss", "ez.t_boss"], "DeathLootTable": f"{NS}:mob/boss", "Health": 260.0,
+            "attributes": [{"id": "minecraft:max_health", "base": 260.0}, {"id": "minecraft:armor", "base": 10.0},
+                           {"id": "minecraft:knockback_resistance", "base": 0.8}, {"id": "minecraft:movement_speed", "base": 0.22},
+                           {"id": "minecraft:follow_range", "base": 40.0}],
+            **soldier("elite", 0x7A1010, 0x2A2A2A, 0x1A1A1A, "rib", "redstone", held_gun("m60"))}
+    fn("boss/spawn", [f"summon minecraft:skeleton ~ ~ ~ {snbt(boss)}",
+                      *[f"execute positioned ~{dx} ~ ~{dz} run function {NS}:spawner/rifleman" for dx, dz in ((3, 0), (-3, 1), (0, -3))],
+                      "tag @e[tag=ez.newai] remove ez.newai",
+                      "playsound minecraft:entity.wither.spawn hostile @a[distance=..120] ~ ~ ~ 0.6 1.4"])
+    # the Fixer: hands out contracts (mod Contracts.java), next to the helipad
+    fn("admin/contracts_npc", [f"execute in {CAMP} run kill @e[tag=ez.shop.contracts]",
+                               f"execute in {CAMP} run kill @e[type=minecraft:text_display,tag=ez.fixerlabel]",
+                               f"execute in {CAMP} run {npc(-8.5, 15.5, 'The Fixer', 'red', 'nitwit', 'contracts', -90)}",
+                               f"execute in {CAMP} run summon minecraft:text_display -8.5 66.6 15.5 " + snbt({"Tags": ["ez.deco", "ez.fixerlabel"], "billboard": "center",
+                                   "text": [name("CONTRACTS\n", "red", True), {"text": "Take a job before you deploy.", "color": "gray"}]})])
     # the Outpost's spawner mixes axe Raiders and Riflemen
     wj(f"data/{NS}/predicate/half.json", {"condition": "minecraft:random_chance", "chance": 0.5})
     fn("spawner/raider_mix", [f"execute if predicate {NS}:half run return run function {NS}:spawner/rifleman", f"function {NS}:spawner/raider"])
@@ -634,6 +672,7 @@ def build(out):
         f"execute in {CAMP} run kill @e[type=minecraft:interaction,tag=ez.deploy]",
         f"execute in {CAMP} run summon minecraft:interaction 0 64 20 " + snbt({"Tags": ["ez.deploy", "ez.deco"], "width": 6.0, "height": 2.5, "response": True}),
         *[f"execute in {CAMP} run {npc(x, z, nm, col, prof, shop, rot)}" for x, z, nm, col, prof, shop, rot in STALL_NPCS],
+        f"function {NS}:admin/contracts_npc",
         *[f"execute in {CAMP} run summon minecraft:text_display {x} {y} {z} " + snbt({"Tags": ["ez.deco"], "billboard": "center", "text": t})
           for x, y, z, t in CAMP_LABELS],
         f"execute in {CAMP} run setworldspawn 0 {CAMP_SPAWN[1]} 6", f"execute in {CAMP} run forceload remove -40 -40 40 40",

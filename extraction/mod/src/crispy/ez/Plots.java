@@ -55,7 +55,17 @@ final class Plots {
     static final Set<String> BANNED = Set.of("minecraft:lava_bucket", "minecraft:flint_and_steel", "minecraft:fire_charge", "minecraft:tnt",
             "minecraft:end_crystal", "minecraft:ender_pearl", "minecraft:wither_skeleton_skull", "minecraft:respawn_anchor");
 
-    static final class Plot { int index; int level; String name; }
+    static final class Plot { int index; int level; String name; java.util.List<String> perks = new java.util.ArrayList<>(); }
+    /** Stash upgrades with an effect (1.1.0): key, name, icon block placed on the plot, cost, what it does. */
+    record Perk(String key, String name, net.minecraft.world.item.Item icon, String block, int cost, List<String> lines) {}
+    static final List<Perk> PERKS = List.of(
+            new Perk("workbench", "Gun Workbench", Items.SMITHING_TABLE, "minecraft:smithing_table", 300,
+                    List.of("Mod your guns: extended magazine (+50%)", "and quick reload (35% faster).", "Right-click it on your plot, or /workbench in camp.")),
+            new Perk("med", "Medical Station", Items.BREWING_STAND, "minecraft:brewing_stand", 200,
+                    List.of("Bandages and medkits cost 40% less", "at every trader.")),
+            new Perk("radio", "Field Radio", Items.JUKEBOX, "minecraft:jukebox", 250,
+                    List.of("Each raid, the first zone event", "(supply drop, crash, hot extract)", "comes with its exact location.")));
+    static boolean hasPerk(Player pl, String key) { Plot p = of(pl); return p != null && p.perks != null && p.perks.contains(key); }
     static final Path FILE = Path.of("config", "crispy_extraction", "plots.json");
     static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     static Map<String, Plot> plots = new HashMap<>();
@@ -123,7 +133,7 @@ final class Plots {
     }
 
     static void menu(ServerPlayer pl) {
-        Ui.open(pl, t("Your Plot", ChatFormatting.DARK_GRAY), 3, m -> {
+        Ui.open(pl, t("Your Plot", ChatFormatting.DARK_GRAY), 4, m -> {
             Plot p = of(pl);
             m.put(4, Shops.balanceIcon(pl), null);
             if (p == null) {
@@ -138,9 +148,9 @@ final class Plots {
             if (p.level + 1 < SIZES.length) {
                 int next = p.level + 1;
                 m.put(13, Ui.item(Items.GOLDEN_SHOVEL, t("Upgrade to " + SIZES[next] + " x " + SIZES[next], ChatFormatting.GOLD, ChatFormatting.BOLD), List.of(
-                        t("Now " + SIZES[p.level] + " x " + SIZES[p.level], ChatFormatting.GRAY), t("Cost: " + COST[next] + " credits", ChatFormatting.GOLD)), true),
+                        t("Now " + SIZES[p.level] + " x " + SIZES[p.level], ChatFormatting.GRAY), t("Cost: " + Coins.fmt(COST[next]), ChatFormatting.GOLD)), true),
                         (q, c) -> {
-                            if (!Shops.pay(q, COST[next])) { Shops.no(q, "You need " + COST[next] + " credits (carry them on you)."); return; }
+                            if (!Shops.pay(q, COST[next])) { Shops.no(q, "You need " + Coins.fmt(COST[next]) + " (carry them on you)."); return; }
                             p.level = next; save(); lay(q.level().getServer(), p, false);
                             Shops.ok(q, "Your plot is now " + SIZES[next] + " x " + SIZES[next] + ".");
                         });
@@ -148,7 +158,29 @@ final class Plots {
             m.put(15, Ui.item(Items.CHEST, t("Storage", ChatFormatting.YELLOW), List.of(
                     t("Place chests and barrels on your plot:", ChatFormatting.GRAY), t("only you can open them.", ChatFormatting.GRAY),
                     t("Buy more from the Builder.", ChatFormatting.GRAY)), false), null);
+            if (p.perks == null) p.perks = new java.util.ArrayList<>();
+            int[] slots = {29, 31, 33};
+            for (int i = 0; i < PERKS.size(); i++) {
+                Perk k = PERKS.get(i);
+                boolean own = p.perks.contains(k.key());
+                List<net.minecraft.network.chat.Component> lore = new java.util.ArrayList<>();
+                for (String l : k.lines()) lore.add(t(l, ChatFormatting.GRAY));
+                lore.add(t(own ? "Installed on your plot" : "Cost: " + Coins.fmt(k.cost()), own ? ChatFormatting.GREEN : ChatFormatting.GOLD));
+                m.put(slots[i], Ui.item(k.icon(), t((own ? "✔ " : "") + k.name(), own ? ChatFormatting.GREEN : ChatFormatting.YELLOW, ChatFormatting.BOLD), lore, own),
+                        own ? (k.key().equals("workbench") ? (q, c) -> Workbench.open(q) : null) : (q, c) -> {
+                            if (!Shops.pay(q, k.cost())) { Shops.no(q, "You need " + Coins.fmt(k.cost()) + " (carry them on you)."); return; }
+                            p.perks.add(k.key()); save();
+                            placePerk(q.level().getServer(), p, k);
+                            Shops.ok(q, k.name() + " installed on your plot.");
+                        });
+            }
         });
+    }
+
+    /** The upgrade's block, in a row along the plot's north edge next to the starter chest (decor and a click target). */
+    static void placePerk(MinecraftServer s, Plot p, Perk k) {
+        int x = cx(p.index) - half(p) + 3 + 2 * PERKS.indexOf(k), z = cz(p.index) - half(p) + 1;
+        run(s, inCamp(String.format("setblock %d %d %d %s", x, FLOOR + 1, z, k.block())));
     }
 
     // ---------------------------------------------------------------- protection

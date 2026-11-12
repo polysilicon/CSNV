@@ -11,7 +11,9 @@ if [ ! -f $B/lib/.ready ]; then
   touch $B/lib/.ready
 fi
 CP=$(find $B/lib -name "*.jar" | tr '\n' ':')
-$J/javac --release 25 -proc:none -nowarn -cp "$CP" -d $B/out $(find $B/src -name "*.java") 2>&1 | grep -v "^Note:" | head -60
+if ! $J/javac --release 25 -proc:none -nowarn -cp "$CP" -d $B/out $(find $B/src -name "*.java") > $B/javac.log 2>&1; then
+  grep -v "^Note:" $B/javac.log | head -60; echo "BUILD FAILED"; exit 1
+fi
 cp $B/src/res/*.json $B/out/
 V=$(python3 -c "import json;print(json.load(open('$B/out/fabric.mod.json'))['version'])")
 (cd $B/out && $J/jar cf $B/crispy-extraction-$V.jar .)

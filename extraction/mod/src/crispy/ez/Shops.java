@@ -57,6 +57,7 @@ final class Shops {
             if (id == null) return InteractionResult.PASS;
             if (hand == InteractionHand.MAIN_HAND) {
                 if (id.equals("plots")) Plots.menu(p);
+                else if (id.equals("contracts")) Contracts.menu(p);
                 else open(p, id);
             }
             return InteractionResult.SUCCESS;
@@ -97,7 +98,7 @@ final class Shops {
     }
 
     // ---------------------------------------------------------------- money
-    static boolean isCredit(ItemStack s) { return !credit.isEmpty() && ItemStack.isSameItemSameComponents(s, credit); }
+    static boolean isCredit(ItemStack s) { return Coins.value(s) > 0; }   // a Gold Coin or a Coin Bag
     static String ezKey(ItemStack s) {
         CustomData cd = s.get(DataComponents.CUSTOM_DATA);
         return cd == null ? "" : cd.copyTag().getString("ez").orElse("");
@@ -122,12 +123,15 @@ final class Shops {
             if (!p.getInventory().add(part)) p.drop(part, false);
         }
     }
-    static int credits(ServerPlayer p) { return count(p, Shops::isCredit); }
-    static boolean pay(ServerPlayer p, int price) {
-        if (credits(p) < price) return false;
-        take(p, Shops::isCredit, price); return true;
+    static int credits(ServerPlayer p) { return Coins.count(p); }
+    static boolean pay(ServerPlayer p, int price) { return Coins.take(p, price); }
+    static void giveCredits(ServerPlayer p, int n) { Coins.give(p, n); }
+    /** Medical station on your stash plot: bandages and medkits 40% cheaper. */
+    static int priceFor(ServerPlayer p, Buy b) {
+        String k = ezKey(b.item);
+        if ((k.equals("bandage") || k.equals("medkit")) && Plots.hasPerk(p, "med")) return Math.max(1, (int) Math.ceil(b.price * 0.6));
+        return b.price;
     }
-    static void giveCredits(ServerPlayer p, int n) { if (n > 0) give(p, credit.copyWithCount(n)); }
 
     static void ok(ServerPlayer p, String msg) {
         p.level().playSound(null, p.blockPosition(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 0.6f, 1.2f);
@@ -139,9 +143,10 @@ final class Shops {
     }
 
     static ItemStack balanceIcon(ServerPlayer p) {
-        return Ui.item(credit.isEmpty() ? new ItemStack(Items.GOLD_NUGGET) : credit.copyWithCount(1),
-                t("Your credits: " + credits(p), ChatFormatting.GOLD, ChatFormatting.BOLD),
-                List.of(t("Credits are items: only what you carry counts.", ChatFormatting.GRAY)), true);
+        return Ui.item(Coins.coin.isEmpty() ? new ItemStack(Items.SUNFLOWER) : Coins.coin.copyWithCount(1),
+                t("Your coins: " + credits(p), ChatFormatting.GOLD, ChatFormatting.BOLD),
+                List.of(t("Gold Coins are items: only what you carry counts.", ChatFormatting.GRAY),
+                        t("A Coin Bag is worth 64 coins.", ChatFormatting.GRAY)), true);
     }
 
     // ---------------------------------------------------------------- the menu
@@ -153,36 +158,49 @@ final class Shops {
             m.put(4, balanceIcon(p), null);
             for (int i = 0; i < shop.buy.size() && i < 27; i++) {
                 Buy b = shop.buy.get(i);
+                int price = priceFor(p, b);
                 boolean bulk = b.item.getMaxStackSize() > 1;
                 List<Component> lore = new ArrayList<>(b.item.getOrDefault(DataComponents.LORE, net.minecraft.world.item.component.ItemLore.EMPTY).lines());
                 lore.add(t(""));
-                lore.add(t("Price: " + b.price + " credits" + (b.item.getCount() > 1 ? " for " + b.item.getCount() : ""), ChatFormatting.GOLD));
+                lore.add(t("Price: " + Coins.fmt(price) + (b.item.getCount() > 1 ? " for " + b.item.getCount() : "")
+                        + (price < b.price ? " (medical station)" : ""), ChatFormatting.GOLD));
                 lore.add(t("Click: buy" + (bulk ? "   Shift-click: buy 5" : ""), ChatFormatting.YELLOW));
                 ItemStack icon = b.item.copy();
                 icon.set(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(lore.stream().map(c -> (Component) c.copy().withStyle(st -> st.withItalic(false))).toList()));
                 m.put(9 + i, icon, (pl, c) -> {
                     int times = (c.shift() && bulk) ? 5 : 1;
-                    if (!pay(pl, b.price * times)) { no(pl, "You need " + b.price * times + " credits for that."); return; }
+                    if (!pay(pl, price * times)) { no(pl, "You need " + Coins.fmt(price * times) + " for that."); return; }
                     for (int k = 0; k < times; k++) give(pl, b.item.copy());
-                    ok(pl, "Bought " + (times > 1 ? times + "x " : "") + b.item.getHoverName().getString() + " for " + b.price * times + " credits.");
+                    ok(pl, "Bought " + (times > 1 ? times + "x " : "") + b.item.getHoverName().getString() + " for " + Coins.fmt(price * times) + ".");
                 });
             }
             for (int i = 0; i < shop.sell.size() && i < 9; i++) {
                 Sell s = shop.sell.get(i);
                 int have = count(p, st -> s.key.equals(ezKey(st)));
                 m.put(36 + i, Ui.item(s.icon.copyWithCount(Math.max(1, Math.min(64, have))), t("Sell " + s.icon.getHoverName().getString(), ChatFormatting.AQUA),
-                        List.of(t(s.price + " credits each", ChatFormatting.GOLD), t("You have " + have, ChatFormatting.GRAY), t("Click: sell all of them", ChatFormatting.YELLOW)), false),
+                        List.of(t(Coins.fmt(s.price) + " each", ChatFormatting.GOLD), t("You have " + have, ChatFormatting.GRAY), t("Click: sell all of them", ChatFormatting.YELLOW)), false),
                         (pl, c) -> {
                             int n = count(pl, st -> s.key.equals(ezKey(st)));
                             if (n == 0) { no(pl, "You don't have any to sell."); return; }
                             take(pl, st -> s.key.equals(ezKey(st)), n);
                             giveCredits(pl, n * s.price);
-                            ok(pl, "Sold " + n + "x " + s.icon.getHoverName().getString() + " for " + n * s.price + " credits.");
+                            ok(pl, "Sold " + n + "x " + s.icon.getHoverName().getString() + " for " + Coins.fmt(n * s.price) + ".");
                         });
             }
             if (!shop.sell.isEmpty()) m.put(31, Ui.item(Items.EMERALD, t("↓ Sells to this trader ↓", ChatFormatting.AQUA, ChatFormatting.BOLD),
                     List.of(t("Click an item below to sell all you carry.", ChatFormatting.GRAY)), false), null);
+            coinButtons(m);
             m.put(49, Ui.item(Items.BARRIER, t("Close", ChatFormatting.RED), List.of(), false), (pl, c) -> pl.closeContainer());
         });
+    }
+
+    /** Condense loose coins into bags, or break a bag for change (slots 47 and 51 of a 6-row menu). */
+    static void coinButtons(Ui.Menu m) {
+        m.put(47, Ui.item(Coins.bag.isEmpty() ? new ItemStack(Items.BUNDLE) : Coins.bag.copyWithCount(1), t("Condense coins into bags", ChatFormatting.BLUE), List.of(
+                t("Every 64 Gold Coins you carry", ChatFormatting.GRAY), t("become one Coin Bag.", ChatFormatting.GRAY)), false),
+                (pl, c) -> { int n = Coins.condense(pl); if (n > 0) ok(pl, "Condensed into " + n + " Coin Bag" + (n == 1 ? "" : "s") + "."); else no(pl, "You need 64 loose coins for a bag."); });
+        m.put(51, Ui.item(Coins.coin.isEmpty() ? new ItemStack(Items.SUNFLOWER) : Coins.coin.copyWithCount(1), t("Break a Coin Bag", ChatFormatting.GOLD), List.of(
+                t("Turn one Coin Bag back into 64 coins.", ChatFormatting.GRAY), t("(Paying never needs this: change is automatic.)", ChatFormatting.DARK_GRAY)), false),
+                (pl, c) -> { if (Coins.breakBag(pl)) ok(pl, "Broke a Coin Bag into 64 coins."); else no(pl, "You don't have a Coin Bag."); });
     }
 }

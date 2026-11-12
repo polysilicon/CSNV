@@ -87,6 +87,12 @@ final class ZoneMap {
                 BlockPos pos = new BlockPos(x, y - 1, z);
                 MapColor c = lvl.getBlockState(pos).getMapColor(lvl, pos);
                 MapColor.Brightness br = y > north ? MapColor.Brightness.HIGH : y < north ? MapColor.Brightness.LOW : MapColor.Brightness.NORMAL;
+                // 1.1.0: the radiation border as a red line
+                int zx0 = Zone.CX - Zone.HALF, zx1 = Zone.CX + Zone.HALF, zz0 = Zone.CZ - Zone.HALF, zz1 = Zone.CZ + Zone.HALF;
+                int wx = left + px * scale, wz = top + row * scale;
+                boolean onX = (wx <= zx0 && zx0 < wx + scale) || (wx <= zx1 && zx1 < wx + scale), onZ = (wz <= zz0 && zz0 < wz + scale) || (wz <= zz1 && zz1 < wz + scale);
+                boolean inX = wx + scale > zx0 && wx <= zx1, inZ = wz + scale > zz0 && wz <= zz1;
+                if ((onX && inZ) || (onZ && inX)) { m.updateColor(px, row, MapColor.COLOR_RED.getPackedId(MapColor.Brightness.HIGH)); continue; }
                 m.updateColor(px, row, c == MapColor.NONE ? MapColor.COLOR_BLACK.getPackedId(MapColor.Brightness.LOW) : c.getPackedId(br));
             }
             row++;
