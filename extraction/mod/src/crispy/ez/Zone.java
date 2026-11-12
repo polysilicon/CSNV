@@ -3,6 +3,16 @@ package crispy.ez;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.minecraft.ChatFormatting;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -42,7 +52,9 @@ final class Zone {
     static final int HALF = 400;            // the zone: CX/CZ +- HALF in the city dimension
     static final Deque<long[]> QUEUE = new ArrayDeque<>();   // {x, y, z, kind 0 crate 1 spawner}
     static final Random RNG = new Random();
-    static final float CRATE_CHANCE = 0.85f, SPAWNER_CHANCE = 0.35f;
+    static final float CRATE_CHANCE = 0.85f, SPAWNER_CHANCE = 0.35f, STREET_SPAWN_CHANCE = 0.12f;
+    static final java.util.Queue<Entity> PURGE = new java.util.concurrent.ConcurrentLinkedQueue<>();
+    static final int GROUND = 71;           // the profile's groundLevel: outside city chunks nobody digs below it
 
     static int tier(int x, int z) {
         double d = Math.hypot(x - CX, z - CZ);
@@ -65,8 +77,31 @@ final class Zone {
                     QUEUE.add(new long[]{p.getX(), p.getY(), p.getZ(), RNG.nextFloat() < SPAWNER_CHANCE ? 1 : 2});
                 }
             }
+            // fresh street chunks: some get a raider spawn point out in the open, so gunners hold the streets too
+            if (generated && RNG.nextFloat() < STREET_SPAWN_CHANCE) {
+                int cx = chunk.getPos().x(), cz = chunk.getPos().z();
+                Integer street = LC.street(level, cx, cz);
+                if (street != null && LC.isStreet(level, cx, cz)) {
+                    int x = bx + 4 + RNG.nextInt(8), z = bz + 4 + RNG.nextInt(8);
+                    int y = chunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x & 15, z & 15) + 1;
+                    if (Math.abs(y - street) <= 1) QUEUE.add(new long[]{x, y, z, 3});
+                }
+            }
+        });
+        // no vanilla mobs in the zone or camp: only our raiders (tagged ez.*) and traders
+        ServerEntityEvents.ENTITY_LOAD.register((e, level) -> {
+            if (e instanceof Mob && (level.dimension().equals(CITY) || level.dimension().equals(Plots.CAMP))
+                    && e.entityTags().stream().noneMatch(t -> t.startsWith("ez."))) PURGE.add(e);
+        });
+        PlayerBlockBreakEvents.BEFORE.register((world, pl, pos, state, be) -> breakAllowed(pl, world, pos, be));
+        UseBlockCallback.EVENT.register((pl, world, hand, hit) -> {
+            if (!world.dimension().equals(CITY) || pl.isCreative() || !(pl.getItemInHand(hand).getItem() instanceof BlockItem)) return InteractionResult.PASS;
+            if (!nearPoint(world, hit.getBlockPos())) return InteractionResult.PASS;
+            if (pl instanceof ServerPlayer sp) sp.sendSystemMessage(Ui.t("You can't build next to an insertion, extraction or trader point.", ChatFormatting.RED), true);
+            return InteractionResult.FAIL;
         });
         ServerTickEvents.END_SERVER_TICK.register(server -> {
+            for (Entity e; (e = PURGE.poll()) != null; ) if (!e.isRemoved()) e.discard();
             for (int n = 0; n < 40 && !QUEUE.isEmpty(); n++) {
                 long[] q = QUEUE.poll();
                 int x = (int) q[0], y = (int) q[1], z = (int) q[2], t = tier(x, z);
@@ -76,10 +111,15 @@ final class Zone {
                     Plots.run(server, String.format("scoreboard players set @e[type=minecraft:marker,tag=ez.new] ez %d", t));
                     Plots.run(server, "scoreboard players set @e[type=minecraft:marker,tag=ez.new] ez.ct 0");
                     Plots.run(server, "tag @e[tag=ez.new] remove ez.new");
+                } else if (q[3] == 3) {
+                    String type = t == 3 ? "raider" : t == 2 ? "bandit" : (RNG.nextFloat() < 0.6f ? "bandit" : "infected");
+                    Plots.run(server, at + "unless entity @e[type=minecraft:marker,tag=ez.spawner,distance=..24] run summon minecraft:marker ~0.5 ~ ~0.5 {Tags:[\"ez.spawner\",\"ez.nospread\",\"ez.street\",\"ez.sp_" + type + "\",\"ez.new\"]}");
+                    Plots.run(server, "scoreboard players set @e[type=minecraft:marker,tag=ez.new] ez 3");
+                    Plots.run(server, "tag @e[tag=ez.new] remove ez.new");
                 } else if (q[3] == 2) {
                     Plots.run(server, at + "run setblock ~ ~ ~ minecraft:air");
                 } else {
-                    String type = t == 3 ? "raider" : t == 2 ? "bandit" : (RNG.nextBoolean() ? "infected" : "bandit");
+                    String type = t == 3 ? "raider" : t == 2 ? "bandit" : (RNG.nextFloat() < 0.6f ? "bandit" : "infected");
                     Plots.run(server, at + "run setblock ~ ~ ~ minecraft:air");
                     Plots.run(server, at + "unless entity @e[type=minecraft:marker,tag=ez.spawner,distance=..2] run summon minecraft:marker ~0.5 ~ ~0.5 {Tags:[\"ez.spawner\",\"ez.nospread\",\"ez.sp_" + type + "\",\"ez.new\"]}");
                     Plots.run(server, "scoreboard players set @e[type=minecraft:marker,tag=ez.new] ez 2");
@@ -95,12 +135,12 @@ final class Zone {
         ZoneMap.init();
     }
 
-    /** Survival in camp (plots), adventure elsewhere; creative and spectator are left alone. */
+    /** Survival everywhere (build and break: camp plots and the zone have their own rules); creative and spectator are left alone. */
     static void modes(MinecraftServer server) {
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
             GameType g = p.gameMode.getGameModeForPlayer();
             if (g == GameType.CREATIVE || g == GameType.SPECTATOR) continue;
-            GameType want = p.level().dimension().equals(Plots.CAMP) ? GameType.SURVIVAL : GameType.ADVENTURE;
+            GameType want = GameType.SURVIVAL;   // camp plots are protected by Plots, the zone by breakAllowed
             if (g != want) p.setGameMode(want);
         }
     }
@@ -138,51 +178,90 @@ final class Zone {
         return best != null ? best : low;
     }
 
-    /** The middle of the nearest street chunk to (x, z), asked of The Lost Cities itself (by reflection, so this mod
-     *  doesn't need it to compile): a city chunk with no building in it, where the ground is at the city's street level
-     *  (not a raised highway or a pile of rubble) and the 5 x 5 around the spot is open and level. Null if none within
-     *  6 chunks or Lost Cities can't be asked. */
+    /** The middle of the nearest street chunk to (x, z): a city chunk with no building in it, where the ground is at
+     *  the city's street level (not a raised highway or a pile of rubble) and the 5 x 5 around the spot is open and
+     *  level. Null if none within 6 chunks or Lost Cities can't be asked. */
     static BlockPos street(ServerLevel lvl, int x, int z) {
-        try {
-            Object imp = Class.forName("mcjty.lostcities.LostCities").getField("lostCitiesImp").get(null);
-            Class<?> iLC = Class.forName("mcjty.lostcities.api.ILostCities");
-            Class<?> iInfo = Class.forName("mcjty.lostcities.api.ILostCityInformation");
-            Class<?> iChunk = Class.forName("mcjty.lostcities.api.ILostChunkInfo");
-            Object info = iLC.getMethod("getLostInfo", Level.class).invoke(imp, lvl);
-            if (info == null) return null;
-            var getChunkInfo = iInfo.getMethod("getChunkInfo", int.class, int.class);
-            var realHeight = iInfo.getMethod("getRealHeight", int.class);
-            var isCity = iChunk.getMethod("isCity");
-            var building = iChunk.getMethod("getBuildingType");
-            var cityLevel = iChunk.getMethod("getCityLevel");
-            int ccx = x >> 4, ccz = z >> 4;
-            BlockPos best = null; double bestD = Double.MAX_VALUE;
-            for (int r = 0; r <= 6 && best == null; r++) {          // rings outward: the nearest street wins
-                for (int dx = -r; dx <= r; dx++) for (int dz = -r; dz <= r; dz++) {
-                    if (Math.max(Math.abs(dx), Math.abs(dz)) != r) continue;
-                    int cx = ccx + dx, cz = ccz + dz;
-                    Object ci = getChunkInfo.invoke(info, cx, cz);
-                    if (ci == null || !(boolean) isCity.invoke(ci) || building.invoke(ci) != null) continue;
-                    int street = (int) realHeight.invoke(info, (int) cityLevel.invoke(ci));
-                    lvl.getChunk(cx, cz);
-                    for (int[] o : new int[][]{{8, 8}, {4, 4}, {12, 12}, {4, 12}, {12, 4}}) {
-                        int px = (cx << 4) + o[0], pz = (cz << 4) + o[1];
-                        int y = lvl.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, px, pz);
-                        if (y < street || y > street + 1) continue;      // on the street surface, nothing piled on it
-                        boolean open = true;
-                        for (int ox = -2; ox <= 2 && open; ox++) for (int oz = -2; oz <= 2; oz++)
-                            if (lvl.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, px + ox, pz + oz) != y) { open = false; break; }
-                        if (!open) continue;
-                        double d = Math.hypot(px - x, pz - z);
-                        if (d < bestD) { bestD = d; best = new BlockPos(px, y, pz); }
-                        break;
-                    }
+        int ccx = x >> 4, ccz = z >> 4;
+        BlockPos best = null; double bestD = Double.MAX_VALUE;
+        for (int r = 0; r <= 6 && best == null; r++) {          // rings outward: the nearest street wins
+            for (int dx = -r; dx <= r; dx++) for (int dz = -r; dz <= r; dz++) {
+                if (Math.max(Math.abs(dx), Math.abs(dz)) != r) continue;
+                int cx = ccx + dx, cz = ccz + dz;
+                if (!LC.isStreet(lvl, cx, cz)) continue;
+                int street = LC.street(lvl, cx, cz);
+                lvl.getChunk(cx, cz);
+                for (int[] o : new int[][]{{8, 8}, {4, 4}, {12, 12}, {4, 12}, {12, 4}}) {
+                    int px = (cx << 4) + o[0], pz = (cz << 4) + o[1];
+                    int y = lvl.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, px, pz);
+                    if (y < street || y > street + 1) continue;      // on the street surface, nothing piled on it
+                    boolean open = true;
+                    for (int ox = -2; ox <= 2 && open; ox++) for (int oz = -2; oz <= 2; oz++)
+                        if (lvl.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, px + ox, pz + oz) != y) { open = false; break; }
+                    if (!open) continue;
+                    double d = Math.hypot(px - x, pz - z);
+                    if (d < bestD) { bestD = d; best = new BlockPos(px, y, pz); }
+                    break;
                 }
             }
-            return best;
-        } catch (Throwable t) {
-            System.err.println("[crispy-extraction] can't ask Lost Cities for streets: " + t);
-            return null;
+        }
+        return best;
+    }
+
+    /** Building in the zone: anything above street level goes, except containers (the loot crates) and the ground
+     *  around insertion, extraction and trader points. Nothing at or below street level, so nobody tunnels under the
+     *  city or into cellars through the floor. */
+    static boolean breakAllowed(Player pl, Level world, BlockPos pos, BlockEntity be) {
+        if (!world.dimension().equals(CITY) || pl.isCreative()) return true;
+        String why = null;
+        Integer street = LC.street((ServerLevel) world, pos.getX() >> 4, pos.getZ() >> 4);
+        int floor = street != null ? street - 1 : GROUND;   // street = first air block, so the street surface is street - 1
+        if (pos.getY() <= floor) why = "You can't dig into the ground here.";
+        else if (be instanceof net.minecraft.world.Container) why = "Crates and containers can't be broken.";
+        else if (nearPoint(world, pos)) why = "You can't break blocks next to an insertion, extraction or trader point.";
+        if (why == null) return true;
+        if (pl instanceof ServerPlayer sp) sp.sendSystemMessage(Ui.t(why, ChatFormatting.RED), true);
+        return false;
+    }
+
+    static boolean nearPoint(Level world, BlockPos pos) {
+        return !world.getEntitiesOfClass(Entity.class, new AABB(pos).inflate(4),
+                e -> e.entityTags().contains("ez.pt") || e.entityTags().contains("ez.zonetrader")).isEmpty();
+    }
+
+    /** The Lost Cities, asked by reflection (so this mod compiles and loads without it). */
+    static final class LC {
+        static Object imp; static java.lang.reflect.Method getInfo, chunkInfo, realHeight, isCity, building, cityLevel;
+        static boolean failed;
+        static Object chunk(ServerLevel lvl, int cx, int cz) {
+            if (failed) return null;
+            try {
+                if (imp == null) {
+                    imp = Class.forName("mcjty.lostcities.LostCities").getField("lostCitiesImp").get(null);
+                    getInfo = Class.forName("mcjty.lostcities.api.ILostCities").getMethod("getLostInfo", Level.class);
+                    Class<?> i = Class.forName("mcjty.lostcities.api.ILostCityInformation"), c = Class.forName("mcjty.lostcities.api.ILostChunkInfo");
+                    chunkInfo = i.getMethod("getChunkInfo", int.class, int.class); realHeight = i.getMethod("getRealHeight", int.class);
+                    isCity = c.getMethod("isCity"); building = c.getMethod("getBuildingType"); cityLevel = c.getMethod("getCityLevel");
+                }
+                Object info = getInfo.invoke(imp, lvl);
+                return info == null ? null : new Object[]{info, chunkInfo.invoke(info, cx, cz)};
+            } catch (Throwable t) {
+                failed = true;
+                System.err.println("[crispy-extraction] can't ask Lost Cities about chunks: " + t);
+                return null;
+            }
+        }
+        /** The first air block above the street in this chunk, or null outside cities. */
+        static Integer street(ServerLevel lvl, int cx, int cz) {
+            try {
+                if (!(chunk(lvl, cx, cz) instanceof Object[] a) || a[1] == null || !(boolean) isCity.invoke(a[1])) return null;
+                return (int) realHeight.invoke(a[0], (int) cityLevel.invoke(a[1])) + 1;
+            } catch (Throwable t) { return null; }
+        }
+        static boolean isStreet(ServerLevel lvl, int cx, int cz) {
+            try {
+                return chunk(lvl, cx, cz) instanceof Object[] a && a[1] != null && (boolean) isCity.invoke(a[1]) && building.invoke(a[1]) == null;
+            } catch (Throwable t) { return false; }
         }
     }
 
@@ -207,7 +286,7 @@ final class Zone {
             BlockPos b = ground(lvl, CX + in[0], CZ + in[1]);
             Plots.run(server, String.format("execute in lostcities:lostcity run forceload add %d %d", b.getX(), b.getZ()));
             Plots.run(server, String.format("execute in lostcities:lostcity run summon minecraft:marker %d %d %d {Tags:[\"ez.pt\",\"ez.insert\"]}", b.getX(), b.getY(), b.getZ()));
-            done.add("insert " + b.toShortString());
+            done.add("insert " + b.toShortString() + " street=" + LC.street(lvl, b.getX() >> 4, b.getZ() >> 4));
         }
         for (Object[] tr : TRADERS) {
             BlockPos b = ground(lvl, CX + (int) tr[3], CZ + (int) tr[4]);

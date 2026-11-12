@@ -361,7 +361,7 @@ def build(out):
         json.dump({"credit": snbt(stack(CREDIT)), "shops": SHOPS}, f, indent=1, ensure_ascii=False)
     loot_tables()
 
-    rules = {"keep_inventory": "false", "immediate_respawn": "true", "spawn_phantoms": "false", "raids": "false",
+    rules = {"spawn_mobs": "false", "keep_inventory": "false", "immediate_respawn": "true", "spawn_phantoms": "false", "raids": "false",
              "spawn_patrols": "false", "spawn_wandering_traders": "false", "mob_griefing": "false", "show_advancement_messages": "false",
              "locator_bar": "false", "command_block_output": "false", "respawn_radius": "0"}
     objs = [*ab_obj, "pvp dummy", "pve.gun dummy", "ez dummy", "ez.time dummy", "ez.mm dummy", "ez.s1 dummy", "ez.s10 dummy",
