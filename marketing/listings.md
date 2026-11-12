@@ -56,6 +56,8 @@ NEW: EXTRACTION ZONE
 - Loot crates, fight armed raiders and reach an extraction point before time runs out
 - One shared zone with PvP: team up with players you meet, or betray them
 - Guns with magazines and reloads, traders in camp and inside the zone
+- Contracts, a boss in the city centre, supply drops and helicopter crashes
+- A new city every week
 - A protected stash plot in camp to store loot, build and upgrade
 - Die and you lose what you carried in
 

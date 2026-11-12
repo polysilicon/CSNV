@@ -429,7 +429,7 @@ def pvp():
 def extraction():
     qas = [
         ("When does Extraction Zone open?", "Friday 13 November 2026. It replaces the old Factions server on the Crispy network."),
-        ("What happens if I die in the zone?", "You lose everything you carried in. What you left in your stash plot in camp is safe."),
+        ("What happens if I die in the zone?", "You lose everything you carried in. What you left in your stash plot in camp is safe, and if you lose everything the Quartermaster sends a basic relief kit."),
         ("Can I team up with other players?", "Yes. Anyone you meet in the zone can become a teammate for the raid, and any teammate can turn on you."),
         ("Do I need mods?", "No. It runs on the normal Minecraft client, Java or Bedrock, through the Crispy lobby."),
     ]
@@ -444,7 +444,7 @@ def extraction():
 <section class="wrap block prose">
   <h2>How a raid works</h2>
   <ol>
-    <li><b>Gear up in camp.</b> Buy guns, ammo, armour and medkits from the Quartermaster with Credits.</li>
+    <li><b>Gear up in camp.</b> Buy guns, ammo, armour and medkits from the Quartermaster with Gold Coins, and take a contract from the Fixer.</li>
     <li><b>Deploy.</b> Board at the helipad and you are dropped on a street at the edge of the zone.</li>
     <li><b>Loot.</b> Search crates in buildings. The closer to the city centre, the better the loot and the tougher the enemies.</li>
     <li><b>Extract.</b> Reach one of the extraction points and hold it for 30 seconds before the 25-minute timer ends.</li>
@@ -453,10 +453,15 @@ def extraction():
   <p>Everyone raids the same city at the same time. Players you meet can team up with you for the raid, and any of them can betray you for what you carry. Trust is part of the loot.</p>
   <h2>Guns and enemies</h2>
   <p>Pistols, SMGs, shotguns, rifles and a machine gun, each with a magazine you have to reload. The city is held by Infected, Bandit Gunners, Raiders and Riflemen, and the armed ones shoot back.</p>
+  <h2>Contracts, the Commander and zone events</h2>
+  <p>The Fixer offers jobs before each raid: recover an intel cache from a district, take out a number of Riflemen, or extract from a particular point. Finish the job and get out alive for bonus coins.</p>
+  <p>The Commander, a heavily armed boss with an escort, lands in the city centre and carries the best loot in the zone. Every few minutes something else happens somewhere in the city: a supply drop under a red flare, a helicopter crash guarded by raiders, or a hot extract that pays double for 3 minutes.</p>
   <h2>Money you can lose</h2>
-  <p>Credits are items, so you can only spend what you carry. Traders inside the zone, the Smuggler and the Arms Dealer, sell gear you can't get in camp, so bringing cash in is worth the risk. Sell what you extract to the Fence in camp.</p>
+  <p>The Zone runs on Gold Coins, and 64 of them condense into a Coin Bag. Coins are items, so you can only spend what you carry. Traders inside the zone, the Smuggler and the Arms Dealer, sell gear you can't get in camp, so bringing cash in is worth the risk. Sell what you extract to the Fence in camp.</p>
   <h2>Your stash plot</h2>
-  <p>Every player gets a protected plot in camp to store loot, build and decorate, and it can be upgraded to a bigger plot with Credits. Nobody can raid it.</p>
+  <p>Every player gets a protected plot in camp to store loot, build and decorate. Grow it, and install upgrades that change how you play: a gun workbench for extended magazines and faster reloads, a medical station for cheaper heals, and a field radio that pins down the next zone event. Nobody can raid it.</p>
+  <h2>A new city every week</h2>
+  <p>The city is rebuilt every Monday, so the streets stay clear and there is always fresh ground to search. After every raid you get a recap of your loot, kills and distance, and the best runs are announced to everyone.</p>
   <h2>Questions</h2>
   {faq_html}
   <h2>How to get there</h2>
