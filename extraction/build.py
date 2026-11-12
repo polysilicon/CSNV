@@ -19,11 +19,11 @@ import abilities   # noqa: E402
 NS = "ez"
 PACK_FORMAT = [107, 0], [107, 1]
 CAMP = "ez:camp"
-CAMP_SPAWN = (0.5, 65, 0.5)
 RAID_SECS = 25 * 60
 EX_HOLD = 30            # seconds on an extraction point
 EX_R = 4                # its radius
-ZONE = (-1050, 30, 800, 800)          # x, z, dx, dz
+ZONE_DIM = "lostcities:lostcity"   # The Lost Cities' city dimension (profile "extraction"); the mod turns its chests and spawners into ours
+ZONE = (-400, -400, 800, 800)          # x, z, dx, dz
 SPAWN_EVERY = 20        # raider spawner check (s)
 CRATE_EVERY = 600       # crate refill (s, counted while loaded)
 
@@ -80,6 +80,13 @@ for k, nm, _ in EZ_GUNS:
     abilities.ABILITIES[k] = (nm, v[1], v[2], v[3], [l.replace("Pack-a-Punch", "upgrade") for l in v[4]], v[5])
 
 def gun(k): return {"id": abilities.BASE, "components": abilities.item_components(k)}
+# magazine size and reload time (ticks) per gun
+MAGS = {"pistol": (12, 30), "m1911": (8, 30), "mp40": (32, 45), "stakeout": (6, 60), "stg44": (30, 50), "olympia": (2, 40),
+        "kar98k": (5, 55), "m60": (75, 110), "amban": (10, 55)}
+GUN_NAME = {k: n for k, n, _ in EZ_GUNS}
+for k, (cap, rt) in MAGS.items():   # magazine size and reload in the lore
+    v = abilities.ABILITIES[k]
+    abilities.ABILITIES[k] = (v[0], v[1], v[2], v[3], v[4] + [f"Magazine {cap} · reload {rt / 20:g} s", "Sneak + right-click to reload"], v[5])
 AMMO_SEL = 'minecraft:iron_nugget[minecraft:custom_data~{ez:"ammo"}]'
 
 # ------------------------------------------------------------------ output helpers
@@ -91,12 +98,18 @@ def wj(path, obj): w(path, json.dumps(obj, indent=1, ensure_ascii=False))
 def tj(o): return json.dumps(o, ensure_ascii=False, separators=(",", ":"))
 
 def ammo_gate(name, lines):
-    """Guns used here need Ammo: no round = no shot (the gun is still handed back); a shot uses one."""
+    """Guns here have magazines (ez.m_<gun>): a shot uses a round from the magazine; an empty magazine, or sneak +
+    right-click, reloads from the Ammo in your inventory (ez.rl ticks, no shooting meanwhile). The gun item is still
+    handed back after every use."""
     key = name.rsplit("/", 1)[1]
-    if name.startswith("ability/use/") and key in {g[0] for g in EZ_GUNS}:
+    if name.startswith("ability/use/") and key in MAGS:
+        cap = MAGS[key][0]
         i = lines.index("scoreboard players set @s pvp.rgt 3") + 1
-        lines = lines[:i] + [f"execute unless items entity @s container.* {AMMO_SEL} run return run function {NS}:noammo",
-                             f"clear @s {AMMO_SEL} 1"] + lines[i:]
+        lines = lines[:i] + [
+            'execute if score @s ez.rl matches 1.. run return run title @s actionbar {"text":"⟳ Reloading...","color":"yellow"}',
+            f"execute if predicate {NS}:sneaking unless score @s ez.m_{key} matches {cap}.. run return run function {NS}:gun/reload_{key}",
+            f"execute unless score @s ez.m_{key} matches 1.. run return run function {NS}:gun/reload_{key}",
+            f"scoreboard players remove @s ez.m_{key} 1"] + lines[i:] + [f"function {NS}:gun/hud_{key}"]
     return lines
 
 def fn(name, lines, ns=None):
@@ -147,15 +160,22 @@ MOB_LOOT = {
     "raider": [(entry(AMMO, 1, 4, 10), 0.9), (entry(CREDIT, 1, 3, 10), 0.6), (entry(VAL["goldbar"], 1), 0.08),
                (entry(VAL["drive"], 1), 0.03), (entry(MEDKIT, 1), 0.2)],
 }
-RAIDERS = {   # summon NBT per type (tags added by the spawner)
+def held_gun(k): return {"id": abilities.BASE, "count": 1, "components": {"minecraft:item_model": f"minecraft:{abilities.ABILITIES[k][2]}"}}
+RAIDERS = {   # type: (mob, summon NBT, extra tags, loot table). Gunners (ez.gunner) shoot hitscan, see ai/gunner
     "infected": ("minecraft:zombie", {"CustomName": name("Infected", "dark_green"), "equipment": {"head": {"id": "minecraft:leather_helmet", "count": 1}},
-                                      "drop_chances": {"head": 0.0}}),
-    "bandit": ("minecraft:pillager", {"CustomName": name("Bandit", "red"), "equipment": {"mainhand": {"id": "minecraft:crossbow", "count": 1}},
-                                      "drop_chances": {"mainhand": 0.0}}),
+                                      "drop_chances": {"head": 0.0}}, [], "infected"),
+    "bandit": ("minecraft:skeleton", {"CustomName": name("Bandit Gunner", "red"), "equipment": {
+        "mainhand": held_gun("mp40"), "head": {"id": "minecraft:leather_helmet", "count": 1}},
+        "drop_chances": {"mainhand": 0.0, "head": 0.0}}, ["ez.gunner", "ez.g_bandit"], "bandit"),
     "raider": ("minecraft:vindicator", {"CustomName": name("Raider", "dark_red"), "equipment": {
         "mainhand": {"id": "minecraft:iron_axe", "count": 1}, "chest": {"id": "minecraft:iron_chestplate", "count": 1}},
-        "drop_chances": {"mainhand": 0.0, "chest": 0.0}}),
+        "drop_chances": {"mainhand": 0.0, "chest": 0.0}}, [], "raider"),
+    "rifleman": ("minecraft:skeleton", {"CustomName": name("Raider Rifleman", "dark_red"), "equipment": {
+        "mainhand": held_gun("stg44"), "head": {"id": "minecraft:iron_helmet", "count": 1}, "chest": {"id": "minecraft:iron_chestplate", "count": 1}},
+        "drop_chances": {"mainhand": 0.0, "head": 0.0, "chest": 0.0}}, ["ez.gunner", "ez.g_rifle"], "raider"),
 }
+GUNNERS = {"bandit": (3, 30, 0.35), "rifle": (4, 38, 0.25)}   # damage, ticks between shots, miss chance
+AI_RANGE = 28
 
 def loot_tables():
     for t, d in TIERS.items():
@@ -165,24 +185,163 @@ def loot_tables():
         wj(f"data/{NS}/loot_table/mob/{k}.json", {"type": "minecraft:entity", "pools": [
             {"rolls": 1, "entries": [e], "conditions": [{"condition": "minecraft:random_chance", "chance": c}]} for e, c in drops]})
 
-# ------------------------------------------------------------------ traders
-def trade(buy, sell, buy_b=None):
-    r = {"buy": buy, "sell": sell, "maxUses": 2147483647, "rewardExp": False, "xp": 0}
-    if buy_b: r["buyB"] = buy_b
-    return r
-def credits(n): return stack(CREDIT, n)
-def villager(x, z, nm, color, prof, recipes, rot):
-    nbt = {"Tags": ["ez.npc"], "NoAI": True, "Invulnerable": True, "PersistenceRequired": True, "Silent": True,
+# ------------------------------------------------------------------ traders (chest menus in the mod; config/crispy_extraction/shops.json)
+def sn(st): return snbt(st)
+def buy(it, price, n=1): return {"item": sn(stack(it, n) if "components" in it else {"id": it["id"], "count": n}), "price": price}
+def vbuy(id_, price, n=1): return {"item": sn({"id": id_, "count": n}), "price": price}
+def gbuy(k, price): return {"item": sn({"id": abilities.BASE, "count": 1, "components": abilities.item_components(k)}), "price": price}
+def sells(rate=1.0): return [{"key": k, "item": sn(stack(VAL[k])), "price": max(1, int(VAL[k]["price"] * rate))} for k, *_ in VALUABLES]
+SHOPS = {
+    "quartermaster": {"title": "Quartermaster", "buy": [buy(AMMO, 4, 16), buy(BANDAGE, 3, 2), buy(MEDKIT, 8), gbuy("pistol", 20), gbuy("m1911", 35),
+                      gbuy("mp40", 60), gbuy("stakeout", 70), gbuy("stg44", 110), vbuy("minecraft:leather_helmet", 4), vbuy("minecraft:leather_chestplate", 6),
+                      vbuy("minecraft:iron_helmet", 14), vbuy("minecraft:iron_chestplate", 24), vbuy("minecraft:iron_leggings", 20),
+                      vbuy("minecraft:iron_boots", 12), vbuy("minecraft:cooked_beef", 2, 8), vbuy("minecraft:golden_apple", 25)], "sell": []},
+    "fence": {"title": "The Fence", "buy": [], "sell": sells()},
+    "builder": {"title": "Builder", "buy": [vbuy("minecraft:chest", 4), vbuy("minecraft:barrel", 4), vbuy("minecraft:oak_planks", 6, 32),
+                vbuy("minecraft:spruce_planks", 6, 32), vbuy("minecraft:stone_bricks", 6, 32), vbuy("minecraft:bricks", 8, 32),
+                vbuy("minecraft:deepslate_tiles", 8, 32), vbuy("minecraft:smooth_quartz", 10, 32), vbuy("minecraft:glass", 6, 16),
+                vbuy("minecraft:oak_log", 5, 16), vbuy("minecraft:oak_stairs", 5, 16), vbuy("minecraft:oak_slab", 4, 16),
+                vbuy("minecraft:oak_door", 3), vbuy("minecraft:lantern", 5, 8), vbuy("minecraft:white_wool", 4, 16), vbuy("minecraft:red_carpet", 4, 16),
+                vbuy("minecraft:white_bed", 8), vbuy("minecraft:crafting_table", 3), vbuy("minecraft:item_frame", 2, 4), vbuy("minecraft:armor_stand", 5),
+                vbuy("minecraft:flower_pot", 2, 4), vbuy("minecraft:poppy", 1, 4), vbuy("minecraft:oak_sapling", 2, 2), vbuy("minecraft:bookshelf", 6, 4),
+                vbuy("minecraft:painting", 3)], "sell": []},
+    # inside the zone: worth carrying cash in
+    "smuggler": {"title": "The Smuggler", "buy": [buy(AMMO, 7, 16), buy(BANDAGE, 5, 2), buy(MEDKIT, 12), gbuy("m1911", 50), gbuy("stakeout", 90),
+                 vbuy("minecraft:golden_apple", 35)], "sell": sells(0.75)},
+    "armsdealer": {"title": "Arms Dealer", "buy": [buy(AMMO, 6, 16), gbuy("olympia", 140), gbuy("kar98k", 170), gbuy("m60", 220), gbuy("amban", 250),
+                   vbuy("minecraft:diamond_helmet", 60), vbuy("minecraft:diamond_chestplate", 90)], "sell": []},
+}
+def npc(x, z, nm, color, prof, shop, rot, y=64):
+    nbt = {"Tags": ["ez.npc", f"ez.shop.{shop}"], "NoAI": True, "Invulnerable": True, "PersistenceRequired": True, "Silent": True,
            "CustomName": name(nm, color, True), "CustomNameVisible": True, "Rotation": [float(rot), 0.0],
-           "VillagerData": {"profession": f"minecraft:{prof}", "type": "minecraft:plains", "level": 5}, "Offers": {"Recipes": recipes}}
-    return f"summon minecraft:villager {x} 64 {z} {snbt(nbt)}"
+           "VillagerData": {"profession": f"minecraft:{prof}", "type": "minecraft:plains", "level": 5}}
+    return f"summon minecraft:villager {x} {y} {z} {snbt(nbt)}"
 
-QUARTERMASTER = [trade(credits(4), stack(AMMO, 16)), trade(credits(3), stack(BANDAGE, 2)), trade(credits(8), stack(MEDKIT, 1)),
-                 *[trade(credits(p) if p <= 64 else credits(64), {"id": abilities.BASE, "count": 1, "components": abilities.item_components(k)},
-                         credits(p - 64) if p > 64 else None) for k, _, p in EZ_GUNS],
-                 trade(credits(20), {"id": "minecraft:iron_chestplate", "count": 1}), trade(credits(12), {"id": "minecraft:iron_helmet", "count": 1}),
-                 trade(credits(16), {"id": "minecraft:iron_leggings", "count": 1}), trade(credits(10), {"id": "minecraft:iron_boots", "count": 1})]
-FENCE = [trade(stack(VAL[k], 1), credits(VAL[k]["price"])) for k, *_ in VALUABLES]
+# ------------------------------------------------------------------ the camp (dimension ez:camp, floor y 63, -30..30)
+CAMP_SPAWN = (0.5, 64, 6.5)
+STALLS = [   # x, z, name, colour, profession, shop, awning colours, facing (+1: opens to +x)
+    (-20, -8, "Quartermaster", "gold", "weaponsmith", "quartermaster", ("orange", "white"), 1),
+    (-20, 8, "Builder", "green", "mason", "builder", ("lime", "white"), 1),
+    (20, -8, "The Fence", "dark_purple", "cartographer", "fence", ("purple", "black"), -1),
+    (20, 8, "Plot Manager", "aqua", "librarian", "plots", ("cyan", "white"), -1),
+]
+STALL_NPCS = [(x - 2 * f + 0.5, z + 0.5, nm, col, prof, shop, -90 if f == 1 else 90) for x, z, nm, col, prof, shop, aw, f in STALLS]
+CAMP_LABELS = [
+    (0.5, 68, -3.5, [name("☢ EXTRACTION ZONE\n", "yellow", True), {"text": "Deploy at the helipad, loot, and get out alive.\n"
+        "Die and you lose everything you carried.\nStore gear on your plot: talk to the Plot Manager.", "color": "white"}]),
+    (0.5, 67.5, 20.5, [name("▶ DEPLOY\n", "red", True), {"text": "Right-click the helipad.\nYou bring what you carry.", "color": "gray"}]),
+    *[(x + 0.5, 68.2, z + 0.5, [name(nm, col, True)]) for x, z, nm, col, *_ in STALLS],
+]
+
+def camp_commands():
+    import random
+    rnd = random.Random(7)
+    B = {}   # (x, y, z) -> block
+    R = 30
+    for x in range(-R, R + 1):
+        for z in range(-R, R + 1):
+            B[(x, 62, z)] = "minecraft:dirt"
+            B[(x, 63, z)] = rnd.choice(["minecraft:grass_block"] * 6 + ["minecraft:coarse_dirt", "minecraft:podzol", "minecraft:rooted_dirt"])
+    def disc(cx, cz, r, blk, y=63):
+        for x in range(cx - r, cx + r + 1):
+            for z in range(cz - r, cz + r + 1):
+                if (x - cx) ** 2 + (z - cz) ** 2 <= r * r + r: B[(x, y, z)] = blk
+    # paths: plaza to stalls and helipad
+    for x in range(-18, 19):
+        for z in (-8, -7, 7, 8):
+            B[(x, 63, z)] = "minecraft:dirt_path"
+    for z in range(-1, 15):
+        for x in (-1, 0, 1):
+            B[(x, 63, z)] = "minecraft:dirt_path"
+    disc(0, 0, 9, "minecraft:tuff_bricks"); disc(0, 0, 8, "minecraft:polished_andesite")
+    for x in range(-8, 9):
+        for z in range(-8, 9):
+            if (x + z) % 4 == 0 and (x * x + z * z) <= 72: B[(x, 63, z)] = "minecraft:andesite"
+    B[(0, 64, 0)] = "minecraft:campfire[lit=true]"
+    for dx, dz, f in [(0, -3, "south"), (0, 3, "north"), (-3, 0, "east"), (3, 0, "west")]:
+        for k in (-1, 0, 1):
+            x, z = (dx + k, dz) if dx == 0 else (dx, dz + k)
+            B[(x, 64, z)] = f"minecraft:spruce_stairs[facing={f}]"
+    # flag
+    for y in range(64, 71): B[(0, y, -12)] = "minecraft:spruce_fence"
+    for y in (68, 69, 70):
+        for x in (1, 2, 3): B[(x, y, -12)] = "minecraft:red_wool" if (y != 69) else "minecraft:white_wool"
+    # perimeter wall and towers
+    for k in range(-R, R + 1):
+        for (x, z) in [(k, -R), (k, R), (-R, k), (R, k)]:
+            for y in (64, 65, 66):
+                B[(x, y, z)] = rnd.choice(["minecraft:stone_bricks"] * 5 + ["minecraft:mossy_stone_bricks", "minecraft:cracked_stone_bricks"])
+            B[(x, 67, z)] = "minecraft:stone_brick_wall"
+            for y in range(68, 74): B[(x, y, z)] = "minecraft:barrier"
+    for tx in (-28, 28):
+        for tz in (-28, 28):
+            for x in range(tx - 2, tx + 3):
+                for z in range(tz - 2, tz + 3):
+                    corner = abs(x - tx) == 2 and abs(z - tz) == 2
+                    for y in range(64, 74):
+                        if corner and y < 73: B[(x, y, z)] = "minecraft:spruce_log"
+                    B[(x, 69, z)] = "minecraft:spruce_planks"
+                    if (abs(x - tx) == 2 or abs(z - tz) == 2) and not corner: B[(x, 70, z)] = "minecraft:spruce_fence"
+                    B[(x, 73, z)] = "minecraft:dark_oak_slab"
+            B[(tx, 72, tz)] = "minecraft:lantern[hanging=true]"
+            for y in range(64, 69): B[(tx + (1 if tx < 0 else -1), y, tz + (1 if tz < 0 else -1))] = "minecraft:ladder[facing=" + ("south" if tz < 0 else "north") + "]"
+    # stalls
+    for sx, sz, nm, col, prof, shop, (c1, c2), f in STALLS:
+        for x in range(sx - 3, sx + 4):
+            for z in range(sz - 2, sz + 3):
+                B[(x, 63, z)] = "minecraft:spruce_planks"
+                B[(x, 67, z)] = f"minecraft:{c1 if (z - sz) % 2 == 0 else c2}_wool"
+        for x in (sx - 3, sx + 3):
+            for z in (sz - 2, sz + 2):
+                for y in (64, 65, 66): B[(x, y, z)] = "minecraft:spruce_fence"
+        fx = sx + 2 * f   # the counter, on the plaza side
+        for z in range(sz - 1, sz + 2): B[(fx, 64, z)] = "minecraft:barrel[facing=up]"
+        B[(fx, 65, sz - 1)] = "minecraft:lantern"
+        bx = sx - 3 * f
+        for z in (sz - 1, sz + 1): B[(bx, 64, z)] = rnd.choice(["minecraft:barrel[facing=up]", "minecraft:hay_block", "minecraft:chiseled_bookshelf"])
+    # tents (north)
+    for tx in (-12, 12):
+        for x in range(tx - 3, tx + 4):
+            B[(x, 64, -22)] = "minecraft:white_wool"; B[(x, 64, -18)] = "minecraft:white_wool"
+            B[(x, 65, -21)] = "minecraft:white_wool"; B[(x, 65, -19)] = "minecraft:white_wool"
+            B[(x, 66, -20)] = "minecraft:white_wool"
+        B[(tx - 2, 64, -20)] = "minecraft:red_bed[facing=east,part=foot]"; B[(tx - 1, 64, -20)] = "minecraft:red_bed[facing=east,part=head]"
+        B[(tx + 2, 64, -20)] = "minecraft:barrel[facing=up]"
+    # helipad (south) with sandbags
+    disc(0, 20, 6, "minecraft:gray_concrete")
+    for x in range(-6, 7):
+        for z in range(14, 27):
+            d = (x * x + (z - 20) ** 2) ** 0.5
+            if 5.2 <= d <= 6.4: B[(x, 63, z)] = "minecraft:yellow_concrete"
+    for z in range(17, 24): B[(-2, 63, z)] = B[(2, 63, z)] = "minecraft:white_concrete"
+    for x in (-1, 0, 1): B[(x, 63, 20)] = "minecraft:white_concrete"
+    for x in range(-9, 10):
+        for z in range(11, 30):
+            d = (x * x + (z - 20) ** 2) ** 0.5
+            if 7.6 <= d <= 8.4 and z > 13: B[(x, 64, z)] = "minecraft:mud_brick_wall"
+    # lamp posts
+    for x, z in [(-9, -9), (9, -9), (-9, 9), (9, 9), (-14, 0), (14, 0), (-5, 13), (5, 13)]:
+        for y in (64, 65, 66): B[(x, y, z)] = "minecraft:spruce_fence"
+        B[(x, 67, z)] = "minecraft:lantern"
+    for x, z in [(-26, 0), (26, 0), (0, -26), (-15, -26), (15, -26), (-26, 20), (26, 20)]:
+        B[(x, 64, z)] = rnd.choice(["minecraft:hay_block", "minecraft:barrel[facing=up]", "minecraft:composter"])
+    for x in (-24, -16, -8, 8, 16, 24):
+        for z in (-24, 24):
+            B[(x, 63, z)] = "minecraft:sea_lantern"
+    # emit: clear, then runs of the same block along x
+    out = [f"execute in {CAMP} run fill -32 {y} -32 32 {y} 32 minecraft:air" for y in range(62, 76)]
+    rows = {}
+    for (x, y, z), blk in B.items(): rows.setdefault((y, z), {})[x] = blk
+    for (y, z), cols in sorted(rows.items()):
+        xs = sorted(cols)
+        start = xs[0]; prev = xs[0]
+        for x in xs[1:] + [None]:
+            if x is not None and x == prev + 1 and cols[x] == cols[start]:
+                prev = x; continue
+            blk = cols[start]
+            out.append(f"execute in {CAMP} run " + (f"setblock {start} {y} {z} {blk}" if start == prev else f"fill {start} {y} {z} {prev} {y} {z} {blk}"))
+            if x is not None: start = prev = x
+    return out
 
 # ------------------------------------------------------------------ build
 def build(out):
@@ -197,6 +356,9 @@ def build(out):
         "biome": "minecraft:the_void", "layers": [], "lakes": False, "features": False, "structure_overrides": []}}})
 
     ab_obj = abilities.build(pfn, pwj, "x=0,y=-2000,z=0,dx=1,dy=1,dz=1")
+    # the mod's shop file (config/crispy_extraction/shops.json on the server)
+    with open(os.path.join(out, "shops.json"), "w") as f:
+        json.dump({"credit": snbt(stack(CREDIT)), "shops": SHOPS}, f, indent=1, ensure_ascii=False)
     loot_tables()
 
     rules = {"keep_inventory": "false", "immediate_respawn": "true", "spawn_phantoms": "false", "raids": "false",
@@ -204,7 +366,7 @@ def build(out):
              "locator_bar": "false", "command_block_output": "false", "respawn_radius": "0"}
     objs = [*ab_obj, "pvp dummy", "pve.gun dummy", "ez dummy", "ez.time dummy", "ez.mm dummy", "ez.s1 dummy", "ez.s10 dummy",
             "ez.ex dummy", "ez.dead deathCount", "ez.id dummy", "ez.sq dummy", "ez.ti dummy", "ez.tit dummy", "ez.ct dummy",
-            "truce trigger", "ez.extracts dummy", "ez.kills playerKillCount", "ez.raids dummy", "ez.new dummy", "ez.out dummy"]
+            "truce trigger", "ez.extracts dummy", "ez.rl dummy", "ez.rlk dummy", "ez.cd dummy", *[f"ez.m_{k} dummy" for k in MAGS], "ez.kills playerKillCount", "ez.raids dummy", "ez.new dummy", "ez.out dummy"]
     fn("load", [*[f"scoreboard objectives add {o}" for o in objs],
                 *[f"gamerule {k} {v}" for k, v in rules.items()],
                 "scoreboard players set #t ez 0", "scoreboard players set #60 ez 60", "scoreboard players set #10 ez 10",
@@ -212,7 +374,35 @@ def build(out):
                 "execute unless score #nextsq ez matches 1.. run scoreboard players set #nextsq ez 1",
                 "difficulty normal", f"function {NS}:second"])
 
-    fn("tick", ["function pvp:ability/tick"])
+    fn("tick", ["function pvp:ability/tick",
+                f"execute as @a[scores={{ez.rl=1..}}] run function {NS}:gun/rl_tick",
+                f"execute as @e[tag=ez.gunner] at @s run function {NS}:ai/gunner"])
+    wj(f"data/{NS}/predicate/sneaking.json", {"condition": "minecraft:entity_properties", "entity": "this",
+                                               "predicate": {"flags": {"is_sneaking": True}}})
+    # ---- magazines
+    fn("gun/rl_tick", ["scoreboard players remove @s ez.rl 1",
+                       *[f"execute if score @s ez.rl matches 0 if score @s ez.rlk matches {i} run function {NS}:gun/fill_{k}" for i, k in enumerate(MAGS, 1)]])
+    w(f"data/{NS}/function/gun/take.mcfunction", f"$clear @s {AMMO_SEL} $(n)")
+    for i, (k, (cap, rt)) in enumerate(MAGS.items(), 1):
+        fn(f"gun/reload_{k}", [
+            f"execute unless items entity @s container.* {AMMO_SEL} run return run function {NS}:noammo",
+            f"scoreboard players set @s ez.rl {rt}", f"scoreboard players set @s ez.rlk {i}",
+            "playsound minecraft:item.crossbow.loading_start player @a[distance=..16] ~ ~ ~ 0.8 1.2",
+            'title @s actionbar {"text":"⟳ Reloading...","color":"yellow"}'])
+        fn(f"gun/fill_{k}", [   # top the magazine up from the Ammo in the inventory
+            f"execute store result score #have ez run clear @s {AMMO_SEL} 0",
+            f"scoreboard players set #need ez {cap}", f"scoreboard players operation #need ez -= @s ez.m_{k}",
+            "execute if score #have ez < #need ez run scoreboard players operation #need ez = #have ez",
+            "execute store result storage ez:gun n int 1 run scoreboard players get #need ez",
+            f"execute if score #need ez matches 1.. run function {NS}:gun/take with storage ez:gun",
+            f"scoreboard players operation @s ez.m_{k} += #need ez",
+            "playsound minecraft:item.crossbow.loading_end player @a[distance=..16] ~ ~ ~ 0.8 1.2",
+            f"function {NS}:gun/hud_{k}"])
+        fn(f"gun/hud_{k}", ["execute store result score #have ez run clear @s " + AMMO_SEL + " 0",
+                            "title @s actionbar " + tj([{"text": f"🔫 {GUN_NAME[k]}  ", "color": "gold", "bold": True},
+                                                        {"score": {"name": "@s", "objective": f"ez.m_{k}"}, "color": "white", "bold": True},
+                                                        {"text": f" / {cap}", "color": "gray"}, {"text": "   ammo ", "color": "dark_gray"},
+                                                        {"score": {"name": "#have", "objective": "ez"}, "color": "yellow"}])])
     fn("second", [
         f"schedule function {NS}:second 20t replace",
         "scoreboard players add #t ez 1",
@@ -250,7 +440,7 @@ def build(out):
         "effect give @s minecraft:resistance 3 255 true", "effect give @s minecraft:weakness 3 255 true",
         "effect give @s minecraft:saturation 3 0 true", "effect give @s minecraft:regeneration 3 2 true",
         f"execute if entity @s[y=-64,dy=110] run tp @s {CAMP_SPAWN[0]} {CAMP_SPAWN[1]} {CAMP_SPAWN[2]}",
-        f"execute unless entity @s[x=-24,y=60,z=-24,dx=48,dy=30,dz=48] run tp @s {CAMP_SPAWN[0]} {CAMP_SPAWN[1]} {CAMP_SPAWN[2]}",
+        f"execute unless entity @s[x=-31,y=60,z=-31,dx=62,dy=40,dz=62] unless entity @s[x=40,y=55,z=-200,dx=320,dy=60,dz=420] run tp @s {CAMP_SPAWN[0]} {CAMP_SPAWN[1]} {CAMP_SPAWN[2]}",
         "scoreboard players set @s truce 0", "scoreboard players enable @s truce"])
 
     # ---------------------------------------------------------------- deploy / raid
@@ -295,6 +485,7 @@ def build(out):
                         say("@a[tag=ez.raid]", "☢ A raider was caught by the blowout.", "dark_green"),
                         "kill @s"])
     fn("raid/died", ["scoreboard players set @s ez.dead 0", "tag @s remove ez.raid", "scoreboard players set @s ez.ex 0",
+                     "scoreboard players set @s ez.rl 0", *[f"scoreboard players set @s ez.m_{k} 0" for k in MAGS],
                      f"function {NS}:squad/leave", f"function {NS}:to_camp",
                      *title("@s", "KILLED IN ACTION", "Your gear is lying where you fell.", "red")])
 
@@ -372,91 +563,63 @@ def build(out):
         fn(f"crate/fill{t}", [f"setblock ~ ~ ~ minecraft:air", f"setblock ~ ~ ~ minecraft:barrel[facing=up]{{LootTable:\"{NS}:crate/t{t}\"}}"])
     fn("crate/refill", [f"scoreboard players set @s ez.ct {CRATE_EVERY}",
                         *[f"execute if score @s ez {f'matches {t}'} run function {NS}:crate/fill{t}" for t in TIERS]])
-    for k, (mob, nbt) in RAIDERS.items():
-        n = dict(nbt, Tags=["ez.ai", "ez.newai"], DeathLootTable=f"{NS}:mob/{k}", PersistenceRequired=False)
+    for k, (mob, nbt, tags, loot) in RAIDERS.items():
+        n = dict(nbt, Tags=["ez.ai", "ez.newai", *tags], DeathLootTable=f"{NS}:mob/{loot}", PersistenceRequired=False)
         fn(f"spawner/{k}", [f"summon {mob} ~ ~ ~ {snbt(n)}"])
+    # the Outpost's spawner mixes axe Raiders and Riflemen
+    wj(f"data/{NS}/predicate/half.json", {"condition": "minecraft:random_chance", "chance": 0.5})
+    fn("spawner/raider_mix", [f"execute if predicate {NS}:half run return run function {NS}:spawner/rifleman", f"function {NS}:spawner/raider"])
+    # ---- enemy gunners: cock (a click you can hear), fire 10 ticks later along a hitscan ray that walls stop
+    for g, (dmg, rate, miss) in GUNNERS.items():
+        wj(f"data/{NS}/predicate/miss_{g}.json", {"condition": "minecraft:random_chance", "chance": miss})
+    T = f"@p[tag=ez.raid,distance=..{AI_RANGE},gamemode=!spectator]"
+    fn("ai/gunner", [
+        "scoreboard players remove @s ez.cd 1",
+        f"execute if score @s ez.cd matches 10 if entity {T} run playsound minecraft:block.iron_trapdoor.close hostile @a[distance=..32] ~ ~ ~ 0.7 1.8",
+        "execute if score @s ez.cd matches 1.. run return 0",
+        f"execute unless entity {T} run return run scoreboard players set @s ez.cd 20",
+        "tag @s add ez.shooter", "scoreboard players set #ar ez 60",
+        *[f"execute if entity @s[tag=ez.g_{g}] if predicate {NS}:miss_{g} anchored eyes facing entity {T} eyes rotated ~6 ~-4 positioned ^ ^ ^0.8 run function {NS}:ai/ray" for g in GUNNERS],
+        *[f"execute if entity @s[tag=ez.g_{g}] unless predicate {NS}:miss_{g} anchored eyes facing entity {T} eyes positioned ^ ^ ^0.8 run function {NS}:ai/ray" for g in GUNNERS],
+        "playsound minecraft:entity.generic.explode hostile @a[distance=..48] ~ ~ ~ 0.35 2",
+        "execute anchored eyes run particle minecraft:smoke ^ ^ ^0.8 0.03 0.03 0.03 0.01 3",
+        *[f"execute if entity @s[tag=ez.g_{g}] run scoreboard players set @s ez.cd {rate}" for g in GUNNERS],
+        "tag @s remove ez.shooter"])
+    fn("ai/ray", [
+        "particle minecraft:crit ~ ~ ~ 0 0 0 0 1",
+        f"execute positioned ~-0.5 ~-0.5 ~-0.5 as @a[tag=ez.raid,dx=0,dy=0,dz=0,gamemode=!spectator,limit=1] run return run function {NS}:ai/hit",
+        "scoreboard players remove #ar ez 1",
+        f"execute if score #ar ez matches 1.. if block ~ ~ ~ #minecraft:replaceable positioned ^ ^ ^0.5 run function {NS}:ai/ray"])
+    fn("ai/hit", [*[f"execute if entity @e[tag=ez.shooter,tag=ez.g_{g}] run damage @s {dmg} minecraft:arrow by @e[tag=ez.shooter,limit=1]" for g, (dmg, _, _) in GUNNERS.items()],
+                  "particle minecraft:damage_indicator ~ ~1 ~ 0.2 0.3 0.2 0.1 3"])
     fn("spawner/run", [   # as a spawner marker (ez score = cap, tag says the type): top up to the cap, scattered around it
         "execute store result score #n ez if entity @e[tag=ez.ai,distance=..48]",
         "execute if score #n ez >= @s ez run return 0",
-        *[f"execute if entity @s[tag=ez.sp_{k}] run function {NS}:spawner/{k}" for k in RAIDERS],
-        "spreadplayers ~ ~ 2 18 false @e[tag=ez.newai]",
+        *[f"execute if entity @s[tag=ez.sp_{k}] run function {NS}:spawner/{k}" for k in RAIDERS if k != "raider"],
+        f"execute if entity @s[tag=ez.sp_raider] run function {NS}:spawner/raider_mix",
+        "execute unless entity @s[tag=ez.nospread] run spreadplayers ~ ~ 2 18 false @e[tag=ez.newai]",
         "tag @e[tag=ez.newai] remove ez.newai"])
 
-    # ---------------------------------------------------------------- setup (run once by an op: /function ez:admin/setup)
-    setup1 = ["say Extraction Zone setup: loading points...", "kill @e[type=minecraft:marker,tag=ez.pt]"]
-    for k, nm, ex, ez_ in EXFILS:
-        setup1.append(f"forceload add {ex} {ez_}")
-    for ix, iz in INSERTS:
-        setup1.append(f"forceload add {ix} {iz}")
-    for k, nm, px, pz, r, tier, n, rtype, cap in POIS:
-        setup1.append(f"forceload add {px - r} {pz - r} {px + r} {pz + r}")
-    setup1.append(f"schedule function {NS}:admin/setup2 400t replace")   # time to generate the terrain
-    # the console (and schedule) run where the world spawn is, which is the camp: say "the zone" explicitly
-    fn("admin/setup", [f"execute in {CAMP} run forceload remove all", f"execute in {CAMP} run forceload add -16 -16 16 16",
-                       f"execute in minecraft:overworld run function {NS}:admin/setup_ow"])
-    fn("admin/setup_ow", setup1)
-    fn("admin/setup2", [f"execute in minecraft:overworld run function {NS}:admin/setup2_ow"])
-    s2 = []
-    for k, nm, ex, ez_ in EXFILS:
-        s2.append(f"execute positioned {ex} 0 {ez_} positioned over motion_blocking_no_leaves run summon minecraft:marker ~ ~ ~ "
-                  + snbt({"Tags": ["ez.pt", "ez.exfil"], "CustomName": name(nm, "aqua")}))
-    for ix, iz in INSERTS:
-        s2.append(f"execute positioned {ix} 0 {iz} positioned over motion_blocking_no_leaves run summon minecraft:marker ~ ~ ~ " + snbt({"Tags": ["ez.pt", "ez.insert"]}))
-    for k, nm, px, pz, r, tier, n, rtype, cap in POIS:
-        s2.append(f"execute positioned {px} 0 {pz} positioned over motion_blocking_no_leaves run summon minecraft:marker ~ ~ ~ "
-                  + snbt({"Tags": ["ez.pt", "ez.spawner", f"ez.sp_{rtype}"], "CustomName": name(nm, "red")}))
-        for i in range(n):
-            s2.append(f"summon minecraft:marker {px} 100 {pz} " + snbt({"Tags": ["ez.pt", "ez.crate", "ez.newcrate", f"ez.t{tier}"]}))
-        s2.append(f"spreadplayers {px} {pz} 4 {r} false @e[type=minecraft:marker,tag=ez.newcrate]")
-        s2.append("tag @e[tag=ez.newcrate] remove ez.newcrate")
-    s2 += [*[f"scoreboard players set @e[type=minecraft:marker,tag=ez.t{t}] ez {t}" for t in TIERS],
-           "scoreboard players set @e[type=minecraft:marker,tag=ez.crate] ez.ct 0",
-           *[f"scoreboard players set @e[type=minecraft:marker,tag=ez.spawner,tag=ez.sp_{rt}] ez {cap}" for k, nm, px, pz, r, t, n, rt, cap in POIS],
-           f"execute as @e[type=minecraft:marker,tag=ez.crate] at @s run function {NS}:crate/refill",
-           # keep only the exfil and insertion chunks loaded
-           *[f"forceload remove {px - r} {pz - r} {px + r} {pz + r}" for k, nm, px, pz, r, *_ in POIS],
-           *[f"forceload add {ex} {ez_}" for k, nm, ex, ez_ in EXFILS], *[f"forceload add {ix} {iz}" for ix, iz in INSERTS],
-           "execute store result score #c ez if entity @e[type=minecraft:marker,tag=ez.crate]",
-           "tellraw @a[tag=ez.admin] " + tj([{"text": "Extraction Zone setup done: ", "color": "green"}, {"score": {"name": "#c", "objective": "ez"}}, {"text": " crates.", "color": "green"}])]
-    fn("admin/setup2_ow", s2)
+    # ---------------------------------------------------------------- setup: the mod places points on street level (/ezadmin setup)
+    fn("admin/setup", ["ezadmin setup"])
 
     # ---------------------------------------------------------------- the camp (built once: /function ez:admin/build_camp)
-    camp = [f"execute in {CAMP} run forceload add -32 -32 32 32", f"schedule function {NS}:admin/build_camp2 40t replace"]
-    fn("admin/build_camp", camp)
-    c = lambda cmd: f"execute in {CAMP} run {cmd}"
-    b2 = [c("kill @e[tag=ez.npc]"), c("kill @e[tag=ez.deco]"), c("kill @e[type=minecraft:interaction,tag=ez.deploy]"),
-          c("fill -22 63 -22 22 63 22 minecraft:polished_deepslate"), c("fill -21 63 -21 21 63 21 minecraft:mud_bricks"),
-          c("fill -22 64 -22 22 70 22 minecraft:air"),
-          c("fill -22 64 -22 22 64 -22 minecraft:mud_brick_wall"), c("fill -22 64 22 22 64 22 minecraft:mud_brick_wall"),
-          c("fill -22 64 -22 -22 64 22 minecraft:mud_brick_wall"), c("fill 22 64 -22 22 64 22 minecraft:mud_brick_wall"),
-          c("fill -23 64 -23 23 72 -23 minecraft:barrier"), c("fill -23 64 23 23 72 23 minecraft:barrier"),
-          c("fill -23 64 -23 -23 72 23 minecraft:barrier"), c("fill 23 64 -23 23 72 23 minecraft:barrier"),
-          c("fill -3 63 -3 3 63 3 minecraft:polished_tuff"),
-          # stash wall (north): a row of ender chests
-          c("fill -8 63 -17 8 63 -13 minecraft:dark_oak_planks"), c("fill -7 64 -18 7 64 -18 minecraft:ender_chest[facing=south]"),
-          c("fill -8 65 -19 8 68 -19 minecraft:dark_oak_planks"),
-          # deploy pad (south)
-          c("fill -3 63 13 3 63 19 minecraft:black_concrete"), c("fill -2 63 14 2 63 18 minecraft:yellow_concrete"),
-          c("summon minecraft:interaction 0 64 16 " + snbt({"Tags": ["ez.deploy", "ez.deco"], "width": 5.0, "height": 2.5, "response": True})),
-          # lights
-          *[c(f"setblock {x} 64 {z} minecraft:lantern") for x in (-20, -10, 10, 20) for z in (-20, 0, 20)],
-          *[c(f"setblock {x} 63 {z} minecraft:sea_lantern") for x in (-15, 0, 15) for z in (-8, 8)],
-          # labels
-          c("summon minecraft:text_display 0 67.5 -17 " + snbt({"Tags": ["ez.deco"], "billboard": "center", "text": [
-              name("📦 YOUR STASH\n", "gold", True), {"text": "Ender chests are your private storage.\nOnly what's in here is safe.", "color": "gray"}]})),
-          c("summon minecraft:text_display 0 67.5 16 " + snbt({"Tags": ["ez.deco"], "billboard": "center", "text": [
-              name("▶ DEPLOY INTO THE ZONE\n", "red", True), {"text": "Right-click the pad. You bring what you carry.\nDie and you lose it all.", "color": "gray"}]})),
-          c("summon minecraft:text_display 0 68 0 " + snbt({"Tags": ["ez.deco"], "billboard": "center", "text": [
-              name("☢ EXTRACTION ZONE\n", "yellow", True),
-              {"text": "1. Gear up from your stash.\n2. Deploy, loot crates and raiders.\n3. Hold an extraction point (flare column) for "
-                       f"{EX_HOLD} s.\n4. Sell valuables to the Fence, buy gear from the Quartermaster.\n"
-                       "Team up with /trigger truce. Trust no one.", "color": "white"}]})),
-          c(villager(-16.5, -0.5, "Quartermaster", "gold", "weaponsmith", QUARTERMASTER, -90)),
-          c(villager(16.5, -0.5, "The Fence", "dark_purple", "cartographer", FENCE, 90)),
-          f"execute in {CAMP} run setworldspawn 0 65 0", f"execute in {CAMP} run forceload remove -32 -32 32 32",
-          f"execute in {CAMP} run forceload add -16 -16 16 16",
-          "tellraw @a[tag=ez.admin] " + tj({"text": "Camp built.", "color": "green"})]
-    fn("admin/build_camp2", b2)
+    fn("admin/build_camp", [f"execute in {CAMP} run forceload add -40 -40 40 40", f"schedule function {NS}:admin/build_camp2 40t replace"])
+    cmds = camp_commands()
+    for n in range(0, len(cmds), 1500):   # in parts, a tick apart
+        part = cmds[n:n + 1500]
+        nxt = f"schedule function {NS}:admin/camp_part{n // 1500 + 1} 2t replace" if n + 1500 < len(cmds) else f"function {NS}:admin/camp_done"
+        fn(f"admin/camp_part{n // 1500}", part + [nxt])
+    fn("admin/build_camp2", [f"function {NS}:admin/camp_part0"])
+    fn("admin/camp_done", [
+        f"execute in {CAMP} run kill @e[tag=ez.npc]", f"execute in {CAMP} run kill @e[tag=ez.deco]",
+        f"execute in {CAMP} run kill @e[type=minecraft:interaction,tag=ez.deploy]",
+        f"execute in {CAMP} run summon minecraft:interaction 0 64 20 " + snbt({"Tags": ["ez.deploy", "ez.deco"], "width": 6.0, "height": 2.5, "response": True}),
+        *[f"execute in {CAMP} run {npc(x, z, nm, col, prof, shop, rot)}" for x, z, nm, col, prof, shop, rot in STALL_NPCS],
+        *[f"execute in {CAMP} run summon minecraft:text_display {x} {y} {z} " + snbt({"Tags": ["ez.deco"], "billboard": "center", "text": t})
+          for x, y, z, t in CAMP_LABELS],
+        f"execute in {CAMP} run setworldspawn 0 {CAMP_SPAWN[1]} 6", f"execute in {CAMP} run forceload remove -40 -40 40 40",
+        f"execute in {CAMP} run forceload add -32 -32 32 32", "say Camp built."])
     return OUT
 
 
