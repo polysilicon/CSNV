@@ -23,13 +23,13 @@ import java.util.regex.Pattern;
 
 /**
  * Network-wide player stats for the lobby. Every few minutes (off the main thread) it reads the vanilla stats
- * files of every backend server on this machine plus Factions balances (Essentials userdata), adds them up per
+ * files of every backend server on this machine, adds them up per
  * player name, and a rotating text_display near spawn shows the top 10 for each category. /stats shows your own.
  */
 final class NetworkStats {
     enum Cat {
         PLAYTIME("⌚ Playtime"), PLAYER_KILLS("⚔ Player Kills"), MOB_KILLS("☠ Mob Kills"), DEATHS("✝ Deaths"),
-        BLOCKS_MINED("⛏ Blocks Mined"), DISTANCE("➶ Distance Travelled"), JUMPS("⬆ Jumps"), MONEY("$ Richest (Factions)"),
+        BLOCKS_MINED("⛏ Blocks Mined"), DISTANCE("➶ Distance Travelled"), JUMPS("⬆ Jumps"),
         BALATRO_BLINDS("🃏 Balatro: Blinds Cleared"), BALATRO_HAND("🃏 Balatro: Best Hand"), BALATRO_WINS("🃏 Balatro: Wins"),
         OUTBREAK_WAVE("☣ Outbreak: Best Wave"), PVP_STREAK("⚔ PvP: Best Kill Streak"), UNO_WINS("🃏 UNO: Wins"),
         DUEL_RATING("⚔ Duels: Rating"), KITS_MASTERED("★ PvP: Characters Mastered");
@@ -51,12 +51,11 @@ final class NetworkStats {
             {"Lobby", "CrispyLobby01/Minecraft/world/players/stats", "CrispyLobby01/Minecraft/usercache.json"},
             {"Anarchy", "CrispyAnarchy01/Minecraft/world/players/stats", "CrispyAnarchy01/Minecraft/usercache.json"},
             {"Vanilla", "Vanilla01/Minecraft/world/players/stats", "Vanilla01/Minecraft/usercache.json"},
-            {"Factions", "Factions01/Minecraft/world/stats", "Factions01/Minecraft/usercache.json"},
+            // Factions closed on 2026-11-12: its stats were archived into the lobby so they keep counting
+            {"Factions (retired)", "CrispyLobby01/archive/factions_stats", "CrispyLobby01/archive/factions_usercache.json"},
             {"Falling", "Falling01/Minecraft/world/players/stats", "Falling01/Minecraft/usercache.json"},
             {"PvP", "CrispyPvP01/Minecraft/world/players/stats", "CrispyPvP01/Minecraft/usercache.json"},
     };
-    private static final Pattern MONEY = Pattern.compile("(?m)^money:\\s*'?([0-9.Ee+-]+)'?\\s*$");
-    private static final Pattern NAME = Pattern.compile("(?m)^last-account-name:\\s*'?([A-Za-z0-9_.]+)'?\\s*$");
 
     private final CrispyLobby plugin;
     private volatile Map<String, Row> rows = Map.of();
@@ -105,21 +104,6 @@ final class NetworkStats {
                     catch (Exception ignored) { }
                 }
             } catch (IOException e) { plugin.getLogger().warning("network-stats: can't read " + dir + ": " + e.getMessage()); }
-        }
-        Path ess = root.resolve(cfg().getString("factions-userdata", "Factions01/Minecraft/plugins/Essentials/userdata"));
-        if (Files.isDirectory(ess)) {
-            try (DirectoryStream<Path> ds = Files.newDirectoryStream(ess, "*.yml")) {
-                for (Path f : ds) {
-                    try {
-                        String y = Files.readString(f);
-                        Matcher m = MONEY.matcher(y), n = NAME.matcher(y);
-                        String uuid = f.getFileName().toString().replace(".yml", "");
-                        String name = n.find() ? n.group(1) : names.get(uuid);
-                        if (name == null || !m.find()) continue;
-                        out.computeIfAbsent(name.toLowerCase(Locale.ROOT), k -> new Row(name)).total[Cat.MONEY.ordinal()] += (long) Double.parseDouble(m.group(1));
-                    } catch (Exception ignored) { }
-                }
-            } catch (IOException ignored) { }
         }
         // Balatro Craft (this lobby): scores.yml alltime.<uuid>.{name, progress = blinds cleared, best = best hand, wins}
         java.io.File bal = new java.io.File(plugin.getDataFolder().getParentFile(), "BalatroCraft/scores.yml");
@@ -278,7 +262,6 @@ final class NetworkStats {
         return switch (c) {
             case PLAYTIME -> String.format(Locale.ROOT, "%.1f h", v / 72000.0);
             case DISTANCE -> String.format(Locale.ROOT, "%.1f km", v / 100000.0);
-            case MONEY -> v >= 1_000_000 ? String.format(Locale.ROOT, "$%.2fM", v / 1e6) : v >= 1000 ? String.format(Locale.ROOT, "$%.1fk", v / 1e3) : "$" + v;
             default -> String.format(Locale.ROOT, "%,d", v);
         };
     }
@@ -327,7 +310,7 @@ final class NetworkStats {
         Cat c = cats[page++ % cats.length];
         int n = Math.max(1, cfg().getInt("top", 10));
         StringBuilder s = new StringBuilder("&d&lCrispyAnarchy Stats\n&e&l").append(c.title).append("\n&7")
-                .append(c == Cat.MONEY ? "Factions" : c.name().startsWith("BALATRO") ? "Lobby · /balatro" : c == Cat.UNO_WINS ? "Lobby · /uno"
+                .append(c.name().startsWith("BALATRO") ? "Lobby · /balatro" : c == Cat.UNO_WINS ? "Lobby · /uno"
                         : c == Cat.OUTBREAK_WAVE || c == Cat.PVP_STREAK || c == Cat.DUEL_RATING || c == Cat.KITS_MASTERED ? "Multiverse" : "All servers").append("\n");
         List<Row> top = top(c, n);
         if (top.isEmpty()) s.append("\n&8No data yet");
