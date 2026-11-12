@@ -28,10 +28,10 @@ import java.util.concurrent.TimeUnit;
  * before any backend has saved them.
  */
 final class Newcomers {
-    static final String[] INSTANCES = {"CrispyLobby01", "CrispyAnarchy01", "Vanilla01", "CrispyPvP01", "Factions01", "Falling01"};
+    static final String[] INSTANCES = {"CrispyLobby01", "CrispyAnarchy01", "Vanilla01", "CrispyPvP01", "Factions01", "Falling01", "Extraction01"};
     static final String[] DATA = {"Minecraft/world/players/data", "Minecraft/world/playerdata"};
     static final Map<String, String> MODE = Map.of("anarchy", "Anarchy", "skyblock", "Skyblock", "multiverse", "the Multiverse",
-            "factions", "Factions", "vanilla", "Vanilla");
+            "extraction", "Extraction Zone", "vanilla", "Vanilla");
     static final String DISCORD = "https://discord.gg/hF2bQgU";
 
     final CrispyTags plugin;
@@ -48,10 +48,20 @@ final class Newcomers {
     }
 
     @Subscribe public void onLogin(PostLoginEvent e) {
-        UUID u = e.getPlayer().getUniqueId();
-        if (greeted.contains(u)) return;
-        try { if (!known(u)) pending.add(u); }
-        catch (Exception ex) { /* can't tell: treat as known, never greet a regular by mistake */ }
+        Player p = e.getPlayer();
+        UUID u = p.getUniqueId();
+        boolean isNew = false;
+        if (!greeted.contains(u)) {
+            try { if (!known(u)) { pending.add(u); isNew = true; } }
+            catch (Exception ex) { /* can't tell: treat as known, never greet a regular by mistake */ }
+        }
+        // 1.11.0, where players come from: the address they typed (each listing site and channel gets its own,
+        // e.g. topg.crispyanarchy.net). tools/analytics/new_player_funnel.py reads these lines from the proxy log.
+        String host = p.getVirtualHost().map(a -> a.getHostString().toLowerCase(java.util.Locale.ROOT)).orElse("?");
+        if (host.endsWith(".")) host = host.substring(0, host.length() - 1);
+        int nul = host.indexOf('\0');   // Forge/FML append data after a NUL
+        if (nul >= 0) host = host.substring(0, nul);
+        plugin.log.info("[source] {} host={} new={}", p.getUsername(), host, isNew);
     }
 
     @Subscribe public void onPostConnect(ServerPostConnectEvent e) {
@@ -70,7 +80,7 @@ final class Newcomers {
                     .append(Component.text(" You're on " + mode + ".", NamedTextColor.GRAY))
                     .build());
             p.sendMessage(Component.text()
-                    .append(Component.text("  We also have Anarchy, Skyblock, the Multiverse, Factions and Vanilla. ", NamedTextColor.GRAY))
+                    .append(Component.text("  We also have Anarchy, Skyblock, the Multiverse, Extraction Zone and Vanilla. ", NamedTextColor.GRAY))
                     .append(link("[Other modes]", NamedTextColor.AQUA, ClickEvent.runCommand("/lobby"), "Go to the lobby to pick another mode"))
                     .append(Component.text("  "))
                     .append(link("[Discord]", NamedTextColor.BLUE, ClickEvent.openUrl(DISCORD), "Join the Discord"))

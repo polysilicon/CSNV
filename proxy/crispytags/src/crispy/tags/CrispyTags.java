@@ -45,7 +45,7 @@ public class CrispyTags {
     /** Velocity server name -> AMP instance; each writes Minecraft/crispy_combat.json (name -> epoch ms when out of
      *  combat): the crispy_chattags mod on the Fabric servers, CrispyFactions' combat tag on Factions. */
     static final Map<String, String> INSTANCE = Map.of("anarchy", "CrispyAnarchy01", "vanilla", "Vanilla01", "multiverse", "CrispyPvP01",
-            "factions", "Factions01", "skyblock", "Falling01");
+            "extraction", "Extraction01", "skyblock", "Falling01");
     static final MinecraftChannelIdentifier CHANNEL = MinecraftChannelIdentifier.from("crispy:vote");
     final ProxyServer proxy;
     Map<String, String> tags = Map.of();
@@ -59,7 +59,8 @@ public class CrispyTags {
     Map<String, String> colors = Map.of();
     long cmtime = -1;
 
-    @Inject public CrispyTags(ProxyServer proxy) { this.proxy = proxy; }
+    final org.slf4j.Logger log;
+    @Inject public CrispyTags(ProxyServer proxy, org.slf4j.Logger log) { this.proxy = proxy; this.log = log; }
 
     @Subscribe public void onInit(ProxyInitializeEvent e) {
         proxy.getChannelRegistrar().register(CHANNEL);
