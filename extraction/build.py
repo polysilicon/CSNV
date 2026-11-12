@@ -161,18 +161,30 @@ MOB_LOOT = {
                (entry(VAL["drive"], 1), 0.03), (entry(MEDKIT, 1), 0.2)],
 }
 def held_gun(k): return {"id": abilities.BASE, "count": 1, "components": {"minecraft:item_model": f"minecraft:{abilities.ABILITIES[k][2]}"}}
+# Soldiers: a modern-soldier player head (textures from minecraft-heads.com: "Desert Soldier", "Camouflaged Soldier",
+# "Elite Soldier") and dyed leather with an armour trim for the pattern. Skeleton bodies, since illagers can't show
+# armour; Silent, so they don't rattle like bones. Nothing they wear drops.
+SOLDIER_HEADS = {
+ "desert": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOWY2MGFjNWFmNmQzYjNkN2VhNGQ4MmRmZTY3NjRhZTg4OTkxMzUwMTMwYmUzYTYxYjhiY2E2YTFkZTJkZTczZSJ9fX0=",
+ "camo": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZWI4NDE4YzQ2MWY2M2Q2YWFkMzkzMmE2MzlmY2UzZmVjMjI3YTM3NzRhNTliODUxZmZiZTY1NTg3NGViNzkxIn19fQ==",
+ "elite": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzMzNjk5ZGFiNGVkOWIyZGNlZDZiZGE3OTA5OTRhYzIzNDNlNTEyNjEyNjlkZGE0Mzk4YzUyOTdlMjI4NzEifX19"
+}
+def soldier(head, chest, legs, boots, trim_pattern, trim_mat, hand):
+    def piece(i, color): return {"id": f"minecraft:leather_{i}", "count": 1, "components": {"minecraft:dyed_color": color,
+                                 "minecraft:trim": {"material": f"minecraft:{trim_mat}", "pattern": f"minecraft:{trim_pattern}"}}}
+    return {"equipment": {"mainhand": hand, "head": {"id": "minecraft:player_head", "count": 1, "components": {
+                "minecraft:profile": {"properties": [{"name": "textures", "value": SOLDIER_HEADS[head]}]}}},
+                "chest": piece("chestplate", chest), "legs": piece("leggings", legs), "feet": piece("boots", boots)},
+            "drop_chances": {"mainhand": 0.0, "head": 0.0, "chest": 0.0, "legs": 0.0, "feet": 0.0}, "Silent": True}
 RAIDERS = {   # type: (mob, summon NBT, extra tags, loot table). Gunners (ez.gunner) shoot hitscan, see ai/gunner
     "infected": ("minecraft:zombie", {"CustomName": name("Infected", "dark_green"), "equipment": {"head": {"id": "minecraft:leather_helmet", "count": 1}},
                                       "drop_chances": {"head": 0.0}}, [], "infected"),
-    "bandit": ("minecraft:skeleton", {"CustomName": name("Bandit Gunner", "red"), "equipment": {
-        "mainhand": held_gun("mp40"), "head": {"id": "minecraft:leather_helmet", "count": 1}},
-        "drop_chances": {"mainhand": 0.0, "head": 0.0}}, ["ez.gunner", "ez.g_bandit"], "bandit"),
-    "raider": ("minecraft:vindicator", {"CustomName": name("Raider", "dark_red"), "equipment": {
-        "mainhand": {"id": "minecraft:iron_axe", "count": 1}, "chest": {"id": "minecraft:iron_chestplate", "count": 1}},
-        "drop_chances": {"mainhand": 0.0, "chest": 0.0}}, [], "raider"),
-    "rifleman": ("minecraft:skeleton", {"CustomName": name("Raider Rifleman", "dark_red"), "equipment": {
-        "mainhand": held_gun("stg44"), "head": {"id": "minecraft:iron_helmet", "count": 1}, "chest": {"id": "minecraft:iron_chestplate", "count": 1}},
-        "drop_chances": {"mainhand": 0.0, "head": 0.0, "chest": 0.0}}, ["ez.gunner", "ez.g_rifle"], "raider"),
+    "bandit": ("minecraft:skeleton", {"CustomName": name("Bandit Gunner", "red"),
+        **soldier("desert", 0xA68A5B, 0xBFA270, 0x6B5A3E, "dune", "copper", held_gun("mp40"))}, ["ez.gunner", "ez.g_bandit"], "bandit"),
+    "raider": ("minecraft:skeleton", {"CustomName": name("Raider", "dark_red"),
+        **soldier("camo", 0x4B5320, 0x556B2F, 0x3B2F1E, "wild", "emerald", {"id": "minecraft:iron_axe", "count": 1})}, [], "raider"),
+    "rifleman": ("minecraft:skeleton", {"CustomName": name("Raider Rifleman", "dark_red"),
+        **soldier("elite", 0x262626, 0x333333, 0x1A1A1A, "silence", "netherite", held_gun("stg44"))}, ["ez.gunner", "ez.g_rifle"], "raider"),
 }
 GUNNERS = {"bandit": (3, 30, 0.35), "rifle": (4, 38, 0.25)}   # damage, ticks between shots, miss chance
 AI_RANGE = 28
@@ -488,7 +500,12 @@ def build(out):
     fn("raid/died", ["scoreboard players set @s ez.dead 0", "tag @s remove ez.raid", "scoreboard players set @s ez.ex 0",
                      "scoreboard players set @s ez.rl 0", *[f"scoreboard players set @s ez.m_{k} 0" for k in MAGS],
                      f"function {NS}:squad/leave", f"function {NS}:to_camp",
-                     *title("@s", "KILLED IN ACTION", "Your gear is lying where you fell.", "red")])
+                     *title("@s", "KILLED IN ACTION", "Your gear is lying where you fell.", "red"),
+                     "ezkit"])   # lost everything (inventory and stash)? the mod hands out a relief kit
+    fn("kit/give", ["loot give @s loot pvp:ability/pistol", give(AMMO, 24), give(BANDAGE, 3), "give @s minecraft:cooked_beef 8",
+                    say("@s", "📦 Relief kit: you'd lost everything, so the Quartermaster sent a pistol, 24 rounds, 3 bandages and food. "
+                        "(Once every 10 minutes; /kit in camp if you're ever broke.)", "gold"),
+                    "playsound minecraft:item.armor.equip_leather player @s ~ ~ ~ 1 1"])
 
     # ---------------------------------------------------------------- extraction
     fn("exfil/second", [

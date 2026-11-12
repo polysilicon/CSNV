@@ -25,3 +25,9 @@ insertion markers, crates and raider spawners; waits 20 s for the terrain to gen
 - **Squads**: `/trigger truce` next to a raider offers a truce; they `/trigger truce` within 30 s to squad up (team
   `ez_sq<N>`, green names, friendly fire stays on). Hitting a squadmate is a betrayal: announced, attacker leaves.
 - **First join**: pistol, 24 ammo, 2 bandages, 10 credits.
+- **Relief kit** (mod `Relief`, 1.0.8): after a death the datapack runs `/ezkit`; a player with no gun and under 20
+  credits, counting their inventory and every container on their stash plot, gets `ez:kit/give` (pistol, 24 ammo,
+  3 bandages, 8 cooked beef; no credits). At most once every 10 minutes per player. Players can ask with `/kit` in camp.
+- **Enemies look like soldiers**: Bandit Gunner, Raider and Raider Rifleman are skeletons in a modern-soldier player
+  head (minecraft-heads.com textures) and dyed leather with an armour trim (desert/dune, camo/wild, black/silence),
+  Silent, nothing drops. Infected stay zombies.

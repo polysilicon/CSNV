@@ -8,5 +8,6 @@ public final class EzMod implements ModInitializer {
         Shops.init();
         Plots.init();
         Zone.init();
+        Relief.init();
     }
 }
