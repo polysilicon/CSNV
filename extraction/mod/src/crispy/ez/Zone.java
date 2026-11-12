@@ -292,9 +292,12 @@ final class Zone {
             BlockPos b = ground(lvl, CX + (int) tr[3], CZ + (int) tr[4]);
             ZoneMap.point("trader", (String) tr[1], b);
             Plots.run(server, String.format("execute in lostcities:lostcity run forceload add %d %d", b.getX(), b.getZ()));
-            Plots.run(server, String.format("execute in lostcities:lostcity run summon minecraft:villager %d %d %d {Tags:[\"ez.npc\",\"ez.zonetrader\",\"ez.shop.%s\"],"
-                    + "NoAI:true,Invulnerable:true,PersistenceRequired:true,Silent:true,CustomNameVisible:true,CustomName:{text:\"%s\",color:\"%s\",bold:true},"
-                    + "VillagerData:{profession:\"minecraft:cleric\",type:\"minecraft:swamp\",level:5}}", b.getX(), b.getY(), b.getZ(), tr[0], tr[1], tr[2]));
+            Shops.load(server);
+            String skin = Shops.SKINS.getOrDefault((String) tr[0], "");
+            Plots.run(server, String.format("execute in lostcities:lostcity run summon minecraft:mannequin %d %d %d {Tags:[\"ez.npc\",\"ez.zonetrader\",\"ez.shop.%s\"],"
+                    + "Invulnerable:true,immovable:true,hide_description:true,CustomNameVisible:true,CustomName:{text:\"%s\",color:\"%s\",bold:true}%s}",
+                    b.getX(), b.getY(), b.getZ(), tr[0], tr[1], tr[2],
+                    skin.isEmpty() ? "" : ",profile:{properties:[{name:\"textures\",value:\"" + skin + "\"}]}"));
             done.add(tr[1] + " " + b.toShortString());
         }
         ZoneMap.save();

@@ -10,7 +10,8 @@ public final class EzMod implements ModInitializer {
         Plots.init();
         Zone.init();
         Relief.init();
-        Workbench.init();   // after Plots: its use-block hook runs after the plot protection's
+        Workbench.init();
+        Storage.init();   // after Plots: its use-block hook runs after the plot protection's
         Raid.init();
         Contracts.init();
         Boss.init();

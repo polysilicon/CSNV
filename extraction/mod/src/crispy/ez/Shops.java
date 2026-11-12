@@ -47,6 +47,7 @@ final class Shops {
 
     static ItemStack credit = ItemStack.EMPTY;
     static final Map<String, Shop> SHOPS = new HashMap<>();
+    static final Map<String, String> SKINS = new HashMap<>();   // shop id -> mannequin skin texture (shops.json "skins")
     static long mtime = Long.MIN_VALUE;
 
     static void init() {
@@ -75,6 +76,8 @@ final class Shops {
             if (m == mtime) return;
             JsonObject root = JsonParser.parseString(Files.readString(FILE)).getAsJsonObject();
             credit = parse(server, root.get("credit").getAsString());
+            SKINS.clear();
+            if (root.has("skins")) for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("skins").entrySet()) SKINS.put(e.getKey(), e.getValue().getAsString());
             SHOPS.clear();
             for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("shops").entrySet()) {
                 JsonObject s = e.getValue().getAsJsonObject();

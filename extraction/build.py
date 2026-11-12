@@ -58,6 +58,8 @@ heal = lambda amp, extra=(): {"minecraft:consumable": {"consume_seconds": 1.6, "
                                                         "on_consume_effects": [{"type": "minecraft:apply_effects", "effects": [
                                                             {"id": "minecraft:instant_health", "amplifier": amp, "duration": 1}, *extra]}]}}
 BANDAGE = item("minecraft:paper", "Bandage", "white", "bandage", ["Hold right-click: heals 2 hearts."], heal(0))
+STASH = item("minecraft:barrel", "Stash Crate", "gold", "stash", ["Storage for your plot (27 slots).", "Your plot holds 4, 7 or 10 by size.",
+                                                                 "Break it to move it: you get it back."], bold=True)
 MEDKIT = item("minecraft:red_dye", "Medkit", "red", "medkit", ["Hold right-click: heals 4 hearts", "and regenerates for 5 s."],
               heal(1, [{"id": "minecraft:regeneration", "amplifier": 1, "duration": 100}]))
 # valuables: key, item, name, colour, sell price (coins)
@@ -72,7 +74,7 @@ VALUABLES = [
     ("drive", "minecraft:echo_shard", "Data Drive", "dark_aqua", 28),
     ("blackbox", "minecraft:recovery_compass", "Black Box", "red", 45),
 ]
-VAL = {k: item(i, n, c, k, ["Valuable: sell it to the Fence", f"for {p} coins."]) | {"price": p} for k, i, n, c, p in VALUABLES}
+VAL = {k: item(i, n, c, k, ["Valuable: sell it to the Broker", f"for {p} coins."]) | {"price": p} for k, i, n, c, p in VALUABLES}
 
 # guns used here, with neutral names (the Multiverse names stay on Multiverse): key, display name, trader price
 EZ_GUNS = [("pistol", "Pistol", 20), ("m1911", "M1911", 32), ("mp40", "MP40", 48), ("stakeout", "Pump Shotgun", 56),
@@ -224,8 +226,8 @@ SHOPS = {
                       gbuy("mp40", 60), gbuy("stakeout", 70), gbuy("stg44", 110), vbuy("minecraft:leather_helmet", 4), vbuy("minecraft:leather_chestplate", 6),
                       vbuy("minecraft:iron_helmet", 14), vbuy("minecraft:iron_chestplate", 24), vbuy("minecraft:iron_leggings", 20),
                       vbuy("minecraft:iron_boots", 12), vbuy("minecraft:cooked_beef", 2, 8), vbuy("minecraft:golden_apple", 25)], "sell": []},
-    "fence": {"title": "The Fence", "buy": [], "sell": sells()},
-    "builder": {"title": "Builder", "buy": [vbuy("minecraft:chest", 4), vbuy("minecraft:barrel", 4), vbuy("minecraft:oak_planks", 6, 32),
+    "fence": {"title": "The Broker", "buy": [], "sell": sells()},
+    "builder": {"title": "Builder", "buy": [buy(STASH, 25), vbuy("minecraft:oak_planks", 6, 32),
                 vbuy("minecraft:spruce_planks", 6, 32), vbuy("minecraft:stone_bricks", 6, 32), vbuy("minecraft:bricks", 8, 32),
                 vbuy("minecraft:deepslate_tiles", 8, 32), vbuy("minecraft:smooth_quartz", 10, 32), vbuy("minecraft:glass", 6, 16),
                 vbuy("minecraft:oak_log", 5, 16), vbuy("minecraft:oak_stairs", 5, 16), vbuy("minecraft:oak_slab", 4, 16),
@@ -239,125 +241,180 @@ SHOPS = {
     "armsdealer": {"title": "Arms Dealer", "buy": [buy(AMMO, 6, 16), gbuy("olympia", 140), gbuy("kar98k", 170), gbuy("m60", 220), gbuy("amban", 250),
                    vbuy("minecraft:diamond_helmet", 60), vbuy("minecraft:diamond_chestplate", 90)], "sell": []},
 }
+NPC_SKINS = json.load(open(os.path.join(HERE, "npc_skins.json")))   # milsim skins (minecraft-heads.com textures), by shop id
 def npc(x, z, nm, color, prof, shop, rot, y=64):
-    nbt = {"Tags": ["ez.npc", f"ez.shop.{shop}"], "NoAI": True, "Invulnerable": True, "PersistenceRequired": True, "Silent": True,
+    """A trader: a mannequin (player model) in a milsim skin; right-click opens its shop (mod Shops)."""
+    nbt = {"Tags": ["ez.npc", f"ez.shop.{shop}"], "Invulnerable": True, "immovable": True, "hide_description": True,
            "CustomName": name(nm, color, True), "CustomNameVisible": True, "Rotation": [float(rot), 0.0],
-           "VillagerData": {"profession": f"minecraft:{prof}", "type": "minecraft:plains", "level": 5}}
-    return f"summon minecraft:villager {x} {y} {z} {snbt(nbt)}"
+           "profile": {"properties": [{"name": "textures", "value": NPC_SKINS[shop]}]}}
+    return f"summon minecraft:mannequin {x} {y} {z} {snbt(nbt)}"
 
-# ------------------------------------------------------------------ the camp (dimension ez:camp, floor y 63, -30..30)
+# ------------------------------------------------------------------ the camp (dimension ez:camp, floor y 63): a compact forward base, -18..18
+# posts: name, colour, shop, NPC x/z/yaw, label y
+POSTS = [("Quartermaster", "gold", "quartermaster", -12.5, -6.5, -90), ("Builder", "green", "builder", -12.5, 6.5, -90),
+         ("The Broker", "dark_purple", "fence", 13.5, -6.5, 90), ("Plot Manager", "aqua", "plots", 13.5, 6.5, 90),
+         ("The Fixer", "red", "contracts", 0.5, -12.5, 0)]
+STALL_NPCS = [(x, z, nm, col, "none", shop, rot) for nm, col, shop, x, z, rot in POSTS]
+HELI = (0, 12)        # helipad centre; the deploy click box sits on it
 CAMP_SPAWN = (0.5, 64, 6.5)
-STALLS = [   # x, z, name, colour, profession, shop, awning colours, facing (+1: opens to +x)
-    (-20, -8, "Quartermaster", "gold", "weaponsmith", "quartermaster", ("orange", "white"), 1),
-    (-20, 8, "Builder", "green", "mason", "builder", ("lime", "white"), 1),
-    (20, -8, "The Fence", "dark_purple", "cartographer", "fence", ("purple", "black"), -1),
-    (20, 8, "Plot Manager", "aqua", "librarian", "plots", ("cyan", "white"), -1),
-]
-STALL_NPCS = [(x - 2 * f + 0.5, z + 0.5, nm, col, prof, shop, -90 if f == 1 else 90) for x, z, nm, col, prof, shop, aw, f in STALLS]
 CAMP_LABELS = [
-    (0.5, 68, -3.5, [name("☢ EXTRACTION ZONE\n", "yellow", True), {"text": "Deploy at the helipad, loot, and get out alive.\n"
-        "Die and you lose everything you carried.\nStore gear on your plot: talk to the Plot Manager.", "color": "white"}]),
-    (0.5, 67.5, 20.5, [name("▶ DEPLOY\n", "red", True), {"text": "Right-click the helipad.\nYou bring what you carry.", "color": "gray"}]),
-    *[(x + 0.5, 68.2, z + 0.5, [name(nm, col, True)]) for x, z, nm, col, *_ in STALLS],
+    (0.5, 67.8, -3.5, [name("☢ EXTRACTION ZONE\n", "yellow", True), {"text": "Deploy at the helipad, loot, and get out alive.\n"
+        "Die and you lose everything you carried.\nTake a job from the Fixer. Store gear on your plot.", "color": "white"}]),
+    (HELI[0] + 0.5, 66.4, HELI[1] + 0.5, [name("▶ DEPLOY\n", "red", True), {"text": "Right-click the helipad.\nYou bring what you carry.", "color": "gray"}]),
+    *[(x, 67.3, z, [name(nm, col, True)]) for nm, col, shop, x, z, rot in POSTS],
 ]
 
 def camp_commands():
     import random
-    rnd = random.Random(7)
+    rnd = random.Random(11)
     B = {}   # (x, y, z) -> block
-    R = 30
+    R = 18
+    pick = lambda *opts: rnd.choice(opts)
+    # ground: three layers, bedrock under; worn dirt, gravel and mud
     for x in range(-R, R + 1):
         for z in range(-R, R + 1):
-            B[(x, 62, z)] = "minecraft:dirt"
-            B[(x, 63, z)] = rnd.choice(["minecraft:grass_block"] * 6 + ["minecraft:coarse_dirt", "minecraft:podzol", "minecraft:rooted_dirt"])
+            B[(x, 59, z)] = "minecraft:bedrock"
+            for y in (60, 61, 62): B[(x, y, z)] = "minecraft:dirt"
+            B[(x, 63, z)] = rnd.choice(["minecraft:coarse_dirt"] * 4 + ["minecraft:gravel", "minecraft:packed_mud", "minecraft:dirt", "minecraft:rooted_dirt", "minecraft:mud"])
+    def fill(x0, y0, z0, x1, y1, z1, blk):
+        for x in range(min(x0, x1), max(x0, x1) + 1):
+            for y in range(min(y0, y1), max(y0, y1) + 1):
+                for z in range(min(z0, z1), max(z0, z1) + 1): B[(x, y, z)] = blk
     def disc(cx, cz, r, blk, y=63):
         for x in range(cx - r, cx + r + 1):
             for z in range(cz - r, cz + r + 1):
                 if (x - cx) ** 2 + (z - cz) ** 2 <= r * r + r: B[(x, y, z)] = blk
-    # paths: plaza to stalls and helipad
-    for x in range(-18, 19):
-        for z in (-8, -7, 7, 8):
-            B[(x, 63, z)] = "minecraft:dirt_path"
-    for z in range(-1, 15):
-        for x in (-1, 0, 1):
-            B[(x, 63, z)] = "minecraft:dirt_path"
-    disc(0, 0, 9, "minecraft:tuff_bricks"); disc(0, 0, 8, "minecraft:polished_andesite")
-    for x in range(-8, 9):
-        for z in range(-8, 9):
-            if (x + z) % 4 == 0 and (x * x + z * z) <= 72: B[(x, 63, z)] = "minecraft:andesite"
-    B[(0, 64, 0)] = "minecraft:campfire[lit=true]"
-    for dx, dz, f in [(0, -3, "south"), (0, 3, "north"), (-3, 0, "east"), (3, 0, "west")]:
-        for k in (-1, 0, 1):
-            x, z = (dx + k, dz) if dx == 0 else (dx, dz + k)
-            B[(x, 64, z)] = f"minecraft:spruce_stairs[facing={f}]"
-    # flag
-    for y in range(64, 71): B[(0, y, -12)] = "minecraft:spruce_fence"
-    for y in (68, 69, 70):
-        for x in (1, 2, 3): B[(x, y, -12)] = "minecraft:red_wool" if (y != 69) else "minecraft:white_wool"
-    # perimeter wall and towers
+    # roads: gravel cross with packed-mud edges
+    for k in range(-R + 1, R):
+        for w in (-1, 0, 1):
+            B[(k, 63, w)] = "minecraft:gravel"; B[(w, 63, k)] = "minecraft:gravel"
+        for w in (-2, 2):
+            if abs(k) > 3: B[(k, 63, w)] = "minecraft:packed_mud"; B[(w, 63, k)] = "minecraft:packed_mud"
+    # plaza: a square of stone bricks, a fire pit, the flag and the briefing board
+    fill(-3, 63, -3, 3, 63, 3, "minecraft:stone_bricks")
+    for x in range(-3, 4):
+        for z in range(-3, 4):
+            if rnd.random() < 0.3: B[(x, 63, z)] = pick("minecraft:cracked_stone_bricks", "minecraft:mossy_stone_bricks", "minecraft:andesite")
+    B[(0, 63, 0)] = "minecraft:campfire[lit=true]"
+    for dx, dz in [(-1, -1), (1, -1), (-1, 1), (1, 1)]: B[(dx, 64, dz)] = "minecraft:stone_brick_slab"
+    for y in range(64, 72): B[(3, y, -3)] = "minecraft:iron_bars" if y > 64 else "minecraft:polished_andesite"
+    fill(4, 69, -3, 6, 71, -3, "minecraft:green_wool"); fill(4, 70, -3, 6, 70, -3, "minecraft:white_wool")
+    # perimeter: HESCO barriers (two high, sand-coloured, chain-link on top), barriers above so nobody climbs out
     for k in range(-R, R + 1):
         for (x, z) in [(k, -R), (k, R), (-R, k), (R, k)]:
-            for y in (64, 65, 66):
-                B[(x, y, z)] = rnd.choice(["minecraft:stone_bricks"] * 5 + ["minecraft:mossy_stone_bricks", "minecraft:cracked_stone_bricks"])
-            B[(x, 67, z)] = "minecraft:stone_brick_wall"
-            for y in range(68, 74): B[(x, y, z)] = "minecraft:barrier"
-    for tx in (-28, 28):
-        for tz in (-28, 28):
-            for x in range(tx - 2, tx + 3):
-                for z in range(tz - 2, tz + 3):
-                    corner = abs(x - tx) == 2 and abs(z - tz) == 2
-                    for y in range(64, 74):
-                        if corner and y < 73: B[(x, y, z)] = "minecraft:spruce_log"
-                    B[(x, 69, z)] = "minecraft:spruce_planks"
-                    if (abs(x - tx) == 2 or abs(z - tz) == 2) and not corner: B[(x, 70, z)] = "minecraft:spruce_fence"
-                    B[(x, 73, z)] = "minecraft:dark_oak_slab"
-            B[(tx, 72, tz)] = "minecraft:lantern[hanging=true]"
-            for y in range(64, 69): B[(tx + (1 if tx < 0 else -1), y, tz + (1 if tz < 0 else -1))] = "minecraft:ladder[facing=" + ("south" if tz < 0 else "north") + "]"
-    # stalls
-    for sx, sz, nm, col, prof, shop, (c1, c2), f in STALLS:
-        for x in range(sx - 3, sx + 4):
-            for z in range(sz - 2, sz + 3):
+            B[(x, 64, z)] = pick("minecraft:smooth_sandstone", "minecraft:smooth_sandstone", "minecraft:sandstone")
+            B[(x, 65, z)] = pick("minecraft:smooth_sandstone", "minecraft:cut_sandstone")
+            B[(x, 66, z)] = "minecraft:iron_bars"
+            for y in range(67, 72): B[(x, y, z)] = "minecraft:barrier"
+    # a vehicle gate on the east side (closed: plots are reached with /plot)
+    for z in range(-2, 3):
+        B[(R, 64, z)] = "minecraft:spruce_fence_gate[facing=east]"; B[(R, 65, z)] = "minecraft:air"; B[(R, 66, z)] = "minecraft:air"
+    fill(R, 67, -3, R, 67, 3, "minecraft:dark_oak_planks"); B[(R, 64, -3)] = B[(R, 64, 3)] = "minecraft:stripped_dark_oak_log"
+    B[(R, 65, -3)] = B[(R, 65, 3)] = B[(R, 66, -3)] = B[(R, 66, 3)] = "minecraft:stripped_dark_oak_log"
+    # watchtowers in the corners
+    for tx in (-16, 16):
+        for tz in (-16, 16):
+            for x in (tx - 1, tx + 1):
+                for z in (tz - 1, tz + 1):
+                    for y in range(64, 70): B[(x, y, z)] = "minecraft:spruce_log"
+            fill(tx - 1, 69, tz - 1, tx + 1, 69, tz + 1, "minecraft:spruce_planks")
+            for x in range(tx - 1, tx + 2):
+                for z in range(tz - 1, tz + 2):
+                    if (x, z) != (tx, tz): B[(x, 70, z)] = "minecraft:mud_brick_wall"
+            fill(tx - 1, 72, tz - 1, tx + 1, 72, tz + 1, "minecraft:moss_carpet")
+            for x in (tx - 1, tx + 1):
+                for z in (tz - 1, tz + 1): B[(x, 71, z)] = "minecraft:spruce_fence"
+            B[(tx, 71, tz)] = "minecraft:sea_lantern"
+            lx, lz = tx + (1 if tx < 0 else -1), tz
+            for y in range(64, 69): B[(lx + (1 if tx < 0 else -1), y, lz)] = f"minecraft:ladder[facing={'east' if tx < 0 else 'west'}]"
+    # posts: a shipping container each for the Quartermaster and the Broker, tents for the Builder and the Plot Manager
+    def container(x0, z0, x1, z1, open_x, col):   # open_x: the open long side faces the road
+        for x in range(x0, x1 + 1):
+            for z in range(z0, z1 + 1):
+                edge = x in (x0, x1) or z in (z0, z1)
                 B[(x, 63, z)] = "minecraft:spruce_planks"
-                B[(x, 67, z)] = f"minecraft:{c1 if (z - sz) % 2 == 0 else c2}_wool"
-        for x in (sx - 3, sx + 3):
-            for z in (sz - 2, sz + 2):
-                for y in (64, 65, 66): B[(x, y, z)] = "minecraft:spruce_fence"
-        fx = sx + 2 * f   # the counter, on the plaza side
-        for z in range(sz - 1, sz + 2): B[(fx, 64, z)] = "minecraft:barrel[facing=up]"
-        B[(fx, 65, sz - 1)] = "minecraft:lantern"
-        bx = sx - 3 * f
-        for z in (sz - 1, sz + 1): B[(bx, 64, z)] = rnd.choice(["minecraft:barrel[facing=up]", "minecraft:hay_block", "minecraft:chiseled_bookshelf"])
-    # tents (north)
-    for tx in (-12, 12):
-        for x in range(tx - 3, tx + 4):
-            B[(x, 64, -22)] = "minecraft:white_wool"; B[(x, 64, -18)] = "minecraft:white_wool"
-            B[(x, 65, -21)] = "minecraft:white_wool"; B[(x, 65, -19)] = "minecraft:white_wool"
-            B[(x, 66, -20)] = "minecraft:white_wool"
-        B[(tx - 2, 64, -20)] = "minecraft:red_bed[facing=east,part=foot]"; B[(tx - 1, 64, -20)] = "minecraft:red_bed[facing=east,part=head]"
-        B[(tx + 2, 64, -20)] = "minecraft:barrel[facing=up]"
-    # helipad (south) with sandbags
-    disc(0, 20, 6, "minecraft:gray_concrete")
-    for x in range(-6, 7):
-        for z in range(14, 27):
-            d = (x * x + (z - 20) ** 2) ** 0.5
-            if 5.2 <= d <= 6.4: B[(x, 63, z)] = "minecraft:yellow_concrete"
-    for z in range(17, 24): B[(-2, 63, z)] = B[(2, 63, z)] = "minecraft:white_concrete"
-    for x in (-1, 0, 1): B[(x, 63, 20)] = "minecraft:white_concrete"
-    for x in range(-9, 10):
-        for z in range(11, 30):
-            d = (x * x + (z - 20) ** 2) ** 0.5
-            if 7.6 <= d <= 8.4 and z > 13: B[(x, 64, z)] = "minecraft:mud_brick_wall"
+                for y in (64, 65, 66):
+                    if edge and x != open_x: B[(x, y, z)] = f"minecraft:{col}_concrete" if (z % 2 == 0) else f"minecraft:{col}_terracotta"
+                    elif not edge: B[(x, y, z)] = "minecraft:air"
+                B[(x, 67, z)] = f"minecraft:{col}_concrete"
+        for z in (z0, z1):
+            for y in (64, 65, 66): B[(open_x, y, z)] = "minecraft:iron_block"
+    def tent(x0, z0, x1, z1, open_x, col):
+        for x in range(x0, x1 + 1):
+            for z in range(z0, z1 + 1):
+                B[(x, 63, z)] = "minecraft:spruce_planks"
+                mid = (z0 + z1) / 2
+                h = 67 - round(abs(z - mid))
+                if x != open_x: B[(x, max(64, h), z)] = f"minecraft:{col}_wool"
+                if x in (x0, x1) and x != open_x:
+                    for y in range(64, max(64, h)): B[(x, y, z)] = f"minecraft:{col}_wool"
+            B[(open_x, 67 - 0, int(mid))] = f"minecraft:{col}_wool"
+        for z in (z0, z1):
+            for y in range(64, 66): B[(open_x, y, z)] = "minecraft:spruce_fence"
+    container(-17, -9, -11, -4, -11, "green")
+    container(11, -9, 17, -4, 11, "gray")
+    tent(-17, 3, -11, 9, -11, "green")
+    tent(11, 3, 17, 9, 11, "brown")
+    # counters and props inside the posts
+    for z in (-8, -7, -5): B[(-15, 64, z)] = pick("minecraft:barrel[facing=up]", "minecraft:smithing_table", "minecraft:grindstone[face=floor,facing=east]")
+    B[(-16, 64, -6)] = "minecraft:anvil[facing=east]"; B[(-12, 64, -8)] = "minecraft:barrel[facing=up]"; B[(-12, 65, -8)] = "minecraft:lantern"
+    for z in (-8, -5): B[(15, 64, z)] = "minecraft:chiseled_bookshelf[facing=west]"
+    B[(16, 64, -6)] = "minecraft:cartography_table"; B[(12, 64, -8)] = "minecraft:barrel[facing=up]"; B[(12, 65, -8)] = "minecraft:soul_lantern"
+    for z in (4, 8): B[(-16, 64, z)] = pick("minecraft:stonecutter", "minecraft:crafting_table")
+    B[(-15, 64, 8)] = "minecraft:scaffolding"; B[(-12, 64, 4)] = "minecraft:barrel[facing=up]"
+    B[(16, 64, 5)] = "minecraft:lectern[facing=west]"; B[(16, 64, 7)] = "minecraft:crafting_table"; B[(12, 64, 8)] = "minecraft:lantern"
+    # the Fixer's booth (north): a desk under a camo net
+    fill(-3, 63, -16, 3, 63, -11, "minecraft:dark_oak_planks")
+    for x in (-3, 3):
+        for z in (-16, -11):
+            for y in range(64, 68): B[(x, y, z)] = "minecraft:dark_oak_fence"
+    fill(-3, 68, -16, 3, 68, -11, "minecraft:moss_carpet")
+    for x in range(-2, 3): B[(x, 64, -14)] = "minecraft:spruce_trapdoor[half=top,open=false]" if x != 0 else "minecraft:air"
+    B[(-2, 65, -14)] = "minecraft:lantern"; B[(2, 64, -15)] = "minecraft:barrel[facing=up]"; B[(-2, 64, -16)] = "minecraft:lectern[facing=south]"
+    # sleeping tents (north-west and north-east)
+    for x0 in (-10, 6):
+        for x in range(x0, x0 + 5):
+            for z in range(-17, -12):
+                d = abs(z + 14.5)
+                B[(x, 64 + (2 - min(2, round(d))), z)] = "minecraft:green_wool" if d > 0.6 else "minecraft:green_wool"
+        B[(x0 + 1, 64, -15)] = "minecraft:green_bed[facing=east,part=foot]"; B[(x0 + 2, 64, -15)] = "minecraft:green_bed[facing=east,part=head]"
+    # helipad (south): concrete pad, yellow ring, white H, edge lights, sandbags and a windsock
+    hx, hz = HELI
+    disc(hx, hz, 4, "minecraft:gray_concrete")
+    for x in range(hx - 5, hx + 6):
+        for z in range(hz - 5, hz + 6):
+            d = ((x - hx) ** 2 + (z - hz) ** 2) ** 0.5
+            if 4.2 <= d <= 4.9: B[(x, 63, z)] = "minecraft:yellow_concrete"
+            if 5.6 <= d <= 6.3 and z > hz - 2: B[(x, 64, z)] = "minecraft:mud_brick_wall"
+    for z in range(hz - 2, hz + 3): B[(hx - 1, 63, z)] = B[(hx + 1, 63, z)] = "minecraft:white_concrete"
+    B[(hx, 63, hz)] = "minecraft:white_concrete"
+    for dx, dz in [(-4, 0), (4, 0), (0, 4), (-3, 3), (3, 3)]: B[(hx + dx, 64, hz + dz)] = "minecraft:end_rod"
+    for y in range(64, 69): B[(7, y, 16)] = "minecraft:iron_bars"
+    B[(8, 68, 16)] = "minecraft:orange_wool"; B[(9, 68, 16)] = "minecraft:white_wool"; B[(10, 68, 16)] = "minecraft:orange_wool"
+    # a jeep (south-west) and fuel drums
+    fill(-14, 64, 12, -9, 64, 14, "minecraft:green_concrete"); fill(-12, 65, 12, -9, 65, 14, "minecraft:green_concrete")
+    fill(-14, 65, 12, -13, 65, 14, "minecraft:air"); B[(-13, 65, 13)] = "minecraft:spruce_stairs[facing=west]"
+    for x in (-14, -9):
+        for z in (11, 15): B[(x, 64, z)] = "minecraft:black_concrete"
+    B[(-9, 66, 12)] = B[(-9, 66, 14)] = "minecraft:tinted_glass"
+    for x, z in [(-16, 12), (-16, 13), (-16, 15), (-15, 16)]: B[(x, 64, z)] = pick("minecraft:cauldron", "minecraft:blast_furnace[facing=east]", "minecraft:barrel[facing=up]")
+    # supply pallets and crates along the walls
+    for x, z in [(-6, -17), (-5, -17), (5, 17), (6, 17), (12, 16), (13, 16), (-6, 17), (14, -16), (-14, -16), (4, -17)]:
+        B[(x, 64, z)] = pick("minecraft:barrel[facing=up]", "minecraft:spruce_planks", "minecraft:hay_block", "minecraft:composter", "minecraft:scaffolding")
+        if rnd.random() < 0.5: B[(x, 65, z)] = pick("minecraft:barrel[facing=up]", "minecraft:spruce_slab")
+    # sandbag lines
+    for x in range(-8, -3): B[(x, 64, 17)] = "minecraft:mud_brick_wall"
+    for z in range(-10, -4): B[(-6, 64, z)] = "minecraft:mud_brick_wall" if z % 3 else "minecraft:air"
+    for z in range(4, 10): B[(6, 64, z)] = "minecraft:mud_brick_wall" if z % 3 else "minecraft:air"
     # lamp posts
-    for x, z in [(-9, -9), (9, -9), (-9, 9), (9, 9), (-14, 0), (14, 0), (-5, 13), (5, 13)]:
-        for y in (64, 65, 66): B[(x, y, z)] = "minecraft:spruce_fence"
+    for x, z in [(-5, -5), (5, -5), (-5, 5), (5, 5), (-9, 0), (9, 0), (0, -9)]:
+        for y in (64, 65, 66): B[(x, y, z)] = "minecraft:dark_oak_fence"
         B[(x, 67, z)] = "minecraft:lantern"
-    for x, z in [(-26, 0), (26, 0), (0, -26), (-15, -26), (15, -26), (-26, 20), (26, 20)]:
-        B[(x, 64, z)] = rnd.choice(["minecraft:hay_block", "minecraft:barrel[facing=up]", "minecraft:composter"])
-    for x in (-24, -16, -8, 8, 16, 24):
-        for z in (-24, 24):
-            B[(x, 63, z)] = "minecraft:sea_lantern"
-    # emit: clear, then runs of the same block along x
-    out = [f"execute in {CAMP} run fill -32 {y} -32 32 {y} 32 minecraft:air" for y in range(62, 76)]
+    # radio mast (west of the plaza)
+    for y in range(64, 74): B[(-7, y, 1)] = "minecraft:iron_bars" if y > 65 else "minecraft:polished_deepslate"
+    B[(-7, 74, 1)] = "minecraft:lightning_rod"; B[(-7, 70, 1)] = "minecraft:redstone_torch"
+    # emit: clear the old camp (it was 61 x 61), then runs of the same block along x
+    out = [f"execute in {CAMP} run fill -32 {y} -32 32 {y} 32 minecraft:air" for y in range(58, 76)]
     rows = {}
     for (x, y, z), blk in B.items(): rows.setdefault((y, z), {})[x] = blk
     for (y, z), cols in sorted(rows.items()):
@@ -369,6 +426,7 @@ def camp_commands():
             blk = cols[start]
             out.append(f"execute in {CAMP} run " + (f"setblock {start} {y} {z} {blk}" if start == prev else f"fill {start} {y} {z} {prev} {y} {z} {blk}"))
             if x is not None: start = prev = x
+    camp_commands.blocks = B
     return out
 
 # ------------------------------------------------------------------ build
@@ -380,13 +438,24 @@ def build(out):
     wj("data/minecraft/tags/function/load.json", {"values": [f"{NS}:load"]})
     wj("data/minecraft/tags/function/tick.json", {"values": [f"{NS}:tick"]})
     # the camp: an empty dimension
-    wj(f"data/{NS}/dimension/camp.json", {"type": "minecraft:overworld", "generator": {"type": "minecraft:flat", "settings": {
+    # 1.2.0: the camp has its own dimension type, the overworld's plus a grey-green fog that closes in at ~60 blocks
+    # and drifting ash, so the void around the base and the plots fades into haze instead of showing as empty sky
+    wj(f"data/{NS}/dimension_type/camp.json", {
+        "ambient_light": 0.0, "coordinate_scale": 1.0, "default_clock": "minecraft:overworld", "has_ceiling": False,
+        "has_ender_dragon_fight": False, "has_skylight": True, "height": 384, "infiniburn": "#minecraft:infiniburn_overworld",
+        "logical_height": 384, "min_y": -64, "monster_spawn_block_light_limit": 0,
+        "monster_spawn_light_level": {"type": "minecraft:uniform", "max_inclusive": 7, "min_inclusive": 0}, "timelines": "#minecraft:in_overworld",
+        "attributes": {"minecraft:visual/fog_color": "#a3ab9c", "minecraft:visual/sky_color": "#9aa49a", "minecraft:visual/cloud_color": "#ccc8d0c4",
+                       "minecraft:visual/fog_start_distance": 14.0, "minecraft:visual/fog_end_distance": 62.0, "minecraft:visual/sky_fog_end_distance": 62.0,
+                       "minecraft:visual/ambient_particles": [{"particle": {"type": "minecraft:white_ash"}, "probability": 0.004}],
+                       "minecraft:visual/ambient_light_color": "#0a0a0a"}})
+    wj(f"data/{NS}/dimension/camp.json", {"type": f"{NS}:camp", "generator": {"type": "minecraft:flat", "settings": {
         "biome": "minecraft:the_void", "layers": [], "lakes": False, "features": False, "structure_overrides": []}}})
 
     ab_obj = abilities.build(pfn, pwj, "x=0,y=-2000,z=0,dx=1,dy=1,dz=1")
     # the mod's shop file (config/crispy_extraction/shops.json on the server)
     with open(os.path.join(out, "shops.json"), "w") as f:
-        json.dump({"credit": snbt(stack(CREDIT)), "shops": SHOPS}, f, indent=1, ensure_ascii=False)
+        json.dump({"credit": snbt(stack(CREDIT)), "shops": SHOPS, "skins": NPC_SKINS}, f, indent=1, ensure_ascii=False)
     loot_tables()
 
     rules = {"spawn_mobs": "false", "keep_inventory": "false", "immediate_respawn": "true", "spawn_phantoms": "false", "raids": "false",
@@ -619,10 +688,7 @@ def build(out):
     # the Fixer: hands out contracts (mod Contracts.java), next to the helipad
     fn("admin/contracts_npc", [f"execute in {CAMP} run kill @e[tag=ez.shop.contracts]",
                                f"execute in {CAMP} run kill @e[type=minecraft:text_display,tag=ez.fixerlabel]",
-                               f"execute in {CAMP} run {npc(-8.5, 15.5, 'The Fixer', 'red', 'nitwit', 'contracts', -90)}",
-                               f"execute in {CAMP} run summon minecraft:text_display -8.5 66.6 15.5 " + snbt({"Tags": ["ez.deco", "ez.fixerlabel"], "billboard": "center",
-                                   "text": [name("CONTRACTS\n", "red", True), {"text": "Take a job before you deploy.", "color": "gray"}]})])
-    # the Outpost's spawner mixes axe Raiders and Riflemen
+                               *[f"execute in {CAMP} run {npc(x, z, nm, col, prof, shop, rot)}" for x, z, nm, col, prof, shop, rot in STALL_NPCS if shop == "contracts"]])
     wj(f"data/{NS}/predicate/half.json", {"condition": "minecraft:random_chance", "chance": 0.5})
     fn("spawner/raider_mix", [f"execute if predicate {NS}:half run return run function {NS}:spawner/rifleman", f"function {NS}:spawner/raider"])
     # ---- enemy gunners: cock (a click you can hear), fire 10 ticks later along a hitscan ray that walls stop
@@ -670,9 +736,8 @@ def build(out):
     fn("admin/camp_done", [
         f"execute in {CAMP} run kill @e[tag=ez.npc]", f"execute in {CAMP} run kill @e[tag=ez.deco]",
         f"execute in {CAMP} run kill @e[type=minecraft:interaction,tag=ez.deploy]",
-        f"execute in {CAMP} run summon minecraft:interaction 0 64 20 " + snbt({"Tags": ["ez.deploy", "ez.deco"], "width": 6.0, "height": 2.5, "response": True}),
+        f"execute in {CAMP} run summon minecraft:interaction {HELI[0] + 0.5} 64 {HELI[1] + 0.5} " + snbt({"Tags": ["ez.deploy", "ez.deco"], "width": 7.0, "height": 2.5, "response": True}),
         *[f"execute in {CAMP} run {npc(x, z, nm, col, prof, shop, rot)}" for x, z, nm, col, prof, shop, rot in STALL_NPCS],
-        f"function {NS}:admin/contracts_npc",
         *[f"execute in {CAMP} run summon minecraft:text_display {x} {y} {z} " + snbt({"Tags": ["ez.deco"], "billboard": "center", "text": t})
           for x, y, z, t in CAMP_LABELS],
         f"execute in {CAMP} run setworldspawn 0 {CAMP_SPAWN[1]} 6", f"execute in {CAMP} run forceload remove -40 -40 40 40",

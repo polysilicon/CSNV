@@ -26,7 +26,7 @@ import static crispy.ez.Ui.t;
 
 /**
  * One raid per player, from deploying to extracting or dying (1.1.0). The datapack calls /ezhook deploy|extract|died
- * as the player. Tracks distance and kills, works out loot value (valuables at the Fence's price plus coins carried),
+ * as the player. Tracks distance and kills, works out loot value (valuables at the Broker's price plus coins carried),
  * pays the hot-extract bonus and contract rewards, and ends with a recap in chat. Standout runs are announced in game
  * and logged as "<name> has completed the challenge [...]", which the Discord bot posts like an advancement.
  */
@@ -94,7 +94,7 @@ final class Raid {
         Contracts.onKill(killer, type);
     }
 
-    /** Fence value of the valuables carried, and coins carried. */
+    /** Broker value of the valuables carried, and coins carried. */
     static int[] loot(ServerPlayer p) {
         Map<String, Integer> price = new HashMap<>();
         Shops.load(p.level().getServer());

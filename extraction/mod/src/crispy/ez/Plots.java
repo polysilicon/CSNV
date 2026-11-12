@@ -18,6 +18,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
@@ -101,6 +102,9 @@ final class Plots {
     /** Lay out (or grow) a plot: path around it, grass floor (only where the path was, so builds stay), a border. */
     static void lay(MinecraftServer s, Plot p, boolean fresh) {
         int x = cx(p.index), z = cz(p.index), h = half(p), c = CELL / 2;
+        ServerLevel camp = s.getLevel(CAMP);
+        if (camp != null)   // commands need the cell's chunks loaded
+            for (int qx = (x - c) >> 4; qx <= (x + c) >> 4; qx++) for (int qz = (z - c) >> 4; qz <= (z + c) >> 4; qz++) camp.getChunk(qx, qz);
         if (fresh) {
             run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:coarse_dirt", x - c, FLOOR, z - c, x + c - 1, FLOOR, z + c - 1)));
             run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:dirt_path", x - c, FLOOR, z + c - 3, x + c - 1, FLOOR, z + c - 1)));
@@ -109,10 +113,40 @@ final class Plots {
         run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:grass_block replace minecraft:tuff_bricks", x - h, FLOOR, z - h, x + h - 1, FLOOR, z + h - 1)));
         for (int[] e : new int[][]{{x - h - 1, z - h - 1, x + h, z - h - 1}, {x - h - 1, z + h, x + h, z + h}, {x - h - 1, z - h - 1, x - h - 1, z + h}, {x + h, z - h - 1, x + h, z + h}})
             run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:tuff_bricks replace minecraft:coarse_dirt", e[0], FLOOR, e[1], e[2], FLOOR, e[3])));
-        if (fresh) run(s, inCamp(String.format("setblock %d %d %d minecraft:chest[facing=south]", x - h + 1, FLOOR + 1, z - h + 1)));
+        if (fresh) run(s, inCamp(String.format("setblock %d %d %d %s", x - h + 1, FLOOR + 1, z - h + 1, Storage.CRATE_BLOCK)));
+        if (fresh) surround(s, p);
         run(s, inCamp(String.format("kill @e[type=minecraft:text_display,tag=ez.plotname,x=%d,y=%d,z=%d,distance=..3]", x, FLOOR + 3, z + h + 1)));
         run(s, inCamp(String.format("summon minecraft:text_display %d %d %d {Tags:[\"ez.plotname\"],billboard:\"center\",text:{text:\"%s's plot\",color:\"gold\",bold:true}}",
                 x, FLOOR + 3, z + h + 1, p.name.replace("\"", ""))));
+    }
+
+    /** 1.2.0: the cell's island: 8 layers of ground down to bedrock (only into empty space, so nothing built is touched),
+     *  an invisible wall on the cell edge so nobody walks off, and a ring of trees around the plot with grass and ferns. */
+    static void surround(MinecraftServer s, Plot p) {
+        int x = cx(p.index), z = cz(p.index), c = CELL / 2, x0 = x - c, x1 = x + c - 1, z0 = z - c, z1 = z + c - 1;
+        for (int y = FLOOR - 1; y >= FLOOR - 4; y--) run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:dirt keep", x0, y, z0, x1, y, z1)));
+        for (int y = FLOOR - 5; y >= FLOOR - 6; y--) run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:stone keep", x0, y, z0, x1, y, z1)));
+        run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:bedrock", x0, FLOOR - 7, z0, x1, FLOOR - 7, z1)));
+        for (int[] e : new int[][]{{x0, z0, x1, z0}, {x0, z1, x1, z1}, {x0, z0, x0, z1}, {x1, z0, x1, z1}})
+            run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:barrier keep", e[0], FLOOR + 1, e[1], e[2], FLOOR + 8, e[3])));
+        // the margin outside the biggest plot size becomes grass with trees
+        int big = SIZES[SIZES.length - 1] / 2;
+        run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:grass_block replace minecraft:coarse_dirt", x0 + 1, FLOOR, z0 + 1, x1 - 1, FLOOR, z1 - 1)));
+        java.util.Random r = new java.util.Random(p.index * 7919L);
+        String[] trees = {"minecraft:oak", "minecraft:birch", "minecraft:spruce", "minecraft:fancy_oak", "minecraft:pine", "minecraft:oak"};
+        int planted = 0;
+        for (int tries = 0; tries < 200 && planted < 14; tries++) {
+            int tx = x0 + 2 + r.nextInt(CELL - 4), tz = z0 + 2 + r.nextInt(CELL - 6);
+            if (Math.abs(tx - x) < big + 2 && Math.abs(tz - z) < big + 2) continue;   // keep clear of the plot at its largest
+            run(s, inCamp(String.format("setblock %d %d %d minecraft:grass_block", tx, FLOOR, tz)));
+            run(s, inCamp(String.format("place feature %s %d %d %d", trees[r.nextInt(trees.length)], tx, FLOOR + 1, tz)));
+            planted++;
+        }
+        for (int i = 0; i < 60; i++) {
+            int gx = x0 + 1 + r.nextInt(CELL - 2), gz = z0 + 1 + r.nextInt(CELL - 4);
+            if (Math.abs(gx - x) < big + 1 && Math.abs(gz - z) < big + 1) continue;
+            run(s, inCamp(String.format("setblock %d %d %d %s keep", gx, FLOOR + 1, gz, r.nextBoolean() ? "minecraft:short_grass" : "minecraft:fern")));
+        }
     }
 
     static Plot claim(ServerPlayer pl) {
@@ -155,9 +189,10 @@ final class Plots {
                             Shops.ok(q, "Your plot is now " + SIZES[next] + " x " + SIZES[next] + ".");
                         });
             } else m.put(13, Ui.item(Items.NETHERITE_SHOVEL, t("Max size: " + SIZES[p.level] + " x " + SIZES[p.level], ChatFormatting.GOLD), List.of(), true), null);
-            m.put(15, Ui.item(Items.CHEST, t("Storage", ChatFormatting.YELLOW), List.of(
-                    t("Place chests and barrels on your plot:", ChatFormatting.GRAY), t("only you can open them.", ChatFormatting.GRAY),
-                    t("Buy more from the Builder.", ChatFormatting.GRAY)), false), null);
+            int used = Storage.count(pl.level().getServer(), p), max = Storage.limit(p);
+            m.put(15, Ui.item(Items.BARREL, t("Storage: " + used + " / " + max + " Stash Crates", ChatFormatting.YELLOW), List.of(
+                    t("Storage on plots is Stash Crates only", ChatFormatting.GRAY), t("(Builder, " + Coins.fmt(25) + "). Only you can open them.", ChatFormatting.GRAY),
+                    t("Size 16: 4 crates · 24: 7 · 32: 10.", ChatFormatting.GRAY)), false), null);
             if (p.perks == null) p.perks = new java.util.ArrayList<>();
             int[] slots = {29, 31, 33};
             for (int i = 0; i < PERKS.size(); i++) {
@@ -225,6 +260,11 @@ final class Plots {
                         String who = StringArgumentType.getString(c, "player");
                         for (Plot p : plots.values()) if (p.name != null && p.name.equalsIgnoreCase(who)) { tp(pl, p); return 1; }
                         Shops.no(pl, who + " doesn't have a plot yet."); return 0; }))));
+            d.register(Commands.literal("ezadmin").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                    .then(Commands.literal("plotdecor").executes(c -> {   // 1.2.0: ground, edge wall and trees for plots made before
+                        load(); MinecraftServer srv = c.getSource().getServer();
+                        for (Plot p : plots.values()) { lay(srv, p, false); surround(srv, p); }
+                        c.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal("Decorated " + plots.size() + " plots."), true); return 1; })));
             d.register(Commands.literal("camp").executes(c -> { ServerPlayer pl = c.getSource().getPlayerOrException();
                 if (raiding(pl)) { Shops.no(pl, "Not during a raid: extract first."); return 0; }
                 run(pl.level().getServer(), inCamp("tp " + pl.getGameProfile().name() + " 0.5 64 6.5 180 0")); return 1; }));
