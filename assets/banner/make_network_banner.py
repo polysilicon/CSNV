@@ -18,11 +18,11 @@ f = lambda path, size: ImageFont.truetype(path, max(8, round(size * S)))
 
 PINK, CYAN, YELLOW, WHITE, GREY = (255, 60, 200), (40, 230, 255), (255, 220, 60), (245, 245, 255), (150, 160, 190)
 SLIDES = [  # (headline, sub-line, headline colour)
-    ("ANARCHY · SKYBLOCK · FACTIONS · PVP", "one network, Java + Bedrock, no mods needed", WHITE),
+    ("ANARCHY · SKYBLOCK · PVP · EXTRACTION", "one network, Java + Bedrock, no mods needed", WHITE),
     ("ANARCHY SINCE 2020", "no rules · cyberware implants · custom enchants", PINK),
     ("SKYBLOCK, NO PAY-TO-WIN", "skills · pets · bazaar · minions · a boss rift", (120, 255, 120)),
     ("MULTIVERSE: 36 CHARACTERS", "kit PvP · ranked duels · co-op zombie waves", (255, 150, 60)),
-    ("OLD-SCHOOL FACTIONS", "1.8 combat · cannons · set raid windows", YELLOW),
+    ("NEW: EXTRACTION ZONE", "loot a ruined city · team up or betray", YELLOW),
     (ADDRESS.upper(), "JAVA + BEDROCK · JOIN NOW", CYAN),
 ]
 FPS_MS, PER_SLIDE = 90, 14                     # 14 frames x 90 ms, plus a held last frame per slide
@@ -110,7 +110,7 @@ left = logo(img, 2)
 d = ImageDraw.Draw(img)
 room = W - left - 8 * S
 hf, sf = f(BOLD, 17), f(BOLD, 13)
-head, sub = "ANARCHY · SKYBLOCK · FACTIONS · PVP", ADDRESS.upper() + "  ·  JAVA + BEDROCK"
+head, sub = "ANARCHY · SKYBLOCK · PVP · EXTRACTION", ADDRESS.upper() + "  ·  JAVA + BEDROCK"
 while d.textlength(head, font=hf) > room and hf.size > 9: hf = ImageFont.truetype(BOLD, hf.size - 1)
 while d.textlength(sub, font=sf) > room and sf.size > 8: sf = ImageFont.truetype(BOLD, sf.size - 1)
 d.text((left + 1.5 * S, 9 * S), head, font=hf, fill=PINK)

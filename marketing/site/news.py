@@ -6,6 +6,23 @@ spots or anything else players are meant to find.
 
 NEWS = [
     {
+        "slug": "extraction-zone-replaces-factions",
+        "date": "2026-11-12",
+        "title": "Factions closes, Extraction Zone opens Friday 13 November",
+        "summary": "Factions has closed. Its replacement is Extraction Zone: loot a ruined city with guns, fight raiders and players, and get out alive.",
+        "body": """
+<p>Factions has closed to make room for something new. Thanks to everyone who raided and built there.</p>
+<p>Its replacement, <a href="/extraction-zone/">Extraction Zone</a>, opens on <b>Friday 13 November</b>. It is a looting mode in a ruined city that everyone shares:</p>
+<ul>
+<li>Deploy with the gear you choose to risk, loot crates and reach an extraction point before the 25-minute timer runs out.</li>
+<li>Guns with magazines and reloads, and armed enemies that shoot back.</li>
+<li>Team up with players you meet, or betray them for their loot.</li>
+<li>Traders in camp and inside the zone, Credits you carry as items, and a protected stash plot in camp you can build on and upgrade.</li>
+</ul>
+<p>Pick Extraction Zone in the lobby's server selector from Friday.</p>
+""",
+    },
+    {
         "slug": "website-and-3d-spawn-map",
         "date": "2026-11-10",
         "title": "New website and a 3D map of six years of anarchy",

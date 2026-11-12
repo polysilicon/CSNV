@@ -31,7 +31,7 @@ VOTE = [
 ]
 
 NAV = [("/", "Home"), ("/anarchy/", "Anarchy"), ("/skyblock/", "Skyblock"), ("/pvp/", "Multiverse"),
-       ("/factions/", "Factions"), ("/spawn-map/", "3D Map"), ("/join/", "How to join"), ("/news/", "News"),
+       ("/extraction-zone/", "Extraction Zone"), ("/spawn-map/", "3D Map"), ("/join/", "How to join"), ("/news/", "News"),
        ("/vote/", "Vote"), ("/faq/", "FAQ")]
 
 e = html.escape
@@ -106,7 +106,7 @@ def page(path, title, desc, body, crumbs=None, extra_ld=(), image="/img/og.jpg",
   <div class="wrap foot">
     <div>
       <p class="foot-name">Crispy Anarchy</p>
-      <p>A Minecraft anarchy server since 2020, plus Skyblock, PvP and Factions on one network. Java and Bedrock.</p>
+      <p>A Minecraft anarchy server since 2020, plus Skyblock, PvP and the new Extraction Zone on one network. Java and Bedrock.</p>
       <p>Java: <code>{JAVA}</code> · Bedrock: <code>{JAVA}</code> port <code>{BEDROCK_PORT}</code></p>
     </div>
     <div class="foot-links">
@@ -176,7 +176,7 @@ FAQ = [
      "cyberpunk implants and a market economy with a crypto exchange, and the community is smaller, so you meet people quickly."),
     ("What other game modes does the network have?",
      "Besides Anarchy there is Vanilla Anarchy (plain survival), Skyblock with skills, pets and minions, a PvP server called Multiverse "
-     "with 36 characters, duels and co-op zombie waves, and old-school Factions. All share one chat and one Discord."),
+     "with 36 characters, duels and co-op zombie waves, and Extraction Zone, a PvPvE looting mode in a ruined city (opens Friday 13 November). All share one chat and one Discord."),
     ("Where is spawn on Crispy Anarchy?",
      "World spawn is at X 287, Z -207 in the overworld. You can explore the area around it on the 3D map at www.crispyanarchy.net/spawn-map/."),
 ]
@@ -188,7 +188,7 @@ def home():
         ("/anarchy/#vanilla", "Vanilla Anarchy", "Plain survival anarchy with no custom items, for people who like it pure."),
         ("/skyblock/", "Skyblock", "Grow your island with skills, pets, 43 minions, a Bazaar and gear crafted from what you farm."),
         ("/pvp/", "Multiverse", "36 playable characters: arena PvP, ranked duels, zombie waves, Core Defense and a roguelite tower."),
-        ("/factions/", "Factions", "1.8-style combat, cannons and obsidian walls, with set raid windows."),
+        ("/extraction-zone/", "Extraction Zone", "New: loot a ruined city, fight armed raiders and other players, and get out alive. Opens Friday 13 November."),
         ("/spawn-map/", "3D spawn map", "Fly over two square kilometres of spawn, wrecked by six years of anarchy."),
         ("/bedrock-anarchy/", "Bedrock anarchy", "Play anarchy from Windows, phone, tablet or console, in the same world as Java players."),
     ]
@@ -207,7 +207,7 @@ def home():
 <section class="wrap block">
   <h2>What is Crispy Anarchy?</h2>
   <p class="measure">Crispy Anarchy is a free Minecraft anarchy server that has been running since 2020 without a map reset. There are no gameplay rules and no land claims: players grief, raid, fight and build wherever they like, and everything that happens stays in the world. Java Edition players join at <code>{JAVA}</code>; Bedrock Edition players join at <code>{JAVA}</code> on port <code>{BEDROCK_PORT}</code>.</p>
-  <p class="measure">Crispy Anarchy is also the name of the wider Crispy network, which adds Vanilla Anarchy, Skyblock, a PvP server and Factions, linked by one chat and one Discord.</p>
+  <p class="measure">Crispy Anarchy is also the name of the wider Crispy network, which adds Vanilla Anarchy, Skyblock, a PvP server and Extraction Zone, linked by one chat and one Discord.</p>
   <ul class="facts">
     <li><b>2020</b><span>world started, never reset</span></li>
     <li><b>0</b><span>rules or land claims</span></li>
@@ -423,26 +423,46 @@ def pvp():
                 body, crumbs=[("/pvp/", "Multiverse")], extra_ld=[GAMESERVER, faq_ld(qas)], image="/img/shots/mv-outbreak.webp")
 
 
-def factions():
+def extraction():
+    qas = [
+        ("When does Extraction Zone open?", "Friday 13 November 2026. It replaces the old Factions server on the Crispy network."),
+        ("What happens if I die in the zone?", "You lose everything you carried in. What you left in your stash plot in camp is safe."),
+        ("Can I team up with other players?", "Yes. Anyone you meet in the zone can become a teammate for the raid, and any teammate can turn on you."),
+        ("Do I need mods?", "No. It runs on the normal Minecraft client, Java or Bedrock, through the Crispy lobby."),
+    ]
+    faq_html = "".join(f"<h3>{e(q)}</h3><p>{e(a)}</p>" for q, a in qas)
     body = f"""
 <section class="wrap block head">
-  <p class="kicker">Factions · Java + Bedrock</p>
-  <h1>Old-school Minecraft Factions server with cannons and raid windows</h1>
-  <p class="lede measure">Crispy Factions plays like classic factions: 1.8-style combat, TNT cannons and obsidian walls. Raids are only allowed in set windows, so you can build in peace the rest of the time. No pay-to-win.</p>
+  <p class="kicker">Extraction Zone · new · opens Friday 13 November · Java + Bedrock</p>
+  <h1>Extraction Zone: a Minecraft extraction shooter in a ruined city</h1>
+  <p class="lede measure">Drop into a ruined city with the gear you chose to risk, loot what you can, fight armed raiders and other players, and reach an extraction point before the timer runs out. Get out and the loot is yours. Die and you lose everything you brought in.</p>
   {join_box(True)}
 </section>
 <section class="wrap block prose">
-  <h2>Classic factions gameplay</h2>
-  <p>Found a faction, claim land, build a base and wall it in with obsidian. Combat uses 1.8-style hit timing. Skills from mcMMO level up as you play.</p>
-  <h2>Raid windows</h2>
-  <p>Raiding is open on weeknights from 6 to 11 pm and on weekends from noon to midnight, Eastern Time. Outside those windows bases are safe.</p>
+  <h2>How a raid works</h2>
+  <ol>
+    <li><b>Gear up in camp.</b> Buy guns, ammo, armour and medkits from the Quartermaster with Credits.</li>
+    <li><b>Deploy.</b> Board at the helipad and you are dropped on a street at the edge of the zone.</li>
+    <li><b>Loot.</b> Search crates in buildings. The closer to the city centre, the better the loot and the tougher the enemies.</li>
+    <li><b>Extract.</b> Reach one of the extraction points and hold it for 30 seconds before the 25-minute timer ends.</li>
+  </ol>
+  <h2>One shared zone with PvP</h2>
+  <p>Everyone raids the same city at the same time. Players you meet can team up with you for the raid, and any of them can betray you for what you carry. Trust is part of the loot.</p>
+  <h2>Guns and enemies</h2>
+  <p>Pistols, SMGs, shotguns, rifles and a machine gun, each with a magazine you have to reload. The city is held by Infected, Bandit Gunners, Raiders and Riflemen, and the armed ones shoot back.</p>
+  <h2>Money you can lose</h2>
+  <p>Credits are items, so you can only spend what you carry. Traders inside the zone, the Smuggler and the Arms Dealer, sell gear you can't get in camp, so bringing cash in is worth the risk. Sell what you extract to the Fence in camp.</p>
+  <h2>Your stash plot</h2>
+  <p>Every player gets a protected plot in camp to store loot, build and decorate, and it can be upgraded to a bigger plot with Credits. Nobody can raid it.</p>
+  <h2>Questions</h2>
+  {faq_html}
   <h2>How to get there</h2>
-  <p>Join <code>{JAVA}</code> (Bedrock: port <code>{BEDROCK_PORT}</code>) and choose Factions in the lobby.</p>
+  <p>From Friday 13 November: join <code>{JAVA}</code> (Bedrock: port <code>{BEDROCK_PORT}</code>) and choose Extraction Zone in the lobby's server selector.</p>
 </section>
 """
-    return page("/factions/", "Minecraft Factions Server – 1.8 Combat, Cannons & Raid Windows | Crispy Network",
-                "Old-school Minecraft Factions on the Crispy network: 1.8-style combat, cannons, obsidian walls, mcMMO and set raid windows. No pay-to-win. Java & Bedrock at crispyanarchy.net",
-                body, crumbs=[("/factions/", "Factions")], extra_ld=[GAMESERVER])
+    return page("/extraction-zone/", "Extraction Zone – Minecraft Extraction Shooter, PvPvE Looting | Crispy Network",
+                "Loot a ruined city with guns, fight armed raiders and players, team up or betray, and extract alive. New on the Crispy network from 13 November. Java & Bedrock, no mods.",
+                body, crumbs=[("/extraction-zone/", "Extraction Zone")], extra_ld=[GAMESERVER, faq_ld(qas)])
 
 
 def spawn_map():
@@ -515,7 +535,7 @@ def vote():
 <p class="note">Type <code>/vote</code> in game to see your vote points and claim rewards.</p></section>
 """
     return page("/vote/", "Vote for Crispy Anarchy – Daily Vote Rewards",
-                "Vote for the Crispy Anarchy Minecraft server on 7 server lists and earn in-game rewards on Anarchy, Skyblock, PvP or Factions.",
+                "Vote for the Crispy Anarchy Minecraft server on 7 server lists and earn in-game rewards on Anarchy, Skyblock or PvP.",
                 body, crumbs=[("/vote/", "Vote")])
 
 
@@ -550,7 +570,7 @@ Key facts:
 - Rules: no gameplay rules and no bans on Anarchy (griefing, raiding and PvP allowed). Community rules on every server: follow the Minecraft Usage Guidelines and Minecraft/Xbox Community Standards; no hate speech or hateful builds, no real-life harassment, threats or doxxing, no spam. Slurs are automatically starred in chat, signs, books and item names. Chat reports are disabled.
 - Requires a paid Java account (not cracked); Bedrock uses Microsoft accounts.
 - Anarchy extras: 193 custom enchantments in 9 tiers, cyberpunk implants from a Ripperdoc, a villager market with Gold Coins, a bank, a crypto (Bitcoin) trader with a fluctuating price, and a hidden black market.
-- Other modes on the same network: Vanilla Anarchy (plain survival anarchy), Skyblock (5 skills, 43 minions, pets, Bazaar, craftable gear), Multiverse PvP (36 characters, kit PvP, Elo duels, co-op zombie waves, Core Defense), Factions (1.8 combat, cannons, set raid windows).
+- Other modes on the same network: Vanilla Anarchy (plain survival anarchy), Skyblock (5 skills, 43 minions, pets, Bazaar, craftable gear), Multiverse PvP (36 characters, kit PvP, Elo duels, co-op zombie waves, Core Defense), Extraction Zone (opens Friday 13 November 2026: a shared PvPvE zone in a ruined city with guns, armed raiders, loot crates, extraction points, traders and a protected stash plot in camp; whatever you carry is lost if you die).
 - Discord: {DISCORD}
 
 ## Pages
@@ -563,7 +583,7 @@ Key facts:
 - [3D spawn map]({SITE}/spawn-map/)
 - [Skyblock]({SITE}/skyblock/)
 - [PvP]({SITE}/pvp/)
-- [Factions]({SITE}/factions/)
+- [Extraction Zone]({SITE}/extraction-zone/)
 - [Vote]({SITE}/vote/)
 """
 
@@ -604,14 +624,14 @@ def news_index():
 <section class="wrap block head">
   <p class="kicker">News</p>
   <h1>Crispy Anarchy news and updates</h1>
-  <p class="lede measure">What's new on Anarchy, Skyblock, Multiverse PvP and Factions.</p>
+  <p class="lede measure">What's new on Anarchy, Skyblock, Multiverse PvP and Extraction Zone.</p>
 </section>
 <section class="wrap block"><div class="posts">{items}</div></section>
 """
     blog = {"@type": "Blog", "name": "Crispy Anarchy news", "url": SITE + "/news/", "publisher": {"@id": SITE + "/#org"},
             "blogPost": [{"@type": "BlogPosting", "headline": n["title"], "url": f"{SITE}/news/{n['slug']}/", "datePublished": n["date"]} for n in NEWS]}
     return page("/news/", "Crispy Anarchy News & Updates – Minecraft Anarchy Server",
-                "Updates from the Crispy Anarchy Minecraft network: new features, fixes and events on Anarchy, Skyblock, PvP and Factions.",
+                "Updates from the Crispy Anarchy Minecraft network: new features, fixes and events on Anarchy, Skyblock, PvP and Extraction Zone.",
                 body, crumbs=[("/news/", "News")], extra_ld=[blog])
 
 
@@ -681,7 +701,7 @@ def bedrock():
   <ul>
     <li>The same anarchy world as Java players: no gameplay rules, no claims, never reset.</li>
     <li>The market, the Banker and the Crypto Exchange, the Enchanter's 193 custom enchantments and the Ripperdoc's implants.</li>
-    <li>Every other mode on the network too: Vanilla Anarchy, Skyblock, Multiverse PvP and Factions.</li>
+    <li>Every other mode on the network too: Vanilla Anarchy, Skyblock, Multiverse PvP and Extraction Zone.</li>
     <li>One chat with Java players and our Discord.</li>
   </ul>
   <p>Bedrock players connect through a translation layer, so a few things look slightly different from Java, such as some custom menus and item textures. If something doesn't work on Bedrock, tell us in the <a href="{DISCORD}" rel="noopener">Discord</a>.</p>
@@ -709,7 +729,7 @@ def rules():
 <section class="wrap block head">
   <p class="kicker">Rules</p>
   <h1>Crispy Anarchy rules</h1>
-  <p class="lede measure">Gameplay on Crispy Anarchy is anarchy: no claims, no protected bases, no bans, and nobody will step in if your base gets griefed. The rules below are about people, not gameplay. They apply everywhere on the network: Anarchy, Vanilla Anarchy, Skyblock, Multiverse, Factions and the lobby. Our Discord has its own moderation.</p>
+  <p class="lede measure">Gameplay on Crispy Anarchy is anarchy: no claims, no protected bases, no bans, and nobody will step in if your base gets griefed. The rules below are about people, not gameplay. They apply everywhere on the network: Anarchy, Vanilla Anarchy, Skyblock, Multiverse, Extraction Zone and the lobby. Our Discord has its own moderation.</p>
 </section>
 <section class="wrap block prose">
   <h2>1. Follow Microsoft's rules</h2>
@@ -728,7 +748,7 @@ def rules():
   <p>Don't flood chat with repeated messages, don't advertise other servers or third-party shops, and don't scam anyone for real money, accounts or personal information.</p>
 
   <h2>What's still fine on Anarchy</h2>
-  <p>Griefing, raiding, stealing, killing, traps, lying and betrayal are all part of the game. Other modes have their own gameplay rules where they need them, like the raid windows on Factions.</p>
+  <p>Griefing, raiding, stealing, killing, traps, lying and betrayal are all part of the game. Other modes have their own gameplay rules where they need them, like the protected stash plots in Extraction Zone's camp.</p>
 
   <h2>How this works</h2>
   <p>There are no bans, mutes or player reports on our Minecraft servers. These rules are here so everyone knows what is expected, not so we can punish people. Instead, we keep the worst content out with roadblocks rather than staff: slurs and hate slogans are automatically replaced with stars in chat, private messages, signs, books and item names on every server, and hateful builds and map art are cleared away when we come across them.</p>
@@ -743,7 +763,7 @@ def main(out):
     if os.path.exists(out):
         shutil.rmtree(out)
     os.makedirs(out)
-    pages = {"/": home, "/anarchy/": anarchy, "/skyblock/": skyblock, "/pvp/": pvp, "/factions/": factions,
+    pages = {"/": home, "/anarchy/": anarchy, "/skyblock/": skyblock, "/pvp/": pvp, "/extraction-zone/": extraction,
              "/spawn-map/": spawn_map, "/join/": join, "/vote/": vote, "/faq/": faq,
              "/bedrock-anarchy/": bedrock, "/news/": news_index, "/rules/": rules}
     for n in NEWS:
@@ -766,6 +786,7 @@ def main(out):
         "/img/*\n  Cache-Control: public, max-age=2592000\n/*.css\n  Cache-Control: public, max-age=86400\n/*.js\n  Cache-Control: public, max-age=86400\n"
         "/map/*\n  X-Robots-Tag: noindex\n"
         "https://:project.pages.dev/*\n  X-Robots-Tag: noindex\n")
+    open(os.path.join(out, "_redirects"), "w").write("/factions/ /extraction-zone/ 301\n/factions /extraction-zone/ 301\n")
     for f in ("style.css", "site.js"):
         shutil.copy(os.path.join(HERE, f), out)
     shutil.copytree(os.path.join(HERE, "images"), os.path.join(out, "img"))

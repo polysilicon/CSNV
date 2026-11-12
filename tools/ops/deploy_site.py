@@ -41,6 +41,8 @@ def main():
     subprocess.run([sys.executable, os.path.join(ROOT, "marketing", "site", "build.py"), out], check=True)
     headers = os.path.join(WORK, "headers.txt")
     shutil.move(os.path.join(out, "_headers"), headers)
+    redirects = os.path.join(WORK, "redirects.txt")   # _headers and _redirects go with the deployment, not as assets
+    shutil.move(os.path.join(out, "_redirects"), redirects)
     if not os.path.isdir(os.path.join(WORK, "node_modules", "blake3-wasm")):
         subprocess.run(["npm", "install", "--silent", "--prefix", WORK, "blake3-wasm@2.1.5"], check=True)
     sm, tsv = os.path.join(WORK, "site_manifest.json"), os.path.join(WORK, "site_upload.tsv")
@@ -80,7 +82,8 @@ print("upsert:", post("/pages/assets/upsert-hashes", {"hashes": d["hashes"]}).ge
              "\nrm -f /root/.cfjwt /root/cfpay.json /root/cfpay.b64\n").strip())
 
     d = cf(f"/accounts/{ACCOUNT}/pages/projects/{PROJECT}/deployments", "POST",
-           form={"manifest": "<" + mpath, "_headers": "@" + headers + ";filename=_headers", "branch": "main"})
+           form={"manifest": "<" + mpath, "_headers": "@" + headers + ";filename=_headers",
+                 "_redirects": "@" + redirects + ";filename=_redirects", "branch": "main"})
     print("deployment:", d.get("success"), d.get("errors"), (d.get("result") or {}).get("url"))
 
 

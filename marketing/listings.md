@@ -1,7 +1,7 @@
 # Server-list copy (all 7 vote sites)
 
 Paste the same copy everywhere, so the network looks the same wherever people find it. Every claim below was checked
-against the live servers on 2026-11-08; if a feature changes, update this file first, then the listings.
+against the live servers on 2026-11-08 (Factions replaced by Extraction Zone on 2026-11-12); if a feature changes, update this file first, then the listings.
 
 ## Address
 
@@ -17,13 +17,13 @@ Sites with separate **IP and port fields** (used to check the server is online):
 
 ## Title (pick the longest the site allows)
 
-- 60 chars: `Crispy Network | Anarchy, Skyblock, Factions, PvP Minigames`
-- 45 chars: `Crispy Network | Anarchy, Skyblock, Factions`
+- 59 chars: `Crispy Network | Anarchy, Skyblock, PvP, Extraction Shooter`
+- 46 chars: `Crispy Network | Anarchy, Skyblock, Extraction`
 - 30 chars: `Crispy Network | Anarchy + PvP`
 
 ## Short description (under 160 characters, for sites with a one-liner)
 
-> No-rules anarchy since 2020, Skyblock with skills and pets, old-school factions and 36-character PvP. Java + Bedrock, no mods needed.
+> No-rules anarchy since 2020, Skyblock with skills and pets, 36-character PvP and a new extraction shooter. Java + Bedrock, no mods needed.
 
 ## Long description
 
@@ -51,10 +51,13 @@ MULTIVERSE
 - Outbreak: co-op zombie waves with guns, upgrades and bosses
 - Core Defense: build a base and keep the core alive
 
-CRISPY FACTIONS
-- 1.8-style combat, cannons and obsidian walls
-- Raids only in set windows (weeknights 6-11pm, weekends noon-midnight ET)
-- No pay-to-win
+NEW: EXTRACTION ZONE
+- Drop into a ruined city with the gear you choose to risk
+- Loot crates, fight armed raiders and reach an extraction point before time runs out
+- One shared zone with PvP: team up with players you meet, or betray them
+- Guns with magazines and reloads, traders in camp and inside the zone
+- A protected stash plot in camp to store loot, build and upgrade
+- Die and you lose what you carried in
 
 IN THE LOBBY
 - Card games with friends or bots: a poker roguelike and a classic colour-matching game
@@ -71,7 +74,7 @@ Discord: discord.gg/hF2bQgU
 
 ## Tags / categories
 
-Anarchy, Survival, Skyblock, Factions, PvP, Minigames, Economy, Crossplay (Java + Bedrock), Vanilla, McMMO, Custom
+Anarchy, Survival, Skyblock, PvP, PvE, Minigames, Economy, Crossplay (Java + Bedrock), Vanilla, McMMO, Custom
 Enchants. Pick the ones each site offers; most allow 5-10.
 
 ## Banners
