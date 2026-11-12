@@ -6,6 +6,24 @@ spots or anything else players are meant to find.
 
 NEWS = [
     {
+        "slug": "skyblock-collections",
+        "date": "2026-11-12",
+        "title": "Skyblock: 68 collections with coins and skill XP for every tier",
+        "summary": "Everything you gather on Skyblock now counts toward a collection. 68 resources, nine tiers each, and every tier pays coins and skill XP.",
+        "image": "/img/shots/sb-collections.webp",
+        "body": """
+<p>Skyblock has <b>collections</b>. Every resource you gather counts toward its own collection, and each one has nine tiers (I to IX). Every new tier pays coins and XP in that resource's skill.</p>
+<ul>
+<li><b>68 collections:</b> 23 farming, 20 mining, 8 foraging, 10 combat and 7 fishing.</li>
+<li><b>What counts:</b> what you pick up from mining, chopping, farming, mob drops and fishing, what a resource zone hands you, and what you collect from your minions.</li>
+<li><b>What doesn't:</b> anything bought, crafted or dropped by another player, and drops from blocks you placed yourself.</li>
+<li><b>A head start:</b> collections started from what you had already picked up before the update, and any tiers that reached paid their coins straight away.</li>
+</ul>
+<p>Open them with <code>/collections</code>, from the Island Menu, or from the Skyblock Guide.</p>
+<figure class="pic"><img src="/img/shots/sb-collections.webp" alt="The Crispy Skyblock Collections menu showing 15 of 612 tiers unlocked" width="1600" height="900" loading="lazy"><figcaption>The Collections menu in game.</figcaption></figure>
+""",
+    },
+    {
         "slug": "extraction-zone-replaces-factions",
         "date": "2026-11-12",
         "title": "Factions closes, Extraction Zone opens Friday 13 November",

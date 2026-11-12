@@ -186,7 +186,7 @@ def home():
     modes = [
         ("/anarchy/", "Anarchy", "No gameplay rules, no claims, one world since 2020. Custom enchantments, implants, a market and a hidden black market."),
         ("/anarchy/#vanilla", "Vanilla Anarchy", "Plain survival anarchy with no custom items, for people who like it pure."),
-        ("/skyblock/", "Skyblock", "Grow your island with skills, pets, 43 minions, a Bazaar and gear crafted from what you farm."),
+        ("/skyblock/", "Skyblock", "Grow your island with skills, collections, pets, 43 minions, a Bazaar and gear crafted from what you farm."),
         ("/pvp/", "Multiverse", "36 playable characters: arena PvP, ranked duels, zombie waves, Core Defense and a roguelite tower."),
         ("/extraction-zone/", "Extraction Zone", "New: loot a ruined city, fight armed raiders and other players, and get out alive. Opens Friday 13 November."),
         ("/spawn-map/", "3D spawn map", "Fly over two square kilometres of spawn, wrecked by six years of anarchy."),
@@ -289,7 +289,7 @@ def skyblock():
 <section class="wrap block head">
   <p class="kicker">Skyblock · Java + Bedrock</p>
   <h1>Minecraft Skyblock server with skills, pets and minions</h1>
-  <p class="lede measure">Crispy Skyblock starts you on one of seven themed islands and gives you plenty to grow into: five skills, 43 kinds of minions, pets, a player-run Bazaar and gear you craft from what you farm. No pay-to-win.</p>
+  <p class="lede measure">Crispy Skyblock starts you on one of seven themed islands and gives you plenty to grow into: five skills, 68 collections, 43 kinds of minions, pets, a player-run Bazaar and gear you craft from what you farm. No pay-to-win.</p>
   {join_box(True)}
 </section>
 <figure class="wrap shot"><img src="/img/shots/skyblock-hub.webp" alt="Aerial view of the Crispy Skyblock hub island: cherry trees, market stalls, a central plaza and a lookout tower" width="1600" height="900"><figcaption>The Skyblock hub: market stalls, NPCs, plots and the island portal.</figcaption></figure>
@@ -298,6 +298,9 @@ def skyblock():
   <p>Choose one of seven themed starter islands. Upgrade its size, minion slots, co-op slots and ore generator as you go, and invite friends to build with you. Island level grows with what you place.</p>
   <h2>Five skills</h2>
   <p>Level Farming, Mining, Combat, Foraging and Fishing by doing them. Each level gives rewards.</p>
+  <h2>68 collections</h2>
+  <p>Every resource you gather counts toward its collection: crops, ores, logs, mob drops and fish, plus whatever your minions bring in. Each of the 68 collections has nine tiers, and every tier pays coins and skill XP. Only what you gather yourself counts, so buying from the Bazaar won't get you there. Open them with <code>/collections</code>.</p>
+  {fig("sb-collections", "The Crispy Skyblock Collections menu: Farming, Mining and Foraging categories, with 15 of 612 tiers unlocked", "The Collections menu: 68 resources, nine tiers each, coins and skill XP for every tier.")}
   <h2>43 minions</h2>
   <p>Minions collect resources for you while you play elsewhere. There are 43 kinds, from crops and ores to mob drops.</p>
   {fig("skyblock-minion", "Minions working on a player's Skyblock island next to storage chests, with an Oak Minion label", "Minions at work on an island, filling chests while you play.")}
@@ -312,7 +315,7 @@ def skyblock():
 </section>
 """
     return page("/skyblock/", "Minecraft Skyblock Server with Skills, Pets & Minions | Crispy Network",
-                "Skyblock on the Crispy network: 7 starter islands, 5 skills, 43 minions, pets, a player Bazaar and craftable gear. No pay-to-win. Java & Bedrock at crispyanarchy.net",
+                "Skyblock on the Crispy network: 7 starter islands, 5 skills, 68 collections, 43 minions, pets, a player Bazaar and craftable gear. No pay-to-win. Java & Bedrock at crispyanarchy.net",
                 body, crumbs=[("/skyblock/", "Skyblock")], extra_ld=[GAMESERVER], image="/img/shots/skyblock-hub.webp")
 
 
@@ -570,7 +573,7 @@ Key facts:
 - Rules: no gameplay rules and no bans on Anarchy (griefing, raiding and PvP allowed). Community rules on every server: follow the Minecraft Usage Guidelines and Minecraft/Xbox Community Standards; no hate speech or hateful builds, no real-life harassment, threats or doxxing, no spam. Slurs are automatically starred in chat, signs, books and item names. Chat reports are disabled.
 - Requires a paid Java account (not cracked); Bedrock uses Microsoft accounts.
 - Anarchy extras: 193 custom enchantments in 9 tiers, cyberpunk implants from a Ripperdoc, a villager market with Gold Coins, a bank, a crypto (Bitcoin) trader with a fluctuating price, and a hidden black market.
-- Other modes on the same network: Vanilla Anarchy (plain survival anarchy), Skyblock (5 skills, 43 minions, pets, Bazaar, craftable gear), Multiverse PvP (36 characters, kit PvP, Elo duels, co-op zombie waves, Core Defense), Extraction Zone (opens Friday 13 November 2026: a shared PvPvE zone in a ruined city with guns, armed raiders, loot crates, extraction points, traders and a protected stash plot in camp; whatever you carry is lost if you die).
+- Other modes on the same network: Vanilla Anarchy (plain survival anarchy), Skyblock (5 skills, 68 collections with tier rewards, 43 minions, pets, Bazaar, craftable gear), Multiverse PvP (36 characters, kit PvP, Elo duels, co-op zombie waves, Core Defense), Extraction Zone (opens Friday 13 November 2026: a shared PvPvE zone in a ruined city with guns, armed raiders, loot crates, extraction points, traders and a protected stash plot in camp; whatever you carry is lost if you die).
 - Discord: {DISCORD}
 
 ## Pages
@@ -655,9 +658,9 @@ def news_post(n):
 """
     post = {"@type": "BlogPosting", "headline": n["title"], "description": n["summary"], "datePublished": n["date"], "dateModified": n["date"],
             "url": SITE + path, "mainEntityOfPage": SITE + path, "author": {"@id": SITE + "/#org"}, "publisher": {"@id": SITE + "/#org"},
-            "image": SITE + "/img/og.jpg"}
+            "image": SITE + n.get("image", "/img/og.jpg")}
     return page(path, f"{n['title']} | Crispy Anarchy", n["summary"], body,
-                crumbs=[("/news/", "News"), (path, n["title"])], extra_ld=[post])
+                crumbs=[("/news/", "News"), (path, n["title"])], extra_ld=[post], image=n.get("image", "/img/og.jpg"))
 
 
 BEDROCK_STEPS = {
