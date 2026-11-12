@@ -114,6 +114,9 @@ final class Zone {
     /** A street spot near (x, z): the lowest point within 32 blocks whose 7 x 7 surroundings are all at the same level
      *  (open street or plaza, not a gap between buildings or a rooftop). Falls back to the lowest point found. */
     static BlockPos ground(ServerLevel lvl, int x, int z) {
+        BlockPos s = street(lvl, x, z);
+        if (s != null) return s;
+        System.out.println("[crispy-extraction] no street near " + x + " " + z + ", using the lowest open spot");
         java.util.Map<Long, Integer> h = new java.util.HashMap<>();
         java.util.function.BiFunction<Integer, Integer, Integer> H = (a, b) -> h.computeIfAbsent(((long) a << 32) ^ (b & 0xffffffffL), k -> {
             lvl.getChunk(a >> 4, b >> 4);   // load (and generate) it first, or the heightmap reads as empty
@@ -133,6 +136,54 @@ final class Zone {
             if (open) best = new BlockPos(cx, y, cz);
         }
         return best != null ? best : low;
+    }
+
+    /** The middle of the nearest street chunk to (x, z), asked of The Lost Cities itself (by reflection, so this mod
+     *  doesn't need it to compile): a city chunk with no building in it, where the ground is at the city's street level
+     *  (not a raised highway or a pile of rubble) and the 5 x 5 around the spot is open and level. Null if none within
+     *  6 chunks or Lost Cities can't be asked. */
+    static BlockPos street(ServerLevel lvl, int x, int z) {
+        try {
+            Object imp = Class.forName("mcjty.lostcities.LostCities").getField("lostCitiesImp").get(null);
+            Class<?> iLC = Class.forName("mcjty.lostcities.api.ILostCities");
+            Class<?> iInfo = Class.forName("mcjty.lostcities.api.ILostCityInformation");
+            Class<?> iChunk = Class.forName("mcjty.lostcities.api.ILostChunkInfo");
+            Object info = iLC.getMethod("getLostInfo", Level.class).invoke(imp, lvl);
+            if (info == null) return null;
+            var getChunkInfo = iInfo.getMethod("getChunkInfo", int.class, int.class);
+            var realHeight = iInfo.getMethod("getRealHeight", int.class);
+            var isCity = iChunk.getMethod("isCity");
+            var building = iChunk.getMethod("getBuildingType");
+            var cityLevel = iChunk.getMethod("getCityLevel");
+            int ccx = x >> 4, ccz = z >> 4;
+            BlockPos best = null; double bestD = Double.MAX_VALUE;
+            for (int r = 0; r <= 6 && best == null; r++) {          // rings outward: the nearest street wins
+                for (int dx = -r; dx <= r; dx++) for (int dz = -r; dz <= r; dz++) {
+                    if (Math.max(Math.abs(dx), Math.abs(dz)) != r) continue;
+                    int cx = ccx + dx, cz = ccz + dz;
+                    Object ci = getChunkInfo.invoke(info, cx, cz);
+                    if (ci == null || !(boolean) isCity.invoke(ci) || building.invoke(ci) != null) continue;
+                    int street = (int) realHeight.invoke(info, (int) cityLevel.invoke(ci));
+                    lvl.getChunk(cx, cz);
+                    for (int[] o : new int[][]{{8, 8}, {4, 4}, {12, 12}, {4, 12}, {12, 4}}) {
+                        int px = (cx << 4) + o[0], pz = (cz << 4) + o[1];
+                        int y = lvl.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, px, pz);
+                        if (y < street || y > street + 1) continue;      // on the street surface, nothing piled on it
+                        boolean open = true;
+                        for (int ox = -2; ox <= 2 && open; ox++) for (int oz = -2; oz <= 2; oz++)
+                            if (lvl.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, px + ox, pz + oz) != y) { open = false; break; }
+                        if (!open) continue;
+                        double d = Math.hypot(px - x, pz - z);
+                        if (d < bestD) { bestD = d; best = new BlockPos(px, y, pz); }
+                        break;
+                    }
+                }
+            }
+            return best;
+        } catch (Throwable t) {
+            System.err.println("[crispy-extraction] can't ask Lost Cities for streets: " + t);
+            return null;
+        }
     }
 
     static void setup(MinecraftServer server) {
@@ -156,6 +207,7 @@ final class Zone {
             BlockPos b = ground(lvl, CX + in[0], CZ + in[1]);
             Plots.run(server, String.format("execute in lostcities:lostcity run forceload add %d %d", b.getX(), b.getZ()));
             Plots.run(server, String.format("execute in lostcities:lostcity run summon minecraft:marker %d %d %d {Tags:[\"ez.pt\",\"ez.insert\"]}", b.getX(), b.getY(), b.getZ()));
+            done.add("insert " + b.toShortString());
         }
         for (Object[] tr : TRADERS) {
             BlockPos b = ground(lvl, CX + (int) tr[3], CZ + (int) tr[4]);
