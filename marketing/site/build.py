@@ -457,7 +457,7 @@ def extraction():
   <p>The Fixer offers jobs before each raid: recover an intel cache from a district, take out a number of Riflemen, or extract from a particular point. Finish the job and get out alive for bonus coins.</p>
   <p>The Commander, a heavily armed boss with an escort, lands in the city centre and carries the best loot in the zone. Every few minutes something else happens somewhere in the city: a supply drop under a red flare, a helicopter crash guarded by raiders, or a hot extract that pays double for 3 minutes.</p>
   <h2>Money you can lose</h2>
-  <p>The Zone runs on Gold Coins, and 64 of them condense into a Coin Bag. Coins are items, so you can only spend what you carry. Traders inside the zone, the Smuggler and the Arms Dealer, sell gear you can't get in camp, so bringing cash in is worth the risk. Sell what you extract to the Fence in camp.</p>
+  <p>The Zone runs on Gold Coins, and 64 of them condense into a Coin Bag. Coins are items, so you can only spend what you carry. Traders inside the zone, the Smuggler and the Arms Dealer, sell gear you can't get in camp, so bringing cash in is worth the risk. Sell what you extract to the Broker in camp.</p>
   <h2>Your stash plot</h2>
   <p>Every player gets a protected plot in camp to store loot, build and decorate. Grow it, and install upgrades that change how you play: a gun workbench for extended magazines and faster reloads, a medical station for cheaper heals, and a field radio that pins down the next zone event. Nobody can raid it.</p>
   <h2>A new city every week</h2>
