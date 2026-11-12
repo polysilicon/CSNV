@@ -69,3 +69,16 @@ Deploy (files are staged under inactive names):
 1. Proxy (test01): `plugins/CrispyTags-1.9.0.jar` → `.bak`, `CrispyTags-1.10.0.jar.pending` → `.jar`;
    `velocity.toml` → `velocity.toml.bak-forcedhosts`, `velocity.toml.tonight` → `velocity.toml`; restart the proxy.
 2. Lobby: `plugins/CrispyLobby/config.yml` → `config.yml.bak-joined`, `config.yml.tonight` → `config.yml`; `vote reload`.
+
+## CrispyTags 1.11.0 (staged as CrispyTags-1.11.0.jar.pending; goes live with a proxy restart)
+
+- `[source] NAME host=... new=...` on every login: the address the player typed, for `tools/analytics`.
+- `ChannelCap`: big mod packs register more than Paper's 128 plugin channels, and the lobby kicked them with
+  "Invalid custom payload payload!" (17 kicks, 6 players, Sep-Nov 2026). The proxy now passes on at most 100 channel
+  registrations per connection (vanilla, proxy and our own namespaces first) and drops the rest, logged as `[channels]`.
+- Factions replaced by Extraction Zone in the first-join welcome and the combat-tag server list.
+
+velocity.toml (2026-11-12, live after `velocity reload`): `kick-existing-players = true` (a reconnect replaces a stale
+session instead of "You are already connected to this proxy!") and `try = ["lobby", "multiverse"]` (if the lobby is
+down, players land on Multiverse instead of "Unable to connect you to lobby"). Lobby `allow-flight=true` (no flying
+kicks in the hub), from its next restart.
