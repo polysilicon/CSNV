@@ -31,3 +31,33 @@ insertion markers, crates and raider spawners; waits 20 s for the terrain to gen
 - **Enemies look like soldiers**: Bandit Gunner, Raider and Raider Rifleman are skeletons in a modern-soldier player
   head (minecraft-heads.com textures) and dyed leather with an armour trim (desert/dune, camo/wild, black/silence),
   Silent, nothing drops. Infected stay zombies.
+
+## 1.1.0 (2026-11-12)
+
+Mod `crispy-extraction-1.1.0`, datapack and `shops.json` together.
+
+- **Gold Coins** (`Coins.java`): the money is Anarchy's Gold Coin item; 64 condense into a Coin Bag. `count/take/give` handle
+  bags (change is automatic, payouts come as bags + coins). Trader menus: "Condense coins into bags" (slot 47) and
+  "Break a Coin Bag" (51). Old Credits (gold nuggets) in inventories become coins.
+- **Contracts** (`Contracts.java`): The Fixer (`ez:admin/contracts_npc`, by the helipad) or `/contracts`. Three offers
+  per player: RECOVER an Intel Cache (barrel on a street in a district, Contract Tracker compass), ELIMINATE N of a type,
+  EXFIL from a named point, BOSS (within 48 blocks of the Commander's death). Pays on extraction; dying fails it.
+- **The Commander** (`Boss.java`, `ez:boss/spawn`): 260 HP, armour, M60 hitscan (`GUNNERS["boss"]`), three Riflemen; at
+  the city centre 4 min after start then 20 min after each death, while raiders are in. Boss bar within 64 blocks. Loot
+  table `ez:mob/boss`.
+- **Events** (`Events.java`): every 6-9 min with raiders in: supply drop (`ez:event/supply`, red flare, 8 min), helicopter
+  crash (wreck + 2 `ez:event/heli` crates + 3 Riflemen, 12 min), hot extract (marker `ez.exfil ez.hot`, 3 min, valuables
+  pay double). Placed blocks only replace air and are restored after.
+- **Stash upgrades** (`Plots.PERKS`, Plot Manager): Gun Workbench 300 (`Workbench.java`: Extended Magazine +50% and
+  Quick Reload -35%, 40 coins each, written as `custom_data {ezmod:{mag:1b,rl:1b}}` and read by the datapack's magazine
+  code via `ez.cap`), Medical Station 200 (bandages/medkits 40% off), Field Radio 250 (exact spot of the first event each
+  raid).
+- **Raid recap** (`Raid.java`, `/ezhook deploy|extract|died` from the datapack): time, distance, kills by type, loot
+  value (valuables at Fence prices + coins carried), hot-extract bonus, contract result. Standout runs (250+ coins, 8+
+  kills, the Commander, or a big hot extract) are broadcast and logged as `<name> has completed the challenge [...]`,
+  which the Discord bot posts once Extraction is in its bridge list.
+- **Weekly reset** (`Reset.java`): on the first start of a new ISO week (UTC) the Lost Cities dimension is moved to
+  `old_city/last` before the worlds load; setup and the map redraw run 10 s after start. AMP restarts the instance every
+  Monday 07:00 UTC (schedule trigger "Weekly city reset"). `/ezadmin reset` forces it on the next start.
+- **Radiation edge**: green haze wall along the border within 28 blocks, Geiger clicks within 12, a one-time warning;
+  the zone map draws the border in red.
