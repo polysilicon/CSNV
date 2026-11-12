@@ -97,6 +97,22 @@ Skyblock on `Falling01` (Fabric 26.2, Velocity name `skyblock`, was `falling`). 
 - `/skills` (`/island skills`, or Island Menu > Skills) shows each skill's level, progress bar and perk. The sidebar
   shows the skill average. XP shows on the action bar as you earn it.
 
+## Collections (2.17.0)
+
+`ItemCollections.java`; `/collections` (`/collection`, `/island collections`, Island Menu > Collections, Guide topic).
+68 resources (23 farming, 20 mining, 8 foraging, 10 combat, 7 fishing), each with nine tiers. Thresholds are
+50 / 100 / 250 / 500 / 1k / 2.5k / 5k / 10k / 25k times a rarity scale (diamond 0.2, emerald 0.1, ancient debris
+0.02...). Tier n pays 100 x n^2 coins and 20 x n^2 XP in the collection's skill (through pets, like any skill XP).
+
+- Counts: items picked up that no player dropped (`ItemEntityMixin` around `playerTouch`), zone drops handed straight
+  to a player (`ZoneRules`), and items collected from minions (`Minions.Menu.collect`).
+- Doesn't count: anything from `ServerPlayer.drop` (Q, closed menus, death drops are tagged `cs_nocoll`), drops from
+  player-placed blocks (`Skills.Placed`, checked in a break BEFORE hook; items spawned there that tick get the tag),
+  and anything bought or crafted (it never goes through a pickup). Creative players don't count.
+- First join after 2.17.0: each collection starts from the vanilla `picked_up` stat for that item; tiers reached that
+  way pay coins only (no skill XP).
+- Data: `<world>/crispy_collections.json`, saved every minute and on shutdown.
+
 ## Bazaar, island upgrades, pets and resource zones (2.6.0)
 
 Menus are built by `Ui.java` (chest GUIs that refill after each click).
