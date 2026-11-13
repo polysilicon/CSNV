@@ -70,22 +70,22 @@ final class Interiors {
     record Theme(String name, String[] wall, String[] floor, float wallP, float floorP, float web, int crates) {}
     // wall props: a block id, or TABLE / CHAIR / SHELF2 / LOCKER / STACK / COUNTER / BEDROLL
     static final Theme[] THEMES = {
-        new Theme("office", new String[]{"SHELF2", "TABLE", "TABLE", "CHAIR", "CHAIR", "minecraft:lectern", "minecraft:chiseled_bookshelf", "minecraft:potted_dead_bush", "minecraft:candle[candles=2,lit=false]"},
-                new String[]{"minecraft:gray_carpet", "minecraft:light_gray_carpet"}, 0.08f, 0.02f, 0.03f, 1),
+        new Theme("office", new String[]{"SHELFRUN", "SHELF2", "TABLE", "TABLE", "CHAIR", "CHAIR", "minecraft:lectern", "minecraft:chiseled_bookshelf", "minecraft:potted_dead_bush", "minecraft:candle[candles=2,lit=false]"},
+                new String[]{"minecraft:gray_carpet", "minecraft:light_gray_carpet"}, 0.16f, 0.040f, 0.03f, 1),
         new Theme("barracks", new String[]{"BEDROLL", "BEDROLL", "BEDROLL", "LOCKER", "LOCKER", "minecraft:mud_brick_wall", "CHAIR", "minecraft:lantern"},
-                new String[]{"minecraft:brown_carpet", "minecraft:green_carpet"}, 0.09f, 0.015f, 0.03f, 1),
-        new Theme("storage", new String[]{"STACK", "STACK", "STACK", "minecraft:hay_block", "minecraft:mud_brick_wall", "minecraft:chipped_anvil", "CRATE"},
-                new String[]{"minecraft:cobblestone_slab", "minecraft:spruce_slab"}, 0.10f, 0.015f, 0.05f, 3),
+                new String[]{"minecraft:brown_carpet", "minecraft:green_carpet"}, 0.18f, 0.030f, 0.03f, 1),
+        new Theme("storage", new String[]{"SHELFRUN", "STACK", "STACK", "STACK", "minecraft:hay_block", "minecraft:mud_brick_wall", "minecraft:chipped_anvil", "CRATE"},
+                new String[]{"minecraft:cobblestone_slab", "minecraft:spruce_slab"}, 0.20f, 0.030f, 0.05f, 3),
         new Theme("clinic", new String[]{"COUNTER", "COUNTER", "minecraft:brewing_stand", "minecraft:cauldron", "BEDROLL", "minecraft:candle[candles=3,lit=false]", "minecraft:potted_dead_bush"},
-                new String[]{"minecraft:white_carpet", "minecraft:light_gray_carpet"}, 0.08f, 0.02f, 0.02f, 1),
+                new String[]{"minecraft:white_carpet", "minecraft:light_gray_carpet"}, 0.16f, 0.040f, 0.02f, 1),
         new Theme("workshop", new String[]{"minecraft:stonecutter", "minecraft:fletching_table", "minecraft:smithing_table", "minecraft:chipped_anvil", "minecraft:grindstone[face=floor]", "STACK", "TABLE", "minecraft:lantern"},
-                new String[]{"minecraft:cobblestone_slab", "minecraft:gray_carpet"}, 0.09f, 0.015f, 0.04f, 2),
+                new String[]{"minecraft:cobblestone_slab", "minecraft:gray_carpet"}, 0.18f, 0.030f, 0.04f, 2),
         new Theme("mess", new String[]{"TABLE", "TABLE", "CHAIR", "CHAIR", "CHAIR", "minecraft:smoker", "minecraft:blast_furnace", "minecraft:cauldron", "COUNTER"},
-                new String[]{"minecraft:brown_carpet"}, 0.09f, 0.01f, 0.03f, 1),
+                new String[]{"minecraft:brown_carpet"}, 0.18f, 0.020f, 0.03f, 1),
         new Theme("fortified", new String[]{"minecraft:mud_brick_wall", "minecraft:mud_brick_wall", "minecraft:iron_bars", "STACK", "CRATE", "minecraft:cobweb", "minecraft:chipped_anvil"},
-                new String[]{"minecraft:cobweb", "minecraft:cobblestone_slab", "minecraft:gravel"}, 0.11f, 0.03f, 0.06f, 2),
+                new String[]{"minecraft:cobweb", "minecraft:cobblestone_slab", "minecraft:gravel"}, 0.22f, 0.060f, 0.06f, 2),
         new Theme("ransacked", new String[]{"STACK", "minecraft:mud_brick_wall", "minecraft:cobblestone_slab", "CHAIR", "SHELF2"},
-                new String[]{"minecraft:cobblestone_slab", "minecraft:andesite_slab", "minecraft:gravel", "minecraft:gray_carpet"}, 0.05f, 0.05f, 0.10f, 1),
+                new String[]{"minecraft:cobblestone_slab", "minecraft:andesite_slab", "minecraft:gravel", "minecraft:gray_carpet"}, 0.10f, 0.080f, 0.10f, 1),
     };
     static final Set<String> STATION_BLOCKS = Set.of("minecraft:loom", "minecraft:brewing_stand", "minecraft:blast_furnace", "minecraft:fletching_table",
             "minecraft:smoker", "minecraft:stonecutter", "minecraft:smithing_table");
@@ -201,7 +201,7 @@ final class Interiors {
                     for (int dx = -1; dx <= 1 && !near; dx++) for (int dz = -1; dz <= 1 && !near; dz++) for (int dy = -1; dy <= 1 && !near; dy++)
                         near = route(lvl.getBlockState(p.offset(dx, dy, dz)));
                     if (near) continue;
-                    if (placed.stream().anyMatch(q -> q.distManhattan(p) < 3)) continue;
+                    if (placed.stream().anyMatch(q -> q.distManhattan(p) < 2)) continue;   // 1.8.15: denser
                     final int fy = y;
                     Theme th = themeOf.computeIfAbsent(fy, k -> pickTheme(new Random(key * 131 + fy * 7L), ring));
                     int walls = (n ? 1 : 0) + (so ? 1 : 0) + (e ? 1 : 0) + (w ? 1 : 0);
@@ -226,8 +226,19 @@ final class Interiors {
                         set(lvl, p, "minecraft:cobweb");   // razor wire: slows you, never seals a room (props stay 3 apart)
                         placed.add(p); props++;
                     } else if (walls == 0 && rng.nextFloat() < th.floorP()) {
-                        set(lvl, p, th.floor()[rng.nextInt(th.floor().length)]);
+                        String f = th.floor()[rng.nextInt(th.floor().length)];
+                        set(lvl, p, f);
+                        if (f.endsWith("_carpet"))   // a rug: 2x2 where the floor allows
+                            for (BlockPos q : new BlockPos[]{p.east(), p.south(), p.east().south()})
+                                if (lvl.getBlockState(q).isAir() && solid(lvl, q.below())) set(lvl, q, f);
                         placed.add(p); props++;
+                    } else if (walls == 0 && rng.nextFloat() < 0.012f) {   // a light hanging from the ceiling, over head height
+                        for (int k = 3; k <= 5; k++) {
+                            if (!lvl.getBlockState(p.above(k)).isAir()) {
+                                if (k >= 3 && lvl.getBlockState(p.above(k - 1)).isAir()) { set(lvl, p.above(k - 1), "minecraft:lantern[hanging=true]"); props++; }
+                                break;
+                            }
+                        }
                     }
                 }
         furnished++;
@@ -275,6 +286,13 @@ final class Interiors {
             case "TABLE" -> { set(lvl, p, "minecraft:spruce_fence"); set(lvl, p.above(), rng.nextInt(3) == 0 ? "minecraft:candle[candles=1,lit=false]" : "minecraft:spruce_pressure_plate"); }
             case "CHAIR" -> set(lvl, p, "minecraft:spruce_stairs[facing=" + toWall.getSerializedName() + "]");
             case "SHELF2" -> { set(lvl, p, "minecraft:bookshelf"); set(lvl, p.above(), rng.nextBoolean() ? "minecraft:bookshelf" : "minecraft:chiseled_bookshelf"); }
+            case "SHELFRUN" -> {   // three shelves along the wall
+                Direction along = toWall.getClockWise();
+                for (int k = -1; k <= 1; k++) {
+                    BlockPos q = p.relative(along, k);
+                    if (lvl.getBlockState(q).isAir() && solid(lvl, q.below()) && solid(lvl, q.relative(toWall))) set(lvl, q, rng.nextInt(3) == 0 ? "minecraft:chiseled_bookshelf" : "minecraft:bookshelf");
+                }
+            }
             case "LOCKER" -> { set(lvl, p, "minecraft:iron_block"); set(lvl, p.above(), "minecraft:iron_block");
                                BlockPos front = p.relative(toWall.getOpposite());
                                if (lvl.getBlockState(front).isAir()) set(lvl, front, "minecraft:iron_trapdoor[facing=" + toWall.getOpposite().getSerializedName() + ",half=top,open=true]"); }
@@ -328,12 +346,6 @@ final class Interiors {
 
     static void init() {
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPING.register(server -> { if (done != null) saveDone(); });
-        UseBlockCallback.EVENT.register((pl, world, hand, hit) -> {
-            if (!(pl instanceof ServerPlayer p) || !world.dimension().equals(Zone.CITY) || p.isCreative()) return InteractionResult.PASS;
-            String id = BuiltInRegistries.BLOCK.getKey(world.getBlockState(hit.getBlockPos()).getBlock()).toString();
-            if (!STATION_BLOCKS.contains(id)) return InteractionResult.PASS;
-            p.sendSystemMessage(Ui.t("It's wrecked. Build your own station in your bunker (the Builder sells them).", ChatFormatting.GRAY), true);
-            return InteractionResult.FAIL;
-        });
+        // 1.8.15: the city's stations work (Stations handles them)
     }
 }

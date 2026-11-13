@@ -299,6 +299,18 @@ final class SelfTest {
             Stations.jobs(p).clear();
         }
         f.p.getInventory().clearContent();
+        // 1.8.15: a station in the city works too (its menu opens)
+        ServerLevel city = server.getLevel(Zone.CITY);
+        var tp = ZoneMap.d().points.stream().filter(q -> q.kind().equals("trader")).findFirst().orElse(null);
+        if (city != null && tp != null && city.hasChunk(tp.x() >> 4, tp.z() >> 4)) {
+            BlockPos zs = new BlockPos(tp.x() + 2, city.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, tp.x() + 2, tp.z() + 2), tp.z() + 2);
+            var was = city.getBlockState(zs);
+            city.setBlock(zs, Blocks.FLETCHING_TABLE.defaultBlockState(), 2);
+            Ui.LAST.remove(f.p.getUUID());
+            InteractionResult zr = useBlock(f, city, zs, Direction.UP);
+            check("a station in the zone opens its menu", zr == InteractionResult.SUCCESS && "Reloading Bench".equals(Ui.LAST.get(f.p.getUUID())), "result " + zr + ", menu " + Ui.LAST.get(f.p.getUUID()));
+            city.setBlock(zs, was, 2);
+        }
         // wall finish: walls change, a block of the same kind inside doesn't
         BlockPos marker = new BlockPos(x - 3, F + 1, z - 3), wallPos = new BlockPos(x + h, F + 3, z), ceil = new BlockPos(x - 1, F + 7, z + 1);
         String before = Plots.shell(p);

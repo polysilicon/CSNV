@@ -114,7 +114,7 @@ final class Stations {
                 m.put(9 + i, Ui.item(icon, t(r.label(), ChatFormatting.AQUA), lore, false), (pl, c) -> craft(pl, s, r, c.shift() && r.seconds() == 0 ? 5 : 1));
             }
             // timed jobs in progress
-            if (plot != null && s.recipes().stream().anyMatch(r -> r.seconds() > 0)) {
+            if (plot != null && !p.level().dimension().equals(Zone.CITY) && s.recipes().stream().anyMatch(r -> r.seconds() > 0)) {
                 List<Job> mine = jobs(plot).stream().filter(j -> j.station.equals(s.key())).toList();
                 for (int k = 0; k < MAX_JOBS; k++) {
                     int slot = 45 + k;
@@ -133,7 +133,8 @@ final class Stations {
 
     static void craft(ServerPlayer p, Station s, Recipe r, int times) {
         Plots.Plot plot = Plots.of(p);
-        if (plot == null) { Shops.no(p, "Stations work in your own bunker."); return; }
+        boolean inZone = p.level().dimension().equals(Zone.CITY);
+        if (r.seconds() > 0 && (plot == null || inZone)) { Shops.no(p, r.label() + " takes time: start it at a " + s.title() + " in your bunker."); return; }
         if (r.seconds() > 0 && jobs(plot).stream().filter(j -> j.station.equals(s.key())).count() >= MAX_JOBS) {
             Shops.no(p, "This " + s.title() + " is busy: collect a finished job first (" + MAX_JOBS + " at a time)."); return;
         }
@@ -166,10 +167,18 @@ final class Stations {
 
     static void init() {
         UseBlockCallback.EVENT.register((pl, world, hand, hit) -> {
-            if (!(pl instanceof ServerPlayer p) || !world.dimension().equals(Plots.CAMP) || p.isShiftKeyDown()) return InteractionResult.PASS;
+            if (!(pl instanceof ServerPlayer p) || p.isShiftKeyDown()) return InteractionResult.PASS;
+            boolean zone = world.dimension().equals(Zone.CITY);
+            if (!zone && !world.dimension().equals(Plots.CAMP)) return InteractionResult.PASS;
             load(p.level().getServer());
-            Station s = BY_BLOCK.get(BuiltInRegistries.BLOCK.getKey(world.getBlockState(hit.getBlockPos()).getBlock()).toString());
+            String id = BuiltInRegistries.BLOCK.getKey(world.getBlockState(hit.getBlockPos()).getBlock()).toString();
+            if (zone && id.equals("minecraft:furnace")) id = "minecraft:blast_furnace";   // a furnace the city kept is a Kiln too
+            Station s = BY_BLOCK.get(id);
             if (s == null) return InteractionResult.PASS;
+            if (zone) {   // 1.8.15: the city's stations work too (instant recipes; timed ones run in your bunker)
+                if (hand == InteractionHand.MAIN_HAND) { Trace.d(p, "zone station " + s.key()); open(p, s); }
+                return InteractionResult.SUCCESS;
+            }
             Plots.Plot plot = Plots.of(p);
             if (plot == null || !Plots.inside(plot, hit.getBlockPos())) return InteractionResult.FAIL;   // someone else's: no vanilla UI either
             if (hand == InteractionHand.MAIN_HAND) { Trace.d(p, "station " + s.key()); open(p, s); }
