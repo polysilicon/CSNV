@@ -118,7 +118,7 @@ final class Interiors {
             BlockPos p = be.getBlockPos();
             if (be instanceof SpawnerBlockEntity) {
                 lvl.setBlock(p, Blocks.AIR.defaultBlockState(), 2); spawnersRemoved++;
-                if (rng.nextFloat() < Zone.SPAWNER_CHANCE) Zone.makeSpawnPoint(server, p);
+                if (rng.nextFloat() < Zone.SPAWN_POINT_CHANCE[Zone.tier(p.getX(), p.getZ())]) Zone.makeSpawnPoint(server, p);
             } else if (be instanceof net.minecraft.world.level.block.entity.ChestBlockEntity || be instanceof net.minecraft.world.level.block.entity.BarrelBlockEntity) {
                 crateOrClear(server, lvl, p, rng);
             }
@@ -157,7 +157,7 @@ final class Interiors {
                     BlockPos p = be.getBlockPos();
                     if (be instanceof SpawnerBlockEntity) {
                         lvl.setBlock(p, Blocks.AIR.defaultBlockState(), 2); spawnersRemoved++;
-                        if (rng.nextFloat() < Zone.SPAWNER_CHANCE) Zone.makeSpawnPoint(server, p);
+                        if (rng.nextFloat() < Zone.SPAWN_POINT_CHANCE[Zone.tier(p.getX(), p.getZ())]) Zone.makeSpawnPoint(server, p);
                     } else if (be instanceof net.minecraft.world.level.block.entity.ChestBlockEntity) { crateOrClear(server, lvl, p, rng); swept++; }
                 }
                 long key = net.minecraft.world.level.ChunkPos.pack(cx, cz);

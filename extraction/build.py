@@ -25,7 +25,7 @@ EX_HOLD = 30            # seconds on an extraction point
 EX_R = 4                # its radius
 ZONE_DIM = "lostcities:lostcity"   # The Lost Cities' city dimension (profile "extraction"); the mod turns its chests and spawners into ours
 ZONE = (48, 48, 800, 800)          # x, z, dx, dz: centre 448 448 (the zone map's grid), see the mod's Zone.CX/CZ
-SPAWN_EVERY = 15        # raider spawner check (s)
+SPAWN_EVERY = 10        # raider spawner check (s)
 CRATE_EVERY = 600       # crate refill (s, counted while loaded)
 
 # POIs: key, name, x, z, radius, crate tier, crates, raider type, raider cap
@@ -359,10 +359,10 @@ RAIDERS.update({   # 1.8.4 more variety
                  [], "raider"),
 })
 # what each ring spawns (weights) and how many raiders a spawn point keeps around it
-RINGS = {1: ([("infected", 30), ("runner", 15), ("scav", 25), ("bandit", 15), ("crossbowman", 15)], 2),
-         2: ([("bandit", 25), ("shotgunner", 15), ("raider", 20), ("brute", 10), ("crossbowman", 15), ("scav", 15)], 3),
-         3: ([("rifleman", 30), ("raider", 15), ("sniper", 20), ("breacher", 20), ("shotgunner", 15)], 4),
-         4: ([("rifleman", 30), ("heavy", 30), ("sniper", 20), ("breacher", 20)], 5)}
+RINGS = {1: ([("infected", 30), ("runner", 15), ("scav", 25), ("bandit", 15), ("crossbowman", 15)], 3),
+         2: ([("bandit", 25), ("shotgunner", 15), ("raider", 20), ("brute", 10), ("crossbowman", 15), ("scav", 15)], 5),
+         3: ([("rifleman", 30), ("raider", 15), ("sniper", 20), ("breacher", 20), ("shotgunner", 15)], 7),
+         4: ([("rifleman", 30), ("heavy", 30), ("sniper", 20), ("breacher", 20)], 10)}
 GUNNERS = {"bandit": (3, 30, 0.5), "rifle": (4, 38, 0.4), "boss": (5, 12, 0.35), "sniper": (8, 60, 0.3), "heavy": (3, 8, 0.6), "shotgun": (6, 22, 0.4)}   # 1.8.5: less accurate
 FAR, FAR_MISS = 16, 0.2   # beyond FAR blocks every gunner but the sniper misses FAR_MISS more often   # damage, ticks between shots, miss chance
 SNIPER_RANGE = 48
@@ -831,6 +831,8 @@ def build(out):
         lines.append(f"function {NS}:spawner/{mix[-1][0]}")
         fn(f"spawner/ring{r}", lines)
     fn("spawner/run", [   # as a spawner marker (ez score = cap; ez.ring<n> or, before 1.8.0, ez.sp_<type>): top up to the cap
+        # 1.8.14: the cap comes from the ring every time, so changing RINGS reaches spawn points that already exist
+        *[f"execute if entity @s[tag=ez.ring{r}] run scoreboard players set @s ez {cap}" for r, (_, cap) in RINGS.items()],
         "execute store result score #n ez if entity @e[tag=ez.ai,distance=..48]",
         "execute if score #n ez >= @s ez run return 0",
         *[f"execute if entity @s[tag=ez.ring{r}] run return run function {NS}:spawner/ring_then {{r:{r}}}" for r in RINGS],

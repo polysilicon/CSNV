@@ -470,6 +470,9 @@ final class Design {
                     e -> e.entityTags().contains("ez.boss") && e.isAlive()).size();
             SelfTest.check("zone: at most one Commander", bosses <= 1, bosses + " loaded");
         }
+        ZoneMap.lockIfNeeded(server);   // 1.8.14: the zone map is locked (moving around doesn't redraw the rings away)
+        var zm = ZoneMap.d().id < 0 ? null : server.overworld().getMapData(new net.minecraft.world.level.saveddata.maps.MapId(ZoneMap.d().id));
+        SelfTest.check("zone map is locked (rings stay drawn)", zm != null && zm.locked, zm == null ? "no map yet" : "map id " + ZoneMap.d().id);
         boolean rings = Zone.tier(Zone.CX, Zone.CZ) == 4 && Zone.tier(Zone.CX + 120, Zone.CZ) == 3 && Zone.tier(Zone.CX + 200, Zone.CZ) == 2 && Zone.tier(Zone.CX + 350, Zone.CZ) == 1;
         SelfTest.check("zone: four rings from the centre out", rings, "");
         List<String> missing = new ArrayList<>();

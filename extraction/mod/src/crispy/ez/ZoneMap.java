@@ -32,7 +32,7 @@ final class ZoneMap {
     static final Path FILE = Path.of("config", "crispy_extraction", "map.json");
     static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     record Pt(String kind, String name, int x, int z) {}
-    static final class Data { int id = -1; List<Pt> points = new ArrayList<>(); }
+    static final class Data { int id = -1; List<Pt> points = new ArrayList<>(); List<Integer> oldIds = new ArrayList<>(); }
     static Data data;
     static int row = -1;            // next map row to draw while rendering
     static ItemStack rendering;     // the map being drawn
@@ -55,6 +55,8 @@ final class ZoneMap {
     static void render(MinecraftServer server) {
         ServerLevel lvl = server.getLevel(Zone.CITY);
         if (lvl == null) return;
+        // 1.8.14: the map being replaced is retired, so copies players carry are swapped to the new one when it's done
+        if (d().id >= 0) { if (d().oldIds == null) d().oldIds = new ArrayList<>(); if (!d().oldIds.contains(d().id)) d().oldIds.add(d().id); save(); }
         rendering = MapItem.create(lvl, Zone.CX, Zone.CZ, (byte) 3, true, false);
         row = 0;
         System.out.println("[crispy-extraction] drawing the zone map...");
@@ -106,6 +108,7 @@ final class ZoneMap {
         if (row >= 128) {
             d().id = rendering.get(net.minecraft.core.component.DataComponents.MAP_ID).id();
             save(); row = -1; rendering = null;
+            lockIfNeeded(server);
             System.out.println("[crispy-extraction] zone map drawn: map id " + d().id);
         }
     }
@@ -127,15 +130,43 @@ final class ZoneMap {
 
     static boolean carries(ServerPlayer p) {
         var inv = p.getInventory();
+        boolean has = false;
         for (int i = 0; i < inv.getContainerSize(); i++) {
-            var id = inv.getItem(i).get(net.minecraft.core.component.DataComponents.MAP_ID);
-            if (id != null && id.id() == d().id) return true;
+            var st = inv.getItem(i);
+            var id = st.get(net.minecraft.core.component.DataComponents.MAP_ID);
+            if (id == null) continue;
+            if (id.id() == d().id) has = true;
+            else if (d().oldIds != null && d().oldIds.contains(id.id())) {   // an older (unlocked) zone map: now the locked one
+                st.set(net.minecraft.core.component.DataComponents.MAP_ID, new net.minecraft.world.level.saveddata.maps.MapId(d().id));
+                has = true;
+            }
         }
-        return false;
+        return has;
+    }
+
+    /** 1.8.14: an unlocked map is redrawn around whoever holds it, wiping the ring circles, the border and the colours.
+     *  Like a cartography table, keep a locked copy under a new id and hand that out. */
+    static void lockIfNeeded(MinecraftServer server) {
+        if (d().id < 0 || rendering != null) return;
+        ServerLevel lvl = server.overworld();
+        var cur = lvl.getMapData(new net.minecraft.world.level.saveddata.maps.MapId(d().id));
+        if (cur == null || cur.locked) return;
+        var nid = lvl.getFreeMapId();
+        lvl.setMapData(nid, cur.locked());
+        if (d().oldIds == null) d().oldIds = new ArrayList<>();
+        d().oldIds.add(d().id);
+        d().id = nid.id();
+        save();
+        System.out.println("[crispy-extraction] zone map locked: map id " + d().id);
     }
 
     static void init() {
         ServerTickEvents.END_SERVER_TICK.register(ZoneMap::tick);
+        ServerTickEvents.END_SERVER_TICK.register(server -> {   // lock a drawn map; swap players' older copies
+            if (server.getTickCount() % 100 != 0) return;
+            lockIfNeeded(server);
+            for (ServerPlayer p : server.getPlayerList().getPlayers()) carries(p);
+        });
         CommandRegistrationCallback.EVENT.register((dsp, ctx, env) -> {
             dsp.register(Commands.literal("zonemap").executes(c -> {
                 ServerPlayer p = c.getSource().getPlayerOrException();

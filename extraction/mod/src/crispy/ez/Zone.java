@@ -58,7 +58,9 @@ final class Zone {
 
     /** 1.8.0: four rings, the Core at the centre: the deeper in, the better the loot and the harder the raiders. */
     static final int[] RING_R = {80, 170, 290};          // the Core, inner, middle; outer beyond
-    static final int[] RING_CAP = {0, 2, 3, 4, 5};       // raiders a spawn point keeps around it, by ring
+    static final int[] RING_CAP = {0, 3, 5, 7, 10};      // raiders a spawn point keeps around it, by ring (1.8.14: more, steeper)
+    static final float[] SPAWN_POINT_CHANCE = {0, 0.4f, 0.5f, 0.7f, 0.9f};   // a former mob spawner becomes a spawn point, by ring
+    static final float[] STREET_SPAWN = {0, 0.15f, 0.25f, 0.4f, 0.6f};        // a new street chunk gets a spawn point, by ring
     static final String[] RING_NAME = {"", "the outskirts", "the middle ring", "the inner ring", "the Core"};
     static int tier(int x, int z) {
         double d = Math.hypot(x - CX, z - CZ);
@@ -98,7 +100,7 @@ final class Zone {
             long key = net.minecraft.world.level.ChunkPos.pack(chunk.getPos().x(), chunk.getPos().z());
             if (!Interiors.done().contains(key)) Interiors.QUEUE.add(key);
             // fresh street chunks: some get a raider spawn point out in the open, so gunners hold the streets too
-            if (generated && RNG.nextFloat() < STREET_SPAWN_CHANCE) {
+            if (generated && RNG.nextFloat() < STREET_SPAWN[tier(bx + 8, bz + 8)]) {
                 int cx = chunk.getPos().x(), cz = chunk.getPos().z();
                 Integer street = LC.street(level, cx, cz);
                 if (street != null && LC.isStreet(level, cx, cz)) {
