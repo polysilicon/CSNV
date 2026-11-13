@@ -2,3 +2,4 @@ build/
 launcher/csnv-launch
 launcher/csnv-launch.exe
 __pycache__/
+extraction/worldgen/overworld_noise_*.json   # vanilla game data: copied from the 26.2 server jar, not committed

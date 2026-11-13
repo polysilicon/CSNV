@@ -148,8 +148,10 @@ final class Plots {
             if (BAD_COMMANDS.size() < 50) BAD_COMMANDS.add(cmd + "  <- " + why);
             System.err.println("[crispy-extraction] command didn't parse: " + cmd + " (" + why + ")");
         }
-        var m = BLOCK_ID.matcher(cmd);
-        while (m.find()) USED_IDS.add(m.group(1));
+        if (cmd.contains("setblock ") || cmd.contains(" fill ") || cmd.contains("run fill ")) {   // only commands that place blocks (not map/item commands)
+            var m = BLOCK_ID.matcher(cmd);
+            while (m.find()) USED_IDS.add(m.group(1));
+        }
         s.getCommands().performPrefixedCommand(src, cmd);
     }
     static final java.util.List<String> BAD_COMMANDS = new java.util.ArrayList<>();

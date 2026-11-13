@@ -412,6 +412,11 @@ final class Design {
             if (!there) off.add(tr[1] + " not at " + pt.x() + " " + pt.z());
         }
         SelfTest.check("zone: traders stand at their map markers", off.isEmpty(), String.join("; ", off));
+        if (city != null) {   // 1.8.4: a dry desert city: one biome, no sea
+            boolean desert = city.getBiome(new net.minecraft.core.BlockPos(Zone.CX, 72, Zone.CZ)).is(net.minecraft.world.level.biome.Biomes.DESERT);
+            SelfTest.check("zone: desert biome, no sea", desert && city.getSeaLevel() < 0, "biome desert " + desert + ", sea level " + city.getSeaLevel()
+                    + "; rooms furnished this run: " + Interiors.furnished + " chunks, " + Interiors.props + " props");
+        }
         if (city != null) {   // 1.8.3: never more than one Commander
             int bosses = city.getEntities((net.minecraft.world.entity.Entity) null, new AABB(Zone.CX - 400, -64, Zone.CZ - 400, Zone.CX + 400, 320, Zone.CZ + 400),
                     e -> e.entityTags().contains("ez.boss") && e.isAlive()).size();

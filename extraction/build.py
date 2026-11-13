@@ -341,11 +341,30 @@ RAIDERS = {   # type: (mob, summon NBT, extra tags, loot table). Gunners (ez.gun
                        {"id": "minecraft:movement_speed", "base": 0.18}],
         **soldier("jugg", 0x3A3F44, 0x2F3438, 0x202326, "rib", "iron", held_gun("m60"))}, ["ez.gunner", "ez.g_heavy"], "heavy"),
 }
+RAIDERS.update({   # 1.8.4 more variety
+    "runner": ("minecraft:zombie", {"CustomName": name("Infected Runner", "green"), "equipment": {"head": {"id": "minecraft:leather_helmet", "count": 1}},
+               "drop_chances": {"head": 0.0}, "Health": 14.0, "attributes": [{"id": "minecraft:max_health", "base": 14.0}, {"id": "minecraft:movement_speed", "base": 0.34}]},
+               ["ez.t_infected"], "infected"),
+    "brute": ("minecraft:zombie", {"CustomName": name("Infected Brute", "dark_green", True), "equipment": {"head": {"id": "minecraft:leather_helmet", "count": 1}},
+              "drop_chances": {"head": 0.0}, "Health": 50.0, "attributes": [{"id": "minecraft:max_health", "base": 50.0}, {"id": "minecraft:attack_damage", "base": 7.0},
+              {"id": "minecraft:movement_speed", "base": 0.2}, {"id": "minecraft:knockback_resistance", "base": 0.6}, {"id": "minecraft:scale", "base": 1.25}]},
+              ["ez.t_infected"], "raider"),
+    "shotgunner": ("minecraft:skeleton", {"CustomName": name("Bandit Shotgunner", "red"),
+        **soldier("desert", 0x8C6D46, 0xA68A5B, 0x5A4A33, "dune", "copper", held_gun("stakeout"))}, ["ez.gunner", "ez.g_shotgun"], "bandit"),
+    "crossbowman": ("minecraft:pillager", {"CustomName": name("Bandit Crossbowman", "red"), "equipment": {"mainhand": {"id": "minecraft:crossbow", "count": 1}},
+                    "drop_chances": {"mainhand": 0.0}, "Health": 20.0, "Silent": False}, [], "bandit"),
+    "breacher": ("minecraft:vindicator", {"CustomName": name("Raider Breacher", "dark_red"), "equipment": {"mainhand": {"id": "minecraft:iron_axe", "count": 1}},
+                 "drop_chances": {"mainhand": 0.0}, "Health": 30.0, "attributes": [{"id": "minecraft:max_health", "base": 30.0}, {"id": "minecraft:attack_damage", "base": 1.0}]},
+                 [], "raider"),
+})
 # what each ring spawns (weights) and how many raiders a spawn point keeps around it
-RINGS = {1: ([("infected", 45), ("scav", 35), ("bandit", 20)], 2), 2: ([("bandit", 45), ("raider", 30), ("infected", 15), ("scav", 10)], 3),
-         3: ([("rifleman", 40), ("raider", 30), ("sniper", 30)], 4), 4: ([("rifleman", 35), ("heavy", 40), ("sniper", 25)], 5)}
-GUNNERS = {"bandit": (3, 30, 0.35), "rifle": (4, 38, 0.25), "boss": (5, 12, 0.2), "sniper": (8, 60, 0.2), "heavy": (3, 8, 0.5)}   # damage, ticks between shots, miss chance
+RINGS = {1: ([("infected", 30), ("runner", 15), ("scav", 25), ("bandit", 15), ("crossbowman", 15)], 2),
+         2: ([("bandit", 25), ("shotgunner", 15), ("raider", 20), ("brute", 10), ("crossbowman", 15), ("scav", 15)], 3),
+         3: ([("rifleman", 30), ("raider", 15), ("sniper", 20), ("breacher", 20), ("shotgunner", 15)], 4),
+         4: ([("rifleman", 30), ("heavy", 30), ("sniper", 20), ("breacher", 20)], 5)}
+GUNNERS = {"bandit": (3, 30, 0.35), "rifle": (4, 38, 0.25), "boss": (5, 12, 0.2), "sniper": (8, 60, 0.2), "heavy": (3, 8, 0.5), "shotgun": (6, 22, 0.35)}   # damage, ticks between shots, miss chance
 SNIPER_RANGE = 48
+SHOTGUN_RANGE = 14
 AI_RANGE = 28
 
 def building_recipes():
@@ -380,6 +399,17 @@ def building_recipes():
     shaped("item_frame", ["|||", "|#|", "|||"], {"|": "minecraft:stick", "#": "minecraft:rabbit_hide"}, "minecraft:item_frame", 2, "misc")
     for k, v in R.items(): wj(f"data/{NS}/recipe/{k}.json", v)
     return len(R)
+
+def zone_world():
+    """1.8.4: the zone (Lost Cities' dimension) is desert all over and has no sea: the overworld's terrain settings with
+    sea level at the bottom, air as the default fluid and no aquifers, so low ground stays dry instead of flooding, and
+    no oceans, rivers, ice or snow. Only new chunks: /ezadmin reset regenerates the city on the next start."""
+    base = os.path.join(HERE, "worldgen", "overworld_noise_26.2.json")   # vanilla data, copied from the 26.2 server jar
+    ns = json.load(open(base))
+    ns.update({"sea_level": -63, "aquifers_enabled": False, "default_fluid": {"Name": "minecraft:air"}})
+    wj(f"data/{NS}/worldgen/noise_settings/zone.json", ns)
+    wj("data/lostcities/dimension/lostcity.json", {"type": "lostcities:lostcity", "generator": {"type": "minecraft:noise", "settings": f"{NS}:zone",
+        "biome_source": {"type": "minecraft:fixed", "biome": "minecraft:desert"}}})
 
 def loot_tables():
     for t, d in TIERS.items():
@@ -495,6 +525,7 @@ def build(out):
                    "stations": STATIONS}, f, indent=1, ensure_ascii=False)
     loot_tables()
     building_recipes()
+    zone_world()
 
     rules = {"spawn_mobs": "false", "keep_inventory": "false", "immediate_respawn": "true", "spawn_phantoms": "false", "raids": "false",
              "spawn_patrols": "false", "spawn_wandering_traders": "false", "mob_griefing": "false", "show_advancement_messages": "false",
@@ -707,8 +738,11 @@ def build(out):
     fn("crate/second", [   # 1.8.0: refills CRATE_EVERY s of game time after its last fill (ez.ct = when), when nobody is close
         "scoreboard players operation #d ez = #now ez", "scoreboard players operation #d ez -= @s ez.ct",
         f"execute if score #d ez matches {CRATE_EVERY * 20}.. unless entity @a[distance=..20] run function {NS}:crate/refill"])
-    for t in TIERS:
-        fn(f"crate/fill{t}", [f"setblock ~ ~ ~ minecraft:air", f"setblock ~ ~ ~ minecraft:barrel[facing=up]{{LootTable:\"{NS}:crate/t{t}\"}}"])
+    wj(f"data/{NS}/tags/block/crate_blocks.json", {"values": ["minecraft:chest", "minecraft:trapped_chest", "minecraft:barrel"]})
+    for t in TIERS:   # 1.8.4: the building's own chest (or barrel) is the crate; only an empty spot gets a barrel
+        fn(f"crate/fill{t}", [f"execute if block ~ ~ ~ #{NS}:crate_blocks run data modify block ~ ~ ~ Items set value []",
+                              f"execute if block ~ ~ ~ #{NS}:crate_blocks run return run data modify block ~ ~ ~ LootTable set value \"{NS}:crate/t{t}\"",
+                              f"setblock ~ ~ ~ minecraft:barrel[facing=up]{{LootTable:\"{NS}:crate/t{t}\"}}"])
     fn("crate/refill", ["scoreboard players operation @s ez.ct = #now ez",
                         *[f"execute if score @s ez {f'matches {t}'} run function {NS}:crate/fill{t}" for t in TIERS]])
     for k, (mob, nbt, tags, loot) in RAIDERS.items():
@@ -734,10 +768,11 @@ def build(out):
     # ---- enemy gunners: cock (a click you can hear), fire 10 ticks later along a hitscan ray that walls stop
     for g, (dmg, rate, miss) in GUNNERS.items():
         wj(f"data/{NS}/predicate/miss_{g}.json", {"condition": "minecraft:random_chance", "chance": miss})
-    for gname, rng in (("gunner", AI_RANGE), ("gunner_long", SNIPER_RANGE)):
+    for gname, rng in (("gunner", AI_RANGE), ("gunner_long", SNIPER_RANGE), ("gunner_short", SHOTGUN_RANGE)):
      T = f"@p[tag=ez.raid,tag=!ez.hidden,distance=..{rng},gamemode=!spectator]"   # ez.hidden: a crouching ghillie (mod Armor)
      fn(f"ai/{gname}", [
-        *([f"execute if entity @s[tag=ez.g_sniper] run return run function {NS}:ai/gunner_long"] if gname == "gunner" else []),
+        *([f"execute if entity @s[tag=ez.g_sniper] run return run function {NS}:ai/gunner_long",
+           f"execute if entity @s[tag=ez.g_shotgun] run return run function {NS}:ai/gunner_short"] if gname == "gunner" else []),
         "scoreboard players remove @s ez.cd 1",
         f"execute if score @s ez.cd matches 10 if entity {T} run playsound minecraft:block.iron_trapdoor.close hostile @a[distance=..32] ~ ~ ~ 0.7 1.8",
         "execute if score @s ez.cd matches 1.. run return 0",

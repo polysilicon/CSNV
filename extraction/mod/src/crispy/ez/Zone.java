@@ -92,15 +92,20 @@ final class Zone {
             if (bx < CX - HALF - 16 || bx > CX + HALF || bz < CZ - HALF - 16 || bz > CZ + HALF) return;
             for (BlockEntity be : new ArrayList<>(chunk.getBlockEntities().values())) {
                 BlockPos p = be.getBlockPos();
+                boolean chest = be instanceof net.minecraft.world.level.block.entity.ChestBlockEntity || be instanceof net.minecraft.world.level.block.entity.BarrelBlockEntity;
                 if (be instanceof RandomizableContainerBlockEntity c && c.getLootTable() != null
                         && !c.getLootTable().identifier().getNamespace().equals("ez")) {
                     c.setLootTable(null);   // no vanilla/Lost Cities loot in the zone
-                    if (RNG.nextFloat() < CRATE_CHANCE) QUEUE.add(new long[]{p.getX(), p.getY(), p.getZ(), 0});
+                    if (chest || RNG.nextFloat() < CRATE_CHANCE) QUEUE.add(new long[]{p.getX(), p.getY(), p.getZ(), 0});
+                } else if (generated && chest) {   // 1.8.4: every chest and barrel in a new building is a crate (they stay chests)
+                    QUEUE.add(new long[]{p.getX(), p.getY(), p.getZ(), 0});
                 } else if (be instanceof SpawnerBlockEntity) {
                     // the city has far more spawners than chests: keep about a third as raider spawn points, remove the rest
                     QUEUE.add(new long[]{p.getX(), p.getY(), p.getZ(), RNG.nextFloat() < SPAWNER_CHANCE ? 1 : 2});
                 }
             }
+            // 1.8.4: furnish the rooms of new buildings
+            if (generated) Interiors.QUEUE.add(net.minecraft.world.level.ChunkPos.pack(chunk.getPos().x(), chunk.getPos().z()));
             // fresh street chunks: some get a raider spawn point out in the open, so gunners hold the streets too
             if (generated && RNG.nextFloat() < STREET_SPAWN_CHANCE) {
                 int cx = chunk.getPos().x(), cz = chunk.getPos().z();
@@ -171,6 +176,7 @@ final class Zone {
             }
             if (server.getTickCount() % 10 == 0) modes(server);
             if (server.getTickCount() % 200 == 0) keepTraders(server);
+            Interiors.tick(server);
         });
         CommandRegistrationCallback.EVENT.register((d, ctx, env) -> d.register(Commands.literal("ezadmin")
                 .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
