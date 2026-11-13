@@ -413,8 +413,8 @@ final class Design {
         }
         SelfTest.check("zone: traders stand at their map markers", off.isEmpty(), String.join("; ", off));
         if (city != null) {   // 1.8.4: a dry desert city: one biome, no sea
-            boolean desert = city.getBiome(new net.minecraft.core.BlockPos(Zone.CX, 72, Zone.CZ)).is(net.minecraft.world.level.biome.Biomes.DESERT);
-            SelfTest.check("zone: desert biome, no sea", desert && city.getSeaLevel() < 0, "biome desert " + desert + ", sea level " + city.getSeaLevel()
+            boolean desert = city.getBiome(new net.minecraft.core.BlockPos(Zone.CX, 72, Zone.CZ)).is(net.minecraft.world.level.biome.Biomes.WINDSWEPT_GRAVELLY_HILLS);
+            SelfTest.check("zone: gravelly hills biome, no sea", desert && city.getSeaLevel() < 0, "biome gravelly hills " + desert + ", sea level " + city.getSeaLevel()
                     + "; rooms furnished this run: " + Interiors.furnished + " chunks, " + Interiors.props + " props");
         }
         if (city != null) {   // 1.8.5: flat, level with the roads: no column's surface below street level

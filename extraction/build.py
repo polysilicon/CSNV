@@ -402,8 +402,9 @@ def building_recipes():
     for k, v in R.items(): wj(f"data/{NS}/recipe/{k}.json", v)
     return len(R)
 
+ZONE_BIOME = "windswept_gravelly_hills"
 def zone_world():
-    """1.8.4: the zone (Lost Cities' dimension) is desert all over, flat (1.8.5) and has no sea: the overworld's terrain settings with
+    """1.8.4: the zone (Lost Cities' dimension) is one biome all over (1.8.7: windswept gravelly hills), flat (1.8.5) and has no sea: the overworld's terrain settings with
     sea level at the bottom, air as the default fluid and no aquifers, so low ground stays dry instead of flooding, and
     no oceans, rivers, ice or snow. Only new chunks: /ezadmin reset regenerates the city on the next start."""
     base = os.path.join(HERE, "worldgen", "overworld_noise_26.2.json")   # vanilla data, copied from the 26.2 server jar
@@ -419,18 +420,20 @@ def zone_world():
     # shape and open at the surface), lava lakes, geodes, fossils, dungeons, wells or springs; plants and ores stay.
     # Every "biome has structure X" list is emptied, so no village, temple, outpost, mineshaft, portal ... anywhere
     # (the overworld isn't used).
-    desert = json.load(open(os.path.join(HERE, "worldgen", "desert_26.2.json")))
-    drop = ("lake", "geode", "fossil", "monster_room", "desert_well", "spring_")
-    desert["carvers"] = []
-    desert["features"] = [[f for f in step if not any(k in f for k in drop)] for step in desert["features"]]
-    wj("data/minecraft/worldgen/biome/desert.json", desert)
+    # 1.8.7: windswept gravelly hills (grey gravel, stone and grass; Lost Cities' standard stone and concrete city)
+    # instead of the desert's orange sand and sandstone; also no infested stone and nothing that freezes
+    biome = json.load(open(os.path.join(HERE, "worldgen", f"{ZONE_BIOME}_26.2.json")))
+    drop = ("lake", "geode", "fossil", "monster_room", "desert_well", "spring_", "infested", "freeze_top_layer")
+    biome["carvers"] = []
+    biome["features"] = [[f for f in step if not any(k in f for k in drop)] for step in biome["features"]]
+    wj(f"data/minecraft/worldgen/biome/{ZONE_BIOME}.json", biome)
     for t in ("ancient_city bastion_remnant buried_treasure desert_pyramid end_city igloo jungle_temple mineshaft mineshaft_mesa nether_fortress "
               "nether_fossil ocean_monument ocean_ruin_cold ocean_ruin_warm pillager_outpost ruined_portal_desert ruined_portal_jungle ruined_portal_mountain "
               "ruined_portal_nether ruined_portal_ocean ruined_portal_standard ruined_portal_swamp shipwreck shipwreck_beached stronghold swamp_hut trail_ruins "
               "trial_chambers village_desert village_plains village_savanna village_snowy village_taiga woodland_mansion").split():
         wj(f"data/minecraft/tags/worldgen/biome/has_structure/{t}.json", {"replace": True, "values": []})
     wj("data/lostcities/dimension/lostcity.json", {"type": "lostcities:lostcity", "generator": {"type": "minecraft:noise", "settings": f"{NS}:zone",
-        "biome_source": {"type": "minecraft:fixed", "biome": "minecraft:desert"}}})
+        "biome_source": {"type": "minecraft:fixed", "biome": f"minecraft:{ZONE_BIOME}"}}})
 
 def loot_tables():
     for t, d in TIERS.items():
