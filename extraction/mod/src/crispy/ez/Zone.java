@@ -334,8 +334,12 @@ final class Zone {
             ZoneMap.Pt pt = ZoneMap.d().points.stream().filter(q -> q.kind().equals("trader") && q.name().equals(tr[1])).findFirst().orElse(null);
             if (pt == null || !lvl.hasChunk(pt.x() >> 4, pt.z() >> 4)) continue;
             String tag = "ez.shop." + tr[0];
-            BlockPos b = ground(lvl, pt.x(), pt.z());
+            // 1.8.13: exactly on the marker's column (searching again could pick another spot once the street changed)
+            BlockPos b = new BlockPos(pt.x(), lvl.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pt.x(), pt.z()), pt.z());
             var here = lvl.getEntities((Entity) null, new AABB(b).inflate(3), e -> e.entityTags().contains(tag));
+            if (here.isEmpty()) {   // room to stand: clear a street piece in that exact spot
+                for (BlockPos q : new BlockPos[]{b, b.above()}) if (!lvl.getBlockState(q).isAir()) lvl.setBlock(q, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+            }
             for (Entity e : lvl.getEntities((Entity) null, new AABB(b).inflate(400), e -> e.entityTags().contains(tag) && !here.contains(e))) e.discard();
             if (!here.isEmpty()) continue;
             String skin = Shops.SKINS.getOrDefault((String) tr[0], "");
