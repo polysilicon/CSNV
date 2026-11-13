@@ -10,6 +10,7 @@ NEWS = [
         "date": "2026-11-13",
         "title": "Extraction Zone is open",
         "summary": "Extraction Zone is live: loot a ruined city, fight raiders and players, revive your squad or finish off a rival, and get out alive.",
+        "image": "/img/shots/ez-street.webp",
         "body": """
 <p><a href="/extraction-zone/">Extraction Zone</a> is open. Pick it in the lobby's server selector.</p>
 <ul>
@@ -21,6 +22,7 @@ NEWS = [
 <li><b>No safe logout.</b> Leave mid-raid and a stand-in of you stays behind with your gear while your timer runs.</li>
 </ul>
 <p>New players get a Field Guide on their first visit, and <code>/guide</code> gives a fresh copy any time.</p>
+<figure class="pic"><img src="/img/shots/ez-city.webp" alt="Aerial view of the ruined Extraction Zone city in grey fog" width="1600" height="900" loading="lazy"><figcaption>The city from above.</figcaption></figure>
 """,
     },
     {

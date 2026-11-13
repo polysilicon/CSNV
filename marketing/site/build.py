@@ -430,7 +430,7 @@ def extraction():
     qas = [
         ("Is Extraction Zone open?", "Yes, since Friday 13 November 2026. It replaced the old Factions server on the Crispy network."),
         ("What happens if I log out in the middle of a raid?", "Your raid timer keeps running and a stand-in of you stays where you stood, carrying your gear. Raiders leave it alone, but other players can kill it and take everything. Log back in before your time runs out."),
-        ("What happens if I die in the zone?", "You lose everything you carried in. What you left in your stash plot in camp is safe, and if you lose everything the Quartermaster sends a basic relief kit."),
+        ("What happens if I die in the zone?", "You lose everything you carried in. What you left in your bunker is safe, and if you lose everything the Quartermaster sends a basic relief kit."),
         ("Can I team up with other players?", "Yes. Anyone you meet in the zone can become a teammate for the raid, and any teammate can turn on you."),
         ("Do I need mods?", "No. It runs on the normal Minecraft client, Java or Bedrock, through the Crispy lobby."),
     ]
@@ -442,6 +442,7 @@ def extraction():
   <p class="lede measure">Drop into a ruined city with the gear you chose to risk, loot what you can, fight armed raiders and other players, and reach an extraction point before the timer runs out. Get out and the loot is yours. Die and you lose everything you brought in.</p>
   {join_box(True)}
 </section>
+<figure class="wrap shot"><img src="/img/shots/ez-street.webp" alt="A masked raider on a foggy street in the ruined city of Extraction Zone, with overgrown concrete buildings and cobwebs" width="1600" height="900" fetchpriority="high"><figcaption>A raider in the outskirts, out of the haze.</figcaption></figure>
 <section class="wrap block prose">
   <h2>How a raid works</h2>
   <ol>
@@ -450,12 +451,18 @@ def extraction():
     <li><b>Loot.</b> Search crates in buildings. The closer to the city centre, the better the loot and the tougher the enemies.</li>
     <li><b>Extract.</b> Reach one of the extraction points and hold it for 30 seconds before the 25-minute timer ends. The flare draws a wave of raiders, so expect a fight.</li>
   </ol>
+  {figs(("ez-camp", "The Extraction Zone camp from above: a helipad marked with an H, lamp posts, sandbags and watchtowers", "The camp: gear up, then deploy from the helipad."),
+        ("ez-fixer", "The Fixer, a masked trader in a wooden booth, who hands out contracts", "The Fixer hands out contracts before each raid."))}
   <h2>One shared zone with PvP</h2>
   <p>Everyone raids the same city at the same time. Players you meet can team up with you for the raid, and any of them can betray you for what you carry. Trust is part of the loot.</p>
+  {figs(("ez-city", "Aerial view of the ruined city in grey fog: cracked streets, tilted buildings and rubble", "The city from above, fading into the haze."),
+        ("ez-map", "The Extraction Zone map held in hand, with yellow, orange and magenta rings closing in on the centre", "Your zone map: the rings close in on the Core."))}
   <h2>Downed, not dead</h2>
   <p>A fatal hit puts you on the ground for 45 seconds. Another player can crouch beside you to get you back up, or finish you off and take your gear. A Self-Revive Injector, rare in the inner city or made in your bunker, gets you up on your own.</p>
   <h2>Guns and enemies</h2>
   <p>Pistols, SMGs, shotguns, rifles and a machine gun, each with a magazine you have to reload. The city is held by Infected, Bandit Gunners, Raiders and Riflemen, and the armed ones shoot back. When the shooting has to stop, there are blades: a combat knife, a machete, a fire axe and a sledgehammer.</p>
+  {figs(("ez-firefight", "First-person gunfire down a city street at armed raiders by a concrete building", "Trading shots with raiders in the street."),
+        ("ez-commander", "The Commander, a heavily armed boss with a red health bar, on a dark street at night", "The Commander, waiting in the Core."))}
   <h2>Contracts, the Commander and zone events</h2>
   <p>The Fixer offers jobs before each raid: recover an intel cache from a district, take out a number of Riflemen, or extract from a particular point. Finish the job and get out alive for bonus coins.</p>
   <p>The Commander, a heavily armed boss with an escort, lands in the city centre and carries the best loot in the zone. Every few minutes something else happens somewhere in the city: a supply drop under a red flare, a helicopter crash guarded by raiders, or a hot extract that pays double for 3 minutes.</p>
@@ -463,6 +470,7 @@ def extraction():
   <p>The Zone runs on Gold Coins, and 64 of them condense into a Coin Bag. Coins are items, so you can only spend what you carry. Traders inside the zone, the Smuggler and the Arms Dealer, sell gear you can't get in camp, so bringing cash in is worth the risk. Sell what you extract to the Broker in camp.</p>
   <h2>Your bunker</h2>
   <p>Every player gets a protected bunker under the camp to store loot, build and decorate. Fill it with stations: sew armour and bandages, brew medkits, reload your own ammo, distil moonshine to sell, make tools like a grappling hook and smoke grenades, and break spare armour and guns down into parts at a Salvage Bench. Upgrades change how you play: a gun workbench for extended magazines and faster reloads, a medical station for cheaper heals, and a field radio that pins down the next zone event. Nobody can raid it.</p>
+  {fig("ez-bunker", "A player's underground bunker: stone-tiled floor, a wheat farm, stations along the wall and stairs up to camp", "A bunker with a farm going and stations along the wall.")}
   <h2>A new city every week</h2>
   <p>The city is rebuilt every Monday, so the streets stay clear and there is always fresh ground to search. After every raid you get a recap of your loot, kills and distance, and the best runs are announced to everyone.</p>
   <h2>Questions</h2>
@@ -473,7 +481,7 @@ def extraction():
 """
     return page("/extraction-zone/", "Extraction Zone – Minecraft Extraction Shooter, PvPvE Looting | Crispy Network",
                 "Loot a ruined city with guns, fight armed raiders and players, team up or betray, and extract alive. Now open on the Crispy network. Java & Bedrock, no mods.",
-                body, crumbs=[("/extraction-zone/", "Extraction Zone")], extra_ld=[GAMESERVER, faq_ld(qas)])
+                body, crumbs=[("/extraction-zone/", "Extraction Zone")], extra_ld=[GAMESERVER, faq_ld(qas)], image="/img/shots/ez-street.webp")
 
 
 def spawn_map():
