@@ -399,6 +399,24 @@ final class Design {
         boolean bounds = true;
         for (int r = 1; r <= 4; r++) { int[] b = Events.ringBounds(r); if (!(b[0] < b[1]) || Zone.tier(Zone.CX + (b[0] + b[1]) / 2, Zone.CZ) != r) bounds = false; }
         SelfTest.check("zone: each ring's event area lies inside that ring", bounds, "");
+        // 1.8.3: every zone trader stands at its map point
+        Zone.keepTraders(server);
+        var city = server.getLevel(Zone.CITY);
+        List<String> off = new ArrayList<>();
+        if (city != null) for (Object[] tr : Zone.TRADERS) {
+            var pt = ZoneMap.d().points.stream().filter(q -> q.kind().equals("trader") && q.name().equals(tr[1])).findFirst().orElse(null);
+            if (pt == null) { off.add(tr[1] + " has no map point"); continue; }
+            if (!city.hasChunk(pt.x() >> 4, pt.z() >> 4)) { off.add(tr[1] + " chunk not loaded"); continue; }
+            boolean there = !city.getEntities((net.minecraft.world.entity.Entity) null, new AABB(pt.x() - 3, -64, pt.z() - 3, pt.x() + 4, 320, pt.z() + 4),
+                    e -> e.entityTags().contains("ez.shop." + tr[0])).isEmpty();
+            if (!there) off.add(tr[1] + " not at " + pt.x() + " " + pt.z());
+        }
+        SelfTest.check("zone: traders stand at their map markers", off.isEmpty(), String.join("; ", off));
+        if (city != null) {   // 1.8.3: never more than one Commander
+            int bosses = city.getEntities((net.minecraft.world.entity.Entity) null, new AABB(Zone.CX - 400, -64, Zone.CZ - 400, Zone.CX + 400, 320, Zone.CZ + 400),
+                    e -> e.entityTags().contains("ez.boss") && e.isAlive()).size();
+            SelfTest.check("zone: at most one Commander", bosses <= 1, bosses + " loaded");
+        }
         boolean rings = Zone.tier(Zone.CX, Zone.CZ) == 4 && Zone.tier(Zone.CX + 120, Zone.CZ) == 3 && Zone.tier(Zone.CX + 200, Zone.CZ) == 2 && Zone.tier(Zone.CX + 350, Zone.CZ) == 1;
         SelfTest.check("zone: four rings from the centre out", rings, "");
         List<String> missing = new ArrayList<>();

@@ -12,6 +12,7 @@ import net.minecraft.world.BossEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
+import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -49,6 +50,20 @@ final class Boss {
         if (lvl == null) return;
         long now = System.currentTimeMillis();
         if (nextAt < 0) nextAt = now + FIRST;
+        // 1.8.3: the Commander is saved with the world, but uuid lived only in memory, so each restart spawned another.
+        // The centre stays loaded; before anything else, adopt a Commander already there and remove any extras.
+        int ccx = Zone.CX >> 4, ccz = Zone.CZ >> 4;
+        if (!lvl.getForceLoadedChunks().contains(net.minecraft.world.level.ChunkPos.pack(ccx, ccz))) lvl.setChunkForced(ccx, ccz, true);
+        if (uuid == null) {
+            if (!lvl.areEntitiesLoaded(net.minecraft.world.level.ChunkPos.pack(ccx, ccz))) return;   // can't tell yet: never spawn blind
+            List<Entity> found = lvl.getEntities((Entity) null, new net.minecraft.world.phys.AABB(Zone.CX - 96, -64, Zone.CZ - 96, Zone.CX + 96, 320, Zone.CZ + 96),
+                    x -> x.entityTags().contains("ez.boss") && x.isAlive());
+            if (!found.isEmpty()) {
+                uuid = found.get(0).getUUID(); at = found.get(0).blockPosition();
+                for (int i = 1; i < found.size(); i++) found.get(i).discard();
+                if (found.size() > 1) System.out.println("[crispy-extraction] removed " + (found.size() - 1) + " extra Commander(s)");
+            }
+        }
         Entity boss = uuid == null ? null : lvl.getEntity(uuid);
         if (uuid != null && (boss == null || !boss.isAlive())) {   // gone some other way (removed, unloaded)
             if (boss == null && at != null && lvl.isLoaded(at)) { reset(lvl); nextAt = now + 60_000L; }
@@ -74,7 +89,7 @@ final class Boss {
         Plots.run(server, String.format("execute in lostcities:lostcity positioned %d %d %d run function ez:boss/spawn", pos.getX(), pos.getY(), pos.getZ()));
         Entity e = lvl.getEntitiesOfClass(LivingEntity.class, new net.minecraft.world.phys.AABB(pos).inflate(4), x -> x.entityTags().contains("ez.boss"))
                 .stream().findFirst().orElse(null);
-        if (e == null) { lvl.setChunkForced(pos.getX() >> 4, pos.getZ() >> 4, false); nextAt = System.currentTimeMillis() + 60_000L; return; }
+        if (e == null) { nextAt = System.currentTimeMillis() + 60_000L; return; }
         uuid = e.getUUID();
         for (ServerPlayer p : server.getPlayerList().getPlayers())
             if (Raid.raiding(p)) {
@@ -95,7 +110,6 @@ final class Boss {
     }
 
     static void reset(ServerLevel lvl) {
-        if (at != null) lvl.setChunkForced(at.getX() >> 4, at.getZ() >> 4, false);
         BAR.removeAllPlayers();
         uuid = null; at = null;
     }

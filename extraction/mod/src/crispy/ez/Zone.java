@@ -65,6 +65,25 @@ final class Zone {
         return d < RING_R[0] ? 4 : d < RING_R[1] ? 3 : d < RING_R[2] ? 2 : 1;
     }
     static final java.util.Queue<java.util.UUID> MIGRATE = new java.util.concurrent.ConcurrentLinkedQueue<>();
+    static final java.util.Queue<java.util.UUID> UNSTICK = new java.util.concurrent.ConcurrentLinkedQueue<>();
+    static int unstuck, removed;
+    /** Move a mob out of solid blocks: the nearest spot within 4 (same height +-2) where it fits with ground under it. */
+    static void unstick(ServerLevel lvl, Entity m) {
+        if (lvl.noCollision(m)) return;
+        BlockPos at = m.blockPosition();
+        for (int r = 1; r <= 4; r++)
+            for (int dy : new int[]{0, 1, -1, 2, -2})
+                for (int dx = -r; dx <= r; dx++)
+                    for (int dz = -r; dz <= r; dz++) {
+                        if (Math.max(Math.abs(dx), Math.abs(dz)) != r) continue;
+                        BlockPos q = at.offset(dx, dy, dz);
+                        AABB box = m.getType().getDimensions().makeBoundingBox(q.getX() + 0.5, q.getY(), q.getZ() + 0.5);
+                        if (lvl.noCollision(m, box) && !lvl.getBlockState(q.below()).getCollisionShape(lvl, q.below()).isEmpty()) {
+                            m.teleportTo(q.getX() + 0.5, q.getY(), q.getZ() + 0.5); unstuck++; return;
+                        }
+                    }
+        m.discard(); removed++;
+    }
 
     static void init() {
         ServerChunkEvents.CHUNK_LOAD.register((level, chunk, generated) -> {
@@ -95,6 +114,8 @@ final class Zone {
         });
         // no vanilla mobs in the zone or camp: only our raiders (tagged ez.*) and traders
         ServerEntityEvents.ENTITY_LOAD.register((e, level) -> {
+            // 1.8.3: a raider that appears inside a wall is moved to open ground (or removed, and the spawner tries again)
+            if (e instanceof Mob && level.dimension().equals(CITY) && e.entityTags().contains("ez.ai")) UNSTICK.add(e.getUUID());
             // 1.8.0: crates and spawn points from before the rings get their ring as they load
             if (e instanceof net.minecraft.world.entity.Marker && level.dimension().equals(CITY) && !e.entityTags().contains("ez.v18")
                     && (e.entityTags().contains("ez.crate") || e.entityTags().contains("ez.spawner"))) MIGRATE.add(e.getUUID());
@@ -111,6 +132,7 @@ final class Zone {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             for (Entity e; (e = PURGE.poll()) != null; ) if (!e.isRemoved()) e.discard();
             ServerLevel city = server.getLevel(CITY);
+            for (java.util.UUID id; city != null && (id = UNSTICK.poll()) != null; ) { Entity m = city.getEntity(id); if (m != null && !m.isRemoved()) unstick(city, m); }
             for (java.util.UUID id; city != null && (id = MIGRATE.poll()) != null; ) {
                 Entity m = city.getEntity(id);
                 if (m == null || m.entityTags().contains("ez.v18")) continue;
@@ -148,6 +170,7 @@ final class Zone {
                 }
             }
             if (server.getTickCount() % 10 == 0) modes(server);
+            if (server.getTickCount() % 200 == 0) keepTraders(server);
         });
         CommandRegistrationCallback.EVENT.register((d, ctx, env) -> d.register(Commands.literal("ezadmin")
                 .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
@@ -286,6 +309,28 @@ final class Zone {
         }
     }
 
+    /** 1.8.3: every zone trader stands at its map point: summoned when missing, strays (old setups) removed. */
+    static void keepTraders(MinecraftServer server) {
+        ServerLevel lvl = server.getLevel(CITY);
+        if (lvl == null) return;
+        Shops.load(server);
+        for (Object[] tr : TRADERS) {
+            ZoneMap.Pt pt = ZoneMap.d().points.stream().filter(q -> q.kind().equals("trader") && q.name().equals(tr[1])).findFirst().orElse(null);
+            if (pt == null || !lvl.hasChunk(pt.x() >> 4, pt.z() >> 4)) continue;
+            String tag = "ez.shop." + tr[0];
+            BlockPos b = ground(lvl, pt.x(), pt.z());
+            var here = lvl.getEntities((Entity) null, new AABB(b).inflate(3), e -> e.entityTags().contains(tag));
+            for (Entity e : lvl.getEntities((Entity) null, new AABB(b).inflate(400), e -> e.entityTags().contains(tag) && !here.contains(e))) e.discard();
+            if (!here.isEmpty()) continue;
+            String skin = Shops.SKINS.getOrDefault((String) tr[0], "");
+            Plots.run(server, String.format("execute in lostcities:lostcity run summon minecraft:mannequin %d %d %d {Tags:[\"ez.npc\",\"ez.zonetrader\",\"ez.shop.%s\"],"
+                    + "Invulnerable:true,immovable:true,hide_description:true,CustomNameVisible:true,CustomName:{text:\"%s\",color:\"%s\",bold:true}%s}",
+                    b.getX(), b.getY(), b.getZ(), tr[0], tr[1], tr[2],
+                    skin.isEmpty() ? "" : ",profile:{properties:[{name:\"textures\",value:\"" + skin + "\"}]}"));
+            System.out.println("[crispy-extraction] zone trader placed: " + tr[1] + " at " + b.toShortString());
+        }
+    }
+
     static void setup(MinecraftServer server) {
         ServerLevel lvl = server.getLevel(CITY);
         if (lvl == null) return;
@@ -313,12 +358,7 @@ final class Zone {
             BlockPos b = ground(lvl, CX + (int) tr[3], CZ + (int) tr[4]);
             ZoneMap.point("trader", (String) tr[1], b);
             Plots.run(server, String.format("execute in lostcities:lostcity run forceload add %d %d", b.getX(), b.getZ()));
-            Shops.load(server);
-            String skin = Shops.SKINS.getOrDefault((String) tr[0], "");
-            Plots.run(server, String.format("execute in lostcities:lostcity run summon minecraft:mannequin %d %d %d {Tags:[\"ez.npc\",\"ez.zonetrader\",\"ez.shop.%s\"],"
-                    + "Invulnerable:true,immovable:true,hide_description:true,CustomNameVisible:true,CustomName:{text:\"%s\",color:\"%s\",bold:true}%s}",
-                    b.getX(), b.getY(), b.getZ(), tr[0], tr[1], tr[2],
-                    skin.isEmpty() ? "" : ",profile:{properties:[{name:\"textures\",value:\"" + skin + "\"}]}"));
+            // 1.8.3: placed by keepTraders() once the chunk is loaded (a summon into a chunk forceloaded this tick is dropped)
             done.add(tr[1] + " " + b.toShortString());
         }
         ZoneMap.save();
