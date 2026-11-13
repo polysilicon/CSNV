@@ -16,11 +16,12 @@ A listing site pings the address you give it, and players type it in, so the add
    | Type | Host | Data |
    |---|---|---|
    | CNAME | `anarchy` | `crispyanarchy.net.` |
-   | SRV | `_minecraft._tcp.anarchy` | priority 0, weight 5, port 13134, target `crispyanarchy.net.` |
+   | SRV | `_minecraft._tcp.anarchy` | priority 0, weight 5, port 13134, target `anarchy.crispyanarchy.net.` |
    | CNAME | `skyblock` | `crispyanarchy.net.` |
-   | SRV | `_minecraft._tcp.skyblock` | priority 0, weight 5, port 13134, target `crispyanarchy.net.` |
+   | SRV | `_minecraft._tcp.skyblock` | priority 0, weight 5, port 13134, target `skyblock.crispyanarchy.net.` |
 
-   (The main SRV record already points `crispyanarchy.net` at port 13134 the same way.)
+   The SRV target must be the subdomain itself: the game sends the SRV *target* to the server as the address it
+   joined, so a target of `crispyanarchy.net` lands everyone in the lobby (that was the first try, 2026-11-13).
 2. **Proxy:** the forced hosts that send `anarchy.crispyanarchy.net` to Anarchy and `skyblock.crispyanarchy.net` to
    Skyblock (falling back to the lobby if that server is down). Staged in `velocity.toml.tonight` since 2026-11-09;
    applied with `velocity reload`, no restart.
