@@ -349,6 +349,29 @@ final class Design {
         SelfTest.check("bunker builder: every command parsed", Plots.BAD_COMMANDS.isEmpty(), Plots.BAD_COMMANDS.isEmpty() ? "" : Plots.BAD_COMMANDS.get(0));
     }
 
+    /** 1.7.0: the armour sets load; vanilla armour converts; no vanilla recipe is loaded. */
+    static void armor(MinecraftServer server) {
+        JsonObject out = new JsonObject(); report.add("armor", out);
+        Armor.SETS.clear(); Armor.load(server);
+        int pieces = Armor.SETS.values().stream().mapToInt(Map::size).sum();
+        out.addProperty("sets", Armor.SETS.size()); out.addProperty("pieces", pieces);
+        SelfTest.check("armour: 6 sets of 4 pieces load", Armor.SETS.size() == 6 && pieces == 24, Armor.SETS.size() + " sets, " + pieces + " pieces");
+        String[][] conv = {{"iron_chestplate", "patrol"}, {"diamond_helmet", "tactical"}, {"netherite_boots", "juggernaut"}, {"leather_leggings", "scav"}, {"turtle_helmet", "scav"}};
+        int okc = 0;
+        for (String[] c : conv) {
+            var to = Armor.convert(server, new net.minecraft.world.item.ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.withDefaultNamespace(c[0]))));
+            if (to != null && c[1].equals(Armor.set(to))) okc++;
+        }
+        SelfTest.check("armour: vanilla pieces swap for set pieces", okc == conv.length, okc + " / " + conv.length);
+        var head = Armor.SETS.getOrDefault("tactical", Map.of()).get("head");
+        boolean armoured = head != null && head.get(net.minecraft.core.component.DataComponents.ATTRIBUTE_MODIFIERS) != null && head.is(net.minecraft.world.item.Items.PLAYER_HEAD);
+        SelfTest.check("armour: helmets are player heads with armour", armoured, "");
+        long vanilla = server.getRecipeManager().getRecipes().stream().filter(r -> r.id().toString().contains("/ minecraft:")).count();
+        long all = server.getRecipeManager().getRecipes().size();
+        out.addProperty("vanilla_recipes", vanilla); out.addProperty("recipes", all);
+        SelfTest.check("recipes: no vanilla recipe loaded", vanilla == 0, vanilla + " vanilla of " + all);
+    }
+
     static void write(int passed, List<String> fails) {
         report.addProperty("passed", passed); report.add("failed", new Gson().toJsonTree(fails));
         report.addProperty("at", java.time.Instant.now().toString());

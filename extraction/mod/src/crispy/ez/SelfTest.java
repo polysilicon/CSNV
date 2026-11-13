@@ -138,7 +138,7 @@ final class SelfTest {
         phases.clear();
         phases.add(() -> { campChecks(server, camp, f); Design.camp(server, camp); Design.realBunkers(server, camp); p[0] = bunkerChecks(server, camp, f); });
         phases.add(() -> { bunkerLevel(server, camp, f, p[0], 0); p[0].level = 1; Plots.lay(server, p[0], false, 0); });
-        phases.add(() -> { bunkerLevel(server, camp, f, p[0], 1); bunkerRest(server, camp, f, p[0]); Design.ids(server); finish(server, camp, f); });
+        phases.add(() -> { bunkerLevel(server, camp, f, p[0], 1); bunkerRest(server, camp, f, p[0]); Design.ids(server); Design.armor(server); finish(server, camp, f); });
         wait = 0;
     }
     static void step(MinecraftServer server) {

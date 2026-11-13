@@ -7,6 +7,7 @@ public final class EzMod implements ModInitializer {
     @Override public void onInitialize() {
         Trace.init();        // first: it logs every click before any handler acts on it
         Flow.init();         // 1.6.0: right after the tracer, so a click is noted before a handler marks it handled
+        Armor.init();         // 1.7.0 milsim armour: set bonuses, vanilla armour swapped
         Coins.init();
         Shops.init();
         Plots.init();

@@ -366,7 +366,7 @@ class Camp:
 
 def layout(posts, spawn, heli):
     """The plan the self-test checks, from the same numbers the builder used."""
-    return {"version": "1.6.2", "spawn": list(spawn), "region": [-17, 58, -17, 17, 76, 17],
+    return {"version": "1.7.0", "spawn": list(spawn), "region": [-17, 58, -17, 17, 76, 17],
             "paths": [{"name": n, "box": [x0, z0, x1, z1]} for n, x0, z0, x1, z1 in PATHS],
             "doorways": [{"name": n, "cells": c, "width": w, "height": h} for n, c, w, h in DOORWAYS],
             "destinations": [{"name": nm, "kind": "npc", "pos": [x, 64, z]} for nm, col, shop, x, z, rot in posts]

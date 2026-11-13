@@ -1,0 +1,26 @@
+{
+ "hazmat": {
+  "name": "Scientist NPC (hazmat suit)",
+  "value": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNGYxODEzZjg4N2YwZjFiNzBiZjFjMWJlZTAyMTNkYTg3N2U0ZjQwMWEzNGE3YzZmYjA5YzQzMDM4MzlhN2QxNCJ9fX0="
+ },
+ "ghillie": {
+  "name": "Underwater Soldier",
+  "value": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTY4NGM1MTY0NDIxMzFhOWVhZjU0NWM2OWE5ZTdmNjhlYzgzMGU2NzFiOWZhM2Y2NGYyY2IwOWRiM2MwMmQxIn19fQ=="
+ },
+ "patrol": {
+  "name": "Green Soldier",
+  "value": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYjZhNTZjN2YyYWQwMjY1Yjg0NzM5Njk4ZWE0YjVkOGNmODRkMWUwMWRhYTg4ODUzYzE0ZmZlMTcyMjg5MWQxIn19fQ=="
+ },
+ "tactical": {
+  "name": "Tactical Night Vision Goggles",
+  "value": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZWViYTk0N2M3YWQ1OTJjMWNlOWU5ZTgyMTE2YWI4MzBmNzA2NWU5NDM1NjdjZjQxZjYwYWVmZjk3NzEyN2IyNiJ9fX0="
+ },
+ "juggernaut": {
+  "name": "Heavy Soldier",
+  "value": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTI4NjIxYWYzMTEyNjU3ZTQwYWEyOWI3MzgzN2I0Yjg0YTJlNjg0MDNhYmY1NTgzZTAzZmVjNGViNTVlM2Q2MyJ9fX0="
+ },
+ "scav": {
+  "name": "Masked Soldier",
+  "value": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzg3MzJkNzNlNmY0NjNhMmI5NjJmNTBiM2QwOWRkMWI3OGUzYTY0NGE5ZmU2MWYwNDZjODI2Y2UxNWJiOGRhMiJ9fX0="
+ }
+}

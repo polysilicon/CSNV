@@ -147,19 +147,71 @@ def entry(it, w_, lo=1, hi=1):
 def ventry(id_, w_, lo=1, hi=1, ench=None):
     fx = [{"function": "minecraft:set_count", "count": {"min": lo, "max": hi}}] if hi > 1 else []
     return {"type": "minecraft:item", "name": id_, "weight": w_, "functions": fx}
+
+# ------------------------------------------------------------------ armour (1.7.0): milsim sets, no vanilla armour
+# Helmets are player heads (textures from minecraft-heads.com, armor_heads.json); chest, legs and boots are dyed leather
+# with an armour trim. Every piece sets its own protection (attribute modifiers replace leather's), durability and
+# custom_data {ezarmor:<set>, ezslot:<slot>}; the mod reads that for the full-set bonuses and swaps any vanilla armour.
+ARMOR_HEADS = json.load(open(os.path.join(HERE, "armor_heads.json")))
+SLOTS = (("head", "Helmet"), ("chest", "Jacket"), ("legs", "Trousers"), ("feet", "Boots"))
+LEATHER = {"chest": "minecraft:leather_chestplate", "legs": "minecraft:leather_leggings", "feet": "minecraft:leather_boots"}
+# set: name, colour, tier, armour per slot (head, chest, legs, feet), toughness per piece, durability, dyes (chest, legs, feet),
+#      trim (pattern, material), extra modifiers per piece, piece names, set bonus line(s)
+ARMOR = {
+    "scav":       ("Scav", "gray", 0, (1, 2, 1, 1), 0.0, 80, (0x5A4E3C, 0x4B4636, 0x2E2A24), ("coast", "iron"), [],
+                   ("Balaclava", "Rag Jacket", "Work Trousers", "Old Boots"), []),
+    "ghillie":    ("Ghillie", "dark_green", 1, (1, 3, 2, 1), 0.0, 140, (0x3B4A22, 0x4A5A2A, 0x2F3A1C), ("wild", "emerald"), [],
+                   ("Ghillie Hood", "Ghillie Jacket", "Ghillie Trousers", "Ghillie Boots"),
+                   ["Full set: crouch and raiders more than", "8 blocks away lose sight of you."]),
+    "hazmat":     ("Hazmat", "yellow", 1, (1, 3, 2, 1), 0.0, 140, (0xE3C21A, 0xD8B417, 0x2A2A2A), ("bolt", "netherite"), [],
+                   ("Hazmat Hood", "Hazmat Suit", "Hazmat Trousers", "Hazmat Boots"),
+                   ["Full set: immune to radiation", "past the zone's edge."]),
+    "patrol":     ("Woodland Patrol", "green", 2, (2, 5, 4, 2), 0.0, 220, (0x4B5320, 0x556B2F, 0x3B2F1E), ("sentry", "copper"), [],
+                   ("Combat Helmet", "Patrol Jacket", "Patrol Trousers", "Patrol Boots"), []),
+    "tactical":   ("Tactical Ops", "dark_aqua", 3, (3, 6, 5, 2), 0.5, 320, (0x262626, 0x2E2E2E, 0x1A1A1A), ("silence", "netherite"), [],
+                   ("NVG Helmet", "Plate Carrier", "Tactical Trousers", "Tactical Boots"),
+                   ["Helmet: night vision while worn."]),
+    "juggernaut": ("Juggernaut", "dark_red", 4, (3, 8, 6, 3), 0.75, 500, (0x3A3F44, 0x2F3438, 0x202326), ("rib", "iron"),
+                   [("minecraft:knockback_resistance", 0.1, "add_value"), ("minecraft:movement_speed", -0.05, "add_multiplied_base")],
+                   ("Bomb-Suit Helmet", "Blast Plate", "Blast Trousers", "Blast Boots"),
+                   ["Heavy: +10% knockback resistance", "and -5% speed per piece."]),
+}
+TIER_NAME = ["Light", "Light", "Medium", "Heavy", "Assault"]
+def armor_piece(key, slot):
+    nm, col, tier, arm, tough, dur, dyes, (pat, mat), extra, names, bonus = ARMOR[key]
+    i = [s for s, _ in SLOTS].index(slot)
+    mods = [{"type": "minecraft:armor", "amount": float(arm[i]), "id": f"ez:armor_{slot}", "operation": "add_value", "slot": slot}]
+    if tough: mods.append({"type": "minecraft:armor_toughness", "amount": tough, "id": f"ez:tough_{slot}", "operation": "add_value", "slot": slot})
+    for t, a, op in extra: mods.append({"type": t, "amount": a, "id": f"ez:{t.split(':')[1]}_{slot}", "operation": op, "slot": slot})
+    comps = {"minecraft:custom_name": {"text": names[i], "italic": False, "color": col},
+             "minecraft:lore": [{"text": f"{nm} set · {TIER_NAME[tier]} (tier {tier})", "color": "gray", "italic": False},
+                                *[{"text": l, "color": "aqua", "italic": False} for l in bonus]],
+             "minecraft:attribute_modifiers": mods, "minecraft:max_damage": dur, "minecraft:custom_data": {"ezarmor": key, "ezslot": slot},
+             "minecraft:tooltip_display": {"hidden_components": ["minecraft:trim", "minecraft:dyed_color"]}}
+    if slot == "head":
+        comps["minecraft:profile"] = {"properties": [{"name": "textures", "value": ARMOR_HEADS[key]["value"]}]}
+        return {"id": "minecraft:player_head", "components": comps}
+    comps["minecraft:dyed_color"] = dyes[i - 1]
+    comps["minecraft:trim"] = {"material": f"minecraft:{mat}", "pattern": f"minecraft:{pat}"}
+    return {"id": LEATHER[slot], "components": comps}
+ARMOR_ITEMS = {(k, sl): armor_piece(k, sl) for k in ARMOR for sl, _ in SLOTS}
+def aentries(key, w_):   # one loot entry per piece; the chest piece rarer
+    return [entry(ARMOR_ITEMS[(key, sl)], max(1, w_ // (2 if sl == "chest" else 1))) for sl, _ in SLOTS]
+def abuy(key, prices): return [buy(ARMOR_ITEMS[(key, sl)], pr) for (sl, _), pr in zip(SLOTS, prices)]
+
 def gentry(k, w_): return {"type": "minecraft:loot_table", "value": f"pvp:ability/{k}", "weight": w_}
 
 TIERS = {
     1: {"rolls": (3, 5), "entries": [entry(AMMO, 30, 4, 12), entry(BANDAGE, 14, 1, 2), entry(CREDIT, 16, 1, 6),
          entry(VAL["scrap"], 18, 1, 3), entry(VAL["wire"], 12, 1, 2), entry(VAL["pills"], 8), ventry("minecraft:bread", 10, 1, 3),
-         ventry("minecraft:leather_chestplate", 4), ventry("minecraft:chainmail_helmet", 3), gentry("pistol", 3), gentry("m1911", 1)]},
+         *aentries("scav", 4), *aentries("ghillie", 1), *aentries("hazmat", 1), gentry("pistol", 3), gentry("m1911", 1)]},
     2: {"rolls": (4, 6), "entries": [entry(AMMO, 28, 8, 20), entry(BANDAGE, 10, 1, 3), entry(MEDKIT, 6), entry(CREDIT, 14, 3, 12),
          entry(VAL["wire"], 10, 1, 3), entry(VAL["pills"], 8, 1, 2), entry(VAL["crystal"], 8), entry(VAL["watch"], 6), entry(VAL["goldbar"], 3),
-         ventry("minecraft:cooked_beef", 8, 1, 3), ventry("minecraft:iron_helmet", 3), ventry("minecraft:iron_chestplate", 2),
-         ventry("minecraft:iron_leggings", 2), gentry("m1911", 4), gentry("mp40", 3), gentry("stakeout", 3), gentry("stg44", 1)]},
+         ventry("minecraft:cooked_beef", 8, 1, 3), *aentries("patrol", 3), *aentries("ghillie", 2), *aentries("hazmat", 2),
+         gentry("m1911", 4), gentry("mp40", 3), gentry("stakeout", 3), gentry("stg44", 1)]},
     3: {"rolls": (5, 7), "entries": [entry(AMMO, 24, 12, 32), entry(MEDKIT, 10, 1, 2), entry(CREDIT, 12, 8, 24),
          entry(VAL["watch"], 8), entry(VAL["goldbar"], 7), entry(VAL["gem"], 5), entry(VAL["drive"], 4), entry(VAL["blackbox"], 1),
-         ventry("minecraft:iron_chestplate", 4), ventry("minecraft:diamond_helmet", 2), ventry("minecraft:diamond_chestplate", 1),
+         *aentries("tactical", 3), *aentries("patrol", 2), *aentries("juggernaut", 1),
          gentry("stg44", 4), gentry("olympia", 3), gentry("kar98k", 3), gentry("m60", 2), gentry("amban", 1), ventry("minecraft:golden_apple", 3)]},
 }
 MOB_LOOT = {
@@ -207,10 +259,11 @@ def loot_tables():
         pool({"min": 6, "max": 8}, TIERS[3]["entries"]), pool(1, [entry(MEDKIT, 1, 2, 3)]), pool(1, [entry(AMMO, 1, 32, 48)])]})
     wj(f"data/{NS}/loot_table/event/heli.json", {"type": "minecraft:chest", "pools": [
         pool({"min": 4, "max": 6}, TIERS[3]["entries"]),
-        pool(1, [entry(VAL["blackbox"], 1), entry(VAL["drive"], 2, 1, 2), entry(VAL["gem"], 2, 1, 2)])]})
+        pool(1, [entry(VAL["blackbox"], 1), entry(VAL["drive"], 2, 1, 2), entry(VAL["gem"], 2, 1, 2)]),
+        pool(1, [*aentries("juggernaut", 2), *aentries("tactical", 4)])]})
     wj(f"data/{NS}/loot_table/mob/boss.json", {"type": "minecraft:entity", "pools": [
         pool(1, [entry(CREDIT, 1, 40, 70)]), pool(1, [entry(VAL["blackbox"], 1, 1, 2)]), pool(1, [entry(VAL["gem"], 1, 2, 4)]),
-        pool(1, [entry(VAL["drive"], 1, 1, 3)]), pool(1, [entry(VAL["goldbar"], 1, 2, 4)]), pool(1, [entry(MEDKIT, 1, 1, 2)]),
+        pool(1, [entry(VAL["drive"], 1, 1, 3)]), pool(1, [entry(VAL["goldbar"], 1, 2, 4)]), pool(1, [entry(MEDKIT, 1, 1, 2)]), pool(1, aentries("juggernaut", 1)),
         {"rolls": 1, "entries": [gentry("m60", 1), gentry("amban", 1)], "conditions": [{"condition": "minecraft:random_chance", "chance": 0.45}]}]})
     for k, drops in MOB_LOOT.items():
         wj(f"data/{NS}/loot_table/mob/{k}.json", {"type": "minecraft:entity", "pools": [
@@ -224,9 +277,8 @@ def gbuy(k, price): return {"item": sn({"id": abilities.BASE, "count": 1, "compo
 def sells(rate=1.0): return [{"key": k, "item": sn(stack(VAL[k])), "price": max(1, int(VAL[k]["price"] * rate))} for k, *_ in VALUABLES]
 SHOPS = {
     "quartermaster": {"title": "Quartermaster", "buy": [buy(AMMO, 4, 16), buy(BANDAGE, 3, 2), buy(MEDKIT, 8), gbuy("pistol", 20), gbuy("m1911", 35),
-                      gbuy("mp40", 60), gbuy("stakeout", 70), gbuy("stg44", 110), vbuy("minecraft:leather_helmet", 4), vbuy("minecraft:leather_chestplate", 6),
-                      vbuy("minecraft:iron_helmet", 14), vbuy("minecraft:iron_chestplate", 24), vbuy("minecraft:iron_leggings", 20),
-                      vbuy("minecraft:iron_boots", 12), vbuy("minecraft:cooked_beef", 2, 8), vbuy("minecraft:golden_apple", 25)], "sell": []},
+                      gbuy("mp40", 60), gbuy("stakeout", 70), gbuy("stg44", 110), *abuy("scav", (3, 5, 4, 2)), *abuy("patrol", (14, 24, 20, 12)),
+                      *abuy("ghillie", (16, 26, 22, 12)), *abuy("hazmat", (16, 26, 22, 12)), vbuy("minecraft:cooked_beef", 2, 8), vbuy("minecraft:golden_apple", 25)], "sell": []},
     "fence": {"title": "The Broker", "buy": [], "sell": sells()},
     "builder": {"title": "Builder", "buy": [buy(STASH, 25), vbuy("minecraft:oak_planks", 6, 32),
                 vbuy("minecraft:spruce_planks", 6, 32), vbuy("minecraft:stone_bricks", 6, 32), vbuy("minecraft:bricks", 8, 32),
@@ -240,7 +292,7 @@ SHOPS = {
     "smuggler": {"title": "The Smuggler", "buy": [buy(AMMO, 7, 16), buy(BANDAGE, 5, 2), buy(MEDKIT, 12), gbuy("m1911", 50), gbuy("stakeout", 90),
                  vbuy("minecraft:golden_apple", 35)], "sell": sells(0.75)},
     "armsdealer": {"title": "Arms Dealer", "buy": [buy(AMMO, 6, 16), gbuy("olympia", 140), gbuy("kar98k", 170), gbuy("m60", 220), gbuy("amban", 250),
-                   vbuy("minecraft:diamond_helmet", 60), vbuy("minecraft:diamond_chestplate", 90)], "sell": []},
+                   *abuy("tactical", (45, 75, 60, 35))], "sell": []},
 }
 NPC_SKINS = json.load(open(os.path.join(HERE, "npc_skins.json")))   # milsim skins (minecraft-heads.com textures), by shop id
 def npc(x, z, nm, color, prof, shop, rot, y=64):
@@ -278,7 +330,9 @@ def build(out):
     global OUT
     OUT = os.path.join(out, "crispy_extraction")
     shutil.rmtree(OUT, ignore_errors=True)
-    wj("pack.mcmeta", {"pack": {"description": "Crispy Extraction Zone (26.2)", "min_format": PACK_FORMAT[0], "max_format": PACK_FORMAT[1]}})
+    wj("pack.mcmeta", {"pack": {"description": "Crispy Extraction Zone (26.2)", "min_format": PACK_FORMAT[0], "max_format": PACK_FORMAT[1]},
+                       # 1.7.0: no vanilla recipes (crafting, smelting, stonecutting, smithing) or their recipe-book unlocks
+                       "filter": {"block": [{"namespace": "minecraft", "path": "recipe/.*"}, {"namespace": "minecraft", "path": "advancement/recipes/.*"}]}})
     wj("data/minecraft/tags/function/load.json", {"values": [f"{NS}:load"]})
     wj("data/minecraft/tags/function/tick.json", {"values": [f"{NS}:tick"]})
     # the camp: an empty dimension
@@ -299,7 +353,8 @@ def build(out):
     ab_obj = abilities.build(pfn, pwj, "x=0,y=-2000,z=0,dx=1,dy=1,dz=1")
     # the mod's shop file (config/crispy_extraction/shops.json on the server)
     with open(os.path.join(out, "shops.json"), "w") as f:
-        json.dump({"credit": snbt(stack(CREDIT)), "shops": SHOPS, "skins": NPC_SKINS}, f, indent=1, ensure_ascii=False)
+        json.dump({"credit": snbt(stack(CREDIT)), "shops": SHOPS, "skins": NPC_SKINS,
+                   "armor": {k: {sl: snbt(stack(ARMOR_ITEMS[(k, sl)])) for sl, _ in SLOTS} for k in ARMOR}}, f, indent=1, ensure_ascii=False)
     loot_tables()
 
     rules = {"spawn_mobs": "false", "keep_inventory": "false", "immediate_respawn": "true", "spawn_phantoms": "false", "raids": "false",
@@ -373,8 +428,9 @@ def build(out):
         f"execute as @e[type=minecraft:marker,tag=ez.crate] at @s run function {NS}:crate/second",
     ])
     fn("newplayer", ["scoreboard players operation @s ez.id = #nextid ez", "scoreboard players add #nextid ez 1",
-                     say("@s", "Welcome to the Extraction Zone! You got a starter kit: a pistol, ammo, bandages and some Gold Coins.", "gold"),
-                     "loot give @s loot pvp:ability/pistol", give(AMMO, 24), give(BANDAGE, 2), give(CREDIT, 10)])
+                     say("@s", "Welcome to the Extraction Zone! You got a starter kit: a pistol, ammo, bandages, a Scav outfit and some Gold Coins.", "gold"),
+                     "loot give @s loot pvp:ability/pistol", give(AMMO, 24), give(BANDAGE, 2), give(CREDIT, 10),
+                     *[give(ARMOR_ITEMS[("scav", sl)]) for sl, _ in SLOTS]])
     fn("noammo", ['title @s actionbar {"text":"✖ Out of ammo","color":"red","bold":true}',
                   "playsound minecraft:block.dispenser.fail player @s ~ ~ ~ 0.8 1.6"])
     fn("to_camp", [f"execute in {CAMP} run tp @s {CAMP_SPAWN[0]} {CAMP_SPAWN[1]} {CAMP_SPAWN[2]} 180 0",
@@ -424,7 +480,8 @@ def build(out):
         "scoreboard players enable @s truce",
         "execute if score @s ez.tit matches 1.. run scoreboard players remove @s ez.tit 1",
     ])
-    fn("raid/outside", ['title @s actionbar {"text":"☢ RADIATION: get back into the zone","color":"green","bold":true}',
+    fn("raid/outside", ['execute if entity @s[tag=ez.radproof] run return run title @s actionbar {"text":"☢ Radiation: your hazmat suit is holding","color":"yellow","bold":true}',
+                        'title @s actionbar {"text":"☢ RADIATION: get back into the zone","color":"green","bold":true}',
                         "damage @s 3 minecraft:magic", "playsound minecraft:block.beacon.deactivate player @s ~ ~ ~ 0.5 2"])
     fn("raid/timeout", [*title("@s", "BLOWOUT", "You ran out of time. Everything you carried is lost.", "red"),
                         say("@a[tag=ez.raid]", "☢ A raider was caught by the blowout.", "dark_green"),
@@ -538,7 +595,7 @@ def build(out):
     # ---- enemy gunners: cock (a click you can hear), fire 10 ticks later along a hitscan ray that walls stop
     for g, (dmg, rate, miss) in GUNNERS.items():
         wj(f"data/{NS}/predicate/miss_{g}.json", {"condition": "minecraft:random_chance", "chance": miss})
-    T = f"@p[tag=ez.raid,distance=..{AI_RANGE},gamemode=!spectator]"
+    T = f"@p[tag=ez.raid,tag=!ez.hidden,distance=..{AI_RANGE},gamemode=!spectator]"   # ez.hidden: a crouching ghillie (mod Armor)
     fn("ai/gunner", [
         "scoreboard players remove @s ez.cd 1",
         f"execute if score @s ez.cd matches 10 if entity {T} run playsound minecraft:block.iron_trapdoor.close hostile @a[distance=..32] ~ ~ ~ 0.7 1.8",
