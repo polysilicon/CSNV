@@ -261,8 +261,8 @@ CAMP_LABELS = [
     (0.5, 67.8, -3.5, [name("☢ EXTRACTION ZONE\n", "yellow", True), {"text": "Deploy at the helipad, loot, and get out alive.\n"
         "Die and you lose everything you carried.\nTake a job from the Fixer. Store gear in your bunker.", "color": "white"}]),
     (HELI[0] + 0.5, 66.4, HELI[1] + 0.5, [name("▶ DEPLOY\n", "red", True), {"text": "Right-click the helipad.\nYou bring what you carry.", "color": "gray"}]),
-    *[(x, 67.3, z, [name(nm, col, True)]) for nm, col, shop, x, z, rot in POSTS],
-]
+    (12.5, 68.4, 12.0, [name("▼ BUNKERS\n", "aqua", True), {"text": "Your bunker is down the steps.\nRight-click the door at the bottom.", "color": "gray"}]),
+]   # 1.4.0: no labels over the NPCs: mannequins show their own name
 
 def camp_commands():
     import random
@@ -422,7 +422,7 @@ def camp_commands():
     B[(-9, 66, 12)] = B[(-9, 66, 14)] = "minecraft:tinted_glass"
     for x, z in [(-16, 12), (-16, 13), (-16, 15), (-15, 16)]: B[(x, 64, z)] = pick("minecraft:cauldron", "minecraft:blast_furnace[facing=east]", "minecraft:barrel[facing=up]")
     # supply pallets and crates along the walls
-    for x, z in [(-6, -16), (-5, -16), (5, 16), (6, 16), (12, 15), (13, 15), (-6, 16), (4, -16)]:
+    for x, z in [(-6, -16), (-5, -16), (5, 16), (6, 16), (-6, 16), (4, -16)]:
         B[(x, 64, z)] = pick("minecraft:barrel[facing=up]", "minecraft:spruce_planks", "minecraft:hay_block", "minecraft:composter", "minecraft:scaffolding")
         if rnd.random() < 0.5: B[(x, 65, z)] = pick("minecraft:barrel[facing=up]", "minecraft:spruce_slab")
     # sandbag lines
@@ -433,6 +433,26 @@ def camp_commands():
     for x, z in [(-5, -5), (5, -5), (-5, 5), (5, 5), (-9, 0), (9, 0), (0, -9)]:
         for y in (64, 65, 66): B[(x, y, z)] = "minecraft:dark_oak_fence"
         B[(x, 67, z)] = "minecraft:lantern"
+    # 1.4.0 the bunker entrance (east of the helipad): a concrete blockhouse, steps down, a heavy door at the bottom
+    # (an interaction tagged ez.bunkerdoor in front of it: the mod sends you to your bunker)
+    fill(10, 64, 12, 14, 66, 16, "minecraft:polished_andesite"); fill(11, 64, 13, 13, 66, 15, "minecraft:air")
+    fill(10, 67, 12, 14, 67, 16, "minecraft:smooth_stone_slab[type=bottom]")
+    fill(11, 64, 12, 13, 65, 12, "minecraft:air")
+    for x in (10, 14):
+        for y in (64, 65, 66): B[(x, y, 12)] = "minecraft:iron_block"
+    fill(11, 66, 12, 13, 66, 12, "minecraft:iron_block")
+    for x in (10, 14):
+        for z in (13, 14, 15): fill(x, 61, z, x, 63, z, "minecraft:polished_andesite")
+    fill(11, 60, 13, 13, 60, 16, "minecraft:polished_andesite"); fill(11, 61, 16, 13, 63, 16, "minecraft:polished_andesite")
+    fill(11, 62, 13, 13, 63, 15, "minecraft:air")
+    fill(11, 63, 13, 13, 63, 13, "minecraft:polished_andesite_stairs[facing=north]")
+    fill(11, 62, 14, 13, 62, 14, "minecraft:polished_andesite_stairs[facing=north]")
+    fill(11, 61, 15, 13, 61, 15, "minecraft:polished_andesite")
+    fill(11, 62, 15, 13, 63, 15, "minecraft:air")
+    B[(12, 62, 16)] = "minecraft:iron_door[half=lower,facing=north]"; B[(12, 63, 16)] = "minecraft:iron_door[half=upper,facing=north]"
+    B[(11, 63, 16)] = B[(13, 63, 16)] = "minecraft:iron_block"; B[(12, 64, 16)] = "minecraft:redstone_lamp[lit=true]"
+    B[(12, 66, 14)] = "minecraft:lantern[hanging=true]"
+    for x in (9, 15): B[(x, 64, 11)] = "minecraft:mud_brick_wall"   # sandbags by the door
     # radio mast (west of the plaza)
     for y in range(64, 74): B[(-7, y, 1)] = "minecraft:iron_bars" if y > 65 else "minecraft:polished_deepslate"
     B[(-7, 74, 1)] = "minecraft:lightning_rod"; B[(-7, 70, 1)] = "minecraft:copper_bulb[lit=true]"
@@ -761,6 +781,8 @@ def build(out):
         f"execute in {CAMP} run kill @e[tag=ez.npc]", f"execute in {CAMP} run kill @e[tag=ez.deco]",
         f"execute in {CAMP} run kill @e[type=minecraft:interaction,tag=ez.deploy]",
         f"execute in {CAMP} run summon minecraft:interaction {HELI[0] + 0.5} 64 {HELI[1] + 0.5} " + snbt({"Tags": ["ez.deploy", "ez.deco"], "width": 7.0, "height": 2.5, "response": True}),
+        f"execute in {CAMP} run kill @e[type=minecraft:interaction,tag=ez.bunkerdoor]",
+        f"execute in {CAMP} run summon minecraft:interaction 12.5 62 15.5 " + snbt({"Tags": ["ez.bunkerdoor", "ez.deco"], "width": 3.0, "height": 2.2, "response": True}),
         *[f"execute in {CAMP} run {npc(x, z, nm, col, prof, shop, rot)}" for x, z, nm, col, prof, shop, rot in STALL_NPCS],
         *[f"execute in {CAMP} run summon minecraft:text_display {x} {y} {z} " + snbt({"Tags": ["ez.deco"], "billboard": "center", "text": t})
           for x, y, z, t in CAMP_LABELS],

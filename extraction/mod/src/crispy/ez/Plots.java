@@ -52,14 +52,26 @@ final class Plots {
     static final ResourceKey<Level> CAMP = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("ez", "camp"));
     // 1.3.0: plots are underground bunkers deep under camp (y 20): FLOOR is the floor layer, TOP the highest buildable block
     static final int X0 = 64, Z0 = -192, CELL = 48, PER_ROW = 6, FLOOR = 20, TOP = FLOOR + 6;
-    static final String SHELL = "minecraft:reinforced_deepslate", FLOOR_BLOCK = "minecraft:polished_tuff";
+    static final String FLOOR_BLOCK = "minecraft:polished_tuff", OLD_SHELL = "minecraft:reinforced_deepslate";
+    /** 1.4.0: wall finishes the Bunker Manager offers (block, name, icon); the first is the default. */
+    record Finish(String block, String name, net.minecraft.world.item.Item icon) {}
+    static final List<Finish> FINISHES = List.of(
+            new Finish("minecraft:white_concrete", "White Concrete", Items.QUARTZ), new Finish("minecraft:light_gray_concrete", "Light Gray Concrete", Items.CLAY_BALL),
+            new Finish("minecraft:gray_concrete", "Gray Concrete", Items.FLINT), new Finish("minecraft:smooth_stone", "Smooth Stone", Items.SMOOTH_STONE),
+            new Finish("minecraft:stone_bricks", "Stone Bricks", Items.STONE_BRICKS), new Finish("minecraft:tuff_bricks", "Tuff Bricks", Items.TUFF_BRICKS),
+            new Finish("minecraft:polished_deepslate", "Polished Deepslate", Items.POLISHED_DEEPSLATE), new Finish("minecraft:spruce_planks", "Spruce Panelling", Items.SPRUCE_PLANKS));
+    static final int FINISH_COST = 50;
+    static String shell(Plot p) { return p.style == null ? FINISHES.get(0).block() : p.style; }
+    // the camp's bunker entrance (datapack camp: an interaction tagged ez.bunkerdoor at the bottom of its steps);
+    // coming up from a bunker puts you outside it
+    static final String CAMP_EXIT = "12.5 64 10.5 180 0";
     static final int OLD_FLOOR = 63;   // where plots were before 1.3.0
     static final int[] SIZES = {16, 24, 32};
     static final int[] COST = {0, 150, 400};
     static final Set<String> BANNED = Set.of("minecraft:lava_bucket", "minecraft:flint_and_steel", "minecraft:fire_charge", "minecraft:tnt",
             "minecraft:end_crystal", "minecraft:ender_pearl", "minecraft:wither_skeleton_skull", "minecraft:respawn_anchor");
 
-    static final class Plot { int index; int level; String name; java.util.List<String> perks = new java.util.ArrayList<>(); }
+    static final class Plot { int index; int level; String name; java.util.List<String> perks = new java.util.ArrayList<>(); String style; }
     /** Stash upgrades with an effect (1.1.0): key, name, icon block placed on the plot, cost, what it does. */
     record Perk(String key, String name, net.minecraft.world.item.Item icon, String block, int cost, List<String> lines) {}
     static final List<Perk> PERKS = List.of(
@@ -122,15 +134,20 @@ final class Plots {
         String f = "fill %d %d %d %d %d %d %s";
         run(s, inCamp(String.format(f, x0 - 1, FLOOR - 1, z0 - 1, x1 + 1, FLOOR - 1, z1 + 1, "minecraft:bedrock")));
         run(s, inCamp(String.format(f, x0, FLOOR, z0, x1, FLOOR, z1, FLOOR_BLOCK + " keep")));
-        run(s, inCamp(String.format(f, x0 - 1, FLOOR + 7, z0 - 1, x1 + 1, FLOOR + 7, z1 + 1, SHELL + " keep")));
+        String shell = shell(p);
+        run(s, inCamp(String.format(f, x0 - 1, FLOOR + 7, z0 - 1, x1 + 1, FLOOR + 7, z1 + 1, shell + " keep")));
         for (int[] e : new int[][]{{x0 - 1, z0 - 1, x1 + 1, z0 - 1}, {x0 - 1, z1 + 1, x1 + 1, z1 + 1}, {x0 - 1, z0 - 1, x0 - 1, z1 + 1}, {x1 + 1, z0 - 1, x1 + 1, z1 + 1}})
-            run(s, inCamp(String.format(f, e[0], FLOOR, e[1], e[2], FLOOR + 7, e[3], SHELL)));
+            run(s, inCamp(String.format(f, e[0], FLOOR, e[1], e[2], FLOOR + 7, e[3], shell)));
         if (oldLevel >= 0 && oldLevel < p.level) {   // grown: the old walls are inside the room now
             int oh = SIZES[oldLevel] / 2, ox0 = x - oh - 1, ox1 = x + oh, oz0 = z - oh - 1, oz1 = z + oh;
             for (int[] e : new int[][]{{ox0, oz0, ox1, oz0}, {ox0, oz1, ox1, oz1}, {ox0, oz0, ox0, oz1}, {ox1, oz0, ox1, oz1}}) {
                 run(s, inCamp(String.format(f, e[0], FLOOR + 1, e[1], e[2], FLOOR + 6, e[3], "minecraft:air")));
                 run(s, inCamp(String.format(f, e[0], FLOOR, e[1], e[2], FLOOR, e[3], FLOOR_BLOCK)));
             }
+            // the old stairwell, now partly inside the bigger room: clear what's inside, drop its exit
+            run(s, inCamp(String.format(f, x - 2, FLOOR + 1, z0, x + 2, FLOOR + 6, oz0 - 1, "minecraft:air")));
+            run(s, inCamp(String.format(f, x - 2, FLOOR, z0, x + 2, FLOOR, oz0 - 1, FLOOR_BLOCK)));
+            run(s, inCamp(String.format("kill @e[tag=ez.bunkerexit,x=%d,y=%d,z=%d,distance=..%d]", x, FLOOR + 6, z, h + 12)));
         }
         for (int lx = x0 + 2; lx <= x1 - 1; lx += 6)   // ceiling lights, into the shell
             for (int lz = z0 + 2; lz <= z1 - 1; lz += 6) run(s, inCamp(String.format("setblock %d %d %d minecraft:sea_lantern", lx, FLOOR + 7, lz)));
@@ -154,12 +171,26 @@ final class Plots {
                 run(s, inCamp(String.format("setblock %d %d %d minecraft:iron_bars", x1 + 1, FLOOR + 5, k)));
             }
         }
-        // the blast door on the north wall: a steel frame, a sealed iron door, a warning light above
-        run(s, inCamp(String.format(f, x - 2, FLOOR + 1, z0 - 1, x + 2, FLOOR + 4, z0 - 1, "minecraft:iron_block")));
-        run(s, inCamp(String.format(f, x - 1, FLOOR + 1, z0 - 1, x + 1, FLOOR + 3, z0 - 1, "minecraft:polished_deepslate")));
-        run(s, inCamp(String.format("setblock %d %d %d minecraft:iron_door[half=lower,facing=south]", x, FLOOR + 1, z0 - 1)));
-        run(s, inCamp(String.format("setblock %d %d %d minecraft:iron_door[half=upper,facing=south]", x, FLOOR + 2, z0 - 1)));
+        // 1.4.0 the way out: an open blast-door frame in the north wall onto a stairwell that climbs to the exit hatch
+        // (right-click it: up into camp, at the bunker entrance)
+        int sz0 = z0 - 9, sz1 = z0 - 1;
+        run(s, inCamp(String.format(f, x - 2, FLOOR - 1, sz0, x + 2, FLOOR + 10, sz1, shell)));                 // a solid block...
+        run(s, inCamp(String.format(f, x - 1, FLOOR + 1, sz0 + 1, x + 1, FLOOR + 9, sz1, "minecraft:air")));     // ...hollowed out
+        for (int st = 0; st < 5; st++) {   // five steps up to the north, solid underneath
+            int zz = z0 - 3 - st;
+            run(s, inCamp(String.format(f, x - 1, FLOOR, zz, x + 1, FLOOR + st, zz, shell)));
+            run(s, inCamp(String.format(f, x - 1, FLOOR + 1 + st, zz, x + 1, FLOOR + 1 + st, zz, "minecraft:polished_andesite_stairs[facing=north]")));
+        }
+        run(s, inCamp(String.format(f, x - 1, FLOOR, sz0 + 1, x + 1, FLOOR + 5, sz0 + 2, shell)));               // top landing
+        run(s, inCamp(String.format(f, x - 1, FLOOR, z0 - 2, x + 1, FLOOR, z0 - 2, FLOOR_BLOCK)));              // bottom landing
+        run(s, inCamp(String.format(f, x - 2, FLOOR + 1, z0 - 1, x + 2, FLOOR + 4, z0 - 1, "minecraft:iron_block")));   // door frame
+        run(s, inCamp(String.format(f, x - 1, FLOOR + 1, z0 - 1, x + 1, FLOOR + 3, z0 - 1, "minecraft:air")));
         run(s, inCamp(String.format("setblock %d %d %d minecraft:redstone_lamp[lit=true]", x, FLOOR + 5, z0 - 1)));
+        run(s, inCamp(String.format("setblock %d %d %d minecraft:sea_lantern", x, FLOOR + 9, z0 - 5)));
+        run(s, inCamp(String.format(f, x - 1, FLOOR + 9, sz0 + 1, x + 1, FLOOR + 9, sz0 + 2, "minecraft:iron_trapdoor[half=top,open=false]")));  // the hatch
+        run(s, inCamp(String.format("kill @e[tag=ez.bunkerexit,x=%d,y=%d,z=%d,distance=..3]", x, FLOOR + 6, sz0 + 2)));
+        run(s, inCamp(String.format("summon minecraft:interaction %d.5 %d %d.0 {Tags:[\"ez.bunkerexit\",\"ez.deco\"],width:3.0f,height:3.0f,response:true}", x, FLOOR + 6, sz0 + 2)));
+        run(s, inCamp(String.format("summon minecraft:text_display %d.5 %d.5 %d.5 {Tags:[\"ez.bunkerexit\",\"ez.deco\"],billboard:\"center\",text:{text:\"▲ UP TO CAMP\\n\",color:\"green\",bold:true,extra:[{text:\"Right-click the hatch\",color:\"gray\",bold:false}]}}", x, FLOOR + 8, sz0 + 2)));
         // the owner's name over the door; the starter crate
         run(s, inCamp(String.format("kill @e[type=minecraft:text_display,tag=ez.plotname,x=%d,y=%d,z=%d,distance=..%d]", x, FLOOR + 5, z, h + 4)));
         run(s, inCamp(String.format("summon minecraft:text_display %d.5 %d %d.6 {Tags:[\"ez.plotname\"],billboard:\"center\",text:{text:\"%s's bunker\",color:\"gold\",bold:true}}",
@@ -217,6 +248,10 @@ final class Plots {
                         });
             } else m.put(13, Ui.item(Items.NETHERITE_SHOVEL, t("Max size: " + SIZES[p.level] + " x " + SIZES[p.level], ChatFormatting.GOLD), List.of(), true), null);
             int used = Storage.count(pl.level().getServer(), p), max = Storage.limit(p);
+            Finish cur = FINISHES.stream().filter(fz -> fz.block().equals(shell(p))).findFirst().orElse(FINISHES.get(0));
+            m.put(22, Ui.item(cur.icon(), t("Wall finish: " + cur.name(), ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD), List.of(
+                    t("Change what your bunker's walls", ChatFormatting.GRAY), t("and ceiling are made of.", ChatFormatting.GRAY),
+                    t(Coins.fmt(FINISH_COST) + " a change", ChatFormatting.GOLD)), false), (q, c) -> finishes(q, p));
             m.put(15, Ui.item(Items.BARREL, t("Storage: " + used + " / " + max + " Stash Crates", ChatFormatting.YELLOW), List.of(
                     t("Bunker storage is Stash Crates only", ChatFormatting.GRAY), t("(Builder, " + Coins.fmt(25) + "). Only you can open them.", ChatFormatting.GRAY),
                     t("Size 16: 4 crates · 24: 7 · 32: 10.", ChatFormatting.GRAY)), false), null);
@@ -237,6 +272,37 @@ final class Plots {
                         });
             }
         });
+    }
+
+    /** The wall finishes: pick one, pay, and every wall and ceiling block (and the stairwell) is swapped. */
+    static void finishes(ServerPlayer pl, Plot p) {
+        Ui.open(pl, t("Bunker wall finish", ChatFormatting.DARK_GRAY), 3, m -> {
+            for (int i = 0; i < FINISHES.size(); i++) {
+                Finish fz = FINISHES.get(i);
+                boolean now = fz.block().equals(shell(p));
+                m.put(9 + i + (i >= 4 ? 1 : 0), Ui.item(fz.icon(), t((now ? "✔ " : "") + fz.name(), now ? ChatFormatting.GREEN : ChatFormatting.YELLOW, ChatFormatting.BOLD),
+                        List.of(t(now ? "Your walls now" : "Cost: " + Coins.fmt(FINISH_COST), now ? ChatFormatting.GREEN : ChatFormatting.GOLD)), now),
+                        now ? null : (q, c) -> {
+                            if (!Shops.pay(q, FINISH_COST)) { Shops.no(q, "You need " + Coins.fmt(FINISH_COST) + "."); return; }
+                            String old = shell(p);
+                            p.style = fz.block(); save();
+                            restyle(q.level().getServer(), p, old, fz.block());
+                            Shops.ok(q, "Your bunker's walls are now " + fz.name() + ".");
+                        });
+            }
+            m.put(22, Ui.item(Items.ARROW, t("Back", ChatFormatting.YELLOW), List.of(), false), (q, c) -> menu(q));
+        });
+    }
+
+    /** Swap the shell blocks (walls, ceiling, stairwell) from one finish to another; nothing inside the room changes. */
+    static void restyle(MinecraftServer s, Plot p, String from, String to) {
+        int x = cx(p.index), z = cz(p.index), h = half(p), x0 = x - h, x1 = x + h - 1, z0 = z - h, z1 = z + h - 1;
+        loadArea(s, x0 - 2, z0 - 10, x1 + 2, z1 + 2);
+        String f = "fill %d %d %d %d %d %d " + to + " replace " + from;
+        for (int[] e : new int[][]{{x0 - 1, z0 - 1, x1 + 1, z0 - 1}, {x0 - 1, z1 + 1, x1 + 1, z1 + 1}, {x0 - 1, z0 - 1, x0 - 1, z1 + 1}, {x1 + 1, z0 - 1, x1 + 1, z1 + 1}})
+            run(s, inCamp(String.format(f, e[0], FLOOR, e[1], e[2], FLOOR + 7, e[3])));
+        run(s, inCamp(String.format(f, x0 - 1, FLOOR + 7, z0 - 1, x1 + 1, FLOOR + 7, z1 + 1)));
+        run(s, inCamp(String.format(f, x - 2, FLOOR - 1, z0 - 9, x + 2, FLOOR + 10, z0 - 1)));
     }
 
     /** The upgrade's block, in a row along the plot's north edge next to the starter chest (decor and a click target). */
@@ -271,6 +337,18 @@ final class Plots {
         AttackEntityCallback.EVENT.register((pl, world, hand, e, hit) -> decoAllowed(pl, world, e) ? InteractionResult.PASS : InteractionResult.FAIL);
         UseEntityCallback.EVENT.register((pl, world, hand, e, hit) -> {
             for (String tag : e.entityTags()) if (tag.startsWith("ez.shop.")) return InteractionResult.PASS;   // traders: Shops handles them
+            if (pl instanceof ServerPlayer sp && hand == net.minecraft.world.InteractionHand.MAIN_HAND) {   // 1.4.0 the bunker doors
+                if (e.entityTags().contains("ez.bunkerexit")) {
+                    run(sp.level().getServer(), inCamp("tp " + sp.getGameProfile().name() + " " + CAMP_EXIT));
+                    Ui.sound(sp, net.minecraft.sounds.SoundEvents.IRON_TRAPDOOR_OPEN, 1f, 0.8f);
+                    return InteractionResult.SUCCESS;
+                }
+                if (e.entityTags().contains("ez.bunkerdoor")) {
+                    Plot p = of(sp);
+                    if (p == null) menu(sp); else { tp(sp, p); Ui.sound(sp, net.minecraft.sounds.SoundEvents.IRON_DOOR_CLOSE, 1f, 0.8f); }
+                    return InteractionResult.SUCCESS;
+                }
+            }
             return decoAllowed(pl, world, e) ? InteractionResult.PASS : InteractionResult.FAIL;
         });
 
@@ -289,6 +367,10 @@ final class Plots {
                         Shops.no(pl, who + " doesn't have a plot yet."); return 0; }))));
             d.register(Commands.literal("bunker").executes(plotNode.getCommand()).redirect(plotNode));   // 1.3.0
             d.register(Commands.literal("ezadmin").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                    .then(Commands.literal("bunkerfix").executes(c -> {   // 1.4.0: white walls (from reinforced deepslate), the stairwell up
+                        load(); MinecraftServer srv = c.getSource().getServer();
+                        for (Plot p : plots.values()) { restyle(srv, p, OLD_SHELL, shell(p)); lay(srv, p, false); }
+                        c.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal("Updated " + plots.size() + " bunkers."), true); return 1; }))
                     .then(Commands.literal("bunkers").executes(c -> {   // 1.3.0: move plots made before underground (old contents cleared)
                         load(); MinecraftServer srv = c.getSource().getServer();
                         for (Plot p : plots.values()) { clearOld(srv, p); lay(srv, p, true); if (p.perks != null) for (Perk k : PERKS) if (p.perks.contains(k.key())) placePerk(srv, p, k); }
