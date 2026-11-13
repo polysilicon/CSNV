@@ -55,8 +55,19 @@ final class SelfTest {
     static void init() {
         CommandRegistrationCallback.EVENT.register((d, ctx, env) -> d.register(Commands.literal("ezadmin")
                 .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
-                .then(Commands.literal("selftest").executes(c -> { run(c.getSource()); return 1; }))));
+                .then(Commands.literal("selftest").executes(c -> {
+                    // not from inside the command: since 1.20.3 commands run during another command wait until it ends,
+                    // so the test bunker's build commands would only land after the checks. Start on the next tick.
+                    pending = c.getSource();
+                    c.getSource().sendSuccess(() -> Component.literal("Self-test starting..."), false);
+                    return 1; }))));
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> {
+            if (pending == null) return;
+            CommandSourceStack src = pending; pending = null;
+            run(src);
+        });
     }
+    static CommandSourceStack pending;
 
     // ---------------------------------------------------------------- results
     static final List<String> fails = new ArrayList<>();
