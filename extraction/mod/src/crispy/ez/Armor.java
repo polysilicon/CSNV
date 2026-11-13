@@ -30,7 +30,7 @@ import static crispy.ez.Ui.t;
 /**
  * Milsim armour (1.7.0). The sets are defined by the datapack build (shops.json "armor": set -> slot -> item SNBT);
  * every piece carries custom_data {ezarmor:<set>, ezslot:<slot>}. This class:
- *  - gives the full-set bonuses: hazmat (tag ez.radproof: the datapack's radiation skips you), ghillie (crouching with
+ *  - gives the set bonuses: hazmat (each piece blocks 25% of a crash site's contamination, see Events), ghillie (crouching with
  *    no raider gunner within 8 blocks: tag ez.hidden, which the gunners' target selector leaves out), tactical helmet
  *    (night vision while worn);
  *  - swaps any vanilla armour for the nearest set's piece (in a player's inventory, and in a container when opened):
@@ -98,8 +98,7 @@ final class Armor {
     static void tick(ServerPlayer p) {
         MinecraftServer server = p.level().getServer();
         convertAll(server, p.getInventory(), p);
-        // hazmat: the datapack's radiation leaves you alone
-        if (pieces(p, "hazmat") == 4) p.addTag("ez.radproof"); else p.removeTag("ez.radproof");
+        p.removeTag("ez.radproof");   // 1.7.0's edge immunity, gone: hazmat is for contaminated crash sites (Events)
         // ghillie: crouching, no gunner within 8 blocks -> raiders further out lose sight of you
         boolean hide = pieces(p, "ghillie") == 4 && p.isShiftKeyDown()
                 && p.level().getEntities((Entity) null, p.getBoundingBox().inflate(8), e -> e.entityTags().contains("ez.gunner")).isEmpty();

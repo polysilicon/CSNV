@@ -165,7 +165,7 @@ ARMOR = {
                    ["Full set: crouch and raiders more than", "8 blocks away lose sight of you."]),
     "hazmat":     ("Hazmat", "yellow", 1, (1, 3, 2, 1), 0.0, 140, (0xE3C21A, 0xD8B417, 0x2A2A2A), ("bolt", "netherite"), [],
                    ("Hazmat Hood", "Hazmat Suit", "Hazmat Trousers", "Hazmat Boots"),
-                   ["Full set: immune to radiation", "past the zone's edge."]),
+                   ["Blocks 25% of the radiation at a crash", "site per piece; a full suit, all of it."]),
     "patrol":     ("Woodland Patrol", "green", 2, (2, 5, 4, 2), 0.0, 220, (0x4B5320, 0x556B2F, 0x3B2F1E), ("sentry", "copper"), [],
                    ("Combat Helmet", "Patrol Jacket", "Patrol Trousers", "Patrol Boots"), []),
     "tactical":   ("Tactical Ops", "dark_aqua", 3, (3, 6, 5, 2), 0.5, 320, (0x262626, 0x2E2E2E, 0x1A1A1A), ("silence", "netherite"), [],
@@ -480,8 +480,7 @@ def build(out):
         "scoreboard players enable @s truce",
         "execute if score @s ez.tit matches 1.. run scoreboard players remove @s ez.tit 1",
     ])
-    fn("raid/outside", ['execute if entity @s[tag=ez.radproof] run return run title @s actionbar {"text":"☢ Radiation: your hazmat suit is holding","color":"yellow","bold":true}',
-                        'title @s actionbar {"text":"☢ RADIATION: get back into the zone","color":"green","bold":true}',
+    fn("raid/outside", ['title @s actionbar {"text":"☢ RADIATION: get back into the zone","color":"green","bold":true}',
                         "damage @s 3 minecraft:magic", "playsound minecraft:block.beacon.deactivate player @s ~ ~ ~ 0.5 2"])
     fn("raid/timeout", [*title("@s", "BLOWOUT", "You ran out of time. Everything you carried is lost.", "red"),
                         say("@a[tag=ez.raid]", "☢ A raider was caught by the blowout.", "dark_green"),

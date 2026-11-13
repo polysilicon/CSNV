@@ -19,6 +19,7 @@ import static crispy.ez.Ui.t;
  * Dynamic zone events (1.1.0), one every 6-9 minutes while raiders are in the zone:
  *  - Supply drop: a barrel of top-tier loot (ez:event/supply) under a red flare column, for 8 minutes.
  *  - Helicopter crash: a smoking wreck with two crates (ez:event/heli) and three Riflemen guarding it, for 12 minutes.
+ *    Since 1.7.1 the wreck is contaminated: radiation within 10 blocks, blocked 25% per hazmat piece worn.
  *  - Hot extract: a temporary extraction point for 3 minutes (a normal ez.exfil marker tagged ez.hot): valuables you
  *    extract with there pay double (Raid.extract).
  * Raiders hear roughly where (the district); a Field Radio on your stash plot gives the exact spot for the first event
@@ -56,6 +57,7 @@ final class Events {
                 lvl.sendParticles(ParticleTypes.FLAME, x, y + 38, z, 12, 0.6, 0.6, 0.6, 0.02);
             } else if (e.kind == Kind.HELI) {
                 lvl.sendParticles(ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, x, y + 2, z, 6, 0.6, 0.4, 0.6, 0.02);
+                contamination(lvl, e);
             }
         }
         if (nextAt < 0) nextAt = now + 3 * 60_000L;
@@ -102,7 +104,7 @@ final class Events {
                 for (int[] g : new int[][]{{3, 3}, {-3, 3}, {0, -3}})
                     Plots.run(server, String.format("execute in lostcities:lostcity positioned %d %d %d run function ez:spawner/rifleman", pos.getX() + g[0], pos.getY(), pos.getZ() + g[1]));
                 Plots.run(server, "tag @e[tag=ez.newai] remove ez.newai");
-                what = "🚁 A helicopter went down in " + district(pos.getX(), pos.getZ()) + ". Raiders are guarding the crash site.";
+                what = "🚁 A helicopter went down in " + district(pos.getX(), pos.getZ()) + ". Raiders guard it, and the wreck is leaking radiation: bring a hazmat suit.";
             }
             default -> {
                 e.ends = System.currentTimeMillis() + 3 * 60_000L;
@@ -124,6 +126,27 @@ final class Events {
                 p.sendSystemMessage(t("📻 Field Radio: it's at " + pos.getX() + ", " + pos.getZ() + ", " + Math.round(Math.hypot(dx, dz)) + " blocks "
                         + Raid.compass(dx, dz).getString() + " of you.", ChatFormatting.AQUA));
             }
+        }
+    }
+
+    // 1.7.1: the crashed helicopter was carrying something hot. Within RAD_R blocks of the wreck you take RAD_DMG a
+    // second; every hazmat piece you wear blocks a quarter of it, a full suit all of it. Green haze marks the area.
+    static final double RAD_R = 10, RAD_DMG = 1.5;
+    static void contamination(ServerLevel lvl, Ev e) {
+        double x = e.pos.getX() + 0.5, y = e.pos.getY(), z = e.pos.getZ() + 0.5;
+        for (int i = 0; i < 24; i++) {
+            double a = RNG.nextDouble() * Math.PI * 2, r = RAD_R * Math.sqrt(RNG.nextDouble());
+            lvl.sendParticles(new DustParticleOptions(0x7CFF4A, 1.6f), x + Math.cos(a) * r, y + 0.4 + RNG.nextDouble() * 2, z + Math.sin(a) * r, 1, 0.1, 0.1, 0.1, 0);
+        }
+        for (ServerPlayer p : lvl.players()) {
+            if (p.isSpectator() || p.isCreative() || Math.hypot(p.getX() - x, p.getZ() - z) > RAD_R || Math.abs(p.getY() - y) > 8) continue;
+            int pieces = Armor.pieces(p, "hazmat");
+            double dmg = RAD_DMG * (4 - pieces) / 4.0;
+            if (dmg > 0) p.hurtServer(lvl, lvl.damageSources().magic(), (float) dmg);
+            p.sendSystemMessage(t(pieces == 4 ? "☢ Contaminated wreck: your hazmat suit blocks it all" :
+                    "☢ CONTAMINATED: " + String.format("%.2f", dmg) + " damage a second" + (pieces > 0 ? " (hazmat blocks " + pieces * 25 + "%)" : ". A hazmat suit blocks it."),
+                    pieces == 4 ? ChatFormatting.YELLOW : ChatFormatting.GREEN, ChatFormatting.BOLD), true);
+            if (pieces < 4) Ui.sound(p, net.minecraft.sounds.SoundEvents.BEACON_DEACTIVATE, 0.4f, 2f);
         }
     }
 
