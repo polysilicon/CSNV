@@ -1,9 +1,23 @@
 # Extraction Zone (instance Extraction01)
 
 Extraction-shooter mode replacing Factions. Fabric 26.2, AMP instance `Extraction01` (AMP port 8087, game 127.0.0.1:25574,
-SFTP 2230, 4 GB, sleep mode off), Velocity server `extraction`. **Private until launch:** whitelist on (lbxd only),
-not in the lobby selector, the proxy's `try` list or TAB. Factions01 keeps running until launch; its backup is
-`/AMPStorage/backups/Factions01-20261112.tgz` (world, nether, end, all plugins and their data).
+SFTP 2230, 4 GB, sleep mode off), Velocity server `extraction`. **Live since 2026-11-13:** in the lobby selector
+(slot 13), the vote menu (15 Gold Coins a vote), the Start-here picker and TAB's global list; Discord bridge
+`[bridge.extraction]` over RCON 127.0.0.1:25583 (password in `/etc/crispybot.env` as `RCON_EXTRACTION`). The
+whitelist is off (AMP's `Use Whitelist` setting owns it; `server.properties` is rewritten on start). Launch config
+backups end in `.bak-golive`. Factions01 is stopped; its backup is `/AMPStorage/backups/Factions01-20261112.tgz`.
+
+## 1.8.16-1.8.25 (2026-11-13)
+- **Salvage Bench** (grindstone): carried armour, guns and blades break into Cloth, Scrap, Wire, Gun Parts (Broker 6)
+  and Armour Plate (Broker 9); badly worn pieces give half. Craftable sets salvage for less than their recipes.
+- **Downed** (`Revive`): a fatal hit while raiding downs you for 45 s; a crouching player revives (5 s), any player's
+  hit finishes you; Self-Revive Injector (hold crouch 3 s, carry one); raiders back off; down again within 20 s = dead.
+- **Extraction waves**: the flare summons 4-10 raiders by ring, placed 26-38 blocks out at the end of the tick (the
+  summons run after exfil/hold), a smaller second wave at 15 s. Spawn points wait while a raider is within 24 blocks.
+- **Logout stand-ins** (`Standin`): a mannequin with your gear and health stays; the raid timer keeps running; only
+  players can kill it (gear drops, you die on return). Records in `config/crispy_extraction/standins.json`.
+- **Field Guide** (`Guide`, `/guide`), **melee** (knife, machete, fire axe, sledgehammer), **zone fog** (biome
+  attributes: 20-90 blocks, ash).
 
 `python3 build.py <out>` writes the `crispy_extraction` datapack (zip it into `world/datapacks/`). One-time setup by
 an op or the console: `/function ez:admin/build_camp`, then `/function ez:admin/setup` (places extraction and

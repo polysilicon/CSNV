@@ -6,6 +6,24 @@ spots or anything else players are meant to find.
 
 NEWS = [
     {
+        "slug": "extraction-zone-open",
+        "date": "2026-11-13",
+        "title": "Extraction Zone is open",
+        "summary": "Extraction Zone is live: loot a ruined city, fight raiders and players, revive your squad or finish off a rival, and get out alive.",
+        "body": """
+<p><a href="/extraction-zone/">Extraction Zone</a> is open. Pick it in the lobby's server selector.</p>
+<ul>
+<li><b>Raid a ruined city.</b> Four rings from the outskirts to the Core: the deeper you go, the tougher the raiders and the better the loot.</li>
+<li><b>Extract under fire.</b> Hold an extraction point for 30 seconds while the flare draws raiders in.</li>
+<li><b>Downed, not dead.</b> Another player can revive you or finish you off and take your gear. Carry a Self-Revive Injector to get up on your own.</li>
+<li><b>Guns and blades.</b> Pistols to a machine gun, plus a combat knife, machete, fire axe and sledgehammer.</li>
+<li><b>Your bunker.</b> Store loot and build stations to craft armour, meds, ammo and tools, or salvage spare gear into parts.</li>
+<li><b>No safe logout.</b> Leave mid-raid and a stand-in of you stays behind with your gear while your timer runs.</li>
+</ul>
+<p>New players get a Field Guide on their first visit, and <code>/guide</code> gives a fresh copy any time.</p>
+""",
+    },
+    {
         "slug": "skyblock-collections",
         "date": "2026-11-12",
         "title": "Skyblock: 68 collections with coins and skill XP for every tier",

@@ -454,6 +454,7 @@ def building_recipes():
     return len(R)
 
 ZONE_BIOME = "windswept_gravelly_hills"
+ZONE_FOG = (20.0, 90.0)   # 1.8.25: fog start / end, blocks
 def zone_world():
     """1.8.4: the zone (Lost Cities' dimension) is one biome all over (1.8.7: windswept gravelly hills), flat (1.8.5) and has no sea: the overworld's terrain settings with
     sea level at the bottom, air as the default fluid and no aquifers, so low ground stays dry instead of flooding, and
@@ -475,6 +476,11 @@ def zone_world():
     # instead of the desert's orange sand and sandstone; also no infested stone and nothing that freezes
     biome = json.load(open(os.path.join(HERE, "worldgen", f"{ZONE_BIOME}_26.2.json")))
     drop = ("lake", "geode", "fossil", "monster_room", "desert_well", "spring_", "infested", "freeze_top_layer")
+    # 1.8.25 fog: dusty grey haze, clear to 20 blocks and closed in by 90 (snipers reach 48, raider guns 28), drifting ash
+    biome["attributes"] = {"minecraft:visual/sky_color": "#8e9294", "minecraft:visual/fog_color": "#9d9a92", "minecraft:visual/cloud_color": "#c8b8b4ac",
+                           "minecraft:visual/fog_start_distance": ZONE_FOG[0], "minecraft:visual/fog_end_distance": ZONE_FOG[1],
+                           "minecraft:visual/sky_fog_end_distance": ZONE_FOG[1],
+                           "minecraft:visual/ambient_particles": [{"particle": {"type": "minecraft:white_ash"}, "probability": 0.002}]}
     biome["carvers"] = []
     biome["features"] = [[f for f in step if not any(k in f for k in drop)] for step in biome["features"]]
     wj(f"data/minecraft/worldgen/biome/{ZONE_BIOME}.json", biome)

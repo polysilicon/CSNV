@@ -176,7 +176,7 @@ FAQ = [
      "cyberpunk implants and a market economy with a crypto exchange, and the community is smaller, so you meet people quickly."),
     ("What other game modes does the network have?",
      "Besides Anarchy there is Vanilla Anarchy (plain survival), Skyblock with skills, pets and minions, a PvP server called Multiverse "
-     "with 36 characters, duels and co-op zombie waves, and Extraction Zone, a PvPvE looting mode in a ruined city (opens Friday 13 November). All share one chat and one Discord."),
+     "with 36 characters, duels and co-op zombie waves, and Extraction Zone, a PvPvE looting mode in a ruined city, open now. All share one chat and one Discord."),
     ("Where is spawn on Crispy Anarchy?",
      "World spawn is at X 287, Z -207 in the overworld. You can explore the area around it on the 3D map at www.crispyanarchy.net/spawn-map/."),
 ]
@@ -188,7 +188,7 @@ def home():
         ("/anarchy/#vanilla", "Vanilla Anarchy", "Plain survival anarchy with no custom items, for people who like it pure."),
         ("/skyblock/", "Skyblock", "Grow your island with skills, collections, pets, 43 minions, a Bazaar and gear crafted from what you farm."),
         ("/pvp/", "Multiverse", "36 playable characters: arena PvP, ranked duels, zombie waves, Core Defense and a roguelite tower."),
-        ("/extraction-zone/", "Extraction Zone", "New: loot a ruined city, fight armed raiders and other players, and get out alive. Opens Friday 13 November."),
+        ("/extraction-zone/", "Extraction Zone", "New: loot a ruined city, fight armed raiders and other players, and get out alive. Open now."),
         ("/spawn-map/", "3D spawn map", "Fly over two square kilometres of spawn, wrecked by six years of anarchy."),
         ("/bedrock-anarchy/", "Bedrock anarchy", "Play anarchy from Windows, phone, tablet or console, in the same world as Java players."),
     ]
@@ -428,7 +428,8 @@ def pvp():
 
 def extraction():
     qas = [
-        ("When does Extraction Zone open?", "Friday 13 November 2026. It replaces the old Factions server on the Crispy network."),
+        ("Is Extraction Zone open?", "Yes, since Friday 13 November 2026. It replaced the old Factions server on the Crispy network."),
+        ("What happens if I log out in the middle of a raid?", "Your raid timer keeps running and a stand-in of you stays where you stood, carrying your gear. Raiders leave it alone, but other players can kill it and take everything. Log back in before your time runs out."),
         ("What happens if I die in the zone?", "You lose everything you carried in. What you left in your stash plot in camp is safe, and if you lose everything the Quartermaster sends a basic relief kit."),
         ("Can I team up with other players?", "Yes. Anyone you meet in the zone can become a teammate for the raid, and any teammate can turn on you."),
         ("Do I need mods?", "No. It runs on the normal Minecraft client, Java or Bedrock, through the Crispy lobby."),
@@ -436,7 +437,7 @@ def extraction():
     faq_html = "".join(f"<h3>{e(q)}</h3><p>{e(a)}</p>" for q, a in qas)
     body = f"""
 <section class="wrap block head">
-  <p class="kicker">Extraction Zone · new · opens Friday 13 November · Java + Bedrock</p>
+  <p class="kicker">Extraction Zone · new · open now · Java + Bedrock</p>
   <h1>Extraction Zone: a Minecraft extraction shooter in a ruined city</h1>
   <p class="lede measure">Drop into a ruined city with the gear you chose to risk, loot what you can, fight armed raiders and other players, and reach an extraction point before the timer runs out. Get out and the loot is yours. Die and you lose everything you brought in.</p>
   {join_box(True)}
@@ -447,29 +448,31 @@ def extraction():
     <li><b>Gear up in camp.</b> Buy guns, ammo, armour and medkits from the Quartermaster with Gold Coins, and take a contract from the Fixer.</li>
     <li><b>Deploy.</b> Board at the helipad and you are dropped on a street at the edge of the zone.</li>
     <li><b>Loot.</b> Search crates in buildings. The closer to the city centre, the better the loot and the tougher the enemies.</li>
-    <li><b>Extract.</b> Reach one of the extraction points and hold it for 30 seconds before the 25-minute timer ends.</li>
+    <li><b>Extract.</b> Reach one of the extraction points and hold it for 30 seconds before the 25-minute timer ends. The flare draws a wave of raiders, so expect a fight.</li>
   </ol>
   <h2>One shared zone with PvP</h2>
   <p>Everyone raids the same city at the same time. Players you meet can team up with you for the raid, and any of them can betray you for what you carry. Trust is part of the loot.</p>
+  <h2>Downed, not dead</h2>
+  <p>A fatal hit puts you on the ground for 45 seconds. Another player can crouch beside you to get you back up, or finish you off and take your gear. A Self-Revive Injector, rare in the inner city or made in your bunker, gets you up on your own.</p>
   <h2>Guns and enemies</h2>
-  <p>Pistols, SMGs, shotguns, rifles and a machine gun, each with a magazine you have to reload. The city is held by Infected, Bandit Gunners, Raiders and Riflemen, and the armed ones shoot back.</p>
+  <p>Pistols, SMGs, shotguns, rifles and a machine gun, each with a magazine you have to reload. The city is held by Infected, Bandit Gunners, Raiders and Riflemen, and the armed ones shoot back. When the shooting has to stop, there are blades: a combat knife, a machete, a fire axe and a sledgehammer.</p>
   <h2>Contracts, the Commander and zone events</h2>
   <p>The Fixer offers jobs before each raid: recover an intel cache from a district, take out a number of Riflemen, or extract from a particular point. Finish the job and get out alive for bonus coins.</p>
   <p>The Commander, a heavily armed boss with an escort, lands in the city centre and carries the best loot in the zone. Every few minutes something else happens somewhere in the city: a supply drop under a red flare, a helicopter crash guarded by raiders, or a hot extract that pays double for 3 minutes.</p>
   <h2>Money you can lose</h2>
   <p>The Zone runs on Gold Coins, and 64 of them condense into a Coin Bag. Coins are items, so you can only spend what you carry. Traders inside the zone, the Smuggler and the Arms Dealer, sell gear you can't get in camp, so bringing cash in is worth the risk. Sell what you extract to the Broker in camp.</p>
-  <h2>Your stash plot</h2>
-  <p>Every player gets a protected plot in camp to store loot, build and decorate. Grow it, and install upgrades that change how you play: a gun workbench for extended magazines and faster reloads, a medical station for cheaper heals, and a field radio that pins down the next zone event. Nobody can raid it.</p>
+  <h2>Your bunker</h2>
+  <p>Every player gets a protected bunker under the camp to store loot, build and decorate. Fill it with stations: sew armour and bandages, brew medkits, reload your own ammo, distil moonshine to sell, make tools like a grappling hook and smoke grenades, and break spare armour and guns down into parts at a Salvage Bench. Upgrades change how you play: a gun workbench for extended magazines and faster reloads, a medical station for cheaper heals, and a field radio that pins down the next zone event. Nobody can raid it.</p>
   <h2>A new city every week</h2>
   <p>The city is rebuilt every Monday, so the streets stay clear and there is always fresh ground to search. After every raid you get a recap of your loot, kills and distance, and the best runs are announced to everyone.</p>
   <h2>Questions</h2>
   {faq_html}
   <h2>How to get there</h2>
-  <p>From Friday 13 November: join <code>{JAVA}</code> (Bedrock: port <code>{BEDROCK_PORT}</code>) and choose Extraction Zone in the lobby's server selector.</p>
+  <p>Join <code>{JAVA}</code> (Bedrock: port <code>{BEDROCK_PORT}</code>) and choose Extraction Zone in the lobby's server selector.</p>
 </section>
 """
     return page("/extraction-zone/", "Extraction Zone – Minecraft Extraction Shooter, PvPvE Looting | Crispy Network",
-                "Loot a ruined city with guns, fight armed raiders and players, team up or betray, and extract alive. New on the Crispy network from 13 November. Java & Bedrock, no mods.",
+                "Loot a ruined city with guns, fight armed raiders and players, team up or betray, and extract alive. Now open on the Crispy network. Java & Bedrock, no mods.",
                 body, crumbs=[("/extraction-zone/", "Extraction Zone")], extra_ld=[GAMESERVER, faq_ld(qas)])
 
 
@@ -578,7 +581,7 @@ Key facts:
 - Rules: no gameplay rules and no bans on Anarchy (griefing, raiding and PvP allowed). Community rules on every server: follow the Minecraft Usage Guidelines and Minecraft/Xbox Community Standards; no hate speech or hateful builds, no real-life harassment, threats or doxxing, no spam. Slurs are automatically starred in chat, signs, books and item names. Chat reports are disabled.
 - Requires a paid Java account (not cracked); Bedrock uses Microsoft accounts.
 - Anarchy extras: 193 custom enchantments in 9 tiers, cyberpunk implants from a Ripperdoc, a villager market with Gold Coins, a bank, a crypto (Bitcoin) trader with a fluctuating price, and a hidden black market.
-- Other modes on the same network: Vanilla Anarchy (plain survival anarchy), Skyblock (5 skills, 68 collections with tier rewards, 43 minions, pets, Bazaar, craftable gear), Multiverse PvP (36 characters, kit PvP, Elo duels, co-op zombie waves, Core Defense), Extraction Zone (opens Friday 13 November 2026: a shared PvPvE zone in a ruined city with guns, armed raiders, loot crates, extraction points, traders and a protected stash plot in camp; whatever you carry is lost if you die).
+- Other modes on the same network: Vanilla Anarchy (plain survival anarchy), Skyblock (5 skills, 68 collections with tier rewards, 43 minions, pets, Bazaar, craftable gear), Multiverse PvP (36 characters, kit PvP, Elo duels, co-op zombie waves, Core Defense), Extraction Zone (open since 13 November 2026: a shared PvPvE zone in a ruined city with guns, armed raiders, loot crates, extraction points, traders and a protected stash plot in camp; whatever you carry is lost if you die).
 - Discord: {DISCORD}
 
 ## Pages
