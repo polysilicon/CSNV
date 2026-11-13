@@ -82,3 +82,11 @@ velocity.toml (2026-11-12, live after `velocity reload`): `kick-existing-players
 session instead of "You are already connected to this proxy!") and `try = ["lobby", "multiverse"]` (if the lobby is
 down, players land on Multiverse instead of "Unable to connect you to lobby"). Lobby allow-flight on (no flying kicks in the
 hub): set in AMP (CrispyLobby01 > Allow Flight), because AMP rewrites server.properties at every start.
+
+## Per-address MOTD (MiniMOTD, 2026-11-13)
+
+`plugins/minimotd-velocity/plugin_settings.conf` → `virtual-host-configs` maps `skyblock.crispyanarchy.net:13134`
+(and `:25565`) to `extra-configs/skyblock.conf`: six rotating "Crispy Skyblock" MOTDs (green to sky-blue title),
+same player-count settings as `main.conf`. Every other address keeps `main.conf`. Apply edits with `minimotd reload`
+(no restart). The key includes the port the game reports, which is 13134 through the SRV record. Backups:
+`plugin_settings.conf.bak-sbmotd`, `extra-configs/skyblock.conf.bak-example` (the plugin's default example).
