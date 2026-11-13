@@ -60,6 +60,7 @@ final class Reset {
                     if (Files.exists(old)) try (Stream<Path> w = Files.walk(old)) { w.sorted(Comparator.reverseOrder()).forEach(p -> p.toFile().delete()); }
                     Files.createDirectories(old.getParent());
                     Files.move(CITY_DIR, old);
+                    Files.deleteIfExists(Interiors.DONE_FILE);   // 1.8.9: the new city's chunks are all to do
                     didReset = true;
                     System.out.println("[crispy-extraction] weekly reset: the city will be regenerated (" + last + " -> " + now + ")");
                 }

@@ -438,6 +438,31 @@ final class Design {
                     }
                 }
             SelfTest.check("zone: no vanilla structures", starts == 0, starts + " found" + (kinds.isEmpty() ? "" : " " + kinds));
+            // 1.8.8: no mob spawners and no empty-looking chests (every crate filled) in the loaded zone
+            int spawners = 0, chests = 0;
+            for (int cx = (Zone.CX - Zone.HALF) >> 4; cx <= (Zone.CX + Zone.HALF) >> 4; cx++)
+                for (int cz = (Zone.CZ - Zone.HALF) >> 4; cz <= (Zone.CZ + Zone.HALF) >> 4; cz++) {
+                    if (!city.hasChunk(cx, cz)) continue;
+                    for (var be : city.getChunk(cx, cz).getBlockEntities().values()) {
+                        if (be instanceof net.minecraft.world.level.block.entity.SpawnerBlockEntity) spawners++;
+                        if (be instanceof net.minecraft.world.level.block.entity.ChestBlockEntity) {
+                            chests++;
+                            if (chests <= 3) SelfTest.LOG.info("[ez-selftest] chest at {} chunk {} {} done={} queued={} street={} isStreet={}", be.getBlockPos().toShortString(), cx, cz,
+                                    Interiors.done().contains(net.minecraft.world.level.ChunkPos.pack(cx, cz)), Interiors.QUEUE.contains(net.minecraft.world.level.ChunkPos.pack(cx, cz)),
+                                    Zone.LC.street(city, cx, cz), Zone.LC.isStreet(city, cx, cz));
+                        }
+                    }
+                }
+            // 1.8.10: every crate marker sits on its loot barrel (it used to sit a block off diagonally: the barrel went next to the chest)
+            int crates = 0, offCrates = 0; String offAt = "";
+            for (var m : city.getEntities(net.minecraft.world.level.entity.EntityTypeTest.forClass(net.minecraft.world.entity.Marker.class), mm -> mm.entityTags().contains("ez.crate"))) {
+                crates++;
+                if (!city.getBlockState(m.blockPosition()).is(net.minecraft.world.level.block.Blocks.BARREL)) { offCrates++; if (offAt.isEmpty()) offAt = m.blockPosition().toShortString() + " is " + city.getBlockState(m.blockPosition()).getBlock(); }
+            }
+            SelfTest.check("zone: every crate marker sits on its loot barrel", offCrates == 0, crates + " crates, " + offCrates + " off" + (offAt.isEmpty() ? "" : ", e.g. " + offAt));
+            SelfTest.check("zone: no mob spawners", spawners == 0, spawners + " found; chunks done " + Interiors.done().size() + ", queued " + Interiors.QUEUE.size() + ", chests swept " + Interiors.swept);
+            SelfTest.check("zone: no leftover chests (crates are loot barrels)", chests == 0, chests + " found; furnished " + Interiors.furnished + " chunks, "
+                    + Interiors.props + " props, " + Interiors.barrels + " loot barrels, " + Interiors.swapped + " stations swapped in, " + Interiors.streetBits + " street pieces");
             SelfTest.check("zone: ground level with the roads (no pits)", sampled > 0 && pits == 0, sampled + " columns sampled, " + pits + " below street level" + (first.isEmpty() ? "" : ", e.g. " + first));
         }
         if (city != null) {   // 1.8.3: never more than one Commander

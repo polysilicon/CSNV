@@ -763,10 +763,8 @@ def build(out):
         "scoreboard players operation #d ez = #now ez", "scoreboard players operation #d ez -= @s ez.ct",
         f"execute if score #d ez matches {CRATE_EVERY * 20}.. unless entity @a[distance=..20] run function {NS}:crate/refill"])
     wj(f"data/{NS}/tags/block/crate_blocks.json", {"values": ["minecraft:chest", "minecraft:trapped_chest", "minecraft:barrel"]})
-    for t in TIERS:   # 1.8.4: the building's own chest (or barrel) is the crate; only an empty spot gets a barrel
-        fn(f"crate/fill{t}", [f"execute if block ~ ~ ~ #{NS}:crate_blocks run data modify block ~ ~ ~ Items set value []",
-                              f"execute if block ~ ~ ~ #{NS}:crate_blocks run return run data modify block ~ ~ ~ LootTable set value \"{NS}:crate/t{t}\"",
-                              f"setblock ~ ~ ~ minecraft:barrel[facing=up]{{LootTable:\"{NS}:crate/t{t}\"}}"])
+    for t in TIERS:   # 1.8.8: every crate is a loot barrel (a building's chest becomes one)
+        fn(f"crate/fill{t}", [f"setblock ~ ~ ~ minecraft:air", f"setblock ~ ~ ~ minecraft:barrel[facing=up]{{LootTable:\"{NS}:crate/t{t}\"}}"])
     fn("crate/refill", ["scoreboard players operation @s ez.ct = #now ez",
                         *[f"execute if score @s ez {f'matches {t}'} run function {NS}:crate/fill{t}" for t in TIERS]])
     for k, (mob, nbt, tags, loot) in RAIDERS.items():

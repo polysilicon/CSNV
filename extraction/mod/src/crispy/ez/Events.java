@@ -185,7 +185,7 @@ final class Events {
             }
             default -> {
                 e.ends = System.currentTimeMillis() + 3 * 60_000L;
-                Plots.run(server, at + "summon minecraft:marker ~0.5 ~ ~0.5 {Tags:[\"ez.pt\",\"ez.exfil\",\"ez.hot\",\"ez.event\"],CustomName:{text:\"Hot Extract\",color:\"gold\"}}");
+                Plots.run(server, at + "summon minecraft:marker ~ ~ ~ {Tags:[\"ez.pt\",\"ez.exfil\",\"ez.hot\",\"ez.event\"],CustomName:{text:\"Hot Extract\",color:\"gold\"}}");
                 lvl.getEntitiesOfClass(net.minecraft.world.entity.Marker.class, new net.minecraft.world.phys.AABB(pos).inflate(2), m -> m.entityTags().contains("ez.hot"))
                         .stream().findFirst().ifPresent(m -> e.marker = m.getUUID());
                 what = "🔥 A hot extract opened in " + district(pos.getX(), pos.getZ()) + " for 3 minutes: valuables extracted there pay double!";

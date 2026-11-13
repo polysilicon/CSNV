@@ -90,22 +90,13 @@ final class Zone {
             if (!level.dimension().equals(CITY)) return;
             int bx = chunk.getPos().getMinBlockX(), bz = chunk.getPos().getMinBlockZ();
             if (bx < CX - HALF - 16 || bx > CX + HALF || bz < CZ - HALF - 16 || bz > CZ + HALF) return;
-            for (BlockEntity be : new ArrayList<>(chunk.getBlockEntities().values())) {
-                BlockPos p = be.getBlockPos();
-                boolean chest = be instanceof net.minecraft.world.level.block.entity.ChestBlockEntity || be instanceof net.minecraft.world.level.block.entity.BarrelBlockEntity;
-                if (be instanceof RandomizableContainerBlockEntity c && c.getLootTable() != null
-                        && !c.getLootTable().identifier().getNamespace().equals("ez")) {
+            for (BlockEntity be : new ArrayList<>(chunk.getBlockEntities().values()))
+                if (be instanceof RandomizableContainerBlockEntity c && c.getLootTable() != null && !c.getLootTable().identifier().getNamespace().equals("ez"))
                     c.setLootTable(null);   // no vanilla/Lost Cities loot in the zone
-                    if (chest || RNG.nextFloat() < CRATE_CHANCE) QUEUE.add(new long[]{p.getX(), p.getY(), p.getZ(), 0});
-                } else if (generated && chest) {   // 1.8.4: every chest and barrel in a new building is a crate (they stay chests)
-                    QUEUE.add(new long[]{p.getX(), p.getY(), p.getZ(), 0});
-                } else if (be instanceof SpawnerBlockEntity) {
-                    // the city has far more spawners than chests: keep about a third as raider spawn points, remove the rest
-                    QUEUE.add(new long[]{p.getX(), p.getY(), p.getZ(), RNG.nextFloat() < SPAWNER_CHANCE ? 1 : 2});
-                }
-            }
-            // 1.8.4: furnish the rooms of new buildings
-            if (generated) Interiors.QUEUE.add(net.minecraft.world.level.ChunkPos.pack(chunk.getPos().x(), chunk.getPos().z()));
+            // 1.8.9: crates, spawners and furnishing happen once per chunk (Interiors keeps the list), whenever the chunk
+            // is loaded and not done yet: the zone map generates chunks and unloads them before a queue gets to them
+            long key = net.minecraft.world.level.ChunkPos.pack(chunk.getPos().x(), chunk.getPos().z());
+            if (!Interiors.done().contains(key)) Interiors.QUEUE.add(key);
             // fresh street chunks: some get a raider spawn point out in the open, so gunners hold the streets too
             if (generated && RNG.nextFloat() < STREET_SPAWN_CHANCE) {
                 int cx = chunk.getPos().x(), cz = chunk.getPos().z();
@@ -157,19 +148,21 @@ final class Zone {
                 int x = (int) q[0], y = (int) q[1], z = (int) q[2], t = tier(x, z);
                 String at = String.format("execute in lostcities:lostcity positioned %d %d %d ", x, y, z);
                 if (q[3] == 0) {
-                    Plots.run(server, at + "unless entity @e[type=minecraft:marker,tag=ez.crate,distance=..0.6] run summon minecraft:marker ~0.5 ~ ~0.5 {Tags:[\"ez.crate\",\"ez.new\"]}");
+                    Plots.run(server, at + "unless entity @e[type=minecraft:marker,tag=ez.crate,distance=..0.6] run summon minecraft:marker ~ ~ ~ {Tags:[\"ez.crate\",\"ez.new\"]}");
                     Plots.run(server, String.format("scoreboard players set @e[type=minecraft:marker,tag=ez.new] ez %d", t));
                     Plots.run(server, "scoreboard players set @e[type=minecraft:marker,tag=ez.new] ez.ct 0");
+                    // 1.8.8: filled now, not when nobody's near (a crate made while you stood by it used to stay empty)
+                    Plots.run(server, "execute in lostcities:lostcity as @e[type=minecraft:marker,tag=ez.new] at @s run function ez:crate/refill");
                     Plots.run(server, "tag @e[tag=ez.new] remove ez.new");
                 } else if (q[3] == 3) {
-                    Plots.run(server, at + "unless entity @e[type=minecraft:marker,tag=ez.spawner,distance=..24] run summon minecraft:marker ~0.5 ~ ~0.5 {Tags:[\"ez.spawner\",\"ez.nospread\",\"ez.street\",\"ez.ring" + t + "\",\"ez.new\"]}");
+                    Plots.run(server, at + "unless entity @e[type=minecraft:marker,tag=ez.spawner,distance=..24] run summon minecraft:marker ~ ~ ~ {Tags:[\"ez.spawner\",\"ez.nospread\",\"ez.street\",\"ez.ring" + t + "\",\"ez.new\"]}");
                     Plots.run(server, "scoreboard players set @e[type=minecraft:marker,tag=ez.new] ez " + RING_CAP[t]);
                     Plots.run(server, "tag @e[tag=ez.new] remove ez.new");
                 } else if (q[3] == 2) {
                     Plots.run(server, at + "run setblock ~ ~ ~ minecraft:air");
                 } else {
                     Plots.run(server, at + "run setblock ~ ~ ~ minecraft:air");
-                    Plots.run(server, at + "unless entity @e[type=minecraft:marker,tag=ez.spawner,distance=..2] run summon minecraft:marker ~0.5 ~ ~0.5 {Tags:[\"ez.spawner\",\"ez.nospread\",\"ez.ring" + t + "\",\"ez.new\"]}");
+                    Plots.run(server, at + "unless entity @e[type=minecraft:marker,tag=ez.spawner,distance=..2] run summon minecraft:marker ~ ~ ~ {Tags:[\"ez.spawner\",\"ez.nospread\",\"ez.ring" + t + "\",\"ez.new\"]}");
                     Plots.run(server, "scoreboard players set @e[type=minecraft:marker,tag=ez.new] ez " + RING_CAP[t]);
                     Plots.run(server, "tag @e[tag=ez.new] remove ez.new");
                 }
@@ -316,6 +309,23 @@ final class Zone {
     }
 
     /** 1.8.3: every zone trader stands at its map point: summoned when missing, strays (old setups) removed. */
+    /** 1.8.9: make a loot crate at a block now (call while its chunk is loaded): marker with its ring's tier, filled. */
+    static void makeCrate(MinecraftServer server, BlockPos p) {
+        String at = String.format("execute in lostcities:lostcity positioned %d %d %d ", p.getX(), p.getY(), p.getZ());
+        Plots.run(server, at + "unless entity @e[type=minecraft:marker,tag=ez.crate,distance=..0.6] run summon minecraft:marker ~ ~ ~ {Tags:[\"ez.crate\",\"ez.v18\",\"ez.new\"]}");
+        Plots.run(server, "scoreboard players set @e[type=minecraft:marker,tag=ez.new] ez " + tier(p.getX(), p.getZ()));
+        Plots.run(server, "execute in lostcities:lostcity as @e[type=minecraft:marker,tag=ez.new] at @s run function ez:crate/refill");
+        Plots.run(server, "tag @e[tag=ez.new] remove ez.new");
+    }
+    /** 1.8.9: a raider spawn point at a block now (a former mob spawner). */
+    static void makeSpawnPoint(MinecraftServer server, BlockPos p) {
+        int t = tier(p.getX(), p.getZ());
+        String at = String.format("execute in lostcities:lostcity positioned %d %d %d ", p.getX(), p.getY(), p.getZ());
+        Plots.run(server, at + "unless entity @e[type=minecraft:marker,tag=ez.spawner,distance=..2] run summon minecraft:marker ~ ~ ~ {Tags:[\"ez.spawner\",\"ez.nospread\",\"ez.v18\",\"ez.ring" + t + "\",\"ez.new\"]}");
+        Plots.run(server, "scoreboard players set @e[type=minecraft:marker,tag=ez.new] ez " + RING_CAP[t]);
+        Plots.run(server, "tag @e[tag=ez.new] remove ez.new");
+    }
+
     static void keepTraders(MinecraftServer server) {
         ServerLevel lvl = server.getLevel(CITY);
         if (lvl == null) return;
