@@ -193,6 +193,13 @@ final class Plots {
         }
         for (int lx = x0 + 2; lx <= x1 - 1; lx += 6)   // ceiling lights, into the shell
             for (int lz = z0 + 2; lz <= z1 - 1; lz += 6) run(s, inCamp(String.format("setblock %d %d %d minecraft:ochre_froglight", lx, FLOOR + 7, lz)));   // 1.6.0 warm, like the reference bunkers
+        // 1.6.1 pendant lights on a 4-block grid, at FLOOR + 4 (3 clear above the floor): the lighting audit found the
+        // ceiling lights alone leave light 5-6 between them at foot level. Only into air, so nothing a player built moves.
+        for (int lx = x0 + 1; lx <= x1; lx += 4)
+            for (int lz = z0 + 1; lz <= z1; lz += 4) {
+                run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:iron_chain[axis=y] keep", lx, FLOOR + 5, lz, lx, FLOOR + 6, lz)));
+                run(s, inCamp(String.format("setblock %d %d %d minecraft:ochre_froglight keep", lx, FLOOR + 4, lz)));
+            }
         // 1.6.0 a grey skirting band (two blocks) round the room, vent grates high up; hazard marks only at the door
         for (int[] e : new int[][]{{x0 - 1, z0 - 1, x1 + 1, z0 - 1}, {x0 - 1, z1 + 1, x1 + 1, z1 + 1}, {x0 - 1, z0 - 1, x0 - 1, z1 + 1}, {x1 + 1, z0 - 1, x1 + 1, z1 + 1}})
             run(s, inCamp(String.format(f, e[0], FLOOR + 1, e[1], e[2], FLOOR + 2, e[3], BAND)));

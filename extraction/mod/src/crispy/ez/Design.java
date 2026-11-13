@@ -101,9 +101,11 @@ final class Design {
                     for (double h : heights(nx, nz)) {
                         double dh = h - a.h;
                         if (dh > JUMP || dh < -DROP) continue;
-                        double lo = Math.min(a.h, h), hi = Math.max(a.h, h) + 1.8;
+                        double hi = Math.max(a.h, h) + 1.8;
                         if (dh > STEP) hi = a.h + JUMP + 1.8;   // a jump needs headroom above where you jump from
-                        if (!clear(a.x, a.z, a.h, hi) || !clear(nx, nz, lo, Math.max(h + 1.8, a.h + 1.8))) continue;
+                        // the cell you leave: free from your feet up; the cell you enter: free from its floor up to
+                        // where your head passes (on a drop, the height you walk off at)
+                        if (!clear(a.x, a.z, a.h, hi) || !clear(nx, nz, h, Math.max(h + 1.8, a.h + 1.8))) continue;
                         Node b = new Node(nx, nz, h);
                         if (steps.putIfAbsent(b.key(), d + 1) == null) { order.add(b); q.add(b); }
                     }
@@ -225,7 +227,7 @@ final class Design {
                 dark++;
                 boolean k = key.test(n);
                 if (k) keyDark++;
-                if (spots.size() < 40) { JsonObject j = new JsonObject(); j.addProperty("at", n.at()); j.addProperty("light", l); j.addProperty("on_route", k); spots.add(j); }
+                if (k ? keyDark <= 150 : dark - keyDark <= 50) { JsonObject j = new JsonObject(); j.addProperty("at", n.at()); j.addProperty("light", l); j.addProperty("on_route", k); spots.add(j); }
             }
         }
         JsonObject j = new JsonObject(); j.addProperty("walkable", g.order.size()); j.addProperty("dark", dark); j.addProperty("dark_on_routes", keyDark);

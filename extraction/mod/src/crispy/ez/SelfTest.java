@@ -62,9 +62,8 @@ final class SelfTest {
                     c.getSource().sendSuccess(() -> Component.literal("Self-test starting..."), false);
                     return 1; }))));
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> {
-            if (pending == null) return;
-            CommandSourceStack src = pending; pending = null;
-            run(src);
+            if (pending != null) { CommandSourceStack src = pending; pending = null; run(src); }
+            step(server);
         });
     }
     static CommandSourceStack pending;
@@ -122,6 +121,9 @@ final class SelfTest {
     static final class FakePlayerRef { FakePlayer p; ItemStack held = ItemStack.EMPTY; }
 
     // ---------------------------------------------------------------- the run
+    // 1.6.0: in phases, ~3 s apart, so lighting is measured after the light engine has caught up with a fresh build
+    static final List<Runnable> phases = new ArrayList<>();
+    static int wait;
     static void run(CommandSourceStack src) {
         out = src; fails.clear(); passed = 0; Design.report = new com.google.gson.JsonObject();
         MinecraftServer server = src.getServer();
@@ -132,22 +134,32 @@ final class SelfTest {
         Plots.load();
         Plots.plots.remove(PROFILE.id().toString());   // a leftover from an aborted run
         Plots.loadArea(server, -20, -20, 20, 20);
-        try {
-            campChecks(server, camp, f);
-            Design.camp(server, camp);
-            bunkerChecks(server, camp, f);
-            Design.ids(server);
-        } catch (Exception e) {
+        Plots.Plot[] p = new Plots.Plot[1];
+        phases.clear();
+        phases.add(() -> { campChecks(server, camp, f); Design.camp(server, camp); p[0] = bunkerChecks(server, camp, f); });
+        phases.add(() -> { bunkerLevel(server, camp, f, p[0], 0); p[0].level = 1; Plots.lay(server, p[0], false, 0); });
+        phases.add(() -> { bunkerLevel(server, camp, f, p[0], 1); bunkerRest(server, camp, f, p[0]); Design.ids(server); finish(server, camp, f); });
+        wait = 0;
+    }
+    static void step(MinecraftServer server) {
+        if (phases.isEmpty() || --wait > 0) return;
+        Runnable r = phases.remove(0); wait = 60;
+        try { r.run(); }
+        catch (Exception e) {
             check("selftest ran to the end", false, e.toString());
             LOG.error("[ez-selftest] crashed", e);
-        } finally {
-            cleanup(server, camp);
-            f.p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            phases.clear();
+            ServerLevel camp = server.getLevel(Plots.CAMP);
+            finish(server, camp, null);
         }
+    }
+    static void finish(MinecraftServer server, ServerLevel camp, FakePlayerRef f) {
+        cleanup(server, camp);
+        if (f != null) f.p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
         Design.write(passed, fails);
         String sum = passed + " passed, " + fails.size() + " failed";
         LOG.info("[ez-selftest] {}", sum);
-        src.sendSuccess(() -> Component.literal("Self-test: " + sum).withStyle(fails.isEmpty() ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.RED,
+        out.sendSuccess(() -> Component.literal("Self-test: " + sum).withStyle(fails.isEmpty() ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.RED,
                 net.minecraft.ChatFormatting.BOLD), false);
     }
 
@@ -177,58 +189,64 @@ final class SelfTest {
         check("blockhouse steps: bottom standable", standable(camp, 12.5, 62, 15.5), "");
     }
 
-    static void bunkerChecks(MinecraftServer server, ServerLevel camp, FakePlayerRef f) {
+    static Plots.Plot bunkerChecks(MinecraftServer server, ServerLevel camp, FakePlayerRef f) {
         // the door with no bunker yet opens the claim menu
         Ui.LAST.remove(f.p.getUUID());
         InteractionResult r0 = useBlock(f, camp, new BlockPos(Plots.DOOR_X, 62, Plots.DOOR_Z), Direction.NORTH);
         check("door without a bunker opens the claim menu", r0 == InteractionResult.SUCCESS && "Your Bunker".equals(Ui.LAST.get(f.p.getUUID())), "result " + r0 + ", menu " + Ui.LAST.get(f.p.getUUID()));
         Plots.Plot p = Plots.claim(f.p);
         p.name = PROFILE.name();
-        for (int level = 0; level <= 1; level++) {
-            if (level == 1) { p.level = 1; Plots.lay(server, p, false, 0); }
+        return p;
+    }
+
+    /** Checks on the test bunker at one size; run a few seconds after it was laid, so the light engine has caught up. */
+    static void bunkerLevel(MinecraftServer server, ServerLevel camp, FakePlayerRef f, Plots.Plot p, int level) {
             String tag = " [" + Plots.SIZES[level] + "x" + Plots.SIZES[level] + "]";
-            int x = Plots.cx(p.index), z = Plots.cz(p.index), h = Plots.half(p), F = Plots.FLOOR, z0 = z - h;
-            // in through the camp door: block and box
-            Plots.move(f.p, Plots.CAMP_EXIT[0], Plots.CAMP_EXIT[1], Plots.CAMP_EXIT[2], 0f);
-            InteractionResult r = useBlock(f, camp, new BlockPos(Plots.DOOR_X, 62, Plots.DOOR_Z), Direction.NORTH);
-            check("camp door block takes you to your bunker" + tag, r == InteractionResult.SUCCESS && near(f.p, x + 0.5, F + 1, z + h - 2.5), "result " + r + ", now at " + f.p.blockPosition().toShortString());
-            Entity doorBox = camp.getEntities((Entity) null, new AABB(10, 60, 13, 15, 66, 18), e -> e.entityTags().contains("ez.bunkerdoor")).stream().findFirst().orElse(null);
-            Plots.move(f.p, Plots.CAMP_EXIT[0], Plots.CAMP_EXIT[1], Plots.CAMP_EXIT[2], 0f);
-            r = doorBox == null ? InteractionResult.PASS : useEntity(f, camp, doorBox);
-            check("camp door box takes you to your bunker" + tag, r == InteractionResult.SUCCESS && near(f.p, x + 0.5, F + 1, z + h - 2.5), "box " + (doorBox != null) + ", result " + r);
-            check("bunker arrival point is standable" + tag, standable(camp, x + 0.5, F + 1, z + h - 2.5), "");
-            // the doorway and the stairwell
-            check("doorway in the north wall is open" + tag, empty(camp, new BlockPos(x, F + 1, z0 - 1)) && empty(camp, new BlockPos(x, F + 2, z0 - 1)), "");
-            double[][] path = new double[8][];
-            path[0] = new double[]{x + 0.5, F + 1, z0 - 1.5};
-            for (int st = 0; st < 5; st++) path[1 + st] = new double[]{x + 0.5, F + 2 + st, z0 - 2.5 - st};
-            path[6] = new double[]{x + 0.5, F + 6, z0 - 6.5};
-            path[7] = new double[]{x + 0.5, F + 6, z0 - 7.5};
-            boolean walk = true; String bad = "";
-            for (int i = 0; i < path.length; i++) {
-                if (!standable(camp, path[i][0], path[i][1], path[i][2])) { walk = false; bad = "can't stand at step " + i + " " + BlockPos.containing(path[i][0], path[i][1], path[i][2]).toShortString(); break; }
-                if (i > 0 && path[i][1] - path[i - 1][1] > 1) { walk = false; bad = "step " + i + " is more than a block up"; break; }
-            }
-            check("stairwell climbs to the hatch" + tag, walk, bad);
-            // the hatch: reach from the landing (straight up and at an angle), then block and box
-            Vec3 land = new Vec3(x + 0.5, F + 6, z0 - 7.5);
-            Predicate<Hit> hatch = hh -> (hh.entity != null && hh.entity.entityTags().contains("ez.bunkerexit")) || (hh.state != null && Plots.isHatch(camp, hh.pos, hh.state));
-            reach("click reaches the hatch, looking up" + tag, camp, f.p, land, new Vec3(x + 0.5, F + 9.9, z0 - 7.5), hatch);
-            reach("click reaches the hatch, at an angle" + tag, camp, f.p, new Vec3(x + 0.5, F + 6, z0 - 6.6), new Vec3(x + 1.3, F + 9.9, z0 - 8.3), hatch);
-            Plots.move(f.p, land.x, land.y, land.z, 0f);
-            r = useBlock(f, camp, new BlockPos(x, F + 9, z0 - 8), Direction.DOWN);
-            check("hatch block takes you up to camp" + tag, r == InteractionResult.SUCCESS && near(f.p, Plots.CAMP_EXIT[0], Plots.CAMP_EXIT[1], Plots.CAMP_EXIT[2]), "result " + r + ", now at " + f.p.blockPosition().toShortString());
-            Entity exitBox = camp.getEntities((Entity) null, new AABB(land, land).inflate(3), e -> e.entityTags().contains("ez.bunkerexit") && e instanceof net.minecraft.world.entity.Interaction).stream().findFirst().orElse(null);
-            Plots.move(f.p, land.x, land.y, land.z, 0f);
-            r = exitBox == null ? InteractionResult.PASS : useEntity(f, camp, exitBox);
-            check("hatch box takes you up to camp" + tag, r == InteractionResult.SUCCESS && near(f.p, Plots.CAMP_EXIT[0], Plots.CAMP_EXIT[1], Plots.CAMP_EXIT[2]), "box " + (exitBox != null) + ", result " + r);
-            // nothing of the shell left inside the room
-            int stray = 0; String shell = Plots.shell(p);
-            for (int bx = x - h; bx < x + h; bx++) for (int bz = z - h; bz < z + h; bz++) for (int by = F + 1; by <= F + 6; by++)
-                if (BuiltInRegistries.BLOCK.getKey(camp.getBlockState(new BlockPos(bx, by, bz)).getBlock()).toString().equals(shell)) stray++;
-            check("no wall blocks left inside the room" + tag, stray == 0, stray + " found");
-            Design.bunker(server, camp, p, tag);
+        int x = Plots.cx(p.index), z = Plots.cz(p.index), h = Plots.half(p), F = Plots.FLOOR, z0 = z - h;
+        // in through the camp door: block and box
+        Plots.move(f.p, Plots.CAMP_EXIT[0], Plots.CAMP_EXIT[1], Plots.CAMP_EXIT[2], 0f);
+        InteractionResult r = useBlock(f, camp, new BlockPos(Plots.DOOR_X, 62, Plots.DOOR_Z), Direction.NORTH);
+        check("camp door block takes you to your bunker" + tag, r == InteractionResult.SUCCESS && near(f.p, x + 0.5, F + 1, z + h - 2.5), "result " + r + ", now at " + f.p.blockPosition().toShortString());
+        Entity doorBox = camp.getEntities((Entity) null, new AABB(10, 60, 13, 15, 66, 18), e -> e.entityTags().contains("ez.bunkerdoor")).stream().findFirst().orElse(null);
+        Plots.move(f.p, Plots.CAMP_EXIT[0], Plots.CAMP_EXIT[1], Plots.CAMP_EXIT[2], 0f);
+        r = doorBox == null ? InteractionResult.PASS : useEntity(f, camp, doorBox);
+        check("camp door box takes you to your bunker" + tag, r == InteractionResult.SUCCESS && near(f.p, x + 0.5, F + 1, z + h - 2.5), "box " + (doorBox != null) + ", result " + r);
+        check("bunker arrival point is standable" + tag, standable(camp, x + 0.5, F + 1, z + h - 2.5), "");
+        // the doorway and the stairwell
+        check("doorway in the north wall is open" + tag, empty(camp, new BlockPos(x, F + 1, z0 - 1)) && empty(camp, new BlockPos(x, F + 2, z0 - 1)), "");
+        double[][] path = new double[8][];
+        path[0] = new double[]{x + 0.5, F + 1, z0 - 1.5};
+        for (int st = 0; st < 5; st++) path[1 + st] = new double[]{x + 0.5, F + 2 + st, z0 - 2.5 - st};
+        path[6] = new double[]{x + 0.5, F + 6, z0 - 6.5};
+        path[7] = new double[]{x + 0.5, F + 6, z0 - 7.5};
+        boolean walk = true; String bad = "";
+        for (int i = 0; i < path.length; i++) {
+            if (!standable(camp, path[i][0], path[i][1], path[i][2])) { walk = false; bad = "can't stand at step " + i + " " + BlockPos.containing(path[i][0], path[i][1], path[i][2]).toShortString(); break; }
+            if (i > 0 && path[i][1] - path[i - 1][1] > 1) { walk = false; bad = "step " + i + " is more than a block up"; break; }
         }
+        check("stairwell climbs to the hatch" + tag, walk, bad);
+        // the hatch: reach from the landing (straight up and at an angle), then block and box
+        Vec3 land = new Vec3(x + 0.5, F + 6, z0 - 7.5);
+        Predicate<Hit> hatch = hh -> (hh.entity != null && hh.entity.entityTags().contains("ez.bunkerexit")) || (hh.state != null && Plots.isHatch(camp, hh.pos, hh.state));
+        reach("click reaches the hatch, looking up" + tag, camp, f.p, land, new Vec3(x + 0.5, F + 9.9, z0 - 7.5), hatch);
+        reach("click reaches the hatch, at an angle" + tag, camp, f.p, new Vec3(x + 0.5, F + 6, z0 - 6.6), new Vec3(x + 1.3, F + 9.9, z0 - 8.3), hatch);
+        Plots.move(f.p, land.x, land.y, land.z, 0f);
+        r = useBlock(f, camp, new BlockPos(x, F + 9, z0 - 8), Direction.DOWN);
+        check("hatch block takes you up to camp" + tag, r == InteractionResult.SUCCESS && near(f.p, Plots.CAMP_EXIT[0], Plots.CAMP_EXIT[1], Plots.CAMP_EXIT[2]), "result " + r + ", now at " + f.p.blockPosition().toShortString());
+        Entity exitBox = camp.getEntities((Entity) null, new AABB(land, land).inflate(3), e -> e.entityTags().contains("ez.bunkerexit") && e instanceof net.minecraft.world.entity.Interaction).stream().findFirst().orElse(null);
+        Plots.move(f.p, land.x, land.y, land.z, 0f);
+        r = exitBox == null ? InteractionResult.PASS : useEntity(f, camp, exitBox);
+        check("hatch box takes you up to camp" + tag, r == InteractionResult.SUCCESS && near(f.p, Plots.CAMP_EXIT[0], Plots.CAMP_EXIT[1], Plots.CAMP_EXIT[2]), "box " + (exitBox != null) + ", result " + r);
+        // nothing of the shell left inside the room
+        int stray = 0; String shell = Plots.shell(p);
+        for (int bx = x - h; bx < x + h; bx++) for (int bz = z - h; bz < z + h; bz++) for (int by = F + 1; by <= F + 6; by++)
+            if (BuiltInRegistries.BLOCK.getKey(camp.getBlockState(new BlockPos(bx, by, bz)).getBlock()).toString().equals(shell)) stray++;
+        check("no wall blocks left inside the room" + tag, stray == 0, stray + " found");
+        Design.bunker(server, camp, p, tag);
+            }
+
+    /** Protection, storage, workbench and finish, on the grown bunker. */
+    static void bunkerRest(MinecraftServer server, ServerLevel camp, FakePlayerRef f, Plots.Plot p) {
         int x = Plots.cx(p.index), z = Plots.cz(p.index), h = Plots.half(p), F = Plots.FLOOR, z0 = z - h;
         Plots.move(f.p, x + 0.5, F + 1, z + 0.5, 0f);
         // protection
@@ -270,7 +288,7 @@ final class SelfTest {
         boolean insideKept = BuiltInRegistries.BLOCK.getKey(camp.getBlockState(marker).getBlock()).toString().equals(before);
         Plots.restyle(server, p, "minecraft:stone_bricks", before);
         check("wall finish changes walls and ceiling, not the room", wallChanged && ceilChanged && insideKept, "walls " + wallChanged + ", ceiling " + ceilChanged + ", inside kept " + insideKept);
-    }
+        }
 
     /** Remove the test bunker (its blocks, entities and record). */
     static void cleanup(MinecraftServer server, ServerLevel camp) {

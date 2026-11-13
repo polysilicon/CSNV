@@ -251,6 +251,19 @@ class Camp:
         for y in range(65, 76): self.put(-5, y, 4, "light", "accent", "structure", blk="minecraft:iron_bars")
         self.put(-5, 71, 4, "light", "secondary", "structure", k=0)
         self.put(-5, 76, 4, "light", "accent", "structure", blk="minecraft:lightning_rod")
+        # flush floor lights (like the helipad's): plaza corners, along the paths; walkable, nothing to trip on
+        for x, z in [(-3, -3), (3, -3), (-3, 3), (3, 3), (0, -9), (0, -6), (0, 6), (-6, 0), (6, 0), (-8, -6), (-8, 6), (8, -6), (8, 6), (8, 10), (12, 10)]:
+            assert on_path(x, z), (x, z)
+            self.put(x, 63, z, "light", "secondary", "structure", k=0)
+        # flush lights in the yard pockets the lighting audit found dark (behind the blockhouse, north of the containers, the gate)
+        for x, z in [(16, 15), (14, -10), (-14, -10), (16, 0)]:
+            assert not on_path(x, z), (x, z)
+            self.put(x, 63, z, "light", "secondary", "structure", k=0)
+        # hanging lights inside every post (structure, not props: the grey-box is lit the same way)
+        for x, z in [(-13, -7), (13, -7), (0, -13), (-8, -14), (8, -14)]:
+            self.put(x, 67, z, "light", "main", "structure", blk="minecraft:lantern[hanging=true]")
+        for x, z in [(-13, 6), (-11, 6), (13, 5), (11, 5)]:   # tents: under the ridge pole
+            self.put(x, 67, z, "light", "main", "structure", blk="minecraft:lantern[hanging=true]")
         # lamp posts, all beside a path, never on one
         for x, z in [(-2, -7), (2, -7), (-2, 5), (2, 5), (-6, -2), (6, -2), (-6, 2), (6, 2), (-10, 0), (10, 0), (10, 8), (6, 10), (-6, 10), (-6, -9), (6, -9)]:
             assert not on_path(x, z), (x, z)
@@ -291,7 +304,7 @@ class Camp:
         for x in range(hx - 7, hx + 8):
             for z in range(hz + 2, hz + 7):
                 d = ((x - hx) ** 2 + (z - hz) ** 2) ** 0.5
-                if 5.6 <= d <= 6.3 and not on_path(x, z): P(x, 64, z, "minecraft:mud_brick_wall", "earthworks", "secondary")
+                if 5.6 <= d <= 6.3 and not on_path(x, z) and z <= R - 3: P(x, 64, z, "minecraft:mud_brick_wall", "earthworks", "secondary")   # 2 clear of the firing step: no climbing onto the wall
         # windsock
         for y in range(64, 69): P(7, y, 16, "minecraft:iron_bars")
         P(8, 68, 16, "minecraft:orange_wool", "canvas"); P(9, 68, 16, "minecraft:white_wool", "canvas"); P(10, 67, 16, "minecraft:orange_wool", "canvas")
@@ -306,7 +319,8 @@ class Camp:
         P(-9, 66, 12, "minecraft:tinted_glass"); P(-9, 66, 14, "minecraft:tinted_glass")
         for x, z in [(-16, 12), (-16, 13), (-16, 15), (-15, 16)]: P(x, 64, z, "minecraft:cauldron", "light", "accent")
         # supply stacks along the walls
-        for x, z in [(-4, -16), (4, -16), (5, -16), (-6, 16), (-5, 16), (5, 16)]:
+        # (never next to a tent's eave: a stack there was a ladder onto the roofs and the firing step, found by the walk check)
+        for x, z in [(-4, -16), (4, -10), (5, -10), (-6, 16), (-5, 16), (5, 16)]:
             P(x, 64, z, "minecraft:barrel[facing=up]")
             if (x + z) % 2: P(x, 65, z, "minecraft:spruce_trapdoor[half=bottom]", "timber", "accent")
 
@@ -352,7 +366,7 @@ class Camp:
 
 def layout(posts, spawn, heli):
     """The plan the self-test checks, from the same numbers the builder used."""
-    return {"version": "1.6.0", "spawn": list(spawn), "region": [-17, 58, -17, 17, 76, 17],
+    return {"version": "1.6.2", "spawn": list(spawn), "region": [-17, 58, -17, 17, 76, 17],
             "paths": [{"name": n, "box": [x0, z0, x1, z1]} for n, x0, z0, x1, z1 in PATHS],
             "doorways": [{"name": n, "cells": c, "width": w, "height": h} for n, c, w, h in DOORWAYS],
             "destinations": [{"name": nm, "kind": "npc", "pos": [x, 64, z]} for nm, col, shop, x, z, rot in posts]
