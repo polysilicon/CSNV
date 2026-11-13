@@ -193,12 +193,19 @@ final class Plots {
         }
         for (int lx = x0 + 2; lx <= x1 - 1; lx += 6)   // ceiling lights, into the shell
             for (int lz = z0 + 2; lz <= z1 - 1; lz += 6) run(s, inCamp(String.format("setblock %d %d %d minecraft:ochre_froglight", lx, FLOOR + 7, lz)));   // 1.6.0 warm, like the reference bunkers
-        // 1.6.1 pendant lights on a 4-block grid, at FLOOR + 4 (3 clear above the floor): the lighting audit found the
-        // ceiling lights alone leave light 5-6 between them at foot level. Only into air, so nothing a player built moves.
+        // 1.6.3 no hanging lights: flush ceiling lights on a 3-block grid (and one at each far edge), so no floor cell is
+        // more than 1 block across from one: light 15 - 6 (down) - 2 = 7 at worst. The 1.6.1 pendants come out, matching
+        // only their own blocks so nothing a player built moves.
+        java.util.List<Integer> gx = new java.util.ArrayList<>(), gz = new java.util.ArrayList<>();
+        for (int k = x0 + 1; k <= x1 - 1; k += 3) gx.add(k);
+        if (gx.get(gx.size() - 1) < x1 - 1) gx.add(x1 - 1);
+        for (int k = z0 + 1; k <= z1 - 1; k += 3) gz.add(k);
+        if (gz.get(gz.size() - 1) < z1 - 1) gz.add(z1 - 1);
+        for (int lx : gx) for (int lz : gz) run(s, inCamp(String.format("setblock %d %d %d minecraft:ochre_froglight", lx, FLOOR + 7, lz)));
         for (int lx = x0 + 1; lx <= x1; lx += 4)
             for (int lz = z0 + 1; lz <= z1; lz += 4) {
-                run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:iron_chain[axis=y] keep", lx, FLOOR + 5, lz, lx, FLOOR + 6, lz)));
-                run(s, inCamp(String.format("setblock %d %d %d minecraft:ochre_froglight keep", lx, FLOOR + 4, lz)));
+                run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:air replace minecraft:iron_chain", lx, FLOOR + 5, lz, lx, FLOOR + 6, lz)));
+                run(s, inCamp(String.format("fill %d %d %d %d %d %d minecraft:air replace minecraft:ochre_froglight", lx, FLOOR + 4, lz, lx, FLOOR + 4, lz)));
             }
         // 1.6.0 a grey skirting band (two blocks) round the room, vent grates high up; hazard marks only at the door
         for (int[] e : new int[][]{{x0 - 1, z0 - 1, x1 + 1, z0 - 1}, {x0 - 1, z1 + 1, x1 + 1, z1 + 1}, {x0 - 1, z0 - 1, x0 - 1, z1 + 1}, {x1 + 1, z0 - 1, x1 + 1, z1 + 1}})
@@ -230,6 +237,7 @@ final class Plots {
             for (int jx : new int[]{x - 2, x + 2})
                 run(s, inCamp(String.format("setblock %d %d %d %s", jx, y, z0, (y - FLOOR) % 2 == 1 ? "minecraft:yellow_concrete" : "minecraft:black_concrete")));
         run(s, inCamp(String.format(f, x - 1, FLOOR + 1, z0 - 1, x + 1, FLOOR + 3, z0 - 1, "minecraft:air")));        // 3 wide x 3 high
+        run(s, inCamp(String.format(f, x - 1, FLOOR + 5, z0 - 1, x + 1, FLOOR + 7, z0 - 1, shell)));   // 1.6.3 the wall above the door, up to the ceiling (the stairwell cut left it open)
         run(s, inCamp(String.format("setblock %d %d %d minecraft:ochre_froglight", x, FLOOR + 5, z0 - 1)));
         run(s, inCamp(String.format("setblock %d %d %d minecraft:ochre_froglight", x, FLOOR + 9, z0 - 5)));
         run(s, inCamp(String.format("setblock %d %d %d minecraft:ochre_froglight", x - 2, FLOOR + 3, z0 - 3)));   // stairwell: bottom
@@ -245,17 +253,13 @@ final class Plots {
         // 1.6.0 the room's plan: arrival at the south end looking up a clear 3-wide aisle to the lit door; the storage
         // wall on the west (crate bays, the starter crate first), upgrade bays on the east (one per upgrade)
         run(s, inCamp(String.format("fill %d %d %d %d %d %d %s replace %s", x - 1, FLOOR, z0, x + 1, FLOOR, z1, AISLE, FLOOR_BLOCK)));
-        run(s, inCamp(String.format("fill %d %d %d %d %d %d %s replace %s", x0, FLOOR, z0 + 2, x0 + 1, FLOOR, z1 - 2, BAY, FLOOR_BLOCK)));
+        // 1.6.3 no fixed spots: upgrades and crates go anywhere. The 1.6.0 bay markings and labels come out.
+        run(s, inCamp(String.format("fill %d %d %d %d %d %d %s replace %s", x0, FLOOR, z0 + 2, x0 + 1, FLOOR, z1 - 2, FLOOR_BLOCK, BAY)));
         for (int i = 0; i < PERKS.size(); i++) {
             int[] b = perkSpot(p, i);
-            run(s, inCamp(String.format("fill %d %d %d %d %d %d %s replace %s", b[0] - 1, FLOOR, b[2] - 1, b[0], FLOOR, b[2] + 1, BAY, FLOOR_BLOCK)));
+            run(s, inCamp(String.format("fill %d %d %d %d %d %d %s replace %s", b[0] - 1, FLOOR, b[2] - 1, b[0], FLOOR, b[2] + 1, FLOOR_BLOCK, BAY)));
         }
         run(s, inCamp(String.format("kill @e[type=minecraft:text_display,tag=ez.bunkerlabel,x=%d,y=%d,z=%d,distance=..%d]", x, FLOOR + 3, z, h + 4)));
-        run(s, inCamp(String.format("summon minecraft:text_display %d.1 %d.6 %d.5 {Tags:[\"ez.bunkerlabel\"],billboard:\"center\",text:{text:\"STORAGE\\n\",color:\"gold\",bold:true,extra:[{text:\"Stash Crates go here\",color:\"gray\",bold:false}]}}", x0, FLOOR + 3, z)));
-        for (int i = 0; i < PERKS.size(); i++) {
-            int[] b = perkSpot(p, i);
-            run(s, inCamp(String.format("summon minecraft:text_display %d.5 %d.2 %d.5 {Tags:[\"ez.bunkerlabel\"],billboard:\"center\",text:{text:\"%s\",color:\"aqua\",bold:true}}", b[0], FLOOR + 3, b[2], PERKS.get(i).name())));
-        }
         // the old upgrade row (along the north wall, in front of the door before 1.6.0) moves to the bays
         for (Perk k : PERKS) {
             int ox = x0 + 3 + 2 * PERKS.indexOf(k);
@@ -328,12 +332,12 @@ final class Plots {
                 boolean own = p.perks.contains(k.key());
                 List<net.minecraft.network.chat.Component> lore = new java.util.ArrayList<>();
                 for (String l : k.lines()) lore.add(t(l, ChatFormatting.GRAY));
-                lore.add(t(own ? "Installed on your plot" : "Cost: " + Coins.fmt(k.cost()), own ? ChatFormatting.GREEN : ChatFormatting.GOLD));
+                lore.add(t(own ? "Owned: place it anywhere in your bunker" : "Cost: " + Coins.fmt(k.cost()) + " · you get the block to place", own ? ChatFormatting.GREEN : ChatFormatting.GOLD));
                 m.put(slots[i], Ui.item(k.icon(), t((own ? "✔ " : "") + k.name(), own ? ChatFormatting.GREEN : ChatFormatting.YELLOW, ChatFormatting.BOLD), lore, own),
                         own ? (k.key().equals("workbench") ? (q, c) -> Workbench.open(q) : null) : (q, c) -> {
                             if (!Shops.pay(q, k.cost())) { Shops.no(q, "You need " + Coins.fmt(k.cost()) + " (carry them on you)."); return; }
                             p.perks.add(k.key()); save();
-                            placePerk(q.level().getServer(), p, k);
+                            Shops.give(q, perkItem(k));
                             Shops.ok(q, k.name() + " installed in your bunker.");
                         });
             }
@@ -372,11 +376,14 @@ final class Plots {
     }
 
     /** The upgrade's block, in a row along the plot's north edge next to the starter chest (decor and a click target). */
-    static void placePerk(MinecraftServer s, Plot p, Perk k) {
-        int[] b = perkSpot(p, PERKS.indexOf(k));
-        run(s, inCamp(String.format("setblock %d %d %d %s", b[0], b[1], b[2], k.block())));
+    /** 1.6.3: the upgrade's block, named, for the owner to place anywhere in their bunker (breaking it gives it back). */
+    static net.minecraft.world.item.ItemStack perkItem(Perk k) {
+        var st = new net.minecraft.world.item.ItemStack(k.icon());
+        st.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, t(k.name(), ChatFormatting.AQUA).copy().withStyle(s -> s.withItalic(false)));
+        st.set(net.minecraft.core.component.DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(List.of(t("Place it anywhere in your bunker.", ChatFormatting.GRAY))));
+        return st;
     }
-    /** 1.6.0: upgrade i's bay against the east wall, three blocks apart from the north end (x, y, z of its block). */
+    /** Where 1.6.0 marked upgrade i's bay (east wall); kept only to clear the old markings. */
     static int[] perkSpot(Plot p, int i) {
         int x1 = cx(p.index) + half(p) - 1, z0 = cz(p.index) - half(p);
         return new int[]{x1, FLOOR + 1, z0 + 3 + 3 * i};
@@ -445,11 +452,11 @@ final class Plots {
             d.register(Commands.literal("ezadmin").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                     .then(Commands.literal("bunkerfix").executes(c -> {   // 1.4.0: white walls (from reinforced deepslate), the stairwell up
                         load(); MinecraftServer srv = c.getSource().getServer();
-                        for (Plot p : plots.values()) { restyle(srv, p, OLD_SHELL, shell(p)); lay(srv, p, false); if (p.perks != null) for (Perk k : PERKS) if (p.perks.contains(k.key())) placePerk(srv, p, k); }   // 1.6.0: re-lays the room plan too (crates and builds stay)
+                        for (Plot p : plots.values()) { restyle(srv, p, OLD_SHELL, shell(p)); lay(srv, p, false); }   // re-lays the room (crates, builds and placed upgrades stay)
                         c.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal("Updated " + plots.size() + " bunkers."), true); return 1; }))
                     .then(Commands.literal("bunkers").executes(c -> {   // 1.3.0: move plots made before underground (old contents cleared)
                         load(); MinecraftServer srv = c.getSource().getServer();
-                        for (Plot p : plots.values()) { clearOld(srv, p); lay(srv, p, true); if (p.perks != null) for (Perk k : PERKS) if (p.perks.contains(k.key())) placePerk(srv, p, k); }
+                        for (Plot p : plots.values()) { clearOld(srv, p); lay(srv, p, true); }
                         c.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal("Moved " + plots.size() + " plots into bunkers."), true); return 1; })));
             d.register(Commands.literal("camp").executes(c -> { ServerPlayer pl = c.getSource().getPlayerOrException();
                 if (raiding(pl)) { Shops.no(pl, "Not during a raid: extract first."); return 0; }

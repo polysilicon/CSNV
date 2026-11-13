@@ -247,8 +247,16 @@ final class Design {
         out.addProperty("walkable_places", g.order.size());
         record D(String name, AABB box, double r) {}
         List<D> ds = new ArrayList<>();
-        ds.add(new D("storage wall", new AABB(x0, F + 1, z0 + 2, x0 + 1, F + 2, z1 - 1), REACH_BLOCK));
-        for (int i = 0; i < Plots.PERKS.size(); i++) { int[] b = Plots.perkSpot(p, i); ds.add(new D("upgrade bay: " + Plots.PERKS.get(i).name(), new AABB(b[0], b[1], b[2], b[0] + 1, b[1] + 1, b[2] + 1), REACH_BLOCK)); }
+        // 1.6.3: no fixed spots (crates and upgrades go anywhere), so every floor place in the room must be reachable
+        int floor = 0, reached = 0, far = 0;
+        for (int bx = x0; bx <= x1; bx++) for (int bz = z0; bz <= z1; bz++) {
+            if (!g.heights(bx, bz).contains((double) (F + 1))) continue;   // a crate or a build stands there
+            floor++;
+            Integer st = g.steps.get(new Node(bx, bz, F + 1).key());
+            if (st != null) { reached++; far = Math.max(far, st); }
+        }
+        out.addProperty("room_floor_places", floor); out.addProperty("room_floor_reached", reached); out.addProperty("room_farthest_steps", far);
+        SelfTest.check("walk: every floor place in the room reachable" + tag, reached == floor, reached + " / " + floor + ", farthest " + far + " steps");
         ds.add(new D("blast door (through it)", new AABB(x - 1, F + 1, z0 - 1, x + 2, F + 3, z0), 0.9));
         ds.add(new D("stairwell top (the hatch)", new AABB(x - 1, F + 9, z0 - 8, x + 2, F + 10, z0 - 6), REACH_BLOCK));
         JsonArray dests = new JsonArray(); out.add("destinations", dests);
