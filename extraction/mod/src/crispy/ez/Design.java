@@ -420,13 +420,24 @@ final class Design {
         if (city != null) {   // 1.8.5: flat, level with the roads: no column's surface below street level
             int sampled = 0, pits = 0; String first = "";
             java.util.Random rr = new java.util.Random(5);
-            for (int i = 0; i < 4000 && sampled < 600; i++) {
+            for (int i = 0; i < 12000 && sampled < 2000; i++) {
                 int x = Zone.CX - Zone.HALF + rr.nextInt(2 * Zone.HALF), z = Zone.CZ - Zone.HALF + rr.nextInt(2 * Zone.HALF);
                 if (!city.hasChunk(x >> 4, z >> 4)) continue;
                 sampled++;
                 int top = city.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);   // first air above the top block
                 if (top < Zone.GROUND) { pits++; if (first.isEmpty()) first = x + " " + z + " (surface " + (top - 1) + ")"; }
             }
+            // 1.8.6: no vanilla structures (villages, temples, outposts, mineshafts ...) in the loaded zone
+            java.util.Set<String> kinds = new java.util.TreeSet<>(); int starts = 0;
+            for (int cx = (Zone.CX - Zone.HALF) >> 4; cx <= (Zone.CX + Zone.HALF) >> 4; cx++)
+                for (int cz = (Zone.CZ - Zone.HALF) >> 4; cz <= (Zone.CZ + Zone.HALF) >> 4; cz++) {
+                    if (!city.hasChunk(cx, cz)) continue;
+                    for (var st : city.getChunk(cx, cz).getAllStarts().entrySet()) {
+                        if (!st.getValue().isValid()) continue;
+                        starts++; kinds.add(String.valueOf(city.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.STRUCTURE).getKey(st.getKey())));
+                    }
+                }
+            SelfTest.check("zone: no vanilla structures", starts == 0, starts + " found" + (kinds.isEmpty() ? "" : " " + kinds));
             SelfTest.check("zone: ground level with the roads (no pits)", sampled > 0 && pits == 0, sampled + " columns sampled, " + pits + " below street level" + (first.isEmpty() ? "" : ", e.g. " + first));
         }
         if (city != null) {   // 1.8.3: never more than one Commander

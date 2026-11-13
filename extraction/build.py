@@ -415,6 +415,20 @@ def zone_world():
     ns["noise_router"]["final_density"] = flat
     ns["noise_router"]["preliminary_surface_level"]["density"] = flat
     wj(f"data/{NS}/worldgen/noise_settings/zone.json", ns)
+    # 1.8.6 no holes, no vanilla structures: the desert without its carvers (caves and canyons cut through any terrain
+    # shape and open at the surface), lava lakes, geodes, fossils, dungeons, wells or springs; plants and ores stay.
+    # Every "biome has structure X" list is emptied, so no village, temple, outpost, mineshaft, portal ... anywhere
+    # (the overworld isn't used).
+    desert = json.load(open(os.path.join(HERE, "worldgen", "desert_26.2.json")))
+    drop = ("lake", "geode", "fossil", "monster_room", "desert_well", "spring_")
+    desert["carvers"] = []
+    desert["features"] = [[f for f in step if not any(k in f for k in drop)] for step in desert["features"]]
+    wj("data/minecraft/worldgen/biome/desert.json", desert)
+    for t in ("ancient_city bastion_remnant buried_treasure desert_pyramid end_city igloo jungle_temple mineshaft mineshaft_mesa nether_fortress "
+              "nether_fossil ocean_monument ocean_ruin_cold ocean_ruin_warm pillager_outpost ruined_portal_desert ruined_portal_jungle ruined_portal_mountain "
+              "ruined_portal_nether ruined_portal_ocean ruined_portal_standard ruined_portal_swamp shipwreck shipwreck_beached stronghold swamp_hut trail_ruins "
+              "trial_chambers village_desert village_plains village_savanna village_snowy village_taiga woodland_mansion").split():
+        wj(f"data/minecraft/tags/worldgen/biome/has_structure/{t}.json", {"replace": True, "values": []})
     wj("data/lostcities/dimension/lostcity.json", {"type": "lostcities:lostcity", "generator": {"type": "minecraft:noise", "settings": f"{NS}:zone",
         "biome_source": {"type": "minecraft:fixed", "biome": "minecraft:desert"}}})
 
