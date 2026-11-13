@@ -875,6 +875,7 @@ def build(out):
         "execute unless entity @s[tag=ez.nospread] run spreadplayers ~ ~ 2 18 false @e[tag=ez.newai]",
         "tag @e[tag=ez.newai] remove ez.newai"])
 
+    fn("test/wave", ["ezhook wavetest"])   # 1.8.22 self-test: a wave started from inside a function, as exfil/hold does
     fn("spawner/ring_then", [f"$function {NS}:spawner/ring$(r)", "execute unless entity @s[tag=ez.nospread] run spreadplayers ~ ~ 2 18 false @e[tag=ez.newai]",
                              "tag @e[tag=ez.newai] remove ez.newai"])
 

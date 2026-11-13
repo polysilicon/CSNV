@@ -165,6 +165,7 @@ final class Revive {
     // ---------------------------------------------------------------- every tick
     static void tick(MinecraftServer server) {
         long now = server.getTickCount();
+        if (!PENDING.isEmpty()) placePending(server);
         if (!FINISH_BY.isEmpty()) {
             var todo = new HashMap<>(FINISH_BY); FINISH_BY.clear();
             todo.forEach((id, k) -> { ServerPlayer p = server.getPlayerList().getPlayer(id); if (p != null && downed(p)) finish(p, k); });
@@ -264,6 +265,11 @@ final class Revive {
 
     // ---------------------------------------------------------------- extraction waves
     /** Raiders from the extracting player's ring, 10-18 blocks out on open ground near their height, coming for them. */
+    /** A wave summoned but not placed yet: run from a datapack function, the summons only happen after that function ends. */
+    record Pending(UUID player, boolean big, int tier, net.minecraft.world.phys.Vec3 at, long tick) {}
+    static final List<Pending> PENDING = new ArrayList<>();
+    static ServerPlayer testPlayer;   // the self-test's fake raider, for /ezhook wavetest
+
     static int wave(ServerPlayer p, boolean big) {
         if (!p.level().dimension().equals(Zone.CITY)) return 0;
         ServerLevel lvl = (ServerLevel) p.level();
@@ -272,33 +278,55 @@ final class Revive {
         int n = big ? 2 + tier * 2 : 1 + tier;
         String at = String.format(Locale.ROOT, "execute in lostcities:lostcity positioned %d %d %d run ", p.getBlockX(), p.getBlockY(), p.getBlockZ());
         for (int i = 0; i < n; i++) Plots.run(server, at + "function ez:spawner/ring" + tier);
-        List<Entity> fresh = lvl.getEntities((Entity) null, p.getBoundingBox().inflate(4), e -> e.entityTags().contains("ez.newai"));
+        // 1.8.22: placed now if the summons already ran (a direct call), else at the end of this tick (called from exfil/hold,
+        // where they're queued behind the function: 1.8.17-1.8.21 found none, so the wave stood where the player was)
+        PENDING.add(new Pending(p.getUUID(), big, tier, p.position(), server.getTickCount()));
+        return placePending(server);
+    }
+    /** Places every pending wave whose raiders exist; returns how many were placed. */
+    static int placePending(MinecraftServer server) {
+        int total = 0;
+        ServerLevel lvl = server.getLevel(Zone.CITY);
+        for (Iterator<Pending> it = PENDING.iterator(); it.hasNext(); ) {
+            Pending w = it.next();
+            ServerPlayer p = server.getPlayerList().getPlayer(w.player());
+            if (lvl == null) { it.remove(); continue; }
+            var box = new net.minecraft.world.phys.AABB(w.at(), w.at()).inflate(6);
+            List<Entity> fresh = lvl.getEntities((Entity) null, box, e -> e.entityTags().contains("ez.newai"));
+            if (fresh.isEmpty()) { if (server.getTickCount() - w.tick() > 2) { it.remove(); System.out.println("[crispy-extraction] extraction wave found no raiders to place"); } continue; }
+            it.remove();
+            total += place(lvl, w, fresh, p);
+        }
+        return total;
+    }
+    static int place(ServerLevel lvl, Pending w, List<Entity> fresh, ServerPlayer p) {
         Random r = new Random();
-        int placed = 0;
+        var c = w.at();
+        int placed = 0; double near = 999;
         for (Entity m : fresh) {
             m.removeTag("ez.newai"); m.addTag("ez.wave");
             BlockPos spot = null;
-            // 1.8.19: 26-38 blocks out (they were on top of you at 10-18), out of sight of the player if possible
+            // 26-38 blocks out, out of sight of the player if possible
             for (int tries = 0; tries < 60 && spot == null; tries++) {
                 double a = r.nextDouble() * Math.PI * 2, dist = WAVE_MIN + r.nextDouble() * (WAVE_MAX - WAVE_MIN);
-                BlockPos b = ground(lvl, (int) Math.floor(p.getX() + Math.cos(a) * dist), p.getBlockY(), (int) Math.floor(p.getZ() + Math.sin(a) * dist));
-                if (b != null && (tries >= 40 || !sees(lvl, b, p))) spot = b;
+                BlockPos b = ground(lvl, (int) Math.floor(c.x + Math.cos(a) * dist), (int) Math.floor(c.y), (int) Math.floor(c.z + Math.sin(a) * dist));
+                if (b != null && (tries >= 40 || p == null || !sees(lvl, b, p))) spot = b;
             }
             if (spot == null) { m.discard(); continue; }   // nowhere to stand: better none than one inside the player
             m.teleportTo(spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5);
-            if (m instanceof Mob mob) mob.setTarget(p);
+            if (m instanceof Mob mob && p != null) mob.setTarget(p);
+            near = Math.min(near, Math.sqrt(spot.distToCenterSqr(c)));
             placed++;
         }
         waves++;
-        for (ServerPlayer o : lvl.players()) {
+        if (p != null) for (ServerPlayer o : lvl.players()) {
             if (!Raid.raiding(o) || o.distanceTo(p) > 48) continue;
-            o.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket(t(big ? "INCOMING" : "MORE INCOMING", ChatFormatting.RED, ChatFormatting.BOLD)));
+            o.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket(t(w.big() ? "INCOMING" : "MORE INCOMING", ChatFormatting.RED, ChatFormatting.BOLD)));
             o.connection.send(new net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket(t("The flare drew " + placed + " raiders: hold the extraction point", ChatFormatting.GRAY)));
             Ui.sound(o, net.minecraft.sounds.SoundEvents.RAID_HORN.value(), 0.6f, 1.2f);
         }
-        double near = lvl.getEntities((Entity) null, p.getBoundingBox().inflate(WAVE_MAX + 4), e -> e.entityTags().contains("ez.wave") && fresh.contains(e))
-                .stream().mapToDouble(e -> e.distanceTo(p)).min().orElse(-1);
-        System.out.println("[crispy-extraction] extraction wave " + (big ? 1 : 2) + " for " + p.getScoreboardName() + ": " + placed + "/" + fresh.size() + " raiders, nearest " + Math.round(near) + " blocks");
+        System.out.println("[crispy-extraction] extraction wave " + (w.big() ? 1 : 2) + " for " + (p != null ? p.getScoreboardName() : "?") + ": "
+                + placed + "/" + fresh.size() + " raiders (ring " + w.tier() + "), nearest " + Math.round(near) + " blocks");
         return placed;
     }
     static final double WAVE_MIN = 26, WAVE_MAX = 38;

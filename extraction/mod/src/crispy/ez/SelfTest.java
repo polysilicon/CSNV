@@ -139,7 +139,8 @@ final class SelfTest {
         phases.clear();
         phases.add(() -> { campChecks(server, camp, f); Design.camp(server, camp); Design.realBunkers(server, camp); p[0] = bunkerChecks(server, camp, f); });
         phases.add(() -> { bunkerLevel(server, camp, f, p[0], 0); p[0].level = 1; Plots.lay(server, p[0], false, 0); });
-        phases.add(() -> { bunkerLevel(server, camp, f, p[0], 1); bunkerRest(server, camp, f, p[0]); Design.ids(server); Design.armor(server); Design.crafting(server); Design.craftingInventory(f.p); finish(server, camp, f); });
+        phases.add(() -> { bunkerLevel(server, camp, f, p[0], 1); bunkerRest(server, camp, f, p[0]); Design.ids(server); Design.armor(server); Design.crafting(server); Design.craftingInventory(f.p); });
+        phases.add(() -> finish(server, camp, f));   // 1.8.22: its own phase, so checks a phase inserts (the wave) count
         wait = 0;
     }
     /** 1.8.17: a fatal hit downs a raiding player, nothing but a player can hurt them then, they get up; the injector limit; a wave. */
@@ -181,12 +182,19 @@ final class SelfTest {
             int n = Shops.count(fp, st -> "selfrevive".equals(Shops.ezKey(st)));
             check("only one Self-Revive Injector can be carried", !inj.isEmpty() && n == 1, "carrying " + n);
             for (Entity e : city.getEntities((Entity) null, fp.getBoundingBox().inflate(4), e -> e instanceof net.minecraft.world.entity.item.ItemEntity)) e.discard();
-            // an extraction wave
-            int placed = Revive.wave(fp, true);
-            List<Entity> w = city.getEntities((Entity) null, fp.getBoundingBox().inflate(48), e -> e.entityTags().contains("ez.wave"));
-            boolean clear = w.stream().allMatch(e -> e.distanceTo(fp) >= Revive.WAVE_MIN - 2);
-            check("extracting draws a wave of raiders, well away from the player", placed > 0 && clear, placed + " placed, " + w.size() + " found, all " + (int) Revive.WAVE_MIN + "+ blocks out " + clear);
-            w.forEach(Entity::discard);
+            // an extraction wave, started from inside a function the way exfil/hold does (its summons run after the function ends)
+            Revive.testPlayer = fp;
+            int before = Revive.waves;
+            Plots.run(server, "function ez:test/wave");
+            Revive.testPlayer = null;
+            phases.add(0, () -> {   // checked a phase later, after the end-of-tick placement
+                List<Entity> w = city.getEntities((Entity) null, fp.getBoundingBox().inflate(48), e -> e.entityTags().contains("ez.wave"));
+                long close = city.getEntities((Entity) null, fp.getBoundingBox().inflate(Revive.WAVE_MIN - 2), e -> e.entityTags().contains("ez.wave") || e.entityTags().contains("ez.newai")).size();
+                check("extracting draws a wave of raiders, well away from the player", Revive.waves > before && !w.isEmpty() && close == 0,
+                        w.size() + " placed, " + close + " within " + (int) (Revive.WAVE_MIN - 2) + " blocks");
+                w.forEach(Entity::discard);
+                city.getEntities((Entity) null, fp.getBoundingBox().inflate(6), e -> e.entityTags().contains("ez.newai")).forEach(Entity::discard);
+            });
             // 1.8.21: logging out mid-raid leaves a stand-in that only players can kill; killed, the gear drops
             fp.getInventory().clearContent(); fp.getInventory().setItem(0, new ItemStack(Items.BREAD, 3));
             Plots.run(server, "scoreboard players set ezrevive ez.time 300");
