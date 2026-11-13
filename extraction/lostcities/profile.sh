@@ -23,7 +23,7 @@ lc.update({
     "buildingMaxFloors": 6, "buildingMaxFloorsChance": 4, "buildingMaxCellars": 1,
     "railwaysEnabled": False, "railwayStationsEnabled": False, "railwaySurfaceStationsEnabled": False,
     "chestWithoutLootChance": 0.0, "vineChance": 0.02, "randomLeafBlockChance": 0.2})
-d["explosions"].update({"explosionChance": 0.001, "miniExplosionChance": 0.02})   # a few blast sites, not debris everywhere
+d["explosions"].update({"explosionChance": 0.0, "miniExplosionChance": 0.0})   # 1.8.5: no blast craters: the ground stays level with the roads
 json.dump(d, open(P + "extraction.json", "w"), indent=1)
 print("profile written:", {k: lc[k] for k in ("buildingChance", "buildingDoorwayChance", "rubbleLayer", "ruinChance", "corridorChance")})
 PY

@@ -187,6 +187,7 @@ def armor_piece(key, slot):
              "minecraft:lore": [{"text": f"{nm} set · {TIER_NAME[tier]} (tier {tier})", "color": "gray", "italic": False},
                                 *[{"text": l, "color": "aqua", "italic": False} for l in bonus]],
              "minecraft:attribute_modifiers": mods, "minecraft:max_damage": dur, "minecraft:custom_data": {"ezarmor": key, "ezslot": slot},
+             "minecraft:max_stack_size": 1,   # 1.8.5: a player head stacks to 64, and nothing with durability may stack (crates dropped no helmets)
              "minecraft:tooltip_display": {"hidden_components": ["minecraft:trim", "minecraft:dyed_color"]}}
     if slot == "head":
         comps["minecraft:profile"] = {"properties": [{"name": "textures", "value": ARMOR_HEADS[key]["value"]}]}
@@ -362,7 +363,8 @@ RINGS = {1: ([("infected", 30), ("runner", 15), ("scav", 25), ("bandit", 15), ("
          2: ([("bandit", 25), ("shotgunner", 15), ("raider", 20), ("brute", 10), ("crossbowman", 15), ("scav", 15)], 3),
          3: ([("rifleman", 30), ("raider", 15), ("sniper", 20), ("breacher", 20), ("shotgunner", 15)], 4),
          4: ([("rifleman", 30), ("heavy", 30), ("sniper", 20), ("breacher", 20)], 5)}
-GUNNERS = {"bandit": (3, 30, 0.35), "rifle": (4, 38, 0.25), "boss": (5, 12, 0.2), "sniper": (8, 60, 0.2), "heavy": (3, 8, 0.5), "shotgun": (6, 22, 0.35)}   # damage, ticks between shots, miss chance
+GUNNERS = {"bandit": (3, 30, 0.5), "rifle": (4, 38, 0.4), "boss": (5, 12, 0.35), "sniper": (8, 60, 0.3), "heavy": (3, 8, 0.6), "shotgun": (6, 22, 0.4)}   # 1.8.5: less accurate
+FAR, FAR_MISS = 16, 0.2   # beyond FAR blocks every gunner but the sniper misses FAR_MISS more often   # damage, ticks between shots, miss chance
 SNIPER_RANGE = 48
 SHOTGUN_RANGE = 14
 AI_RANGE = 28
@@ -401,12 +403,17 @@ def building_recipes():
     return len(R)
 
 def zone_world():
-    """1.8.4: the zone (Lost Cities' dimension) is desert all over and has no sea: the overworld's terrain settings with
+    """1.8.4: the zone (Lost Cities' dimension) is desert all over, flat (1.8.5) and has no sea: the overworld's terrain settings with
     sea level at the bottom, air as the default fluid and no aquifers, so low ground stays dry instead of flooding, and
     no oceans, rivers, ice or snow. Only new chunks: /ezadmin reset regenerates the city on the next start."""
     base = os.path.join(HERE, "worldgen", "overworld_noise_26.2.json")   # vanilla data, copied from the 26.2 server jar
     ns = json.load(open(base))
     ns.update({"sea_level": -63, "aquifers_enabled": False, "default_fluid": {"Name": "minecraft:air"}})
+    # 1.8.5: flat, level with the roads: solid up to y 71 (the profile's ground level; streets' first air is 72), air
+    # above, everywhere. No hills, valleys, pits, caves or ravines to fall into or get stuck in.
+    flat = {"type": "minecraft:y_clamped_gradient", "from_y": 71, "to_y": 73, "from_value": 1.0, "to_value": -1.0}
+    ns["noise_router"]["final_density"] = flat
+    ns["noise_router"]["preliminary_surface_level"]["density"] = flat
     wj(f"data/{NS}/worldgen/noise_settings/zone.json", ns)
     wj("data/lostcities/dimension/lostcity.json", {"type": "lostcities:lostcity", "generator": {"type": "minecraft:noise", "settings": f"{NS}:zone",
         "biome_source": {"type": "minecraft:fixed", "biome": "minecraft:desert"}}})
@@ -768,6 +775,8 @@ def build(out):
     # ---- enemy gunners: cock (a click you can hear), fire 10 ticks later along a hitscan ray that walls stop
     for g, (dmg, rate, miss) in GUNNERS.items():
         wj(f"data/{NS}/predicate/miss_{g}.json", {"condition": "minecraft:random_chance", "chance": miss})
+        wj(f"data/{NS}/predicate/missfar_{g}.json", {"condition": "minecraft:random_chance", "chance": miss if g == "sniper" else min(0.85, miss + FAR_MISS)})
+    wj(f"data/{NS}/predicate/third.json", {"condition": "minecraft:random_chance", "chance": 0.34})
     for gname, rng in (("gunner", AI_RANGE), ("gunner_long", SNIPER_RANGE), ("gunner_short", SHOTGUN_RANGE)):
      T = f"@p[tag=ez.raid,tag=!ez.hidden,distance=..{rng},gamemode=!spectator]"   # ez.hidden: a crouching ghillie (mod Armor)
      fn(f"ai/{gname}", [
@@ -778,8 +787,15 @@ def build(out):
         "execute if score @s ez.cd matches 1.. run return 0",
         f"execute unless entity {T} run return run scoreboard players set @s ez.cd 20",
         "tag @s add ez.shooter", f"scoreboard players set #ar ez {rng * 2 + 4}",
-        *[f"execute if entity @s[tag=ez.g_{g}] if predicate {NS}:miss_{g} anchored eyes facing entity {T} eyes rotated ~6 ~-4 positioned ^ ^ ^0.8 run function {NS}:ai/ray" for g in GUNNERS],
-        *[f"execute if entity @s[tag=ez.g_{g}] unless predicate {NS}:miss_{g} anchored eyes facing entity {T} eyes positioned ^ ^ ^0.8 run function {NS}:ai/ray" for g in GUNNERS],
+        # 1.8.5: roll once (near or far), then a miss goes wide; a hit aims at the head or (a third) the legs
+        "tag @s remove ez.miss", "tag @s remove ez.far",
+        f"execute unless entity @p[tag=ez.raid,tag=!ez.hidden,distance=..{FAR},gamemode=!spectator] run tag @s add ez.far",
+        *[f"execute if entity @s[tag=ez.g_{g},tag=!ez.far] if predicate {NS}:miss_{g} run tag @s add ez.miss" for g in GUNNERS],
+        *[f"execute if entity @s[tag=ez.g_{g},tag=ez.far] if predicate {NS}:missfar_{g} run tag @s add ez.miss" for g in GUNNERS],
+        f"execute if entity @s[tag=ez.miss] if predicate {NS}:half anchored eyes facing entity {T} eyes rotated ~6 ~-4 positioned ^ ^ ^0.8 run function {NS}:ai/ray",
+        f"execute if entity @s[tag=ez.miss] unless predicate {NS}:half anchored eyes facing entity {T} eyes rotated ~-5 ~3 positioned ^ ^ ^0.8 run function {NS}:ai/ray",
+        f"execute if entity @s[tag=!ez.miss] if predicate {NS}:third anchored eyes facing entity {T} feet positioned ^ ^ ^0.8 run function {NS}:ai/ray",   # legs: low cover stops it
+        f"execute if entity @s[tag=!ez.miss] unless predicate {NS}:third anchored eyes facing entity {T} eyes positioned ^ ^ ^0.8 run function {NS}:ai/ray",
         "playsound minecraft:entity.generic.explode hostile @a[distance=..48] ~ ~ ~ 0.35 2",
         "execute anchored eyes run particle minecraft:smoke ^ ^ ^0.8 0.03 0.03 0.03 0.01 3",
         *[f"execute if entity @s[tag=ez.g_{g}] run scoreboard players set @s ez.cd {rate}" for g in GUNNERS],

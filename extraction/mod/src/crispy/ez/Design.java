@@ -417,6 +417,18 @@ final class Design {
             SelfTest.check("zone: desert biome, no sea", desert && city.getSeaLevel() < 0, "biome desert " + desert + ", sea level " + city.getSeaLevel()
                     + "; rooms furnished this run: " + Interiors.furnished + " chunks, " + Interiors.props + " props");
         }
+        if (city != null) {   // 1.8.5: flat, level with the roads: no column's surface below street level
+            int sampled = 0, pits = 0; String first = "";
+            java.util.Random rr = new java.util.Random(5);
+            for (int i = 0; i < 4000 && sampled < 600; i++) {
+                int x = Zone.CX - Zone.HALF + rr.nextInt(2 * Zone.HALF), z = Zone.CZ - Zone.HALF + rr.nextInt(2 * Zone.HALF);
+                if (!city.hasChunk(x >> 4, z >> 4)) continue;
+                sampled++;
+                int top = city.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);   // first air above the top block
+                if (top < Zone.GROUND) { pits++; if (first.isEmpty()) first = x + " " + z + " (surface " + (top - 1) + ")"; }
+            }
+            SelfTest.check("zone: ground level with the roads (no pits)", sampled > 0 && pits == 0, sampled + " columns sampled, " + pits + " below street level" + (first.isEmpty() ? "" : ", e.g. " + first));
+        }
         if (city != null) {   // 1.8.3: never more than one Commander
             int bosses = city.getEntities((net.minecraft.world.entity.Entity) null, new AABB(Zone.CX - 400, -64, Zone.CZ - 400, Zone.CX + 400, 320, Zone.CZ + 400),
                     e -> e.entityTags().contains("ez.boss") && e.isAlive()).size();
