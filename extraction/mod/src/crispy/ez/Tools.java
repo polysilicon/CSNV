@@ -46,6 +46,11 @@ final class Tools {
             if (!(pl instanceof ServerPlayer p)) return InteractionResult.PASS;
             ItemStack st = p.getItemInHand(hand);
             String k = Shops.ezKey(st);
+            // 1.8.26: no shooting or smoke at spawn (the camp and the bunkers under it)
+            if (p.level().dimension().equals(Plots.CAMP) && (Relief.isGun(st) || "smoke".equals(k))) {
+                p.sendSystemMessage(t(Relief.isGun(st) ? "Guns are holstered in camp: deploy to use them." : "No smoke grenades in camp.", ChatFormatting.RED), true);
+                return InteractionResult.FAIL;
+            }
             if ("grapple".equals(k)) return grapple(p, st, hand);
             if ("repairkit".equals(k)) return repair(p, st);
             return InteractionResult.PASS;

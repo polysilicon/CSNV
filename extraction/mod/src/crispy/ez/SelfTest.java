@@ -378,6 +378,20 @@ final class SelfTest {
             check("a timed station recipe starts a job", Stations.jobs(p).size() == before + 1, Stations.jobs(p).size() + " jobs");
             Stations.jobs(p).clear();
         }
+        // 1.8.26: guns and smoke grenades can't be used in camp
+        {
+            ItemStack gun = new ItemStack(Items.CLAY_BALL);
+            gun.set(net.minecraft.core.component.DataComponents.ITEM_MODEL, net.minecraft.resources.Identifier.parse("minecraft:iron_shovel"));
+            f.p.setItemInHand(InteractionHand.MAIN_HAND, gun);
+            InteractionResult gr = net.fabricmc.fabric.api.event.player.UseItemCallback.EVENT.invoker().interact(f.p, camp, InteractionHand.MAIN_HAND);
+            ItemStack smoke = new ItemStack(Items.SNOWBALL);
+            net.minecraft.nbt.CompoundTag tg = new net.minecraft.nbt.CompoundTag(); tg.putString("ez", "smoke");
+            smoke.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(tg));
+            f.p.setItemInHand(InteractionHand.MAIN_HAND, smoke);
+            InteractionResult sr2 = net.fabricmc.fabric.api.event.player.UseItemCallback.EVENT.invoker().interact(f.p, camp, InteractionHand.MAIN_HAND);
+            f.p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            check("guns and smoke grenades can't be used in camp", gr == InteractionResult.FAIL && sr2 == InteractionResult.FAIL, "gun " + gr + ", smoke " + sr2);
+        }
         // 1.8.16: salvage breaks a carried armour piece and a gun into resources
         Salvage.load(server); Armor.load(server);
         if (Armor.SETS.containsKey("tactical") && !Salvage.GUNS.isEmpty()) {
