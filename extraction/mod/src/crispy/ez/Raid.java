@@ -56,7 +56,9 @@ final class Raid {
                 .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .then(Commands.literal("deploy").executes(c -> { if (c.getSource().getEntity() instanceof ServerPlayer p) deploy(p); return 1; }))
                 .then(Commands.literal("extract").executes(c -> { if (c.getSource().getEntity() instanceof ServerPlayer p) extract(p); return 1; }))
-                .then(Commands.literal("died").executes(c -> { if (c.getSource().getEntity() instanceof ServerPlayer p) died(p); return 1; }))));
+                .then(Commands.literal("died").executes(c -> { if (c.getSource().getEntity() instanceof ServerPlayer p) died(p); return 1; }))
+                .then(Commands.literal("wave").executes(c -> { if (c.getSource().getEntity() instanceof ServerPlayer p) Revive.wave(p, true); return 1; }))
+                .then(Commands.literal("wave2").executes(c -> { if (c.getSource().getEntity() instanceof ServerPlayer p) Revive.wave(p, false); return 1; }))));
         ServerLivingEntityEvents.AFTER_DEATH.register(Raid::onDeath);
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             if (server.getTickCount() % 20 != 0) return;

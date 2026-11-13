@@ -142,6 +142,45 @@ final class SelfTest {
         phases.add(() -> { bunkerLevel(server, camp, f, p[0], 1); bunkerRest(server, camp, f, p[0]); Design.ids(server); Design.armor(server); Design.crafting(server); Design.craftingInventory(f.p); finish(server, camp, f); });
         wait = 0;
     }
+    /** 1.8.17: a fatal hit downs a raiding player, nothing but a player can hurt them then, they get up; the injector limit; a wave. */
+    static void reviveChecks(MinecraftServer server, ServerLevel city, BlockPos at) {
+        FakePlayer fp = FakePlayer.get(city, new GameProfile(java.util.UUID.fromString("e2e2e2e2-0000-4000-8000-00000000d0e1"), "ezrevive"));
+        fp.snapTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 0, 0);
+        fp.addTag("ez.raid"); fp.setHealth(20f); fp.invulnerableTime = 0;
+        try {
+            fp.hurtServer(city, fp.damageSources().generic(), 1000f);
+            boolean down = Revive.downed(fp) && fp.isAlive() && fp.entityTags().contains("ez.downed");
+            check("a fatal hit in the zone downs a raider instead of killing them", down, "downed " + Revive.downed(fp) + ", alive " + fp.isAlive() + ", health " + fp.getHealth());
+            fp.invulnerableTime = 0;
+            fp.hurtServer(city, fp.damageSources().generic(), 5f);
+            check("a downed player takes no more damage from the zone", Revive.downed(fp) && fp.isAlive() && fp.getHealth() >= 1f, "health " + fp.getHealth());
+            FakePlayer other = FakePlayer.get(city, new GameProfile(java.util.UUID.fromString("e2e2e2e2-0000-4000-8000-00000000d0e2"), "ezrevive2"));
+            fp.invulnerableTime = 0;
+            fp.hurtServer(city, fp.damageSources().playerAttack(other), 2f);
+            check("a player's hit on a downed player finishes them off", Revive.FINISH_BY.get(fp.getUUID()) == other, "queued " + Revive.FINISH_BY.containsKey(fp.getUUID()));
+            Revive.FINISH_BY.remove(fp.getUUID());
+            Revive.up(fp, "selftest");
+            check("a revived player is back up", !Revive.downed(fp) && !fp.entityTags().contains("ez.downed") && fp.getHealth() >= 6f, "health " + fp.getHealth());
+            Revive.UP_AT.remove(fp.getUUID());
+            // one injector at a time
+            Shops.load(server);
+            ItemStack inj = Stations.BY_BLOCK.values().stream().flatMap(st -> st.recipes().stream()).filter(r -> r.key().equals("selfrevive")).map(r -> r.out().copy()).findFirst().orElse(ItemStack.EMPTY);
+            fp.getInventory().clearContent();
+            fp.getInventory().setItem(0, inj.copy()); fp.getInventory().setItem(1, inj.copy());
+            Revive.limit(fp);
+            int n = Shops.count(fp, st -> "selfrevive".equals(Shops.ezKey(st)));
+            check("only one Self-Revive Injector can be carried", !inj.isEmpty() && n == 1, "carrying " + n);
+            for (Entity e : city.getEntities((Entity) null, fp.getBoundingBox().inflate(4), e -> e instanceof net.minecraft.world.entity.item.ItemEntity)) e.discard();
+            // an extraction wave
+            int placed = Revive.wave(fp, true);
+            List<Entity> w = city.getEntities((Entity) null, fp.getBoundingBox().inflate(24), e -> e.entityTags().contains("ez.wave"));
+            boolean clear = w.stream().allMatch(e -> e.distanceTo(fp) >= 8);
+            check("extracting draws a wave of raiders, out of arm's reach", placed > 0 && clear, placed + " placed, " + w.size() + " found, all 8+ blocks out " + clear);
+            w.forEach(Entity::discard);
+        } finally {
+            Revive.clear(fp); fp.removeTag("ez.raid"); fp.getInventory().clearContent(); Revive.DOWN.remove(fp.getUUID()); Revive.UP_AT.remove(fp.getUUID());
+        }
+    }
     static void step(MinecraftServer server) {
         if (phases.isEmpty() || --wait > 0) return;
         Runnable r = phases.remove(0); wait = 60;
@@ -325,6 +364,7 @@ final class SelfTest {
             InteractionResult zr = useBlock(f, city, zs, Direction.UP);
             check("a station in the zone opens its menu", zr == InteractionResult.SUCCESS && "Reloading Bench".equals(Ui.LAST.get(f.p.getUUID())), "result " + zr + ", menu " + Ui.LAST.get(f.p.getUUID()));
             city.setBlock(zs, was, 2);
+            reviveChecks(server, city, zs.above());
         }
         // wall finish: walls change, a block of the same kind inside doesn't
         BlockPos marker = new BlockPos(x - 3, F + 1, z - 3), wallPos = new BlockPos(x + h, F + 3, z), ceil = new BlockPos(x - 1, F + 7, z + 1);

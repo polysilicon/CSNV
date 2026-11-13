@@ -63,6 +63,10 @@ STASH = item("minecraft:barrel", "Stash Crate", "gold", "stash", ["Storage for y
                                                                  "Break it to move it: you get it back."], bold=True)
 MEDKIT = item("minecraft:red_dye", "Medkit", "red", "medkit", ["Hold right-click: heals 4 hearts", "and regenerates for 5 s."],
               heal(1, [{"id": "minecraft:regeneration", "amplifier": 1, "duration": 100}]))
+# 1.8.17 downed and revived: the one item that gets you up on your own (mod Revive). You can carry one.
+SELFREVIVE = item("minecraft:glistering_melon_slice", "Self-Revive Injector", "light_purple", "selfrevive",
+                  ["When you're downed in the zone, hold crouch", "for 3 s to get back up on your own.", "You can carry only one."],
+                  {"minecraft:max_stack_size": 1}, bold=True)
 # valuables: key, item, name, colour, sell price (coins)
 VALUABLES = [
     ("scrap", "minecraft:redstone", "Scrap Electronics", "gray", 2),
@@ -263,7 +267,8 @@ STATIONS = {
           for sl, c, sc, w in (("head", 2, 3, 1), ("chest", 5, 4, 2), ("legs", 4, 3, 1), ("feet", 2, 2, 0))]]},
     "med": {"block": mc("brewing_stand"), "title": "Med Bench", "price": 40, "recipes": [
         rcp("herb", HERB, 1, [(mc("sweet_berries"), 4)]),
-        rcp("medkit", MEDKIT, 1, [(ez("bandage"), 2), (ez("pills"), 1), (ez("herb"), 1)], perk_double="med")]},
+        rcp("medkit", MEDKIT, 1, [(ez("bandage"), 2), (ez("pills"), 1), (ez("herb"), 1)], perk_double="med"),
+        rcp("selfrevive", SELFREVIVE, 1, [(ez("medkit"), 1), (ez("pills"), 2), (ez("moonshine"), 1)])]},
     "kiln": {"block": mc("blast_furnace"), "title": "Kiln", "price": 40, "recipes": [
         rcp("charcoal", {"id": mc("charcoal"), "components": {"minecraft:lore": lore("Made in a Kiln from oak logs.", "Reloading Bench: 2 with a Saltpeter",
                                                                                      "make Propellant (ammo, smoke).")}}, 4, [(mc("oak_log"), 2)], 60),
@@ -303,12 +308,14 @@ TIERS = {
     3: {"rolls": (5, 7), "entries": [entry(AMMO, 24, 12, 32), entry(MEDKIT, 10, 1, 2), entry(CREDIT, 12, 8, 24),
          entry(VAL["watch"], 8), entry(VAL["goldbar"], 7), entry(VAL["gem"], 5), entry(VAL["drive"], 4), entry(VAL["blackbox"], 1),
          *aentries("tactical", 3), *aentries("patrol", 2), *aentries("juggernaut", 1),
-         gentry("stg44", 4), gentry("olympia", 3), gentry("kar98k", 3), gentry("m60", 2), gentry("amban", 1), ventry("minecraft:golden_apple", 3)]},
+         gentry("stg44", 4), gentry("olympia", 3), gentry("kar98k", 3), gentry("m60", 2), gentry("amban", 1), ventry("minecraft:golden_apple", 3),
+         entry(SELFREVIVE, 2)]},
     # 1.8.0 the Core (under 80 blocks from the centre): the best regular loot in the zone
     4: {"rolls": (6, 8), "entries": [entry(AMMO, 20, 16, 40), entry(MEDKIT, 12, 1, 2), entry(CREDIT, 12, 12, 32),
          entry(VAL["watch"], 6), entry(VAL["goldbar"], 8), entry(VAL["gem"], 8), entry(VAL["drive"], 6), entry(VAL["blackbox"], 3),
          *aentries("tactical", 5), *aentries("juggernaut", 3), entry(SMOKE, 4, 1, 2), entry(PARACHUTE, 3),
-         gentry("m60", 4), gentry("amban", 3), gentry("kar98k", 3), gentry("olympia", 2), ventry("minecraft:golden_apple", 4)]},
+         gentry("m60", 4), gentry("amban", 3), gentry("kar98k", 3), gentry("olympia", 2), ventry("minecraft:golden_apple", 4),
+         entry(SELFREVIVE, 4)]},
 }
 MOB_LOOT = {
     "infected": [(entry(AMMO, 1, 1, 4), 0.5), (entry(VAL["scrap"], 1), 0.3), (entry(CREDIT, 1, 1, 3), 0.3)],
@@ -716,7 +723,7 @@ def build(out):
     fn("exfil/second", [
         f"particle minecraft:end_rod ~ ~3 ~ 0.1 10 0.1 0 25 force",
         f"particle minecraft:flame ~ ~1 ~ {EX_R / 2} 0.1 {EX_R / 2} 0 8 force",
-        f"execute as @a[tag=ez.raid,distance=..{EX_R}] run function {NS}:exfil/hold",
+        f"execute as @a[tag=ez.raid,tag=!ez.downed,distance=..{EX_R}] run function {NS}:exfil/hold",
         f"execute as @a[tag=ez.raid,distance={EX_R}.01..,scores={{ez.ex=1..}}] at @s unless entity @e[type=minecraft:marker,tag=ez.exfil,distance=..{EX_R}] run function {NS}:exfil/left",
     ])
     fn("exfil/hold", [
@@ -725,6 +732,9 @@ def build(out):
                                                                                  {"selector": "@e[type=minecraft:marker,tag=ez.exfil,sort=nearest,limit=1]", "color": "aqua"},
                                                                                  {"text": "!", "color": "yellow"}]),
         "execute if score @s ez.ex matches 1 run playsound minecraft:entity.firework_rocket.launch player @a[tag=ez.raid] ~ ~ ~ 1 0.8",
+        # 1.8.17: the flare draws a wave of raiders from the ring (mod Revive.wave), and a second at the halfway mark
+        "execute if score @s ez.ex matches 1 run ezhook wave",
+        f"execute if score @s ez.ex matches {EX_HOLD // 2} run ezhook wave2",
         f"title @s actionbar " + tj([{"text": "✈ EXTRACTING ", "color": "green", "bold": True}, {"score": {"name": "@s", "objective": "ez.ex"}, "color": "white"},
                                      {"text": f" / {EX_HOLD} s: stay in the zone", "color": "gray"}]),
         f"execute if score @s ez.ex matches {EX_HOLD}.. run function {NS}:exfil/done",
@@ -814,7 +824,7 @@ def build(out):
         wj(f"data/{NS}/predicate/missfar_{g}.json", {"condition": "minecraft:random_chance", "chance": miss if g == "sniper" else min(0.85, miss + FAR_MISS)})
     wj(f"data/{NS}/predicate/third.json", {"condition": "minecraft:random_chance", "chance": 0.34})
     for gname, rng in (("gunner", AI_RANGE), ("gunner_long", SNIPER_RANGE), ("gunner_short", SHOTGUN_RANGE)):
-     T = f"@p[tag=ez.raid,tag=!ez.hidden,distance=..{rng},gamemode=!spectator]"   # ez.hidden: a crouching ghillie (mod Armor)
+     T = f"@p[tag=ez.raid,tag=!ez.hidden,tag=!ez.downed,distance=..{rng},gamemode=!spectator]"   # 1.8.17 ez.downed: on the ground (mod Revive)   # ez.hidden: a crouching ghillie (mod Armor)
      fn(f"ai/{gname}", [
         *([f"execute if entity @s[tag=ez.g_sniper] run return run function {NS}:ai/gunner_long",
            f"execute if entity @s[tag=ez.g_shotgun] run return run function {NS}:ai/gunner_short"] if gname == "gunner" else []),
@@ -825,7 +835,7 @@ def build(out):
         "tag @s add ez.shooter", f"scoreboard players set #ar ez {rng * 2 + 4}",
         # 1.8.5: roll once (near or far), then a miss goes wide; a hit aims at the head or (a third) the legs
         "tag @s remove ez.miss", "tag @s remove ez.far",
-        f"execute unless entity @p[tag=ez.raid,tag=!ez.hidden,distance=..{FAR},gamemode=!spectator] run tag @s add ez.far",
+        f"execute unless entity @p[tag=ez.raid,tag=!ez.hidden,tag=!ez.downed,distance=..{FAR},gamemode=!spectator] run tag @s add ez.far",
         *[f"execute if entity @s[tag=ez.g_{g},tag=!ez.far] if predicate {NS}:miss_{g} run tag @s add ez.miss" for g in GUNNERS],
         *[f"execute if entity @s[tag=ez.g_{g},tag=ez.far] if predicate {NS}:missfar_{g} run tag @s add ez.miss" for g in GUNNERS],
         f"execute if entity @s[tag=ez.miss] if predicate {NS}:half anchored eyes facing entity {T} eyes rotated ~6 ~-4 positioned ^ ^ ^0.8 run function {NS}:ai/ray",

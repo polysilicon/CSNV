@@ -10,6 +10,7 @@ public final class EzMod implements ModInitializer {
         Armor.init();         // 1.7.0 milsim armour: set bonuses, vanilla armour swapped
         Stations.init();      // 1.8.0 bunker crafting stations
         Tools.init();
+        Revive.init();        // 1.8.17 downed / revived / finished off, Self-Revive, extraction waves
         Interiors.init();     // 1.8.8 stations in the zone are wreckage         // 1.8.0 grappling hook, repair kit, smoke
         Coins.init();
         Shops.init();
