@@ -252,7 +252,7 @@ def npc(x, z, nm, color, prof, shop, rot, y=64):
 # ------------------------------------------------------------------ the camp (dimension ez:camp, floor y 63): a compact forward base, -18..18
 # posts: name, colour, shop, NPC x/z/yaw, label y
 POSTS = [("Quartermaster", "gold", "quartermaster", -12.5, -6.5, -90), ("Builder", "green", "builder", -12.5, 6.5, -90),
-         ("The Broker", "dark_purple", "fence", 13.5, -6.5, 90), ("Bunker Manager", "aqua", "plots", 13.5, 6.5, 90),
+         ("The Broker", "dark_purple", "fence", 13.5, -6.5, 90), ("Bunker Manager", "aqua", "plots", 13.5, 5.5, 90),
          ("The Fixer", "red", "contracts", 0.5, -12.5, 0)]
 STALL_NPCS = [(x, z, nm, col, "none", shop, rot) for nm, col, shop, x, z, rot in POSTS]
 HELI = (0, 12)        # helipad centre; the deploy click box sits on it
@@ -376,7 +376,7 @@ def camp_commands():
     container(-16, -9, -10, -4, -10, "green")
     container(10, -9, 16, -4, 10, "gray")
     tent(-16, 3, -10, 9, -10, "green")
-    tent(10, 3, 16, 9, 10, "brown")
+    tent(10, 3, 16, 7, 10, "brown")   # kept shallow: the bunker entrance is just south of it
     # counters and props inside the posts
     for z in (-8, -5): B[(-14, 64, z)] = pick("minecraft:smithing_table", "minecraft:grindstone[face=floor,facing=east]")
     B[(-15, 64, -6)] = "minecraft:anvil[facing=east]"; B[(-15, 64, -7)] = "minecraft:barrel[facing=up]"; B[(-15, 65, -7)] = "minecraft:lantern"
@@ -385,7 +385,7 @@ def camp_commands():
     B[(15, 64, -6)] = "minecraft:cartography_table"; B[(15, 64, -7)] = "minecraft:barrel[facing=up]"; B[(15, 65, -7)] = "minecraft:soul_lantern"
     for x, z in [(11, -8), (11, -5)]: B[(x, 64, z)] = "minecraft:barrel[facing=west]"
     B[(-15, 64, 4)] = "minecraft:stonecutter"; B[(-15, 64, 8)] = "minecraft:crafting_table"; B[(-14, 64, 8)] = "minecraft:scaffolding"; B[(-11, 64, 4)] = "minecraft:barrel[facing=up]"
-    B[(15, 64, 5)] = "minecraft:lectern[facing=west]"; B[(15, 64, 7)] = "minecraft:crafting_table"; B[(15, 65, 7)] = "minecraft:lantern"; B[(11, 64, 8)] = "minecraft:barrel[facing=up]"
+    B[(15, 64, 4)] = "minecraft:lectern[facing=west]"; B[(15, 64, 6)] = "minecraft:crafting_table"; B[(15, 65, 6)] = "minecraft:lantern"; B[(11, 64, 4)] = "minecraft:barrel[facing=up]"
     # the Fixer's booth (north): dark oak frame, a plank back wall with a map board, a desk, a camo-net roof
     fill(-3, 63, -16, 3, 63, -11, "minecraft:dark_oak_planks")
     for x in (-3, 3):
