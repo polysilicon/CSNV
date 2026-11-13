@@ -255,8 +255,10 @@ GUN_PARTS = item("minecraft:iron_ingot", "Gun Parts", "gray", "gunparts", ["Salv
 ARMOR_PLATE = item("minecraft:netherite_scrap", "Armour Plate", "dark_aqua", "armorplate", ["Salvaged from heavy armour.", "Tool Bench: with Cloth, two Repair Kits.", "The Broker pays 9 each."])
 GUN_TIER = {"pistol": 1, "m1911": 2, "mp40": 2, "stakeout": 2, "stg44": 3, "olympia": 3, "kar98k": 3, "m60": 4, "amban": 4}
 SALVAGE = {
-    "armor": {"scav": [["ez:cloth", 1]], "ghillie": [["ez:cloth", 2], ["ez:scrap", 1]], "hazmat": [["ez:cloth", 2], ["ez:scrap", 1]],
-              "patrol": [["ez:cloth", 2], ["ez:scrap", 2], ["ez:wire", 1]], "tactical": [["ez:armorplate", 1], ["ez:scrap", 2], ["ez:wire", 1]],
+    "armor": {"scav": [["ez:cloth", 1]], "ghillie": [["ez:cloth", 1]], "hazmat": [["ez:cloth", 2], ["ez:scrap", 1]],
+              # 1.8.25 balance: craftable sets salvage for less than any of their recipes (patrol boots gave a free Wire every
+              # cycle; ghillie turned farmed wheat into Scrap, uncapped)
+              "patrol": [["ez:cloth", 1], ["ez:scrap", 2]], "tactical": [["ez:armorplate", 1], ["ez:scrap", 2], ["ez:wire", 1]],
               "juggernaut": [["ez:armorplate", 2], ["ez:scrap", 3], ["ez:wire", 2]]},
     "gun_tier": {"1": [["ez:gunparts", 1], ["ez:scrap", 1]], "2": [["ez:gunparts", 2], ["ez:scrap", 1]], "3": [["ez:gunparts", 3], ["ez:wire", 1]],
                  "4": [["ez:gunparts", 5], ["ez:wire", 2]]},
