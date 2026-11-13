@@ -824,7 +824,7 @@ def build(out):
         wj(f"data/{NS}/predicate/missfar_{g}.json", {"condition": "minecraft:random_chance", "chance": miss if g == "sniper" else min(0.85, miss + FAR_MISS)})
     wj(f"data/{NS}/predicate/third.json", {"condition": "minecraft:random_chance", "chance": 0.34})
     for gname, rng in (("gunner", AI_RANGE), ("gunner_long", SNIPER_RANGE), ("gunner_short", SHOTGUN_RANGE)):
-     T = f"@p[tag=ez.raid,tag=!ez.hidden,tag=!ez.downed,distance=..{rng},gamemode=!spectator]"   # 1.8.17 ez.downed: on the ground (mod Revive)   # ez.hidden: a crouching ghillie (mod Armor)
+     T = f"@p[tag=ez.raid,tag=!ez.hidden,tag=!ez.downed,tag=!ez.getup,distance=..{rng},gamemode=!spectator]"   # 1.8.17 ez.downed: on the ground (mod Revive)   # ez.hidden: a crouching ghillie (mod Armor)
      fn(f"ai/{gname}", [
         *([f"execute if entity @s[tag=ez.g_sniper] run return run function {NS}:ai/gunner_long",
            f"execute if entity @s[tag=ez.g_shotgun] run return run function {NS}:ai/gunner_short"] if gname == "gunner" else []),
@@ -835,7 +835,7 @@ def build(out):
         "tag @s add ez.shooter", f"scoreboard players set #ar ez {rng * 2 + 4}",
         # 1.8.5: roll once (near or far), then a miss goes wide; a hit aims at the head or (a third) the legs
         "tag @s remove ez.miss", "tag @s remove ez.far",
-        f"execute unless entity @p[tag=ez.raid,tag=!ez.hidden,tag=!ez.downed,distance=..{FAR},gamemode=!spectator] run tag @s add ez.far",
+        f"execute unless entity @p[tag=ez.raid,tag=!ez.hidden,tag=!ez.downed,tag=!ez.getup,distance=..{FAR},gamemode=!spectator] run tag @s add ez.far",
         *[f"execute if entity @s[tag=ez.g_{g},tag=!ez.far] if predicate {NS}:miss_{g} run tag @s add ez.miss" for g in GUNNERS],
         *[f"execute if entity @s[tag=ez.g_{g},tag=ez.far] if predicate {NS}:missfar_{g} run tag @s add ez.miss" for g in GUNNERS],
         f"execute if entity @s[tag=ez.miss] if predicate {NS}:half anchored eyes facing entity {T} eyes rotated ~6 ~-4 positioned ^ ^ ^0.8 run function {NS}:ai/ray",

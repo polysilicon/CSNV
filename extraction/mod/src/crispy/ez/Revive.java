@@ -59,6 +59,8 @@ final class Revive {
     }
     static final Map<UUID, Down> DOWN = new HashMap<>();
     static final Map<UUID, Long> UP_AT = new HashMap<>();      // server tick they last got up
+    static final int GETUP = 4;                                 // 1.8.19: seconds after getting up that raiders still leave you alone (tag ez.getup)
+    static final double SCATTER = 14, CALM = 32;                // raiders closer than SCATTER walk off; none within CALM keeps you as a target
     static final Map<UUID, ServerPlayer> FINISH_BY = new HashMap<>();   // to finish off at the end of this tick (null value: bled out)
     static final Set<UUID> FINISHING = new HashSet<>();
     static int waves;
@@ -126,11 +128,14 @@ final class Revive {
         p.setHealth(6f);
         p.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 60, 2, false, false, true));
         UP_AT.put(p.getUUID(), (long) p.level().getServer().getTickCount());
+        p.addTag("ez.getup");
+        calm(p, true);
         p.sendSystemMessage(t("You're back on your feet (" + how + "). Go down again within " + GRACE + " s and it's over.", ChatFormatting.GREEN));
         Ui.sound(p, net.minecraft.sounds.SoundEvents.PLAYER_LEVELUP, 0.7f, 1.4f);
         Trace.d(p, "revived: " + how);
     }
     static void clear(ServerPlayer p) {
+        if (!UP_AT.containsKey(p.getUUID())) p.removeTag("ez.getup");
         DOWN.remove(p.getUUID());
         p.removeTag("ez.downed");
         var sp = p.getAttribute(Attributes.JUMP_STRENGTH);
@@ -200,8 +205,26 @@ final class Revive {
                 lvl.sendParticles(new DustParticleOptions(0xB01010, 1.2f), p.getX(), p.getY() + 0.3, p.getZ(), 4, 0.3, 0.1, 0.3, 0);
             }
         }
+        // 1.8.19: raiders don't crowd someone on the ground, or jump them the moment they're up
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            if (p.entityTags().contains("ez.getup")) {
+                Long up = UP_AT.get(p.getUUID());
+                if (up == null || now - up >= GETUP * 20L) { p.removeTag("ez.getup"); continue; }
+            } else if (!downed(p)) continue;
+            calm(p, now % 10 == 0);
+        }
         if (now % 20 == 0) for (ServerPlayer p : server.getPlayerList().getPlayers()) limit(p);
         if (now % 1200 == 0) UP_AT.values().removeIf(t0 -> now - t0 > GRACE * 20L);
+    }
+    /** Raiders around p forget them; with scatter, the ones closer than SCATTER walk off to SCATTER+6 blocks away. */
+    static void calm(ServerPlayer p, boolean scatter) {
+        ServerLevel lvl = (ServerLevel) p.level();
+        for (Mob m : lvl.getEntitiesOfClass(Mob.class, p.getBoundingBox().inflate(CALM), e -> e.entityTags().contains("ez.ai") || e.entityTags().contains("ez.wave"))) {
+            if (m.getTarget() == p) m.setTarget(null);
+            if (!scatter || m.distanceTo(p) >= SCATTER) continue;
+            double dx = m.getX() - p.getX(), dz = m.getZ() - p.getZ(), len = Math.max(0.5, Math.hypot(dx, dz)), go = SCATTER + 6;
+            m.getNavigation().moveTo(p.getX() + dx / len * go, m.getY(), p.getZ() + dz / len * go, 1.2);
+        }
     }
     static String bar(int n, int of) { int k = Math.min(10, n * 10 / of); return "█".repeat(k) + "░".repeat(10 - k); }
 
@@ -239,9 +262,11 @@ final class Revive {
         for (Entity m : fresh) {
             m.removeTag("ez.newai"); m.addTag("ez.wave");
             BlockPos spot = null;
-            for (int tries = 0; tries < 24 && spot == null; tries++) {
-                double a = r.nextDouble() * Math.PI * 2, dist = 10 + r.nextDouble() * 8;
-                spot = ground(lvl, (int) Math.floor(p.getX() + Math.cos(a) * dist), p.getBlockY(), (int) Math.floor(p.getZ() + Math.sin(a) * dist));
+            // 1.8.19: 26-38 blocks out (they were on top of you at 10-18), out of sight of the player if possible
+            for (int tries = 0; tries < 60 && spot == null; tries++) {
+                double a = r.nextDouble() * Math.PI * 2, dist = WAVE_MIN + r.nextDouble() * (WAVE_MAX - WAVE_MIN);
+                BlockPos b = ground(lvl, (int) Math.floor(p.getX() + Math.cos(a) * dist), p.getBlockY(), (int) Math.floor(p.getZ() + Math.sin(a) * dist));
+                if (b != null && (tries >= 40 || !sees(lvl, b, p))) spot = b;
             }
             if (spot == null) { m.discard(); continue; }   // nowhere to stand: better none than one inside the player
             m.teleportTo(spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5);
@@ -258,8 +283,15 @@ final class Revive {
         Trace.d(p, "extraction wave " + (big ? "1" : "2") + ": " + placed + " raiders (ring " + tier + ")");
         return placed;
     }
+    static final double WAVE_MIN = 26, WAVE_MAX = 38;
+    static boolean sees(ServerLevel lvl, BlockPos b, ServerPlayer p) {
+        var from = new net.minecraft.world.phys.Vec3(b.getX() + 0.5, b.getY() + 1.6, b.getZ() + 0.5);
+        return lvl.clip(new net.minecraft.world.level.ClipContext(from, p.getEyePosition(), net.minecraft.world.level.ClipContext.Block.COLLIDER,
+                net.minecraft.world.level.ClipContext.Fluid.NONE, p)).getType() == net.minecraft.world.phys.HitResult.Type.MISS;
+    }
     /** Open ground near height y (two clear blocks over a solid one), or null. */
     static BlockPos ground(ServerLevel lvl, int x, int y, int z) {
+        if (!lvl.hasChunk(x >> 4, z >> 4)) return null;
         for (int dy : new int[]{0, 1, -1, 2, -2, 3, -3, 4, -4, 5, 6}) {
             BlockPos b = new BlockPos(x, y + dy, z);
             if (lvl.getBlockState(b.below()).isSolidRender() && lvl.getBlockState(b).getCollisionShape(lvl, b).isEmpty()

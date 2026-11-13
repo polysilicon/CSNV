@@ -153,6 +153,14 @@ final class SelfTest {
             boolean died = deathEv.allowDeath(fp, fp.damageSources().generic(), 1000f);
             boolean down = !died && Revive.downed(fp) && fp.isAlive() && fp.entityTags().contains("ez.downed");
             check("a fatal hit in the zone downs a raider instead of killing them", down, "downed " + Revive.downed(fp) + ", alive " + fp.isAlive() + ", health " + fp.getHealth());
+            // 1.8.19: a raider next to someone on the ground forgets them and walks off
+            var ze = BuiltInRegistries.ENTITY_TYPE.getValue(net.minecraft.resources.Identifier.withDefaultNamespace("zombie")).create(city, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+            if (ze instanceof net.minecraft.world.entity.Mob z) {
+                z.snapTo(fp.getX() + 3, fp.getY(), fp.getZ(), 0, 0); z.addTag("ez.ai"); city.addFreshEntity(z); z.setTarget(fp);
+                Revive.calm(fp, true);
+                check("raiders leave a downed player alone and back off", z.getTarget() == null && z.getNavigation().isInProgress(), "target " + z.getTarget() + ", walking off " + z.getNavigation().isInProgress());
+                z.discard();
+            }
             boolean hurt = dmgEv.allowDamage(fp, fp.damageSources().generic(), 5f);
             check("a downed player takes no more damage from the zone", !hurt && Revive.downed(fp), "damage allowed " + hurt);
             FakePlayer other = FakePlayer.get(city, new GameProfile(java.util.UUID.fromString("e2e2e2e2-0000-4000-8000-00000000d0e2"), "ezrevive2"));
@@ -173,9 +181,9 @@ final class SelfTest {
             for (Entity e : city.getEntities((Entity) null, fp.getBoundingBox().inflate(4), e -> e instanceof net.minecraft.world.entity.item.ItemEntity)) e.discard();
             // an extraction wave
             int placed = Revive.wave(fp, true);
-            List<Entity> w = city.getEntities((Entity) null, fp.getBoundingBox().inflate(24), e -> e.entityTags().contains("ez.wave"));
-            boolean clear = w.stream().allMatch(e -> e.distanceTo(fp) >= 8);
-            check("extracting draws a wave of raiders, out of arm's reach", placed > 0 && clear, placed + " placed, " + w.size() + " found, all 8+ blocks out " + clear);
+            List<Entity> w = city.getEntities((Entity) null, fp.getBoundingBox().inflate(48), e -> e.entityTags().contains("ez.wave"));
+            boolean clear = w.stream().allMatch(e -> e.distanceTo(fp) >= Revive.WAVE_MIN - 2);
+            check("extracting draws a wave of raiders, well away from the player", placed > 0 && clear, placed + " placed, " + w.size() + " found, all " + (int) Revive.WAVE_MIN + "+ blocks out " + clear);
             w.forEach(Entity::discard);
         } finally {
             Revive.clear(fp); fp.removeTag("ez.raid"); fp.getInventory().clearContent(); Revive.DOWN.remove(fp.getUUID()); Revive.UP_AT.remove(fp.getUUID());
