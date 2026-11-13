@@ -67,6 +67,10 @@ final class Armor {
         CustomData cd = s.get(DataComponents.CUSTOM_DATA);
         return cd == null ? null : cd.copyTag().getString("ezarmor").orElse(null);
     }
+    static String slot(ItemStack s) {
+        CustomData cd = s.get(DataComponents.CUSTOM_DATA);
+        return cd == null ? "" : cd.copyTag().getString("ezslot").orElse("");
+    }
     static int pieces(ServerPlayer p, String set) {
         int n = 0;
         for (EquipmentSlot sl : WORN) if (set.equals(set(p.getItemBySlot(sl)))) n++;

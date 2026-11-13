@@ -232,6 +232,18 @@ SMOKE = item("minecraft:snowball", "Smoke Grenade", "gray", "smoke", ["Throw it:
 HAMMER = item("minecraft:iron_pickaxe", "Breaching Hammer", "gold", "hammer", ["Breaks through walls, doors and floors", "above street level, fast."],
               {"minecraft:max_damage": 300, "minecraft:tool": {"default_mining_speed": 1.0, "damage_per_block": 1, "rules": [
                   {"blocks": f"#minecraft:mineable/{t}", "speed": 9.0, "correct_for_drops": True} for t in ("pickaxe", "axe", "shovel")]}})
+# 1.8.16 salvage: what armour and guns break down into at a Salvage Bench
+GUN_PARTS = item("minecraft:iron_ingot", "Gun Parts", "gray", "gunparts", ["Salvaged from guns.", "Reloading Bench: with Propellant, 32 rounds.", "The Broker pays 6 each."])
+ARMOR_PLATE = item("minecraft:netherite_scrap", "Armour Plate", "dark_aqua", "armorplate", ["Salvaged from heavy armour.", "Tool Bench: with Cloth, two Repair Kits.", "The Broker pays 9 each."])
+GUN_TIER = {"pistol": 1, "m1911": 2, "mp40": 2, "stakeout": 2, "stg44": 3, "olympia": 3, "kar98k": 3, "m60": 4, "amban": 4}
+SALVAGE = {
+    "armor": {"scav": [["ez:cloth", 1]], "ghillie": [["ez:cloth", 2], ["ez:scrap", 1]], "hazmat": [["ez:cloth", 2], ["ez:scrap", 1]],
+              "patrol": [["ez:cloth", 2], ["ez:scrap", 2], ["ez:wire", 1]], "tactical": [["ez:armorplate", 1], ["ez:scrap", 2], ["ez:wire", 1]],
+              "juggernaut": [["ez:armorplate", 2], ["ez:scrap", 3], ["ez:wire", 2]]},
+    "gun_tier": {"1": [["ez:gunparts", 1], ["ez:scrap", 1]], "2": [["ez:gunparts", 2], ["ez:scrap", 1]], "3": [["ez:gunparts", 3], ["ez:wire", 1]],
+                 "4": [["ez:gunparts", 5], ["ez:wire", 2]]},
+    "guns": {f"minecraft:{abilities.ABILITIES[k][2]}": t for k, t in GUN_TIER.items()},
+}
 LADDER = {"id": "minecraft:ladder", "components": {"minecraft:custom_name": name("Rope Ladder", "gold")}}
 HOE = item("minecraft:wooden_hoe", "Garden Hoe", "gold", "hoe", ["Turns dirt into farmland."])
 def ez(k): return f"ez:{k}"
@@ -260,17 +272,23 @@ STATIONS = {
     "reload": {"block": mc("fletching_table"), "title": "Reloading Bench", "price": 50, "recipes": [
         rcp("propellant", PROPELLANT, 2, [(ez("saltpeter"), 1), (mc("charcoal"), 2)]),
         rcp("ammo", AMMO, 24, [(ez("wire"), 1), (ez("propellant"), 1)]),
-        rcp("smoke", SMOKE, 2, [(ez("propellant"), 1), (ez("cloth"), 1), (ez("scrap"), 1)])]},
+        rcp("smoke", SMOKE, 2, [(ez("propellant"), 1), (ez("cloth"), 1), (ez("scrap"), 1)]),
+        rcp("ammo_parts", AMMO, 32, [(ez("gunparts"), 1), (ez("propellant"), 1)])]},
     "still": {"block": mc("smoker"), "title": "Still", "price": 60, "recipes": [
         rcp("moonshine", MOONSHINE, 2, [(mc("potato"), 4), (mc("sugar_cane"), 2)], 300)]},
     "tools": {"block": mc("stonecutter"), "title": "Tool Bench", "price": 50, "recipes": [
         rcp("grapple", GRAPPLE, 1, [(ez("wire"), 3), (ez("scrap"), 2), (ez("cloth"), 2)]),
         rcp("hammer", HAMMER, 1, [(ez("scrap"), 4), (mc("oak_log"), 2), (ez("wire"), 1)]),
         rcp("repairkit", REPAIRKIT, 1, [(ez("cloth"), 1), (ez("scrap"), 1), (ez("wire"), 1)]),
-        rcp("stash", STASH, 1, [(mc("oak_planks"), 8), (ez("scrap"), 2)])]},
+        rcp("stash", STASH, 1, [(mc("oak_planks"), 8), (ez("scrap"), 2)]),
+        rcp("repairkit_plate", REPAIRKIT, 2, [(ez("armorplate"), 1), (ez("cloth"), 1)])]},
+    # 1.8.16: no fixed recipes: the menu lists the armour and guns you carry and breaks them down (mod Salvage, SALVAGE)
+    "salvage": {"block": mc("grindstone"), "title": "Salvage Bench", "price": 45, "recipes": []},
 }
 def station_item(k):
     st = STATIONS[k]
+    if k == "salvage":
+        return item(st["block"], st["title"], "aqua", "station_" + k, ["Place it in your bunker and right-click it.", "Breaks spare armour and guns into Cloth,", "Scrap, Wire, Gun Parts and Armour Plate."], bold=True)
     labels = list(dict.fromkeys(r["label"].split(" (")[0] for r in st["recipes"]))
     return item(st["block"], st["title"], "aqua", "station_" + k, ["Place it in your bunker and right-click it.", "Makes: " + ", ".join(labels[:5]) + (", ..." if len(labels) > 5 else "")], bold=True)
 
@@ -465,7 +483,8 @@ SHOPS = {
     "quartermaster": {"title": "Quartermaster", "buy": [buy(AMMO, 4, 16), buy(BANDAGE, 3, 2), buy(MEDKIT, 8), gbuy("pistol", 20), gbuy("m1911", 35),
                       gbuy("mp40", 60), gbuy("stakeout", 70), gbuy("stg44", 110), *abuy("scav", (3, 5, 4, 2)), *abuy("patrol", (14, 24, 20, 12)),
                       *abuy("ghillie", (16, 26, 22, 12)), *abuy("hazmat", (16, 26, 22, 12)), vbuy("minecraft:cooked_beef", 2, 8), vbuy("minecraft:golden_apple", 25)], "sell": []},
-    "fence": {"title": "The Broker", "buy": [], "sell": sells() + [{"key": "moonshine", "item": sn(stack(MOONSHINE)), "price": 8, "cap": 24, "after": 2}]},
+    "fence": {"title": "The Broker", "buy": [], "sell": sells() + [{"key": "moonshine", "item": sn(stack(MOONSHINE)), "price": 8, "cap": 24, "after": 2},
+                                                 {"key": "gunparts", "item": sn(stack(GUN_PARTS)), "price": 6}, {"key": "armorplate", "item": sn(stack(ARMOR_PLATE)), "price": 9}]},
     "builder": {"title": "Builder", "buy": [buy(STASH, 25), vbuy("minecraft:oak_planks", 6, 32),
                 vbuy("minecraft:spruce_planks", 6, 32), vbuy("minecraft:stone_bricks", 6, 32), vbuy("minecraft:bricks", 8, 32),
                 vbuy("minecraft:deepslate_tiles", 8, 32), vbuy("minecraft:smooth_quartz", 10, 32), vbuy("minecraft:glass", 6, 16),
@@ -546,7 +565,9 @@ def build(out):
     with open(os.path.join(out, "shops.json"), "w") as f:
         json.dump({"credit": snbt(stack(CREDIT)), "shops": SHOPS, "skins": NPC_SKINS,
                    "armor": {k: {sl: snbt(stack(ARMOR_ITEMS[(k, sl)])) for sl, _ in SLOTS} for k in ARMOR},
-                   "stations": STATIONS}, f, indent=1, ensure_ascii=False)
+                   "stations": STATIONS, "salvage": SALVAGE,
+                   "salvage_items": {"cloth": snbt(stack(CLOTH)), "scrap": snbt(stack(VAL["scrap"])), "wire": snbt(stack(VAL["wire"])),
+                                     "gunparts": snbt(stack(GUN_PARTS)), "armorplate": snbt(stack(ARMOR_PLATE))}}, f, indent=1, ensure_ascii=False)
     loot_tables()
     building_recipes()
     zone_world()

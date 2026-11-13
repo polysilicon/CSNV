@@ -93,6 +93,7 @@ final class Stations {
 
     // ---------------------------------------------------------------- the menu
     static void open(ServerPlayer p, Station s) {
+        if (s.key().equals("salvage")) { Salvage.open(p); return; }   // 1.8.16: no recipes, a menu of what you carry
         MinecraftServer server = p.level().getServer();
         Plots.Plot plot = Plots.of(p);
         Ui.open(p, t(s.title(), ChatFormatting.DARK_GRAY), 6, m -> {

@@ -282,7 +282,7 @@ final class SelfTest {
         p.perks.remove("workbench");
         // 1.8.11: stations open their menu in your own bunker; a timed recipe starts a job
         Stations.load(server);
-        for (String[] st : new String[][]{{"minecraft:loom", "Sewing Table"}, {"minecraft:blast_furnace", "Kiln"}}) {
+        for (String[] st : new String[][]{{"minecraft:loom", "Sewing Table"}, {"minecraft:blast_furnace", "Kiln"}, {"minecraft:grindstone[face=floor]", "Salvage Bench"}}) {
             BlockPos at = new BlockPos(x - 3, F + 1, z + 3);
             Plots.run(server, Plots.inCamp(String.format("setblock %d %d %d %s", at.getX(), at.getY(), at.getZ(), st[0])));
             Ui.LAST.remove(f.p.getUUID());
@@ -298,6 +298,21 @@ final class SelfTest {
             check("a timed station recipe starts a job", Stations.jobs(p).size() == before + 1, Stations.jobs(p).size() + " jobs");
             Stations.jobs(p).clear();
         }
+        // 1.8.16: salvage breaks a carried armour piece and a gun into resources
+        Salvage.load(server); Armor.load(server);
+        if (Armor.SETS.containsKey("tactical") && !Salvage.GUNS.isEmpty()) {
+            var inv = f.p.getInventory(); inv.clearContent();
+            inv.setItem(0, Armor.SETS.get("tactical").get("chest").copy());
+            ItemStack gun = new ItemStack(Items.CLAY_BALL);
+            String model = Salvage.GUNS.entrySet().stream().filter(e -> e.getValue().equals("4")).findFirst().map(java.util.Map.Entry::getKey).orElse("");
+            gun.set(net.minecraft.core.component.DataComponents.ITEM_MODEL, net.minecraft.resources.Identifier.parse(model));
+            inv.setItem(1, gun);
+            Salvage.one(f.p, 0, false); Salvage.one(f.p, 1, false);
+            int plate = Shops.count(f.p, st -> "armorplate".equals(Shops.ezKey(st))), parts = Shops.count(f.p, st -> "gunparts".equals(Shops.ezKey(st)));
+            check("salvage breaks armour and guns into resources", inv.getItem(0).isEmpty() && inv.getItem(1).isEmpty() && plate == 1 && parts == 5,
+                    "plate " + plate + ", gun parts " + parts);
+            inv.clearContent();
+        } else check("salvage breaks armour and guns into resources", false, "salvage table not loaded");
         f.p.getInventory().clearContent();
         // 1.8.15: a station in the city works too (its menu opens)
         ServerLevel city = server.getLevel(Zone.CITY);
