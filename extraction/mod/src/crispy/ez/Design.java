@@ -404,6 +404,30 @@ final class Design {
         SelfTest.check("zone: ring spawners, new raiders and Core crates loaded", missing.isEmpty(), missing.isEmpty() ? "" : "missing " + missing);
     }
 
+    /** 1.8.1: the stations see what's actually in an inventory: plain vanilla items and our own items. */
+    static void craftingInventory(net.minecraft.server.level.ServerPlayer p) {
+        var inv = p.getInventory();
+        inv.clearContent();
+        Stations.Recipe ration = null, bandage = null, cloth = null;
+        for (var s : Stations.BY_BLOCK.values()) for (var r : s.recipes()) {
+            if (r.key().equals("ration")) ration = r;
+            if (r.key().equals("bandage")) bandage = r;
+            if (r.key().equals("cloth")) cloth = r;
+        }
+        if (ration == null || bandage == null || cloth == null) { SelfTest.check("crafting: test recipes present", false, ""); return; }
+        boolean before = Stations.canMake(p, ration, 1);
+        inv.add(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BROWN_MUSHROOM, 2));
+        inv.add(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.RED_MUSHROOM, 1));
+        boolean vanilla = !before && Stations.canMake(p, ration, 1);
+        inv.add(cloth.out().copyWithCount(2));   // two of our Cloth
+        boolean ours = Stations.canMake(p, bandage, 1);
+        Stations.takeInputs(p, bandage, 1);
+        boolean took = !Stations.canMake(p, bandage, 1);
+        inv.clearContent();
+        SelfTest.check("crafting: plain items in an inventory count (mushrooms for a ration)", vanilla, "");
+        SelfTest.check("crafting: our items in an inventory count and get used (cloth for bandages)", ours && took, "");
+    }
+
     static void write(int passed, List<String> fails) {
         report.addProperty("passed", passed); report.add("failed", new Gson().toJsonTree(fails));
         report.addProperty("at", java.time.Instant.now().toString());

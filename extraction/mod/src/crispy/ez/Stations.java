@@ -63,7 +63,7 @@ final class Stations {
     // ---------------------------------------------------------------- inputs
     static Predicate<ItemStack> matcher(String m) {
         if (m.startsWith("ez:")) { String k = m.substring(3); return st -> k.equals(Shops.ezKey(st)); }
-        return st -> Shops.ezKey(st) == null && BuiltInRegistries.ITEM.getKey(st.getItem()).toString().equals(m);
+        return st -> Shops.ezKey(st).isEmpty() && BuiltInRegistries.ITEM.getKey(st.getItem()).toString().equals(m);   // 1.8.1: ezKey is "" (not null) for a plain item
     }
     static String inName(MinecraftServer server, String m) {
         for (Station s : BY_BLOCK.values()) for (Recipe r : s.recipes()) if (m.startsWith("ez:") && m.substring(3).equals(Shops.ezKey(r.out()))) return r.out().getHoverName().getString();
