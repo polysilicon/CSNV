@@ -149,13 +149,36 @@ Skyblock, Economy, Survival, RPG, PvE, Crossplay (Java + Bedrock).
 ### Screenshots
 `marketing/site/images/shots/skyblock-hub.webp`, `skyblock-minion.webp`, `sb-collections.webp`.
 
-## Where to list
+## Where to list (checked 2026-11-13)
 
-Add these as **new** listings on the sites, next to the existing network listing (don't edit or replace it: its
-votes and rank stay with it). Before adding a second or third listing on a site, read its rules: some sites don't
-allow the same network more than once, even with a different address. If a site doesn't, keep only the network
-listing there.
+**The 7 sites we're already on: no extra listings.** TopG ("One server = one listing per game"), MinecraftServers.org
+("only create one listing for the same server") and Minecraft-MP (same MOTD, player count and IP = duplicate; network
+sub-servers can't take votes) forbid it; Planet Minecraft very likely does (one listing per server, nothing leading to
+the same hub). ServerTilt (blocks only the same hostname + port, 4 listings per account) and MMTop200 (no rule, but
+removes anything "duplicated") are unclear: ask their support before adding a mode there. Keep the network listing.
 
-Votes: give each new listing the same Votifier settings as the network listing (address, port and public key from
-the lobby's NuVotifier). Every vote reaches the lobby the same way, and players still pick which server their reward
-goes to in `/vote`.
+**New sites: one listing each, led by one mode.** We aren't listed on these yet, so a single listing per site is
+within every rule, and it can be the Anarchy or Skyblock listing (its own address, copy and banner):
+
+| Site | List | Its rule on more than one listing | Notes |
+|---|---|---|---|
+| minecraft-serverlist.com | **Anarchy** | one listing per server (plus one Bedrock listing) | free; Anarchy and Skyblock categories; voting |
+| minelist.net | **Anarchy** | same IP = duplicate | Anarchy and Skyblock categories; voting |
+| minecraft.menu | **Anarchy** | none stated | free; Anarchy page, Skyblock category; monthly votes |
+| mcserv.org | **Anarchy** | none stated | free; Skyblock filter, Anarchy tag; voting |
+| mclike.com | **Skyblock** | one listing per server | Anarchy and Skyblock filters; voting |
+| serverlist.net | **Skyblock** | may hide or merge duplicates | free; Anarchy and Skyblock categories; voting |
+| craftlist.org | **Skyblock** | none stated | Skyblock category (no Anarchy one); NuVotifier |
+| blockatlas.net | **Skyblock** | none stated | Anarchy and Skyblock categories; monthly votes |
+| minecraftiplist.com | **Skyblock** | none stated | Anarchy and Skyblock tags; Votifier |
+
+Not checked (their pages refused automated reads): topminecraftservers.org, findmcserver.com, Minecraft-Server-List.
+"None stated" isn't permission: list one mode there, and add the other only if their support says yes.
+
+Votes: give each listing the same Votifier settings as the network listing (address, port and public key from the
+lobby's NuVotifier); votes reach the lobby the same way, and players pick which server gets the reward in `/vote`.
+To show a new site in the lobby's `/vote` menu, add it to `votes.links` in the lobby's CrispyLobby config.
+
+**Outside server lists** (no one-listing rule; each post can be about one mode): Reddit's server-advertising
+communities (read each one's posting rules and limits first), Discord server-advertising servers, and the website's
+own `/anarchy/` and `/skyblock/` pages.
