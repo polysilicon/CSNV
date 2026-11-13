@@ -305,7 +305,7 @@ def camp_commands():
     for k in range(-R, R + 1):
         for (x, z) in [(k, -R), (k, R), (-R, k), (R, k)]:
             for y in (64, 65, 66, 67): B[(x, y, z)] = hesco()
-            B[(x, 68, z)] = "minecraft:iron_bars"; B[(x, 69, z)] = "minecraft:chain[axis=x]" if z in (-R, R) else "minecraft:chain[axis=z]"
+            B[(x, 68, z)] = "minecraft:iron_bars"; B[(x, 69, z)] = "minecraft:iron_chain[axis=x]" if z in (-R, R) else "minecraft:iron_chain[axis=z]"
             for y in range(70, 74): B[(x, y, z)] = "minecraft:barrier"
     for k in range(-R + 1, R):
         for (x, z) in [(k, -R + 1), (k, R - 1), (-R + 1, k), (R - 1, k)]:
