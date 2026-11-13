@@ -189,9 +189,9 @@ final class SelfTest {
             Revive.testPlayer = null;
             phases.add(0, () -> {   // checked a phase later, after the end-of-tick placement
                 List<Entity> w = city.getEntities((Entity) null, fp.getBoundingBox().inflate(48), e -> e.entityTags().contains("ez.wave"));
-                long close = city.getEntities((Entity) null, fp.getBoundingBox().inflate(Revive.WAVE_MIN - 2), e -> e.entityTags().contains("ez.wave") || e.entityTags().contains("ez.newai")).size();
-                check("extracting draws a wave of raiders, well away from the player", Revive.waves > before && !w.isEmpty() && close == 0,
-                        w.size() + " placed, " + close + " within " + (int) (Revive.WAVE_MIN - 2) + " blocks");
+                long left = city.getEntities((Entity) null, fp.getBoundingBox().inflate(6), e -> e.entityTags().contains("ez.newai")).size();
+                check("extracting draws a wave of raiders, well away from the player", Revive.waves > before && !w.isEmpty() && left == 0 && Revive.lastNearest >= Revive.WAVE_MIN - 2,
+                        w.size() + " placed, nearest placed " + Math.round(Revive.lastNearest) + " blocks out, " + left + " left at the player");
                 w.forEach(Entity::discard);
                 city.getEntities((Entity) null, fp.getBoundingBox().inflate(6), e -> e.entityTags().contains("ez.newai")).forEach(Entity::discard);
             });

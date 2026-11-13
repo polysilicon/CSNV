@@ -268,7 +268,8 @@ final class Revive {
     /** A wave summoned but not placed yet: run from a datapack function, the summons only happen after that function ends. */
     record Pending(UUID player, boolean big, int tier, net.minecraft.world.phys.Vec3 at, long tick) {}
     static final List<Pending> PENDING = new ArrayList<>();
-    static ServerPlayer testPlayer;   // the self-test's fake raider, for /ezhook wavetest
+    static ServerPlayer testPlayer;
+    static double lastNearest = -1;   // where the last wave's closest raider was placed (self-test)   // the self-test's fake raider, for /ezhook wavetest
 
     static int wave(ServerPlayer p, boolean big) {
         if (!p.level().dimension().equals(Zone.CITY)) return 0;
@@ -318,7 +319,7 @@ final class Revive {
             near = Math.min(near, Math.sqrt(spot.distToCenterSqr(c)));
             placed++;
         }
-        waves++;
+        waves++; lastNearest = placed > 0 ? near : -1;
         if (p != null) for (ServerPlayer o : lvl.players()) {
             if (!Raid.raiding(o) || o.distanceTo(p) > 48) continue;
             o.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket(t(w.big() ? "INCOMING" : "MORE INCOMING", ChatFormatting.RED, ChatFormatting.BOLD)));
