@@ -80,7 +80,11 @@ final class Ui {
         @Override public ItemStack quickMoveStack(Player player, int slot) { return ItemStack.EMPTY; }
     }
 
+    /** The title of the last menu each player was sent (SelfTest checks a click opened the right one). */
+    static final Map<java.util.UUID, String> LAST = new HashMap<>();
+
     static void open(ServerPlayer p, Component title, int rows, Consumer<Menu> filler) {
+        LAST.put(p.getUUID(), title.getString());
         SimpleContainer box = new SimpleContainer(rows * 9);
         p.openMenu(new SimpleMenuProvider((id, inv, pl) -> new Menu(id, inv, box, rows, filler), title));
     }

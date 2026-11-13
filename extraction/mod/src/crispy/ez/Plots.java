@@ -64,7 +64,34 @@ final class Plots {
     static String shell(Plot p) { return p.style == null ? FINISHES.get(0).block() : p.style; }
     // the camp's bunker entrance (datapack camp: an interaction tagged ez.bunkerdoor at the bottom of its steps);
     // coming up from a bunker puts you outside it
-    static final String CAMP_EXIT = "12.5 64 10.5 180 0";
+    static final double[] CAMP_EXIT = {12.5, 64, 10.5, 180};   // outside the camp's bunker blockhouse, facing camp
+    static final double[] CAMP_SPAWN = {0.5, 64, 6.5, 180};
+    static final int DOOR_X = 12, DOOR_Z = 16;                  // the blockhouse's iron door (lower half at y 62)
+
+    /** Move a player within camp (bunkers are in the camp dimension too): a direct teleport, no command. */
+    static void move(ServerPlayer pl, double x, double y, double z, float yaw) {
+        ServerLevel camp = pl.level().getServer().getLevel(CAMP);
+        if (camp != null) pl.teleportTo(camp, x, y, z, java.util.Set.of(), yaw, 0f, true);
+    }
+    /** The exit hatch at the top of every bunker's stairwell (iron trapdoor at FLOOR + 9 in the camp dimension). */
+    static boolean isHatch(Level w, BlockPos pos, net.minecraft.world.level.block.state.BlockState st) {
+        return w.dimension().equals(CAMP) && pos.getY() == FLOOR + 9 && st.is(net.minecraft.world.level.block.Blocks.IRON_TRAPDOOR);
+    }
+    /** The camp blockhouse's heavy door. */
+    static boolean isCampDoor(Level w, BlockPos pos, net.minecraft.world.level.block.state.BlockState st) {
+        return w.dimension().equals(CAMP) && pos.getX() == DOOR_X && pos.getZ() == DOOR_Z && (pos.getY() == 62 || pos.getY() == 63)
+                && st.is(net.minecraft.world.level.block.Blocks.IRON_DOOR);
+    }
+    static void exitToCamp(ServerPlayer sp) {
+        move(sp, CAMP_EXIT[0], CAMP_EXIT[1], CAMP_EXIT[2], (float) CAMP_EXIT[3]);
+        Ui.sound(sp, net.minecraft.sounds.SoundEvents.IRON_TRAPDOOR_OPEN, 1f, 0.8f);
+    }
+    static void enterBunker(ServerPlayer sp) {
+        Plot p = of(sp);
+        if (p == null) { Trace.d(sp, "no bunker yet: claim menu"); menu(sp); return; }
+        tp(sp, p);
+        Ui.sound(sp, net.minecraft.sounds.SoundEvents.IRON_DOOR_CLOSE, 1f, 0.8f);
+    }
     static final int OLD_FLOOR = 63;   // where plots were before 1.3.0
     static final int[] SIZES = {16, 24, 32};
     static final int[] COST = {0, 150, 400};
@@ -189,7 +216,7 @@ final class Plots {
         run(s, inCamp(String.format("setblock %d %d %d minecraft:sea_lantern", x, FLOOR + 9, z0 - 5)));
         run(s, inCamp(String.format(f, x - 1, FLOOR + 9, sz0 + 1, x + 1, FLOOR + 9, sz0 + 2, "minecraft:iron_trapdoor[half=top,open=false]")));  // the hatch
         run(s, inCamp(String.format("kill @e[tag=ez.bunkerexit,x=%d,y=%d,z=%d,distance=..3]", x, FLOOR + 6, sz0 + 2)));
-        run(s, inCamp(String.format("summon minecraft:interaction %d.5 %d %d.0 {Tags:[\"ez.bunkerexit\",\"ez.deco\"],width:3.0f,height:3.0f,response:true}", x, FLOOR + 6, sz0 + 2)));
+        run(s, inCamp(String.format("summon minecraft:interaction %d.5 %d %d.0 {Tags:[\"ez.bunkerexit\",\"ez.deco\"],width:3.0f,height:4.2f,response:true}", x, FLOOR + 6, sz0 + 2)));
         run(s, inCamp(String.format("summon minecraft:text_display %d.5 %d.5 %d.5 {Tags:[\"ez.bunkerexit\",\"ez.deco\"],billboard:\"center\",text:{text:\"▲ UP TO CAMP\\n\",color:\"green\",bold:true,extra:[{text:\"Right-click the hatch\",color:\"gray\",bold:false}]}}", x, FLOOR + 8, sz0 + 2)));
         // the owner's name over the door; the starter crate
         run(s, inCamp(String.format("kill @e[type=minecraft:text_display,tag=ez.plotname,x=%d,y=%d,z=%d,distance=..%d]", x, FLOOR + 5, z, h + 4)));
@@ -221,7 +248,7 @@ final class Plots {
 
     static boolean raiding(ServerPlayer pl) { return pl.entityTags().contains("ez.raid"); }
     static void tp(ServerPlayer pl, Plot p) {
-        run(pl.level().getServer(), inCamp(String.format("tp %s %d.5 %d %d.5 180 0", pl.getGameProfile().name(), cx(p.index), FLOOR + 1, cz(p.index) + half(p) - 3)));
+        move(pl, cx(p.index) + 0.5, FLOOR + 1, cz(p.index) + half(p) - 2.5, 180f);
     }
 
     static void menu(ServerPlayer pl) {
@@ -323,6 +350,17 @@ final class Plots {
         PlayerBlockBreakEvents.BEFORE.register((world, pl, pos, state, be) -> campAllowed(pl, world, pos));
         AttackBlockCallback.EVENT.register((pl, world, hand, pos, dir) -> campAllowed(pl, world, pos) ? InteractionResult.PASS : InteractionResult.FAIL);
         UseBlockCallback.EVENT.register((pl, world, hand, hit) -> {
+            // 1.5.0: the hatch and the blockhouse door are the triggers themselves (the boxes around them are a backup)
+            if (pl instanceof ServerPlayer sp && world.dimension().equals(CAMP)) {
+                var st = world.getBlockState(hit.getBlockPos());
+                boolean hatch = isHatch(world, hit.getBlockPos(), st), door = isCampDoor(world, hit.getBlockPos(), st);
+                if (hatch || door) {
+                    if (hand != net.minecraft.world.InteractionHand.MAIN_HAND) return InteractionResult.SUCCESS;
+                    if (hatch) { Trace.d(sp, "exit hatch block -> camp"); exitToCamp(sp); }
+                    else { Trace.d(sp, "blockhouse door block -> bunker"); enterBunker(sp); }
+                    return InteractionResult.SUCCESS;
+                }
+            }
             if (!world.dimension().equals(CAMP) || pl.isCreative()) return InteractionResult.PASS;
             ItemStack held = pl.getItemInHand(hand);
             if (BANNED.contains(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(held.getItem()).toString())) return InteractionResult.FAIL;
@@ -337,17 +375,11 @@ final class Plots {
         AttackEntityCallback.EVENT.register((pl, world, hand, e, hit) -> decoAllowed(pl, world, e) ? InteractionResult.PASS : InteractionResult.FAIL);
         UseEntityCallback.EVENT.register((pl, world, hand, e, hit) -> {
             for (String tag : e.entityTags()) if (tag.startsWith("ez.shop.")) return InteractionResult.PASS;   // traders: Shops handles them
-            if (pl instanceof ServerPlayer sp && hand == net.minecraft.world.InteractionHand.MAIN_HAND) {   // 1.4.0 the bunker doors
-                if (e.entityTags().contains("ez.bunkerexit")) {
-                    run(sp.level().getServer(), inCamp("tp " + sp.getGameProfile().name() + " " + CAMP_EXIT));
-                    Ui.sound(sp, net.minecraft.sounds.SoundEvents.IRON_TRAPDOOR_OPEN, 1f, 0.8f);
-                    return InteractionResult.SUCCESS;
-                }
-                if (e.entityTags().contains("ez.bunkerdoor")) {
-                    Plot p = of(sp);
-                    if (p == null) menu(sp); else { tp(sp, p); Ui.sound(sp, net.minecraft.sounds.SoundEvents.IRON_DOOR_CLOSE, 1f, 0.8f); }
-                    return InteractionResult.SUCCESS;
-                }
+            if (pl instanceof ServerPlayer sp && (e.entityTags().contains("ez.bunkerexit") || e.entityTags().contains("ez.bunkerdoor"))) {
+                if (hand != net.minecraft.world.InteractionHand.MAIN_HAND) return InteractionResult.SUCCESS;
+                if (e.entityTags().contains("ez.bunkerexit")) { Trace.d(sp, "exit hatch box -> camp"); exitToCamp(sp); }
+                else { Trace.d(sp, "blockhouse door box -> bunker"); enterBunker(sp); }
+                return InteractionResult.SUCCESS;
             }
             return decoAllowed(pl, world, e) ? InteractionResult.PASS : InteractionResult.FAIL;
         });
@@ -377,7 +409,7 @@ final class Plots {
                         c.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal("Moved " + plots.size() + " plots into bunkers."), true); return 1; })));
             d.register(Commands.literal("camp").executes(c -> { ServerPlayer pl = c.getSource().getPlayerOrException();
                 if (raiding(pl)) { Shops.no(pl, "Not during a raid: extract first."); return 0; }
-                run(pl.level().getServer(), inCamp("tp " + pl.getGameProfile().name() + " 0.5 64 6.5 180 0")); return 1; }));
+                move(pl, CAMP_SPAWN[0], CAMP_SPAWN[1], CAMP_SPAWN[2], (float) CAMP_SPAWN[3]); return 1; }));
         });
     }
 

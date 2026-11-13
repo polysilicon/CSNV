@@ -5,6 +5,7 @@ import net.fabricmc.api.ModInitializer;
 /** Crispy Extraction Zone: chest-menu traders (Shops), player plots (Plots), the Lost Cities zone and game modes (Zone). */
 public final class EzMod implements ModInitializer {
     @Override public void onInitialize() {
+        Trace.init();        // first: it logs every click before any handler acts on it
         Coins.init();
         Shops.init();
         Plots.init();
@@ -17,5 +18,6 @@ public final class EzMod implements ModInitializer {
         Boss.init();
         Events.init();
         Reset.init();
+        SelfTest.init();
     }
 }
