@@ -11,6 +11,8 @@ public final class EzMod implements ModInitializer {
         Stations.init();      // 1.8.0 bunker crafting stations
         Tools.init();
         Revive.init();        // 1.8.17 downed / revived / finished off, Self-Revive, extraction waves
+        Standin.init();       // 1.8.21 logging out mid-raid leaves a stand-in; the timer keeps going
+        Guide.init();         // 1.8.21 the Field Guide (/guide)
         Interiors.init();     // 1.8.8 stations in the zone are wreckage         // 1.8.0 grappling hook, repair kit, smoke
         Coins.init();
         Shops.init();

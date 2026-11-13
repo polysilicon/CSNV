@@ -296,7 +296,9 @@ final class Revive {
             o.connection.send(new net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket(t("The flare drew " + placed + " raiders: hold the extraction point", ChatFormatting.GRAY)));
             Ui.sound(o, net.minecraft.sounds.SoundEvents.RAID_HORN.value(), 0.6f, 1.2f);
         }
-        Trace.d(p, "extraction wave " + (big ? "1" : "2") + ": " + placed + " raiders (ring " + tier + ")");
+        double near = lvl.getEntities((Entity) null, p.getBoundingBox().inflate(WAVE_MAX + 4), e -> e.entityTags().contains("ez.wave") && fresh.contains(e))
+                .stream().mapToDouble(e -> e.distanceTo(p)).min().orElse(-1);
+        System.out.println("[crispy-extraction] extraction wave " + (big ? 1 : 2) + " for " + p.getScoreboardName() + ": " + placed + "/" + fresh.size() + " raiders, nearest " + Math.round(near) + " blocks");
         return placed;
     }
     static final double WAVE_MIN = 26, WAVE_MAX = 38;

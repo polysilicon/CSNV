@@ -187,6 +187,29 @@ final class SelfTest {
             boolean clear = w.stream().allMatch(e -> e.distanceTo(fp) >= Revive.WAVE_MIN - 2);
             check("extracting draws a wave of raiders, well away from the player", placed > 0 && clear, placed + " placed, " + w.size() + " found, all " + (int) Revive.WAVE_MIN + "+ blocks out " + clear);
             w.forEach(Entity::discard);
+            // 1.8.21: logging out mid-raid leaves a stand-in that only players can kill; killed, the gear drops
+            fp.getInventory().clearContent(); fp.getInventory().setItem(0, new ItemStack(Items.BREAD, 3));
+            Plots.run(server, "scoreboard players set ezrevive ez.time 300");
+            Standin.leave(server, fp);
+            Standin.Rec rec = Standin.RECS.get(fp.getUUID().toString());
+            Entity sm = rec == null || rec.entity == null ? null : city.getEntity(java.util.UUID.fromString(rec.entity));
+            check("logging out mid-raid leaves a stand-in with the timer running", sm instanceof net.minecraft.world.entity.LivingEntity && rec.deadline > System.currentTimeMillis() + 290_000,
+                    "record " + (rec != null) + ", entity " + sm);
+            if (sm instanceof net.minecraft.world.entity.LivingEntity le) {
+                boolean zoneHurts = dmgEv.allowDamage(le, le.damageSources().generic(), 5f);
+                le.invulnerableTime = 0;
+                le.hurtServer(city, le.damageSources().playerAttack(other), 1000f);
+                long bread = city.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, le.getBoundingBox().inflate(3), ie -> ie.getItem().is(Items.BREAD)).size();
+                check("only players can kill a stand-in, and its gear drops", !zoneHurts && "killed".equals(rec.state) && bread > 0, "zone damage " + zoneHurts + ", state " + rec.state + ", dropped " + bread);
+                for (Entity e : city.getEntities((Entity) null, le.getBoundingBox().inflate(4), e -> e instanceof net.minecraft.world.entity.item.ItemEntity)) e.discard();
+                Standin.back(server, fp);
+                check("back after the stand-in died: gear gone", fp.getInventory().isEmpty() && !Standin.RECS.containsKey(fp.getUUID().toString()), "inventory empty " + fp.getInventory().isEmpty());
+                if (le.isAlive()) le.discard();
+            }
+            Standin.RECS.remove(fp.getUUID().toString()); Standin.save();
+            var gb = Guide.book().get(net.minecraft.core.component.DataComponents.WRITTEN_BOOK_CONTENT);
+            check("the Field Guide has all its pages", gb != null && gb.pages().size() == Guide.PAGES.length, gb == null ? "no content" : gb.pages().size() + " pages");
+            Plots.run(server, "scoreboard players reset ezrevive ez.time");
         } finally {
             Revive.clear(fp); fp.removeTag("ez.raid"); fp.getInventory().clearContent(); Revive.DOWN.remove(fp.getUUID()); Revive.UP_AT.remove(fp.getUUID());
         }

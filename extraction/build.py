@@ -391,6 +391,7 @@ RINGS = {1: ([("infected", 30), ("runner", 15), ("scav", 25), ("bandit", 15), ("
 GUNNERS = {"bandit": (3, 30, 0.5), "rifle": (4, 38, 0.4), "boss": (5, 12, 0.35), "sniper": (8, 60, 0.3), "heavy": (3, 8, 0.6), "shotgun": (6, 22, 0.4)}   # 1.8.5: less accurate
 FAR, FAR_MISS = 16, 0.2   # beyond FAR blocks every gunner but the sniper misses FAR_MISS more often   # damage, ticks between shots, miss chance
 SNIPER_RANGE = 48
+NO_SPAWN_NEAR = 24   # 1.8.21: a spawn point waits while a raiding player is this close
 SHOTGUN_RANGE = 14
 AI_RANGE = 28
 
@@ -864,6 +865,8 @@ def build(out):
     fn("spawner/run", [   # as a spawner marker (ez score = cap; ez.ring<n> or, before 1.8.0, ez.sp_<type>): top up to the cap
         # 1.8.14: the cap comes from the ring every time, so changing RINGS reaches spawn points that already exist
         *[f"execute if entity @s[tag=ez.ring{r}] run scoreboard players set @s ez {cap}" for r, (_, cap) in RINGS.items()],
+        # 1.8.21: never pop raiders in right next to someone (a street spawn point by an extraction point did, mid-extraction)
+        f"execute if entity @a[tag=ez.raid,gamemode=!spectator,distance=..{NO_SPAWN_NEAR}] run return 0",
         "execute store result score #n ez if entity @e[tag=ez.ai,distance=..48]",
         "execute if score #n ez >= @s ez run return 0",
         *[f"execute if entity @s[tag=ez.ring{r}] run return run function {NS}:spawner/ring_then {{r:{r}}}" for r in RINGS],
