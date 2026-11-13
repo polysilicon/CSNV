@@ -206,11 +206,15 @@ def gentry(k, w_): return {"type": "minecraft:loot_table", "value": f"pvp:abilit
 # Stations are vanilla blocks with no vanilla use left (recipes are filtered out); in your own bunker the mod opens a
 # station menu instead (mod Stations.java). Inputs are matched exactly: "ez:<key>" is one of our items, anything else
 # a vanilla item id (farm produce and the Builder's basics). Timed recipes (Kiln, Still) run while you're away.
-CLOTH = item("minecraft:rabbit_hide", "Cloth", "white", "cloth", ["Woven from wheat at a Sewing Table."])
-SALTPETER = item("minecraft:white_dye", "Saltpeter", "white", "saltpeter", ["Leached from crop waste in a Kiln."])
-PROPELLANT = item("minecraft:gunpowder", "Propellant", "dark_gray", "propellant", ["Saltpeter and charcoal: for ammo and smoke."])
-HERB = item("minecraft:green_dye", "Herbal Extract", "green", "herb", ["Pressed from sweet berries at a Med Bench."])
-MOONSHINE = item("minecraft:potion", "Moonshine", "gold", "moonshine", ["The Broker pays well for it.", "Or drink it: a little healing, a lot of wobble."],
+CLOTH = item("minecraft:rabbit_hide", "Cloth", "white", "cloth", ["Woven from wheat at a Sewing Table.", "For bandages, ladders, parachutes,", "Ghillie and Patrol armour, smoke",
+                                                                 "grenades, repair kits and hooks."])
+SALTPETER = item("minecraft:white_dye", "Saltpeter", "white", "saltpeter", ["Made in a Kiln from wheat and potatoes.", "Reloading Bench: with 2 Charcoal it",
+                                                                           "makes Propellant (ammo, smoke)."])
+PROPELLANT = item("minecraft:gunpowder", "Propellant", "dark_gray", "propellant", ["Made at the Reloading Bench.", "With Copper Wire: 24 rounds of ammo.",
+                                                                               "With Cloth and Scrap: smoke grenades."])
+HERB = item("minecraft:green_dye", "Herbal Extract", "green", "herb", ["Pressed from sweet berries at a Med Bench.", "Med Bench: with 2 Bandages and",
+                                                                     "Painkillers it makes a Medkit."])
+MOONSHINE = item("minecraft:potion", "Moonshine", "gold", "moonshine", ["The Broker pays 8 each (24 a week,", "then 2). Or drink it: a little", "healing, a lot of wobble."],
                  {"minecraft:max_stack_size": 16, "minecraft:potion_contents": {"custom_color": 0xE0C070, "custom_effects": [
                      {"id": "minecraft:regeneration", "amplifier": 0, "duration": 100}, {"id": "minecraft:nausea", "amplifier": 0, "duration": 200}]},
                   "minecraft:tooltip_display": {"hidden_components": ["minecraft:potion_contents"]}})
@@ -248,7 +252,8 @@ STATIONS = {
         rcp("herb", HERB, 1, [(mc("sweet_berries"), 4)]),
         rcp("medkit", MEDKIT, 1, [(ez("bandage"), 2), (ez("pills"), 1), (ez("herb"), 1)], perk_double="med")]},
     "kiln": {"block": mc("blast_furnace"), "title": "Kiln", "price": 40, "recipes": [
-        rcp("charcoal", {"id": mc("charcoal"), "components": {}}, 4, [(mc("oak_log"), 2)], 60),
+        rcp("charcoal", {"id": mc("charcoal"), "components": {"minecraft:lore": lore("Made in a Kiln from oak logs.", "Reloading Bench: 2 with a Saltpeter",
+                                                                                     "make Propellant (ammo, smoke).")}}, 4, [(mc("oak_log"), 2)], 60),
         rcp("saltpeter", SALTPETER, 2, [(mc("wheat"), 2), (mc("potato"), 2)], 120),
         rcp("ration", RATION, 2, [(mc("brown_mushroom"), 2), (mc("red_mushroom"), 1)], 60)]},
     "reload": {"block": mc("fletching_table"), "title": "Reloading Bench", "price": 50, "recipes": [
@@ -406,7 +411,7 @@ SHOPS = {
     "quartermaster": {"title": "Quartermaster", "buy": [buy(AMMO, 4, 16), buy(BANDAGE, 3, 2), buy(MEDKIT, 8), gbuy("pistol", 20), gbuy("m1911", 35),
                       gbuy("mp40", 60), gbuy("stakeout", 70), gbuy("stg44", 110), *abuy("scav", (3, 5, 4, 2)), *abuy("patrol", (14, 24, 20, 12)),
                       *abuy("ghillie", (16, 26, 22, 12)), *abuy("hazmat", (16, 26, 22, 12)), vbuy("minecraft:cooked_beef", 2, 8), vbuy("minecraft:golden_apple", 25)], "sell": []},
-    "fence": {"title": "The Broker", "buy": [], "sell": sells() + [{"key": "moonshine", "item": sn(stack(MOONSHINE)), "price": 3, "cap": 32, "after": 1}]},
+    "fence": {"title": "The Broker", "buy": [], "sell": sells() + [{"key": "moonshine", "item": sn(stack(MOONSHINE)), "price": 8, "cap": 24, "after": 2}]},
     "builder": {"title": "Builder", "buy": [buy(STASH, 25), vbuy("minecraft:oak_planks", 6, 32),
                 vbuy("minecraft:spruce_planks", 6, 32), vbuy("minecraft:stone_bricks", 6, 32), vbuy("minecraft:bricks", 8, 32),
                 vbuy("minecraft:deepslate_tiles", 8, 32), vbuy("minecraft:smooth_quartz", 10, 32), vbuy("minecraft:glass", 6, 16),
