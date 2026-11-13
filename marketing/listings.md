@@ -1,5 +1,7 @@
 # Server-list copy (all 7 vote sites)
 
+Per-mode listings (Anarchy and Skyblock on their own, with their own addresses and banners): see `listings-modes.md`.
+
 Paste the same copy everywhere, so the network looks the same wherever people find it. Every claim below was checked
 against the live servers on 2026-11-08 (Factions replaced by Extraction Zone on 2026-11-12); if a feature changes, update this file first, then the listings.
 
