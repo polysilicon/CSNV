@@ -237,7 +237,7 @@ final class Plots {
             for (int jx : new int[]{x - 2, x + 2})
                 run(s, inCamp(String.format("setblock %d %d %d %s", jx, y, z0, (y - FLOOR) % 2 == 1 ? "minecraft:yellow_concrete" : "minecraft:black_concrete")));
         run(s, inCamp(String.format(f, x - 1, FLOOR + 1, z0 - 1, x + 1, FLOOR + 3, z0 - 1, "minecraft:air")));        // 3 wide x 3 high
-        run(s, inCamp(String.format(f, x - 1, FLOOR + 5, z0 - 1, x + 1, FLOOR + 7, z0 - 1, shell)));   // 1.6.3 the wall above the door, up to the ceiling (the stairwell cut left it open)
+        run(s, inCamp(String.format(f, x - 1, FLOOR + 5, z0 - 1, x + 1, FLOOR + 9, z0 - 1, shell)));   // 1.6.4 the wall above the door, up to the stairwell's own ceiling (the stairwell cut left it open; 1.6.3 stopped at the room ceiling)
         run(s, inCamp(String.format("setblock %d %d %d minecraft:ochre_froglight", x, FLOOR + 5, z0 - 1)));
         run(s, inCamp(String.format("setblock %d %d %d minecraft:ochre_froglight", x, FLOOR + 9, z0 - 5)));
         run(s, inCamp(String.format("setblock %d %d %d minecraft:ochre_froglight", x - 2, FLOOR + 3, z0 - 3)));   // stairwell: bottom

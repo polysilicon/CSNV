@@ -267,6 +267,9 @@ final class Design {
             dests.add(j);
             SelfTest.check("walk: arrival -> " + d.name + tag, n != null, n == null ? "not reachable" : res[1] + " steps, from " + n.at());
         }
+        BlockPos leak = leak(camp, p);
+        out.addProperty("sealed", leak == null);
+        SelfTest.check("sealed: no opening in the bunker's shell" + tag, leak == null, leak == null ? "" : "air reaches outside from " + leak.toShortString());
         // clearance: the blast door (main entry), the stairwell (3 wide, 2 of headroom over every step), the aisle
         JsonArray doors = new JsonArray(); out.add("doorways", doors);
         int dw = 0, dh = 99;
@@ -280,6 +283,37 @@ final class Design {
         door(doors, "aisle, arrival to door" + tag, 3, aisleMin, 3, 3);
         lighting(out, g, n -> (n.x >= x - 1 && n.x <= x + 1) || ds.stream().anyMatch(d -> d.box.inflate(d.r).contains(n.eye())), "bunker" + tag);
     }
+    /** 1.6.4: air flooded from a bunker's arrival point (through the room, the door, the stairwell) must never reach the
+     *  edge of a box round the bunker; returns the last inside cell before the first leak, or null when it's sealed. */
+    static BlockPos leak(ServerLevel camp, Plots.Plot p) {
+        int x = Plots.cx(p.index), z = Plots.cz(p.index), h = Plots.half(p), F = Plots.FLOOR, x0 = x - h, x1 = x + h - 1, z0 = z - h, z1 = z + h - 1;
+        int bx0 = x0 - 3, bx1 = x1 + 3, by0 = F - 2, by1 = F + 12, bz0 = z0 - 12, bz1 = z1 + 3;
+        ArrayDeque<BlockPos> q = new ArrayDeque<>(); Set<BlockPos> seen = new HashSet<>();
+        BlockPos s0 = BlockPos.containing(x + 0.5, F + 1, z + h - 2.5); q.add(s0); seen.add(s0);
+        int cells = 0;
+        while (!q.isEmpty() && cells < 200000) {
+            BlockPos c = q.poll(); cells++;
+            for (Direction d : Direction.values()) {
+                BlockPos n = c.relative(d);
+                if (seen.contains(n) || !camp.getBlockState(n).isAir()) continue;
+                if (n.getX() <= bx0 || n.getX() >= bx1 || n.getY() <= by0 || n.getY() >= by1 || n.getZ() <= bz0 || n.getZ() >= bz1) return c;
+                seen.add(n); q.add(n);
+            }
+        }
+        return null;
+    }
+    /** Every player's bunker, as it stands. */
+    static void realBunkers(MinecraftServer server, ServerLevel camp) {
+        JsonArray arr = new JsonArray(); report.add("player_bunkers", arr);
+        for (Plots.Plot p : Plots.plots.values()) {
+            if (p.name == null || p.name.equals(SelfTest.PROFILE.name())) continue;
+            Plots.loadArea(server, Plots.cx(p.index) - 30, Plots.cz(p.index) - 40, Plots.cx(p.index) + 30, Plots.cz(p.index) + 30);
+            BlockPos l = leak(camp, p);
+            JsonObject j = new JsonObject(); j.addProperty("index", p.index); j.addProperty("sealed", l == null); arr.add(j);
+            SelfTest.check("sealed: player bunker #" + p.index, l == null, l == null ? "" : "air reaches outside from " + l.toShortString());
+        }
+    }
+
     static void door(JsonArray doors, String name, int w, int h, int needW, int needH) {
         boolean ok = w >= needW && h >= needH;
         JsonObject j = new JsonObject(); j.addProperty("name", name); j.addProperty("width", w); j.addProperty("headroom", h);
