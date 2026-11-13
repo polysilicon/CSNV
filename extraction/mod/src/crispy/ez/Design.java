@@ -378,7 +378,7 @@ final class Design {
         Stations.BY_BLOCK.clear(); Stations.load(server);
         int recipes = Stations.BY_BLOCK.values().stream().mapToInt(s -> s.recipes().size()).sum();
         out.addProperty("stations", Stations.BY_BLOCK.size()); out.addProperty("station_recipes", recipes);
-        SelfTest.check("crafting: 6 stations load", Stations.BY_BLOCK.size() == 6, Stations.BY_BLOCK.size() + " stations, " + recipes + " recipes");
+        SelfTest.check("crafting: 7 stations load", Stations.BY_BLOCK.size() == 7, Stations.BY_BLOCK.size() + " stations, " + recipes + " recipes");
         // every input is something that exists: one of our items (made somewhere, sold, or a valuable) or a vanilla item
         java.util.Set<String> ezKeys = new java.util.HashSet<>(List.of("bandage", "pills", "scrap", "wire", "medkit", "ammo"));
         for (var s : Stations.BY_BLOCK.values()) for (var r : s.recipes()) { String k = Shops.ezKey(r.out()); if (k != null) ezKeys.add(k); }

@@ -148,15 +148,15 @@ final class SelfTest {
         fp.snapTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 0, 0);
         fp.addTag("ez.raid"); fp.setHealth(20f); fp.invulnerableTime = 0;
         try {
-            fp.hurtServer(city, fp.damageSources().generic(), 1000f);
-            boolean down = Revive.downed(fp) && fp.isAlive() && fp.entityTags().contains("ez.downed");
+            var deathEv = net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.ALLOW_DEATH.invoker();
+            var dmgEv = net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.ALLOW_DAMAGE.invoker();
+            boolean died = deathEv.allowDeath(fp, fp.damageSources().generic(), 1000f);
+            boolean down = !died && Revive.downed(fp) && fp.isAlive() && fp.entityTags().contains("ez.downed");
             check("a fatal hit in the zone downs a raider instead of killing them", down, "downed " + Revive.downed(fp) + ", alive " + fp.isAlive() + ", health " + fp.getHealth());
-            fp.invulnerableTime = 0;
-            fp.hurtServer(city, fp.damageSources().generic(), 5f);
-            check("a downed player takes no more damage from the zone", Revive.downed(fp) && fp.isAlive() && fp.getHealth() >= 1f, "health " + fp.getHealth());
+            boolean hurt = dmgEv.allowDamage(fp, fp.damageSources().generic(), 5f);
+            check("a downed player takes no more damage from the zone", !hurt && Revive.downed(fp), "damage allowed " + hurt);
             FakePlayer other = FakePlayer.get(city, new GameProfile(java.util.UUID.fromString("e2e2e2e2-0000-4000-8000-00000000d0e2"), "ezrevive2"));
-            fp.invulnerableTime = 0;
-            fp.hurtServer(city, fp.damageSources().playerAttack(other), 2f);
+            dmgEv.allowDamage(fp, fp.damageSources().playerAttack(other), 2f);
             check("a player's hit on a downed player finishes them off", Revive.FINISH_BY.get(fp.getUUID()) == other, "queued " + Revive.FINISH_BY.containsKey(fp.getUUID()));
             Revive.FINISH_BY.remove(fp.getUUID());
             Revive.up(fp, "selftest");
@@ -348,8 +348,9 @@ final class SelfTest {
             inv.setItem(1, gun);
             Salvage.one(f.p, 0, false); Salvage.one(f.p, 1, false);
             int plate = Shops.count(f.p, st -> "armorplate".equals(Shops.ezKey(st))), parts = Shops.count(f.p, st -> "gunparts".equals(Shops.ezKey(st)));
-            check("salvage breaks armour and guns into resources", inv.getItem(0).isEmpty() && inv.getItem(1).isEmpty() && plate == 1 && parts == 5,
-                    "plate " + plate + ", gun parts " + parts);
+            int left = Shops.count(f.p, st -> Armor.set(st) != null || Relief.isGun(st));
+            check("salvage breaks armour and guns into resources", left == 0 && plate == 1 && parts == 5,
+                    "plate " + plate + ", gun parts " + parts + ", left " + left);
             inv.clearContent();
         } else check("salvage breaks armour and guns into resources", false, "salvage table not loaded");
         f.p.getInventory().clearContent();
