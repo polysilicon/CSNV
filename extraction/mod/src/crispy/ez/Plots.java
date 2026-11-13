@@ -100,7 +100,8 @@ final class Plots {
     static final Set<String> BANNED = Set.of("minecraft:lava_bucket", "minecraft:flint_and_steel", "minecraft:fire_charge", "minecraft:tnt",
             "minecraft:end_crystal", "minecraft:ender_pearl", "minecraft:wither_skeleton_skull", "minecraft:respawn_anchor");
 
-    static final class Plot { int index; int level; String name; java.util.List<String> perks = new java.util.ArrayList<>(); String style; }
+    static final class Plot { int index; int level; String name; java.util.List<String> perks = new java.util.ArrayList<>(); String style;
+        java.util.List<Stations.Job> jobs = new java.util.ArrayList<>(); }   // 1.8.0 timed station jobs (Kiln, Still)
     /** Stash upgrades with an effect (1.1.0): key, name, icon block placed on the plot, cost, what it does. */
     record Perk(String key, String name, net.minecraft.world.item.Item icon, String block, int cost, List<String> lines) {}
     static final List<Perk> PERKS = List.of(

@@ -52,14 +52,19 @@ final class Zone {
     static final int HALF = 400;            // the zone: CX/CZ +- HALF in the city dimension
     static final Deque<long[]> QUEUE = new ArrayDeque<>();   // {x, y, z, kind 0 crate 1 spawner}
     static final Random RNG = new Random();
-    static final float CRATE_CHANCE = 0.85f, SPAWNER_CHANCE = 0.35f, STREET_SPAWN_CHANCE = 0.12f;
+    static final float CRATE_CHANCE = 0.85f, SPAWNER_CHANCE = 0.5f, STREET_SPAWN_CHANCE = 0.2f;   // 1.8.0: livelier
     static final java.util.Queue<Entity> PURGE = new java.util.concurrent.ConcurrentLinkedQueue<>();
     static final int GROUND = 71;           // the profile's groundLevel: outside city chunks nobody digs below it
 
+    /** 1.8.0: four rings, the Core at the centre: the deeper in, the better the loot and the harder the raiders. */
+    static final int[] RING_R = {80, 170, 290};          // the Core, inner, middle; outer beyond
+    static final int[] RING_CAP = {0, 2, 3, 4, 5};       // raiders a spawn point keeps around it, by ring
+    static final String[] RING_NAME = {"", "the outskirts", "the middle ring", "the inner ring", "the Core"};
     static int tier(int x, int z) {
         double d = Math.hypot(x - CX, z - CZ);
-        return d < 140 ? 3 : d < 280 ? 2 : 1;
+        return d < RING_R[0] ? 4 : d < RING_R[1] ? 3 : d < RING_R[2] ? 2 : 1;
     }
+    static final java.util.Queue<java.util.UUID> MIGRATE = new java.util.concurrent.ConcurrentLinkedQueue<>();
 
     static void init() {
         ServerChunkEvents.CHUNK_LOAD.register((level, chunk, generated) -> {
@@ -90,6 +95,9 @@ final class Zone {
         });
         // no vanilla mobs in the zone or camp: only our raiders (tagged ez.*) and traders
         ServerEntityEvents.ENTITY_LOAD.register((e, level) -> {
+            // 1.8.0: crates and spawn points from before the rings get their ring as they load
+            if (e instanceof net.minecraft.world.entity.Marker && level.dimension().equals(CITY) && !e.entityTags().contains("ez.v18")
+                    && (e.entityTags().contains("ez.crate") || e.entityTags().contains("ez.spawner"))) MIGRATE.add(e.getUUID());
             if (e instanceof Mob && (level.dimension().equals(CITY) || level.dimension().equals(Plots.CAMP))
                     && e.entityTags().stream().noneMatch(t -> t.startsWith("ez."))) PURGE.add(e);
         });
@@ -102,6 +110,21 @@ final class Zone {
         });
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             for (Entity e; (e = PURGE.poll()) != null; ) if (!e.isRemoved()) e.discard();
+            ServerLevel city = server.getLevel(CITY);
+            for (java.util.UUID id; city != null && (id = MIGRATE.poll()) != null; ) {
+                Entity m = city.getEntity(id);
+                if (m == null || m.entityTags().contains("ez.v18")) continue;
+                int t = tier(m.getBlockX(), m.getBlockZ());
+                var sb = server.getScoreboard(); var obj = sb.getObjective("ez");
+                if (obj == null) continue;
+                if (m.entityTags().contains("ez.crate")) sb.getOrCreatePlayerScore(m, obj).set(t);
+                else {
+                    for (String tg : new ArrayList<>(m.entityTags())) if (tg.startsWith("ez.sp_") || tg.startsWith("ez.ring")) m.removeTag(tg);
+                    m.addTag("ez.ring" + t);
+                    sb.getOrCreatePlayerScore(m, obj).set(RING_CAP[t]);
+                }
+                m.addTag("ez.v18");
+            }
             for (int n = 0; n < 40 && !QUEUE.isEmpty(); n++) {
                 long[] q = QUEUE.poll();
                 int x = (int) q[0], y = (int) q[1], z = (int) q[2], t = tier(x, z);
@@ -112,17 +135,15 @@ final class Zone {
                     Plots.run(server, "scoreboard players set @e[type=minecraft:marker,tag=ez.new] ez.ct 0");
                     Plots.run(server, "tag @e[tag=ez.new] remove ez.new");
                 } else if (q[3] == 3) {
-                    String type = t == 3 ? "raider" : t == 2 ? "bandit" : (RNG.nextFloat() < 0.6f ? "bandit" : "infected");
-                    Plots.run(server, at + "unless entity @e[type=minecraft:marker,tag=ez.spawner,distance=..24] run summon minecraft:marker ~0.5 ~ ~0.5 {Tags:[\"ez.spawner\",\"ez.nospread\",\"ez.street\",\"ez.sp_" + type + "\",\"ez.new\"]}");
-                    Plots.run(server, "scoreboard players set @e[type=minecraft:marker,tag=ez.new] ez 3");
+                    Plots.run(server, at + "unless entity @e[type=minecraft:marker,tag=ez.spawner,distance=..24] run summon minecraft:marker ~0.5 ~ ~0.5 {Tags:[\"ez.spawner\",\"ez.nospread\",\"ez.street\",\"ez.ring" + t + "\",\"ez.new\"]}");
+                    Plots.run(server, "scoreboard players set @e[type=minecraft:marker,tag=ez.new] ez " + RING_CAP[t]);
                     Plots.run(server, "tag @e[tag=ez.new] remove ez.new");
                 } else if (q[3] == 2) {
                     Plots.run(server, at + "run setblock ~ ~ ~ minecraft:air");
                 } else {
-                    String type = t == 3 ? "raider" : t == 2 ? "bandit" : (RNG.nextFloat() < 0.6f ? "bandit" : "infected");
                     Plots.run(server, at + "run setblock ~ ~ ~ minecraft:air");
-                    Plots.run(server, at + "unless entity @e[type=minecraft:marker,tag=ez.spawner,distance=..2] run summon minecraft:marker ~0.5 ~ ~0.5 {Tags:[\"ez.spawner\",\"ez.nospread\",\"ez.sp_" + type + "\",\"ez.new\"]}");
-                    Plots.run(server, "scoreboard players set @e[type=minecraft:marker,tag=ez.new] ez 2");
+                    Plots.run(server, at + "unless entity @e[type=minecraft:marker,tag=ez.spawner,distance=..2] run summon minecraft:marker ~0.5 ~ ~0.5 {Tags:[\"ez.spawner\",\"ez.nospread\",\"ez.ring" + t + "\",\"ez.new\"]}");
+                    Plots.run(server, "scoreboard players set @e[type=minecraft:marker,tag=ez.new] ez " + RING_CAP[t]);
                     Plots.run(server, "tag @e[tag=ez.new] remove ez.new");
                 }
             }

@@ -42,7 +42,7 @@ final class Shops {
 
     static final Path FILE = Path.of("config", "crispy_extraction", "shops.json");
     record Buy(ItemStack item, int price) {}
-    record Sell(String key, ItemStack icon, int price) {}
+    record Sell(String key, ItemStack icon, int price, int cap, int after) {}   // 1.8.0: cap a week at price, then after
     record Shop(String title, List<Buy> buy, List<Sell> sell) {}
 
     static ItemStack credit = ItemStack.EMPTY;
@@ -91,7 +91,8 @@ final class Shops {
                 JsonArray sl = s.getAsJsonArray("sell");
                 if (sl != null) for (JsonElement b : sl) {
                     JsonObject o = b.getAsJsonObject();
-                    sell.add(new Sell(o.get("key").getAsString(), parse(server, o.get("item").getAsString()), o.get("price").getAsInt()));
+                    sell.add(new Sell(o.get("key").getAsString(), parse(server, o.get("item").getAsString()), o.get("price").getAsInt(),
+                            o.has("cap") ? o.get("cap").getAsInt() : 0, o.has("after") ? o.get("after").getAsInt() : 0));
                 }
                 SHOPS.put(e.getKey(), new Shop(s.get("title").getAsString(), buy, sell));
             }
@@ -154,14 +155,19 @@ final class Shops {
     }
 
     // ---------------------------------------------------------------- the menu
-    static void open(ServerPlayer p, String id) {
+    static void open(ServerPlayer p, String id) { open(p, id, 0); }
+    static void open(ServerPlayer p, String id, int page) {
         load(p.level().getServer());
         Shop shop = SHOPS.get(id);
         if (shop == null) { no(p, "This trader has nothing for you right now."); return; }
-        Ui.open(p, t(shop.title, ChatFormatting.DARK_GRAY), 6, m -> {
+        int pages = Math.max(1, (shop.buy.size() + 26) / 27);
+        int pg = Math.max(0, Math.min(page, pages - 1));
+        Ui.open(p, t(shop.title + (pages > 1 ? " (" + (pg + 1) + "/" + pages + ")" : ""), ChatFormatting.DARK_GRAY), 6, m -> {
             m.put(4, balanceIcon(p), null);
-            for (int i = 0; i < shop.buy.size() && i < 27; i++) {
-                Buy b = shop.buy.get(i);
+            if (pg > 0) m.put(45, Ui.item(Items.ARROW, t("◀ Previous page", ChatFormatting.YELLOW), List.of(), false), (pl, c) -> open(pl, id, pg - 1));
+            if (pg < pages - 1) m.put(53, Ui.item(Items.ARROW, t("Next page ▶", ChatFormatting.YELLOW), List.of(), false), (pl, c) -> open(pl, id, pg + 1));
+            for (int i = 0; i < 27 && pg * 27 + i < shop.buy.size(); i++) {
+                Buy b = shop.buy.get(pg * 27 + i);
                 int price = priceFor(p, b);
                 boolean bulk = b.item.getMaxStackSize() > 1;
                 List<Component> lore = new ArrayList<>(b.item.getOrDefault(DataComponents.LORE, net.minecraft.world.item.component.ItemLore.EMPTY).lines());
@@ -178,20 +184,31 @@ final class Shops {
                     ok(pl, "Bought " + (times > 1 ? times + "x " : "") + b.item.getHoverName().getString() + " for " + Coins.fmt(price * times) + ".");
                 });
             }
-            for (int i = 0; i < shop.sell.size() && i < 9; i++) {
+            // sells: below the buys, or (a trader that only buys from you) the whole menu
+            int first = shop.buy.isEmpty() ? 9 : 36, room = shop.buy.isEmpty() ? 27 : 9;
+            for (int i = 0; i < shop.sell.size() && i < room; i++) {
                 Sell s = shop.sell.get(i);
                 int have = count(p, st -> s.key.equals(ezKey(st)));
-                m.put(36 + i, Ui.item(s.icon.copyWithCount(Math.max(1, Math.min(64, have))), t("Sell " + s.icon.getHoverName().getString(), ChatFormatting.AQUA),
-                        List.of(t(Coins.fmt(s.price) + " each", ChatFormatting.GOLD), t("You have " + have, ChatFormatting.GRAY), t("Click: sell all of them", ChatFormatting.YELLOW)), false),
+                List<Component> lore = new ArrayList<>(List.of(t(Coins.fmt(s.price) + " each", ChatFormatting.GOLD)));
+                if (s.cap > 0) {
+                    int left = Math.max(0, s.cap - Market.sold(p, s.key));
+                    lore.add(t(left > 0 ? left + " more this week at this price, then " + Coins.fmt(s.after) + " each" : "Weekly limit reached: " + Coins.fmt(s.after) + " each until the reset", left > 0 ? ChatFormatting.GRAY : ChatFormatting.RED));
+                }
+                lore.add(t("You have " + have, ChatFormatting.GRAY)); lore.add(t("Click: sell all of them", ChatFormatting.YELLOW));
+                m.put(first + i, Ui.item(s.icon.copyWithCount(Math.max(1, Math.min(64, have))), t("Sell " + s.icon.getHoverName().getString(), ChatFormatting.AQUA), lore, false),
                         (pl, c) -> {
                             int n = count(pl, st -> s.key.equals(ezKey(st)));
                             if (n == 0) { no(pl, "You don't have any to sell."); return; }
+                            int full = s.cap > 0 ? Math.min(n, Math.max(0, s.cap - Market.sold(pl, s.key))) : n;
+                            int coins = full * s.price + (n - full) * s.after;
                             take(pl, st -> s.key.equals(ezKey(st)), n);
-                            giveCredits(pl, n * s.price);
-                            ok(pl, "Sold " + n + "x " + s.icon.getHoverName().getString() + " for " + Coins.fmt(n * s.price) + ".");
+                            if (s.cap > 0) Market.add(pl, s.key, n);
+                            giveCredits(pl, coins);
+                            ok(pl, "Sold " + n + "x " + s.icon.getHoverName().getString() + " for " + Coins.fmt(coins) + (n > full ? " (" + (n - full) + " past this week's limit)" : "") + ".");
+                            open(pl, id, pg);
                         });
             }
-            if (!shop.sell.isEmpty()) m.put(31, Ui.item(Items.EMERALD, t("↓ Sells to this trader ↓", ChatFormatting.AQUA, ChatFormatting.BOLD),
+            if (!shop.sell.isEmpty() && !shop.buy.isEmpty()) m.put(31, Ui.item(Items.EMERALD, t("↓ Sells to this trader ↓", ChatFormatting.AQUA, ChatFormatting.BOLD),
                     List.of(t("Click an item below to sell all you carry.", ChatFormatting.GRAY)), false), null);
             coinButtons(m);
             m.put(49, Ui.item(Items.BARRIER, t("Close", ChatFormatting.RED), List.of(), false), (pl, c) -> pl.closeContainer());

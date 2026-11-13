@@ -25,7 +25,7 @@ EX_HOLD = 30            # seconds on an extraction point
 EX_R = 4                # its radius
 ZONE_DIM = "lostcities:lostcity"   # The Lost Cities' city dimension (profile "extraction"); the mod turns its chests and spawners into ours
 ZONE = (48, 48, 800, 800)          # x, z, dx, dz: centre 448 448 (the zone map's grid), see the mod's Zone.CX/CZ
-SPAWN_EVERY = 20        # raider spawner check (s)
+SPAWN_EVERY = 15        # raider spawner check (s)
 CRATE_EVERY = 600       # crate refill (s, counted while loaded)
 
 # POIs: key, name, x, z, radius, crate tier, crates, raider type, raider cap
@@ -199,7 +199,74 @@ def aentries(key, w_):   # one loot entry per piece; the chest piece rarer
     return [entry(ARMOR_ITEMS[(key, sl)], max(1, w_ // (2 if sl == "chest" else 1))) for sl, _ in SLOTS]
 def abuy(key, prices): return [buy(ARMOR_ITEMS[(key, sl)], pr) for (sl, _), pr in zip(SLOTS, prices)]
 
+
 def gentry(k, w_): return {"type": "minecraft:loot_table", "value": f"pvp:ability/{k}", "weight": w_}
+
+# ------------------------------------------------------------------ crafting (1.8.0): bunker stations, farming, tools
+# Stations are vanilla blocks with no vanilla use left (recipes are filtered out); in your own bunker the mod opens a
+# station menu instead (mod Stations.java). Inputs are matched exactly: "ez:<key>" is one of our items, anything else
+# a vanilla item id (farm produce and the Builder's basics). Timed recipes (Kiln, Still) run while you're away.
+CLOTH = item("minecraft:rabbit_hide", "Cloth", "white", "cloth", ["Woven from wheat at a Sewing Table."])
+SALTPETER = item("minecraft:white_dye", "Saltpeter", "white", "saltpeter", ["Leached from crop waste in a Kiln."])
+PROPELLANT = item("minecraft:gunpowder", "Propellant", "dark_gray", "propellant", ["Saltpeter and charcoal: for ammo and smoke."])
+HERB = item("minecraft:green_dye", "Herbal Extract", "green", "herb", ["Pressed from sweet berries at a Med Bench."])
+MOONSHINE = item("minecraft:potion", "Moonshine", "gold", "moonshine", ["The Broker pays well for it.", "Or drink it: a little healing, a lot of wobble."],
+                 {"minecraft:max_stack_size": 16, "minecraft:potion_contents": {"custom_color": 0xE0C070, "custom_effects": [
+                     {"id": "minecraft:regeneration", "amplifier": 0, "duration": 100}, {"id": "minecraft:nausea", "amplifier": 0, "duration": 200}]},
+                  "minecraft:tooltip_display": {"hidden_components": ["minecraft:potion_contents"]}})
+RATION = item("minecraft:bread", "Mushroom Ration", "gold", "ration", ["Smoked mushrooms: a filling meal."],
+              {"minecraft:food": {"nutrition": 8, "saturation": 10.0}})
+REPAIRKIT = item("minecraft:flint", "Repair Kit", "aqua", "repairkit", ["Hold right-click: mends the armour you wear", "by half its durability."])
+GRAPPLE = item("minecraft:tripwire_hook", "Grappling Hook", "gold", "grapple", ["Right-click a wall or roof edge up to", "28 blocks away: it pulls you there.", "2 s between shots · 40 uses"],
+               {"minecraft:max_stack_size": 1, "minecraft:max_damage": 40, "minecraft:damage": 0}, bold=True)
+PARACHUTE = item("minecraft:phantom_membrane", "Parachute", "white", "parachute", ["Hold right-click: slow falling for 20 s.", "Step off any roof."],
+                 {"minecraft:max_stack_size": 4, "minecraft:consumable": {"consume_seconds": 0.4, "animation": "none", "sound": "minecraft:item.armor.equip_elytra",
+                  "has_consume_particles": False, "on_consume_effects": [{"type": "minecraft:apply_effects", "effects": [
+                      {"id": "minecraft:slow_falling", "amplifier": 0, "duration": 400}]}]}})
+SMOKE = item("minecraft:snowball", "Smoke Grenade", "gray", "smoke", ["Throw it: a smoke screen for 15 s.", "Raiders can't shoot through smoke."], {"minecraft:max_stack_size": 8})
+HAMMER = item("minecraft:iron_pickaxe", "Breaching Hammer", "gold", "hammer", ["Breaks through walls, doors and floors", "above street level, fast."],
+              {"minecraft:max_damage": 300, "minecraft:tool": {"default_mining_speed": 1.0, "damage_per_block": 1, "rules": [
+                  {"blocks": f"#minecraft:mineable/{t}", "speed": 9.0, "correct_for_drops": True} for t in ("pickaxe", "axe", "shovel")]}})
+LADDER = {"id": "minecraft:ladder", "components": {"minecraft:custom_name": name("Rope Ladder", "gold")}}
+HOE = item("minecraft:wooden_hoe", "Garden Hoe", "gold", "hoe", ["Turns dirt into farmland."])
+def ez(k): return f"ez:{k}"
+def mc(k): return f"minecraft:{k}"
+def rcp(key, out, n, ins, sec=0, **kw):
+    label = out["components"].get("minecraft:custom_name", {}).get("text") or out["id"].split(":")[1].replace("_", " ").title()
+    return {"key": key, "label": label, "out": snbt(stack(out, n)), "n": n, "in": [[m, c] for m, c in ins if c > 0], "seconds": sec, **kw}
+AR = lambda k, sl: ARMOR_ITEMS[(k, sl)]
+STATIONS = {
+    "sewing": {"block": mc("loom"), "title": "Sewing Table", "price": 30, "recipes": [
+        rcp("cloth", CLOTH, 1, [(mc("wheat"), 3)]),
+        rcp("bandage", BANDAGE, 2, [(ez("cloth"), 2)]),
+        rcp("ladder", LADDER, 8, [(ez("cloth"), 2), (mc("oak_planks"), 2)]),
+        rcp("parachute", PARACHUTE, 1, [(ez("cloth"), 4), (ez("wire"), 1)]),
+        *[rcp(f"ghillie_{sl}", AR("ghillie", sl), 1, [(ez("cloth"), c), (mc("wheat"), w)]) for sl, c, w in (("head", 3, 6), ("chest", 6, 12), ("legs", 5, 10), ("feet", 2, 4))],
+        *[rcp(f"patrol_{sl}", AR("patrol", sl), 1, [(ez("cloth"), c), (ez("scrap"), sc), (ez("wire"), w)])
+          for sl, c, sc, w in (("head", 2, 3, 1), ("chest", 5, 4, 2), ("legs", 4, 3, 1), ("feet", 2, 2, 0))]]},
+    "med": {"block": mc("brewing_stand"), "title": "Med Bench", "price": 40, "recipes": [
+        rcp("herb", HERB, 1, [(mc("sweet_berries"), 4)]),
+        rcp("medkit", MEDKIT, 1, [(ez("bandage"), 2), (ez("pills"), 1), (ez("herb"), 1)], perk_double="med")]},
+    "kiln": {"block": mc("blast_furnace"), "title": "Kiln", "price": 40, "recipes": [
+        rcp("charcoal", {"id": mc("charcoal"), "components": {}}, 4, [(mc("oak_log"), 2)], 60),
+        rcp("saltpeter", SALTPETER, 2, [(mc("wheat"), 2), (mc("potato"), 2)], 120),
+        rcp("ration", RATION, 2, [(mc("brown_mushroom"), 2), (mc("red_mushroom"), 1)], 60)]},
+    "reload": {"block": mc("fletching_table"), "title": "Reloading Bench", "price": 50, "recipes": [
+        rcp("propellant", PROPELLANT, 2, [(ez("saltpeter"), 1), (mc("charcoal"), 2)]),
+        rcp("ammo", AMMO, 24, [(ez("wire"), 1), (ez("propellant"), 1)]),
+        rcp("smoke", SMOKE, 2, [(ez("propellant"), 1), (ez("cloth"), 1), (ez("scrap"), 1)])]},
+    "still": {"block": mc("smoker"), "title": "Still", "price": 60, "recipes": [
+        rcp("moonshine", MOONSHINE, 2, [(mc("potato"), 4), (mc("sugar_cane"), 2)], 300)]},
+    "tools": {"block": mc("stonecutter"), "title": "Tool Bench", "price": 50, "recipes": [
+        rcp("grapple", GRAPPLE, 1, [(ez("wire"), 3), (ez("scrap"), 2), (ez("cloth"), 2)]),
+        rcp("hammer", HAMMER, 1, [(ez("scrap"), 4), (mc("oak_log"), 2), (ez("wire"), 1)]),
+        rcp("repairkit", REPAIRKIT, 1, [(ez("cloth"), 1), (ez("scrap"), 1), (ez("wire"), 1)]),
+        rcp("stash", STASH, 1, [(mc("oak_planks"), 8), (ez("scrap"), 2)])]},
+}
+def station_item(k):
+    st = STATIONS[k]
+    labels = list(dict.fromkeys(r["label"].split(" (")[0] for r in st["recipes"]))
+    return item(st["block"], st["title"], "aqua", "station_" + k, ["Place it in your bunker and right-click it.", "Makes: " + ", ".join(labels[:5]) + (", ..." if len(labels) > 5 else "")], bold=True)
 
 TIERS = {
     1: {"rolls": (3, 5), "entries": [entry(AMMO, 30, 4, 12), entry(BANDAGE, 14, 1, 2), entry(CREDIT, 16, 1, 6),
@@ -213,12 +280,22 @@ TIERS = {
          entry(VAL["watch"], 8), entry(VAL["goldbar"], 7), entry(VAL["gem"], 5), entry(VAL["drive"], 4), entry(VAL["blackbox"], 1),
          *aentries("tactical", 3), *aentries("patrol", 2), *aentries("juggernaut", 1),
          gentry("stg44", 4), gentry("olympia", 3), gentry("kar98k", 3), gentry("m60", 2), gentry("amban", 1), ventry("minecraft:golden_apple", 3)]},
+    # 1.8.0 the Core (under 80 blocks from the centre): the best regular loot in the zone
+    4: {"rolls": (6, 8), "entries": [entry(AMMO, 20, 16, 40), entry(MEDKIT, 12, 1, 2), entry(CREDIT, 12, 12, 32),
+         entry(VAL["watch"], 6), entry(VAL["goldbar"], 8), entry(VAL["gem"], 8), entry(VAL["drive"], 6), entry(VAL["blackbox"], 3),
+         *aentries("tactical", 5), *aentries("juggernaut", 3), entry(SMOKE, 4, 1, 2), entry(PARACHUTE, 3),
+         gentry("m60", 4), gentry("amban", 3), gentry("kar98k", 3), gentry("olympia", 2), ventry("minecraft:golden_apple", 4)]},
 }
 MOB_LOOT = {
     "infected": [(entry(AMMO, 1, 1, 4), 0.5), (entry(VAL["scrap"], 1), 0.3), (entry(CREDIT, 1, 1, 3), 0.3)],
     "bandit": [(entry(AMMO, 1, 3, 8), 0.8), (entry(CREDIT, 1, 2, 6), 0.5), (entry(VAL["watch"], 1), 0.08), (entry(BANDAGE, 1), 0.3)],
     "raider": [(entry(AMMO, 1, 4, 10), 0.9), (entry(CREDIT, 1, 3, 10), 0.6), (entry(VAL["goldbar"], 1), 0.08),
                (entry(VAL["drive"], 1), 0.03), (entry(MEDKIT, 1), 0.2)],
+    "scav": [(entry(AMMO, 1, 1, 3), 0.5), (entry(VAL["scrap"], 1), 0.4), (entry(CLOTH, 1), 0.2), (entry(CREDIT, 1, 1, 2), 0.3)],
+    "sniper": [(entry(AMMO, 1, 4, 10), 0.8), (entry(CREDIT, 1, 4, 10), 0.6), (entry(VAL["drive"], 1), 0.06), (entry(SMOKE, 1), 0.15),
+               (entry(ARMOR_ITEMS[("ghillie", "head")], 1), 0.05)],
+    "heavy": [(entry(AMMO, 1, 10, 20), 1.0), (entry(CREDIT, 1, 8, 16), 0.8), (entry(VAL["goldbar"], 1), 0.15), (entry(MEDKIT, 1), 0.3),
+              (entry(ARMOR_ITEMS[("juggernaut", "chest")], 1), 0.06), (entry(ARMOR_ITEMS[("juggernaut", "head")], 1), 0.06)],
 }
 def held_gun(k): return {"id": abilities.BASE, "count": 1, "components": {"minecraft:item_model": f"minecraft:{abilities.ABILITIES[k][2]}"}}
 # Soldiers: a modern-soldier player head (textures from minecraft-heads.com: "Desert Soldier", "Camouflaged Soldier",
@@ -229,6 +306,8 @@ SOLDIER_HEADS = {
  "camo": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZWI4NDE4YzQ2MWY2M2Q2YWFkMzkzMmE2MzlmY2UzZmVjMjI3YTM3NzRhNTliODUxZmZiZTY1NTg3NGViNzkxIn19fQ==",
  "elite": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzMzNjk5ZGFiNGVkOWIyZGNlZDZiZGE3OTA5OTRhYzIzNDNlNTEyNjEyNjlkZGE0Mzk4YzUyOTdlMjI4NzEifX19"
 }
+SOLDIER_HEADS["ghillie"] = json.load(open(os.path.join(HERE, "armor_heads.json")))["ghillie"]["value"]
+SOLDIER_HEADS["jugg"] = json.load(open(os.path.join(HERE, "armor_heads.json")))["juggernaut"]["value"]
 def soldier(head, chest, legs, boots, trim_pattern, trim_mat, hand):
     def piece(i, color): return {"id": f"minecraft:leather_{i}", "count": 1, "components": {"minecraft:dyed_color": color,
                                  "minecraft:trim": {"material": f"minecraft:{trim_mat}", "pattern": f"minecraft:{trim_pattern}"}}}
@@ -245,9 +324,57 @@ RAIDERS = {   # type: (mob, summon NBT, extra tags, loot table). Gunners (ez.gun
         **soldier("camo", 0x4B5320, 0x556B2F, 0x3B2F1E, "wild", "emerald", {"id": "minecraft:iron_axe", "count": 1})}, [], "raider"),
     "rifleman": ("minecraft:skeleton", {"CustomName": name("Raider Rifleman", "dark_red"),
         **soldier("elite", 0x262626, 0x333333, 0x1A1A1A, "silence", "netherite", held_gun("stg44"))}, ["ez.gunner", "ez.g_rifle"], "raider"),
+    # 1.8.0 outer-ring scavengers (melee), inner-ring snipers (long range, slow), Core heavies (tough, a machine gun)
+    "scav": ("minecraft:vindicator", {"CustomName": name("Scav Looter", "gray"), "equipment": {"mainhand": {"id": "minecraft:wooden_sword", "count": 1}},
+             "drop_chances": {"mainhand": 0.0}, "attributes": [{"id": "minecraft:attack_damage", "base": 2.0}, {"id": "minecraft:max_health", "base": 18.0}],
+             "Health": 18.0, "Silent": True}, [], "scav"),
+    "sniper": ("minecraft:skeleton", {"CustomName": name("Raider Sniper", "dark_green"),
+        "attributes": [{"id": "minecraft:movement_speed", "base": 0.18}, {"id": "minecraft:follow_range", "base": 48.0}],
+        **soldier("ghillie", 0x3B4A22, 0x4A5A2A, 0x2F3A1C, "wild", "emerald", held_gun("kar98k"))}, ["ez.gunner", "ez.g_sniper"], "sniper"),
+    "heavy": ("minecraft:skeleton", {"CustomName": name("Raider Heavy", "dark_red", True), "Health": 60.0,
+        "attributes": [{"id": "minecraft:max_health", "base": 60.0}, {"id": "minecraft:armor", "base": 12.0}, {"id": "minecraft:knockback_resistance", "base": 0.6},
+                       {"id": "minecraft:movement_speed", "base": 0.18}],
+        **soldier("jugg", 0x3A3F44, 0x2F3438, 0x202326, "rib", "iron", held_gun("m60"))}, ["ez.gunner", "ez.g_heavy"], "heavy"),
 }
-GUNNERS = {"bandit": (3, 30, 0.35), "rifle": (4, 38, 0.25), "boss": (5, 12, 0.2)}   # damage, ticks between shots, miss chance
+# what each ring spawns (weights) and how many raiders a spawn point keeps around it
+RINGS = {1: ([("infected", 45), ("scav", 35), ("bandit", 20)], 2), 2: ([("bandit", 45), ("raider", 30), ("infected", 15), ("scav", 10)], 3),
+         3: ([("rifleman", 40), ("raider", 30), ("sniper", 30)], 4), 4: ([("rifleman", 35), ("heavy", 40), ("sniper", 25)], 5)}
+GUNNERS = {"bandit": (3, 30, 0.35), "rifle": (4, 38, 0.25), "boss": (5, 12, 0.2), "sniper": (8, 60, 0.2), "heavy": (3, 8, 0.5)}   # damage, ticks between shots, miss chance
+SNIPER_RANGE = 48
 AI_RANGE = 28
+
+def building_recipes():
+    """1.8.0: vanilla recipes are filtered out; these give back the shapes you build with, from what the Builder sells
+    (and what you break in the city). In the ez namespace, so the filter leaves them alone."""
+    R = {}
+    def shaped(name, pattern, key, out, n, cat="building"):
+        R[name] = {"type": "minecraft:crafting_shaped", "category": cat, "pattern": pattern, "key": key, "result": {"id": out, "count": n}}
+    def shapeless(name, ins, out, n, cat="building"):
+        R[name] = {"type": "minecraft:crafting_shapeless", "category": cat, "ingredients": ins, "result": {"id": out, "count": n}}
+    for w in ("oak", "spruce"):
+        P = f"minecraft:{w}_planks"
+        shapeless(f"{w}_planks", [f"minecraft:{w}_log"], P, 4)
+        shaped(f"{w}_stairs", ["#  ", "## ", "###"], {"#": P}, f"minecraft:{w}_stairs", 4)
+        shaped(f"{w}_slab", ["###"], {"#": P}, f"minecraft:{w}_slab", 6)
+        shaped(f"{w}_fence", ["#|#", "#|#"], {"#": P, "|": "minecraft:stick"}, f"minecraft:{w}_fence", 3)
+        shaped(f"{w}_fence_gate", ["|#|", "|#|"], {"#": P, "|": "minecraft:stick"}, f"minecraft:{w}_fence_gate", 1)
+        shaped(f"{w}_door", ["##", "##", "##"], {"#": P}, f"minecraft:{w}_door", 3)
+        shaped(f"{w}_trapdoor", ["###", "###"], {"#": P}, f"minecraft:{w}_trapdoor", 2)
+        shaped(f"{w}_sticks", ["#", "#"], {"#": P}, "minecraft:stick", 4, "misc")
+    shaped("crafting_table", ["##", "##"], {"#": "minecraft:oak_planks"}, "minecraft:crafting_table", 1, "misc")
+    shaped("ladder", ["| |", "|||", "| |"], {"|": "minecraft:stick"}, "minecraft:ladder", 3)
+    for base, stairs, slab, wall in (("stone_bricks", "stone_brick_stairs", "stone_brick_slab", "stone_brick_wall"), ("bricks", "brick_stairs", "brick_slab", "brick_wall"),
+                                     ("deepslate_tiles", "deepslate_tile_stairs", "deepslate_tile_slab", "deepslate_tile_wall"), ("smooth_quartz", "smooth_quartz_stairs", "smooth_quartz_slab", None)):
+        B = f"minecraft:{base}"
+        shaped(stairs, ["#  ", "## ", "###"], {"#": B}, f"minecraft:{stairs}", 4)
+        shaped(slab, ["###"], {"#": B}, f"minecraft:{slab}", 6)
+        if wall: shaped(wall, ["###", "###"], {"#": B}, f"minecraft:{wall}", 6)
+    shaped("glass_pane", ["###", "###"], {"#": "minecraft:glass"}, "minecraft:glass_pane", 16)
+    shaped("white_carpet", ["##"], {"#": "minecraft:white_wool"}, "minecraft:white_carpet", 3)
+    shaped("red_carpet", ["##"], {"#": "minecraft:red_wool"}, "minecraft:red_carpet", 3)
+    shaped("item_frame", ["|||", "|#|", "|||"], {"|": "minecraft:stick", "#": "minecraft:rabbit_hide"}, "minecraft:item_frame", 2, "misc")
+    for k, v in R.items(): wj(f"data/{NS}/recipe/{k}.json", v)
+    return len(R)
 
 def loot_tables():
     for t, d in TIERS.items():
@@ -279,7 +406,7 @@ SHOPS = {
     "quartermaster": {"title": "Quartermaster", "buy": [buy(AMMO, 4, 16), buy(BANDAGE, 3, 2), buy(MEDKIT, 8), gbuy("pistol", 20), gbuy("m1911", 35),
                       gbuy("mp40", 60), gbuy("stakeout", 70), gbuy("stg44", 110), *abuy("scav", (3, 5, 4, 2)), *abuy("patrol", (14, 24, 20, 12)),
                       *abuy("ghillie", (16, 26, 22, 12)), *abuy("hazmat", (16, 26, 22, 12)), vbuy("minecraft:cooked_beef", 2, 8), vbuy("minecraft:golden_apple", 25)], "sell": []},
-    "fence": {"title": "The Broker", "buy": [], "sell": sells()},
+    "fence": {"title": "The Broker", "buy": [], "sell": sells() + [{"key": "moonshine", "item": sn(stack(MOONSHINE)), "price": 3, "cap": 32, "after": 1}]},
     "builder": {"title": "Builder", "buy": [buy(STASH, 25), vbuy("minecraft:oak_planks", 6, 32),
                 vbuy("minecraft:spruce_planks", 6, 32), vbuy("minecraft:stone_bricks", 6, 32), vbuy("minecraft:bricks", 8, 32),
                 vbuy("minecraft:deepslate_tiles", 8, 32), vbuy("minecraft:smooth_quartz", 10, 32), vbuy("minecraft:glass", 6, 16),
@@ -287,7 +414,12 @@ SHOPS = {
                 vbuy("minecraft:oak_door", 3), vbuy("minecraft:lantern", 5, 8), vbuy("minecraft:white_wool", 4, 16), vbuy("minecraft:red_carpet", 4, 16),
                 vbuy("minecraft:white_bed", 8), vbuy("minecraft:crafting_table", 3), vbuy("minecraft:item_frame", 2, 4), vbuy("minecraft:armor_stand", 5),
                 vbuy("minecraft:flower_pot", 2, 4), vbuy("minecraft:poppy", 1, 4), vbuy("minecraft:oak_sapling", 2, 2), vbuy("minecraft:bookshelf", 6, 4),
-                vbuy("minecraft:painting", 3)], "sell": []},
+                vbuy("minecraft:painting", 3),
+                # 1.8.0 crafting stations and farm supplies
+                *[buy(station_item(k), STATIONS[k]["price"]) for k in STATIONS],
+                vbuy("minecraft:dirt", 4, 16), buy(HOE, 5), vbuy("minecraft:water_bucket", 6), vbuy("minecraft:wheat_seeds", 3, 8),
+                vbuy("minecraft:potato", 3, 4), vbuy("minecraft:sugar_cane", 3, 4), vbuy("minecraft:sweet_berries", 4, 4),
+                vbuy("minecraft:brown_mushroom", 3, 4), vbuy("minecraft:red_mushroom", 3, 4)], "sell": []},
     # inside the zone: worth carrying cash in
     "smuggler": {"title": "The Smuggler", "buy": [buy(AMMO, 7, 16), buy(BANDAGE, 5, 2), buy(MEDKIT, 12), gbuy("m1911", 50), gbuy("stakeout", 90),
                  vbuy("minecraft:golden_apple", 35)], "sell": sells(0.75)},
@@ -354,8 +486,10 @@ def build(out):
     # the mod's shop file (config/crispy_extraction/shops.json on the server)
     with open(os.path.join(out, "shops.json"), "w") as f:
         json.dump({"credit": snbt(stack(CREDIT)), "shops": SHOPS, "skins": NPC_SKINS,
-                   "armor": {k: {sl: snbt(stack(ARMOR_ITEMS[(k, sl)])) for sl, _ in SLOTS} for k in ARMOR}}, f, indent=1, ensure_ascii=False)
+                   "armor": {k: {sl: snbt(stack(ARMOR_ITEMS[(k, sl)])) for sl, _ in SLOTS} for k in ARMOR},
+                   "stations": STATIONS}, f, indent=1, ensure_ascii=False)
     loot_tables()
+    building_recipes()
 
     rules = {"spawn_mobs": "false", "keep_inventory": "false", "immediate_respawn": "true", "spawn_phantoms": "false", "raids": "false",
              "spawn_patrols": "false", "spawn_wandering_traders": "false", "mob_griefing": "false", "show_advancement_messages": "false",
@@ -425,6 +559,7 @@ def build(out):
         "scoreboard players operation #m ez = #t ez", f"scoreboard players set #k ez {SPAWN_EVERY}", "scoreboard players operation #m ez %= #k ez",
         f"execute if score #m ez matches 0 as @e[type=minecraft:marker,tag=ez.spawner] at @s if entity @a[tag=ez.raid,distance=..80] run function {NS}:spawner/run",
         f"execute if score #m ez matches 0 as @e[tag=ez.ai] at @s unless entity @a[tag=ez.raid,distance=..110] run tp @s ~ -400 ~",
+        "execute store result score #now ez run time query gametime",
         f"execute as @e[type=minecraft:marker,tag=ez.crate] at @s run function {NS}:crate/second",
     ])
     fn("newplayer", ["scoreboard players operation @s ez.id = #nextid ez", "scoreboard players add #nextid ez 1",
@@ -564,12 +699,12 @@ def build(out):
                         f"function {NS}:squad/leave"])
 
     # ---------------------------------------------------------------- crates and spawners
-    fn("crate/second", [   # a loaded crate counts down; refills when nobody is close
-        "scoreboard players remove @s ez.ct 1",
-        f"execute if score @s ez.ct matches ..0 unless entity @a[distance=..20] run function {NS}:crate/refill"])
+    fn("crate/second", [   # 1.8.0: refills CRATE_EVERY s of game time after its last fill (ez.ct = when), when nobody is close
+        "scoreboard players operation #d ez = #now ez", "scoreboard players operation #d ez -= @s ez.ct",
+        f"execute if score #d ez matches {CRATE_EVERY * 20}.. unless entity @a[distance=..20] run function {NS}:crate/refill"])
     for t in TIERS:
         fn(f"crate/fill{t}", [f"setblock ~ ~ ~ minecraft:air", f"setblock ~ ~ ~ minecraft:barrel[facing=up]{{LootTable:\"{NS}:crate/t{t}\"}}"])
-    fn("crate/refill", [f"scoreboard players set @s ez.ct {CRATE_EVERY}",
+    fn("crate/refill", ["scoreboard players operation @s ez.ct = #now ez",
                         *[f"execute if score @s ez {f'matches {t}'} run function {NS}:crate/fill{t}" for t in TIERS]])
     for k, (mob, nbt, tags, loot) in RAIDERS.items():
         n = dict(nbt, Tags=["ez.ai", "ez.newai", f"ez.t_{k}", *tags], DeathLootTable=f"{NS}:mob/{loot}", PersistenceRequired=False)
@@ -594,13 +729,15 @@ def build(out):
     # ---- enemy gunners: cock (a click you can hear), fire 10 ticks later along a hitscan ray that walls stop
     for g, (dmg, rate, miss) in GUNNERS.items():
         wj(f"data/{NS}/predicate/miss_{g}.json", {"condition": "minecraft:random_chance", "chance": miss})
-    T = f"@p[tag=ez.raid,tag=!ez.hidden,distance=..{AI_RANGE},gamemode=!spectator]"   # ez.hidden: a crouching ghillie (mod Armor)
-    fn("ai/gunner", [
+    for gname, rng in (("gunner", AI_RANGE), ("gunner_long", SNIPER_RANGE)):
+     T = f"@p[tag=ez.raid,tag=!ez.hidden,distance=..{rng},gamemode=!spectator]"   # ez.hidden: a crouching ghillie (mod Armor)
+     fn(f"ai/{gname}", [
+        *([f"execute if entity @s[tag=ez.g_sniper] run return run function {NS}:ai/gunner_long"] if gname == "gunner" else []),
         "scoreboard players remove @s ez.cd 1",
         f"execute if score @s ez.cd matches 10 if entity {T} run playsound minecraft:block.iron_trapdoor.close hostile @a[distance=..32] ~ ~ ~ 0.7 1.8",
         "execute if score @s ez.cd matches 1.. run return 0",
         f"execute unless entity {T} run return run scoreboard players set @s ez.cd 20",
-        "tag @s add ez.shooter", "scoreboard players set #ar ez 60",
+        "tag @s add ez.shooter", f"scoreboard players set #ar ez {rng * 2 + 4}",
         *[f"execute if entity @s[tag=ez.g_{g}] if predicate {NS}:miss_{g} anchored eyes facing entity {T} eyes rotated ~6 ~-4 positioned ^ ^ ^0.8 run function {NS}:ai/ray" for g in GUNNERS],
         *[f"execute if entity @s[tag=ez.g_{g}] unless predicate {NS}:miss_{g} anchored eyes facing entity {T} eyes positioned ^ ^ ^0.8 run function {NS}:ai/ray" for g in GUNNERS],
         "playsound minecraft:entity.generic.explode hostile @a[distance=..48] ~ ~ ~ 0.35 2",
@@ -609,18 +746,30 @@ def build(out):
         "tag @s remove ez.shooter"])
     fn("ai/ray", [
         "particle minecraft:crit ~ ~ ~ 0 0 0 0 1",
+        "execute if entity @e[type=minecraft:marker,tag=ez.smoke,distance=..3.5] run return 0",   # 1.8.0 smoke stops the shot
         f"execute positioned ~-0.5 ~-0.5 ~-0.5 as @a[tag=ez.raid,dx=0,dy=0,dz=0,gamemode=!spectator,limit=1] run return run function {NS}:ai/hit",
         "scoreboard players remove #ar ez 1",
         f"execute if score #ar ez matches 1.. if block ~ ~ ~ #minecraft:replaceable positioned ^ ^ ^0.5 run function {NS}:ai/ray"])
     fn("ai/hit", [*[f"execute if entity @e[tag=ez.shooter,tag=ez.g_{g}] run damage @s {dmg} minecraft:arrow by @e[tag=ez.shooter,limit=1]" for g, (dmg, _, _) in GUNNERS.items()],
                   "particle minecraft:damage_indicator ~ ~1 ~ 0.2 0.3 0.2 0.1 3"])
-    fn("spawner/run", [   # as a spawner marker (ez score = cap, tag says the type): top up to the cap, scattered around it
+    for r, (mix, cap) in RINGS.items():   # 1.8.0: a ring picks its raider type each time (weighted)
+        lines, left = [], 100
+        for k, wt in mix[:-1]:
+            wj(f"data/{NS}/predicate/ring{r}_{k}.json", {"condition": "minecraft:random_chance", "chance": round(wt / left, 4)})
+            lines.append(f"execute if predicate {NS}:ring{r}_{k} run return run function {NS}:spawner/{k}"); left -= wt
+        lines.append(f"function {NS}:spawner/{mix[-1][0]}")
+        fn(f"spawner/ring{r}", lines)
+    fn("spawner/run", [   # as a spawner marker (ez score = cap; ez.ring<n> or, before 1.8.0, ez.sp_<type>): top up to the cap
         "execute store result score #n ez if entity @e[tag=ez.ai,distance=..48]",
         "execute if score #n ez >= @s ez run return 0",
+        *[f"execute if entity @s[tag=ez.ring{r}] run return run function {NS}:spawner/ring_then {{r:{r}}}" for r in RINGS],
         *[f"execute if entity @s[tag=ez.sp_{k}] run function {NS}:spawner/{k}" for k in RAIDERS if k != "raider"],
         f"execute if entity @s[tag=ez.sp_raider] run function {NS}:spawner/raider_mix",
         "execute unless entity @s[tag=ez.nospread] run spreadplayers ~ ~ 2 18 false @e[tag=ez.newai]",
         "tag @e[tag=ez.newai] remove ez.newai"])
+
+    fn("spawner/ring_then", [f"$function {NS}:spawner/ring$(r)", "execute unless entity @s[tag=ez.nospread] run spreadplayers ~ ~ 2 18 false @e[tag=ez.newai]",
+                             "tag @e[tag=ez.newai] remove ez.newai"])
 
     # ---------------------------------------------------------------- setup: the mod places points on street level (/ezadmin setup)
     fn("admin/setup", ["ezadmin setup"])

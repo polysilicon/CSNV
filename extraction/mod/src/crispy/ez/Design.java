@@ -372,6 +372,38 @@ final class Design {
         SelfTest.check("recipes: no vanilla recipe loaded", vanilla == 0, vanilla + " vanilla of " + all);
     }
 
+    /** 1.8.0: stations, recipes, rings, spawners, building recipes. */
+    static void crafting(MinecraftServer server) {
+        JsonObject out = new JsonObject(); report.add("crafting", out);
+        Stations.BY_BLOCK.clear(); Stations.load(server);
+        int recipes = Stations.BY_BLOCK.values().stream().mapToInt(s -> s.recipes().size()).sum();
+        out.addProperty("stations", Stations.BY_BLOCK.size()); out.addProperty("station_recipes", recipes);
+        SelfTest.check("crafting: 6 stations load", Stations.BY_BLOCK.size() == 6, Stations.BY_BLOCK.size() + " stations, " + recipes + " recipes");
+        // every input is something that exists: one of our items (made somewhere, sold, or a valuable) or a vanilla item
+        java.util.Set<String> ezKeys = new java.util.HashSet<>(List.of("bandage", "pills", "scrap", "wire", "medkit", "ammo"));
+        for (var s : Stations.BY_BLOCK.values()) for (var r : s.recipes()) { String k = Shops.ezKey(r.out()); if (k != null) ezKeys.add(k); }
+        Shops.load(server);
+        for (Shops.Shop sh : Shops.SHOPS.values()) for (Shops.Sell se : sh.sell()) ezKeys.add(se.key());
+        List<String> bad = new ArrayList<>();
+        for (var s : Stations.BY_BLOCK.values()) for (var r : s.recipes()) {
+            if (r.out().isEmpty()) bad.add(s.key() + "/" + r.key() + " makes nothing");
+            for (var in : r.in()) {
+                boolean ok = in.match().startsWith("ez:") ? ezKeys.contains(in.match().substring(3)) : BuiltInRegistries.ITEM.containsKey(Identifier.parse(in.match()));
+                if (!ok) bad.add(s.key() + "/" + r.key() + " needs unknown " + in.match());
+            }
+        }
+        SelfTest.check("crafting: every recipe input exists", bad.isEmpty(), bad.isEmpty() ? "" : String.join("; ", bad.subList(0, Math.min(4, bad.size()))));
+        long ezRecipes = server.getRecipeManager().getRecipes().stream().filter(r -> r.id().toString().contains("/ ez:")).count();
+        out.addProperty("building_recipes", ezRecipes);
+        SelfTest.check("crafting: building recipes loaded", ezRecipes >= 20, ezRecipes + " recipes");
+        boolean rings = Zone.tier(Zone.CX, Zone.CZ) == 4 && Zone.tier(Zone.CX + 120, Zone.CZ) == 3 && Zone.tier(Zone.CX + 200, Zone.CZ) == 2 && Zone.tier(Zone.CX + 350, Zone.CZ) == 1;
+        SelfTest.check("zone: four rings from the centre out", rings, "");
+        List<String> missing = new ArrayList<>();
+        for (String f : List.of("ez:spawner/ring1", "ez:spawner/ring2", "ez:spawner/ring3", "ez:spawner/ring4", "ez:spawner/scav", "ez:spawner/sniper", "ez:spawner/heavy", "ez:crate/fill4", "ez:ai/gunner_long"))
+            if (server.getFunctions().get(Identifier.parse(f)).isEmpty()) missing.add(f);
+        SelfTest.check("zone: ring spawners, new raiders and Core crates loaded", missing.isEmpty(), missing.isEmpty() ? "" : "missing " + missing);
+    }
+
     static void write(int passed, List<String> fails) {
         report.addProperty("passed", passed); report.add("failed", new Gson().toJsonTree(fails));
         report.addProperty("at", java.time.Instant.now().toString());

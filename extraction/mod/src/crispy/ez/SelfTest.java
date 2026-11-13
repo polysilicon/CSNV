@@ -90,7 +90,8 @@ final class SelfTest {
         BlockHitResult b = lvl.clip(new ClipContext(eye, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, self));
         double bd = b.getType() == HitResult.Type.MISS ? Double.MAX_VALUE : eye.distanceTo(b.getLocation());
         Entity best = null; double ed = Double.MAX_VALUE;
-        for (Entity e : lvl.getEntities(self, new AABB(eye, end).inflate(2), Entity::isPickable)) {
+        // other players aren't part of the layout: someone standing in front of a trader shouldn't fail its check
+        for (Entity e : lvl.getEntities(self, new AABB(eye, end).inflate(2), e -> e.isPickable() && !(e instanceof net.minecraft.world.entity.player.Player))) {
             AABB box = e.getBoundingBox().inflate(e.getPickRadius());
             double dd = box.contains(eye) ? 0 : box.clip(eye, end).map(eye::distanceTo).orElse(Double.MAX_VALUE);
             if (dd < ed) { ed = dd; best = e; }
@@ -138,7 +139,7 @@ final class SelfTest {
         phases.clear();
         phases.add(() -> { campChecks(server, camp, f); Design.camp(server, camp); Design.realBunkers(server, camp); p[0] = bunkerChecks(server, camp, f); });
         phases.add(() -> { bunkerLevel(server, camp, f, p[0], 0); p[0].level = 1; Plots.lay(server, p[0], false, 0); });
-        phases.add(() -> { bunkerLevel(server, camp, f, p[0], 1); bunkerRest(server, camp, f, p[0]); Design.ids(server); Design.armor(server); finish(server, camp, f); });
+        phases.add(() -> { bunkerLevel(server, camp, f, p[0], 1); bunkerRest(server, camp, f, p[0]); Design.ids(server); Design.armor(server); Design.crafting(server); finish(server, camp, f); });
         wait = 0;
     }
     static void step(MinecraftServer server) {
