@@ -393,6 +393,19 @@ final class SelfTest {
             check("salvage breaks armour and guns into resources", left == 0 && plate == 1 && parts == 5,
                     "plate " + plate + ", gun parts " + parts + ", left " + left);
             inv.clearContent();
+            // 1.8.24: melee weapons hit as listed and salvage too
+            Stations.Station tb = Stations.BY_BLOCK.get("minecraft:stonecutter");
+            Stations.Recipe sr = tb == null ? null : Stations.recipe(tb, "sledge");
+            if (sr != null) {
+                ItemStack sl = sr.out().copy();
+                var mods = sl.get(net.minecraft.core.component.DataComponents.ATTRIBUTE_MODIFIERS);
+                double dmg = mods == null ? 0 : mods.modifiers().stream().filter(m -> m.attribute().is(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE)).mapToDouble(m -> m.modifier().amount()).sum();
+                inv.setItem(0, sl);
+                Salvage.one(f.p, 0, false);
+                int pl2 = Shops.count(f.p, st -> "armorplate".equals(Shops.ezKey(st)));
+                check("melee: the Sledgehammer hits for 13 and salvages", dmg == 12 && pl2 == 1, "damage modifier " + dmg + ", plates " + pl2);
+                inv.clearContent();
+            } else check("melee: the Sledgehammer hits for 13 and salvages", false, "no sledge recipe");
         } else check("salvage breaks armour and guns into resources", false, "salvage table not loaded");
         f.p.getInventory().clearContent();
         // 1.8.15: a station in the city works too (its menu opens)

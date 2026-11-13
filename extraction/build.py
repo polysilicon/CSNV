@@ -236,6 +236,20 @@ SMOKE = item("minecraft:snowball", "Smoke Grenade", "gray", "smoke", ["Throw it:
 HAMMER = item("minecraft:iron_pickaxe", "Breaching Hammer", "gold", "hammer", ["Breaks through walls, doors and floors", "above street level, fast."],
               {"minecraft:max_damage": 300, "minecraft:tool": {"default_mining_speed": 1.0, "damage_per_block": 1, "rules": [
                   {"blocks": f"#minecraft:mineable/{t}", "speed": 9.0, "correct_for_drops": True} for t in ("pickaxe", "axe", "shovel")]}})
+# 1.8.24 melee weapons: quiet, no ammo, wear out. key: base item, look, name, colour, damage, attacks/s, durability, extra modifiers, lore
+def melee(key, base, look, nm, color, dmg, speed, dur, extra=(), lines=()):
+    mods = [{"type": "minecraft:attack_damage", "amount": float(dmg - 1), "id": "minecraft:base_attack_damage", "operation": "add_value", "slot": "mainhand"},
+            {"type": "minecraft:attack_speed", "amount": round(speed - 4.0, 2), "id": "minecraft:base_attack_speed", "operation": "add_value", "slot": "mainhand"},
+            *[{"type": t, "amount": a, "id": f"ez:melee_{t.split(':')[1]}", "operation": op, "slot": "mainhand"} for t, a, op in extra]]
+    return item(base, nm, color, key, [f"Melee · {dmg} damage · {speed:g} hits/s", "No ammo needed; wears out with use.", *lines],
+                {"minecraft:item_model": look, "minecraft:attribute_modifiers": mods, "minecraft:max_damage": dur, "minecraft:max_stack_size": 1,
+                 "minecraft:weapon": {"item_damage_per_attack": 1}})
+KNIFE = melee("knife", "minecraft:stone_sword", "minecraft:stone_sword", "Combat Knife", "gray", 5, 2.2, 200)
+MACHETE = melee("machete", "minecraft:iron_sword", "minecraft:iron_sword", "Machete", "white", 7, 1.5, 300)
+FIREAXE = melee("fireaxe", "minecraft:iron_axe", "minecraft:iron_axe", "Fire Axe", "red", 10, 0.9, 350, lines=["Knocks a shield aside."])
+SLEDGE = melee("sledge", "minecraft:stick", "minecraft:mace", "Sledgehammer", "dark_gray", 13, 0.6, 400,
+               [("minecraft:attack_knockback", 1.5, "add_value"), ("minecraft:movement_speed", -0.1, "add_multiplied_base")],
+               ["Sends raiders flying. Heavy: -10% speed in hand."])
 # 1.8.16 salvage: what armour and guns break down into at a Salvage Bench
 GUN_PARTS = item("minecraft:iron_ingot", "Gun Parts", "gray", "gunparts", ["Salvaged from guns.", "Reloading Bench: with Propellant, 32 rounds.", "The Broker pays 6 each."])
 ARMOR_PLATE = item("minecraft:netherite_scrap", "Armour Plate", "dark_aqua", "armorplate", ["Salvaged from heavy armour.", "Tool Bench: with Cloth, two Repair Kits.", "The Broker pays 9 each."])
@@ -247,6 +261,9 @@ SALVAGE = {
     "gun_tier": {"1": [["ez:gunparts", 1], ["ez:scrap", 1]], "2": [["ez:gunparts", 2], ["ez:scrap", 1]], "3": [["ez:gunparts", 3], ["ez:wire", 1]],
                  "4": [["ez:gunparts", 5], ["ez:wire", 2]]},
     "guns": {f"minecraft:{abilities.ABILITIES[k][2]}": t for k, t in GUN_TIER.items()},
+    # 1.8.24 melee weapons (by ez key)
+    "melee": {"knife": [["ez:scrap", 1]], "machete": [["ez:scrap", 2], ["ez:cloth", 1]], "fireaxe": [["ez:gunparts", 1], ["ez:scrap", 2]],
+              "sledge": [["ez:armorplate", 1], ["ez:scrap", 2]]},
 }
 LADDER = {"id": "minecraft:ladder", "components": {"minecraft:custom_name": name("Rope Ladder", "gold")}}
 HOE = item("minecraft:wooden_hoe", "Garden Hoe", "gold", "hoe", ["Turns dirt into farmland."])
@@ -285,6 +302,10 @@ STATIONS = {
         rcp("grapple", GRAPPLE, 1, [(ez("wire"), 3), (ez("scrap"), 2), (ez("cloth"), 2)]),
         rcp("hammer", HAMMER, 1, [(ez("scrap"), 4), (mc("oak_log"), 2), (ez("wire"), 1)]),
         rcp("repairkit", REPAIRKIT, 1, [(ez("cloth"), 1), (ez("scrap"), 1), (ez("wire"), 1)]),
+        rcp("knife", KNIFE, 1, [(ez("scrap"), 2), (ez("cloth"), 1)]),
+        rcp("machete", MACHETE, 1, [(ez("scrap"), 4), (ez("wire"), 1), (ez("cloth"), 1)]),
+        rcp("fireaxe", FIREAXE, 1, [(ez("gunparts"), 2), (ez("scrap"), 3), (mc("oak_planks"), 2)]),
+        rcp("sledge", SLEDGE, 1, [(ez("armorplate"), 2), (ez("gunparts"), 2), (mc("oak_planks"), 2)]),
         rcp("stash", STASH, 1, [(mc("oak_planks"), 8), (ez("scrap"), 2)]),
         rcp("repairkit_plate", REPAIRKIT, 2, [(ez("armorplate"), 1), (ez("cloth"), 1)])]},
     # 1.8.16: no fixed recipes: the menu lists the armour and guns you carry and breaks them down (mod Salvage, SALVAGE)
@@ -300,22 +321,24 @@ def station_item(k):
 TIERS = {
     1: {"rolls": (3, 5), "entries": [entry(AMMO, 30, 4, 12), entry(BANDAGE, 14, 1, 2), entry(CREDIT, 16, 1, 6),
          entry(VAL["scrap"], 18, 1, 3), entry(VAL["wire"], 12, 1, 2), entry(VAL["pills"], 8), ventry("minecraft:bread", 10, 1, 3),
-         *aentries("scav", 4), *aentries("ghillie", 1), *aentries("hazmat", 1), gentry("pistol", 3), gentry("m1911", 1)]},
+         *aentries("scav", 4), *aentries("ghillie", 1), *aentries("hazmat", 1), gentry("pistol", 3), gentry("m1911", 1),
+         entry(KNIFE, 4), entry(MACHETE, 2)]},
     2: {"rolls": (4, 6), "entries": [entry(AMMO, 28, 8, 20), entry(BANDAGE, 10, 1, 3), entry(MEDKIT, 6), entry(CREDIT, 14, 3, 12),
          entry(VAL["wire"], 10, 1, 3), entry(VAL["pills"], 8, 1, 2), entry(VAL["crystal"], 8), entry(VAL["watch"], 6), entry(VAL["goldbar"], 3),
          ventry("minecraft:cooked_beef", 8, 1, 3), *aentries("patrol", 3), *aentries("ghillie", 2), *aentries("hazmat", 2),
-         gentry("m1911", 4), gentry("mp40", 3), gentry("stakeout", 3), gentry("stg44", 1)]},
+         gentry("m1911", 4), gentry("mp40", 3), gentry("stakeout", 3), gentry("stg44", 1),
+         entry(MACHETE, 3), entry(FIREAXE, 2)]},
     3: {"rolls": (5, 7), "entries": [entry(AMMO, 24, 12, 32), entry(MEDKIT, 10, 1, 2), entry(CREDIT, 12, 8, 24),
          entry(VAL["watch"], 8), entry(VAL["goldbar"], 7), entry(VAL["gem"], 5), entry(VAL["drive"], 4), entry(VAL["blackbox"], 1),
          *aentries("tactical", 3), *aentries("patrol", 2), *aentries("juggernaut", 1),
          gentry("stg44", 4), gentry("olympia", 3), gentry("kar98k", 3), gentry("m60", 2), gentry("amban", 1), ventry("minecraft:golden_apple", 3),
-         entry(SELFREVIVE, 2)]},
+         entry(SELFREVIVE, 2), entry(FIREAXE, 3), entry(SLEDGE, 1)]},
     # 1.8.0 the Core (under 80 blocks from the centre): the best regular loot in the zone
     4: {"rolls": (6, 8), "entries": [entry(AMMO, 20, 16, 40), entry(MEDKIT, 12, 1, 2), entry(CREDIT, 12, 12, 32),
          entry(VAL["watch"], 6), entry(VAL["goldbar"], 8), entry(VAL["gem"], 8), entry(VAL["drive"], 6), entry(VAL["blackbox"], 3),
          *aentries("tactical", 5), *aentries("juggernaut", 3), entry(SMOKE, 4, 1, 2), entry(PARACHUTE, 3),
          gentry("m60", 4), gentry("amban", 3), gentry("kar98k", 3), gentry("olympia", 2), ventry("minecraft:golden_apple", 4),
-         entry(SELFREVIVE, 4)]},
+         entry(SELFREVIVE, 4), entry(SLEDGE, 3)]},
 }
 MOB_LOOT = {
     "infected": [(entry(AMMO, 1, 1, 4), 0.5), (entry(VAL["scrap"], 1), 0.3), (entry(CREDIT, 1, 1, 3), 0.3)],
@@ -490,7 +513,8 @@ def sells(rate=1.0): return [{"key": k, "item": sn(stack(VAL[k])), "price": max(
 SHOPS = {
     "quartermaster": {"title": "Quartermaster", "buy": [buy(AMMO, 4, 16), buy(BANDAGE, 3, 2), buy(MEDKIT, 8), gbuy("pistol", 20), gbuy("m1911", 35),
                       gbuy("mp40", 60), gbuy("stakeout", 70), gbuy("stg44", 110), *abuy("scav", (3, 5, 4, 2)), *abuy("patrol", (14, 24, 20, 12)),
-                      *abuy("ghillie", (16, 26, 22, 12)), *abuy("hazmat", (16, 26, 22, 12)), vbuy("minecraft:cooked_beef", 2, 8), vbuy("minecraft:golden_apple", 25)], "sell": []},
+                      *abuy("ghillie", (16, 26, 22, 12)), *abuy("hazmat", (16, 26, 22, 12)), vbuy("minecraft:cooked_beef", 2, 8), vbuy("minecraft:golden_apple", 25),
+                      buy(KNIFE, 18), buy(MACHETE, 35), buy(FIREAXE, 60)], "sell": []},
     "fence": {"title": "The Broker", "buy": [], "sell": sells() + [{"key": "moonshine", "item": sn(stack(MOONSHINE)), "price": 8, "cap": 24, "after": 2},
                                                  {"key": "gunparts", "item": sn(stack(GUN_PARTS)), "price": 6}, {"key": "armorplate", "item": sn(stack(ARMOR_PLATE)), "price": 9}]},
     "builder": {"title": "Builder", "buy": [buy(STASH, 25), vbuy("minecraft:oak_planks", 6, 32),

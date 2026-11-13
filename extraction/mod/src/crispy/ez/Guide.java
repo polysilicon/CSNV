@@ -22,7 +22,7 @@ import static crispy.ez.Ui.t;
 
 /**
  * The Field Guide (1.8.21): a written book explaining every system, given once on a player's first visit and any time
- * with /guide (custom_data ez:guide; /guide doesn't hand out a second copy while you carry one).
+ * with /guide (custom_data ez:guide; /guide replaces any copy you carry with the current one).
  */
 final class Guide {
     private Guide() {}
@@ -38,7 +38,8 @@ final class Guide {
             {"LOGGING OUT", "Log out mid-raid and a stand-in of you stays where you stood, carrying your gear, and your timer keeps running.\n\nRaiders leave it alone. Players can kill it and take everything."},
             {"YOUR BUNKER", "/bunker, or the steps in camp. Store gear in Stash Crates.\n\nThe Builder sells stations: Sewing Table, Med Bench, Kiln, Reloading Bench, Still, Tool Bench and Salvage Bench."},
             {"SALVAGE", "At a Salvage Bench, break spare armour and guns into Cloth, Scrap, Wire, Gun Parts and Armour Plate.\n\nSell them to the Broker or craft with them."},
-            {"TRADERS", "Quartermaster: guns, ammo, meds, armour.\nBuilder: blocks and stations.\nThe Broker: buys valuables.\nBunker Manager: your bunker.\nThe Fixer: contracts that pay extra."},
+            {"TRADERS", "Quartermaster: guns, blades, ammo, meds, armour.\nBuilder: blocks and stations.\nThe Broker: buys valuables.\nBunker Manager: your bunker.\nThe Fixer: contracts that pay extra."},
+            {"MELEE", "No ammo, wears out with use.\n\nCombat Knife: fast.\nMachete: all-round.\nFire Axe: heavy hits.\nSledgehammer: huge hits, sends raiders flying, slows you.\n\nQuartermaster, Tool Bench, or crates."},
             {"TOOLS", "Grappling Hook: pulls you to a block.\nParachute: slow fall.\nSmoke Grenade: blocks raider gunfire.\nRope Ladder: climb out.\nRepair Kit: mends worn armour.\n\nCraft them at your stations."},
     };
 
@@ -57,7 +58,7 @@ final class Guide {
     }
     static boolean carries(ServerPlayer p) { return Shops.count(p, s -> "guide".equals(Shops.ezKey(s))) > 0; }
     static void give(ServerPlayer p, boolean tell) {
-        if (carries(p)) { if (tell) p.sendSystemMessage(t("You already carry the Field Guide: right-click it to read.", ChatFormatting.GRAY)); return; }
+        Shops.take(p, s -> "guide".equals(Shops.ezKey(s)), 64);   // 1.8.24: /guide swaps an old copy for the current one
         Shops.give(p, book());
         if (tell) p.sendSystemMessage(t("📖 Field Guide added to your inventory: right-click it to read.", ChatFormatting.GREEN));
     }

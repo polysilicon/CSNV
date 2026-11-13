@@ -28,6 +28,7 @@ final class Salvage {
     record Out(String key, int n) {}
     static final Map<String, List<Out>> ARMOR = new HashMap<>(), TIER = new HashMap<>();
     static final Map<String, String> GUNS = new HashMap<>();
+    static final Map<String, List<Out>> MELEE = new HashMap<>();   // 1.8.24, by ez key
     static final Map<String, ItemStack> ITEMS = new HashMap<>();
 
     static void load(MinecraftServer server) {
@@ -38,6 +39,7 @@ final class Salvage {
             for (var e : s.getAsJsonObject("armor").entrySet()) ARMOR.put(e.getKey(), outs(e.getValue().getAsJsonArray()));
             for (var e : s.getAsJsonObject("gun_tier").entrySet()) TIER.put(e.getKey(), outs(e.getValue().getAsJsonArray()));
             for (var e : s.getAsJsonObject("guns").entrySet()) GUNS.put(e.getKey(), e.getValue().getAsString());
+            if (s.has("melee")) for (var e : s.getAsJsonObject("melee").entrySet()) MELEE.put(e.getKey(), outs(e.getValue().getAsJsonArray()));
             for (var e : root.getAsJsonObject("salvage_items").entrySet()) ITEMS.put(e.getKey(), Shops.parse(server, e.getValue().getAsString()));
         } catch (Exception ex) { System.err.println("[crispy-extraction] salvage: " + ex); ARMOR.clear(); TIER.clear(); GUNS.clear(); ITEMS.clear(); }
     }
@@ -53,6 +55,7 @@ final class Salvage {
         List<Out> base = null;
         String set = Armor.set(s);
         if (set != null) base = ARMOR.get(set);
+        else if (MELEE.containsKey(Shops.ezKey(s))) base = MELEE.get(Shops.ezKey(s));
         else if (Relief.isGun(s)) { String tier = GUNS.get(String.valueOf(s.get(DataComponents.ITEM_MODEL))); base = tier == null ? null : TIER.get(tier); }
         if (base == null) return null;
         if (!worn(s)) return base;
@@ -61,7 +64,11 @@ final class Salvage {
         return half;
     }
     static boolean worn(ItemStack s) { return s.isDamageableItem() && s.getDamageValue() * 2 > s.getMaxDamage(); }
-    static String kind(ItemStack s) { String set = Armor.set(s); return set != null ? "a:" + set + ":" + Armor.slot(s) : "g:" + s.get(DataComponents.ITEM_MODEL); }
+    static String kind(ItemStack s) {
+        String set = Armor.set(s);
+        if (set != null) return "a:" + set + ":" + Armor.slot(s);
+        return MELEE.containsKey(Shops.ezKey(s)) ? "m:" + Shops.ezKey(s) : "g:" + s.get(DataComponents.ITEM_MODEL);
+    }
     static String describe(List<Out> outs) {
         StringBuilder b = new StringBuilder();
         for (Out o : outs) { if (b.length() > 0) b.append(", "); ItemStack it = ITEMS.get(o.key()); b.append(o.n()).append("× ").append(it == null ? o.key() : it.getHoverName().getString()); }
@@ -72,7 +79,7 @@ final class Salvage {
         load(p.level().getServer());
         Ui.open(p, t("Salvage Bench", ChatFormatting.DARK_GRAY), 6, m -> {
             m.put(4, Ui.item(Items.GRINDSTONE, t("Salvage Bench", ChatFormatting.AQUA, ChatFormatting.BOLD), List.of(
-                    t("Click spare armour or a gun to break it down.", ChatFormatting.GRAY),
+                    t("Click spare armour, a gun or a blade to break it down.", ChatFormatting.GRAY),
                     t("Shift-click: every one of that kind you carry.", ChatFormatting.GRAY),
                     t("Worn armour (what you have on) is never touched.", ChatFormatting.GRAY),
                     t("Badly damaged pieces give half.", ChatFormatting.GRAY),
