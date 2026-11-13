@@ -158,7 +158,9 @@ final class SelfTest {
             if (ze instanceof net.minecraft.world.entity.Mob z) {
                 z.snapTo(fp.getX() + 3, fp.getY(), fp.getZ(), 0, 0); z.addTag("ez.ai"); city.addFreshEntity(z); z.setTarget(fp);
                 Revive.calm(fp, true);
-                check("raiders leave a downed player alone and back off", z.getTarget() == null && z.getNavigation().isInProgress(), "target " + z.getTarget() + ", walking off " + z.getNavigation().isInProgress());
+                var v = z.getDeltaMovement();
+                boolean leaving = z.getNavigation().isInProgress() || v.x * (z.getX() - fp.getX()) + v.z * (z.getZ() - fp.getZ()) > 0;
+                check("raiders leave a downed player alone and back off", z.getTarget() == null && leaving, "target " + z.getTarget() + ", walking off " + z.getNavigation().isInProgress() + ", pushed " + v);
                 z.discard();
             }
             boolean hurt = dmgEv.allowDamage(fp, fp.damageSources().generic(), 5f);

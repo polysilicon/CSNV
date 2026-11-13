@@ -222,9 +222,25 @@ final class Revive {
         for (Mob m : lvl.getEntitiesOfClass(Mob.class, p.getBoundingBox().inflate(CALM), e -> e.entityTags().contains("ez.ai") || e.entityTags().contains("ez.wave"))) {
             if (m.getTarget() == p) m.setTarget(null);
             if (!scatter || m.distanceTo(p) >= SCATTER) continue;
-            double dx = m.getX() - p.getX(), dz = m.getZ() - p.getZ(), len = Math.max(0.5, Math.hypot(dx, dz)), go = SCATTER + 6;
-            m.getNavigation().moveTo(p.getX() + dx / len * go, m.getY(), p.getZ() + dz / len * go, 1.2);
+            backOff(lvl, m, p);
         }
+    }
+    /** Walk m off to open ground SCATTER+6 blocks from p (straight away first, then wider angles); no path: a shove away. */
+    static boolean backOff(ServerLevel lvl, Mob m, ServerPlayer p) {
+        if (m.getNavigation().isInProgress() && m.getNavigation().getTargetPos() != null
+                && m.getNavigation().getTargetPos().distSqr(p.blockPosition()) >= SCATTER * SCATTER) return true;   // already leaving
+        double base = Math.atan2(m.getZ() - p.getZ(), m.getX() - p.getX());
+        for (double off : new double[]{0, 0.6, -0.6, 1.2, -1.2, 1.8, -1.8})
+            for (double go : new double[]{SCATTER + 6, SCATTER + 2}) {
+                BlockPos b = ground(lvl, (int) Math.floor(p.getX() + Math.cos(base + off) * go), m.getBlockY(), (int) Math.floor(p.getZ() + Math.sin(base + off) * go));
+                if (b == null) continue;
+                var path = m.getNavigation().createPath(b, 1);
+                if (path != null && path.canReach() && m.getNavigation().moveTo(path, 1.2)) return true;
+            }
+        double dx = m.getX() - p.getX(), dz = m.getZ() - p.getZ(), len = Math.max(0.3, Math.hypot(dx, dz));
+        m.setDeltaMovement(dx / len * 0.8, 0.25, dz / len * 0.8);
+        m.hurtMarked = true;
+        return false;
     }
     static String bar(int n, int of) { int k = Math.min(10, n * 10 / of); return "█".repeat(k) + "░".repeat(10 - k); }
 
