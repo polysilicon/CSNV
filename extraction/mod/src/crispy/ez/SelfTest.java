@@ -123,7 +123,7 @@ final class SelfTest {
 
     // ---------------------------------------------------------------- the run
     static void run(CommandSourceStack src) {
-        out = src; fails.clear(); passed = 0;
+        out = src; fails.clear(); passed = 0; Design.report = new com.google.gson.JsonObject();
         MinecraftServer server = src.getServer();
         ServerLevel camp = server.getLevel(Plots.CAMP);
         if (camp == null) { src.sendFailure(Component.literal("No camp dimension.")); return; }
@@ -134,7 +134,9 @@ final class SelfTest {
         Plots.loadArea(server, -20, -20, 20, 20);
         try {
             campChecks(server, camp, f);
+            Design.camp(server, camp);
             bunkerChecks(server, camp, f);
+            Design.ids(server);
         } catch (Exception e) {
             check("selftest ran to the end", false, e.toString());
             LOG.error("[ez-selftest] crashed", e);
@@ -142,6 +144,7 @@ final class SelfTest {
             cleanup(server, camp);
             f.p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
         }
+        Design.write(passed, fails);
         String sum = passed + " passed, " + fails.size() + " failed";
         LOG.info("[ez-selftest] {}", sum);
         src.sendSuccess(() -> Component.literal("Self-test: " + sum).withStyle(fails.isEmpty() ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.RED,
@@ -224,6 +227,7 @@ final class SelfTest {
             for (int bx = x - h; bx < x + h; bx++) for (int bz = z - h; bz < z + h; bz++) for (int by = F + 1; by <= F + 6; by++)
                 if (BuiltInRegistries.BLOCK.getKey(camp.getBlockState(new BlockPos(bx, by, bz)).getBlock()).toString().equals(shell)) stray++;
             check("no wall blocks left inside the room" + tag, stray == 0, stray + " found");
+            Design.bunker(server, camp, p, tag);
         }
         int x = Plots.cx(p.index), z = Plots.cz(p.index), h = Plots.half(p), F = Plots.FLOOR, z0 = z - h;
         Plots.move(f.p, x + 0.5, F + 1, z + 0.5, 0f);

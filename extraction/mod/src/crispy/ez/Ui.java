@@ -85,6 +85,7 @@ final class Ui {
 
     static void open(ServerPlayer p, Component title, int rows, Consumer<Menu> filler) {
         LAST.put(p.getUUID(), title.getString());
+        Flow.handled(p);
         SimpleContainer box = new SimpleContainer(rows * 9);
         p.openMenu(new SimpleMenuProvider((id, inv, pl) -> new Menu(id, inv, box, rows, filler), title));
     }

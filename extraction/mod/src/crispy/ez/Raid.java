@@ -74,6 +74,7 @@ final class Raid {
     }
 
     static void deploy(ServerPlayer p) {
+        Flow.mark(p, "helipad");
         State st = new State();
         st.last = p.position();
         RAIDS.put(p.getUUID(), st);

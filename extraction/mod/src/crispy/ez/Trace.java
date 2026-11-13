@@ -31,7 +31,10 @@ final class Trace {
     static String v(net.minecraft.world.phys.Vec3 x) { return String.format("(%.2f %.2f %.2f)", x.x, x.y, x.z); }
 
     /** A handler's decision. */
-    static void d(Player p, String what) { if (on) LOG.info("[ez-trace] {} -> {}", who(p), what); }
+    static void d(Player p, String what) {
+        if (p instanceof net.minecraft.server.level.ServerPlayer sp) Flow.handled(sp);
+        if (on) LOG.info("[ez-trace] {} -> {}", who(p), what);
+    }
 
     static void init() {
         UseBlockCallback.EVENT.register((pl, world, hand, hit) -> {

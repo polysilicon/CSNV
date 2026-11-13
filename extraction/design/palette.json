@@ -1,0 +1,369 @@
+{
+ "earthworks": {
+  "why": "HESCO fill and sandbags: grey-brown, not yellow (hesco_wire, hesco_fob, hesco_top)",
+  "main": [
+   "dripstone_block",
+   "packed_mud"
+  ],
+  "secondary": [
+   "mud_bricks",
+   "tuff"
+  ],
+  "accent": [
+   "coarse_dirt",
+   "iron_bars",
+   "iron_chain"
+  ],
+  "rgb": {
+   "dripstone_block": [
+    134,
+    108,
+    93
+   ],
+   "packed_mud": [
+    142,
+    107,
+    80
+   ],
+   "mud_bricks": [
+    137,
+    104,
+    79
+   ],
+   "tuff": [
+    108,
+    109,
+    103
+   ],
+   "coarse_dirt": [
+    119,
+    86,
+    59
+   ],
+   "iron_bars": [
+    137,
+    139,
+    136
+   ],
+   "iron_chain": [
+    51,
+    58,
+    74
+   ]
+  }
+ },
+ "ground": {
+  "why": "gravel roads, packed earth, grey pad with white and yellow marks (helipad, plant_room floor)",
+  "main": [
+   "gravel",
+   "coarse_dirt"
+  ],
+  "secondary": [
+   "packed_mud",
+   "andesite",
+   "dirt"
+  ],
+  "accent": [
+   "gray_concrete",
+   "white_concrete",
+   "yellow_concrete"
+  ],
+  "rgb": {
+   "gravel": [
+    132,
+    127,
+    127
+   ],
+   "coarse_dirt": [
+    119,
+    86,
+    59
+   ],
+   "packed_mud": [
+    142,
+    107,
+    80
+   ],
+   "andesite": [
+    136,
+    136,
+    137
+   ],
+   "dirt": [
+    134,
+    96,
+    67
+   ],
+   "gray_concrete": [
+    55,
+    58,
+    62
+   ],
+   "white_concrete": [
+    207,
+    213,
+    214
+   ],
+   "yellow_concrete": [
+    241,
+    175,
+    21
+   ]
+  }
+ },
+ "timber": {
+  "why": "plywood B-huts, sawn tower frames (bhut, tower_frame)",
+  "main": [
+   "stripped_oak_log",
+   "oak_planks"
+  ],
+  "secondary": [
+   "stripped_dark_oak_log",
+   "dark_oak_planks"
+  ],
+  "accent": [
+   "spruce_trapdoor",
+   "brown_terracotta"
+  ],
+  "rgb": {
+   "stripped_oak_log": [
+    177,
+    144,
+    86
+   ],
+   "oak_planks": [
+    162,
+    131,
+    79
+   ],
+   "stripped_dark_oak_log": [
+    73,
+    57,
+    36
+   ],
+   "dark_oak_planks": [
+    67,
+    43,
+    20
+   ],
+   "spruce_trapdoor": [
+    104,
+    79,
+    48
+   ],
+   "brown_terracotta": [
+    77,
+    51,
+    36
+   ]
+  }
+ },
+ "steel": {
+  "why": "olive ISO containers, steel frames (container)",
+  "main": [
+   "green_terracotta"
+  ],
+  "secondary": [
+   "polished_andesite",
+   "iron_block"
+  ],
+  "accent": [
+   "iron_trapdoor",
+   "black_concrete",
+   "iron_bars"
+  ],
+  "rgb": {
+   "green_terracotta": [
+    76,
+    83,
+    42
+   ],
+   "polished_andesite": [
+    132,
+    135,
+    134
+   ],
+   "iron_block": [
+    220,
+    220,
+    220
+   ],
+   "iron_trapdoor": [
+    203,
+    202,
+    202
+   ],
+   "black_concrete": [
+    8,
+    10,
+    15
+   ],
+   "iron_bars": [
+    137,
+    139,
+    136
+   ]
+  }
+ },
+ "canvas": {
+  "why": "tan clamshell and frame tents (bhut_row)",
+  "main": [
+   "white_terracotta"
+  ],
+  "secondary": [
+   "light_gray_terracotta",
+   "terracotta"
+  ],
+  "accent": [
+   "spruce_fence",
+   "brown_wool",
+   "white_wool"
+  ],
+  "rgb": {
+   "white_terracotta": [
+    210,
+    178,
+    161
+   ],
+   "light_gray_terracotta": [
+    135,
+    107,
+    98
+   ],
+   "terracotta": [
+    152,
+    94,
+    68
+   ],
+   "spruce_fence": null,
+   "brown_wool": [
+    114,
+    72,
+    41
+   ],
+   "white_wool": [
+    234,
+    236,
+    237
+   ]
+  }
+ },
+ "concrete": {
+  "why": "cream bunker walls over a grey band, green blast doors, hazard marks (blastdoor_*, stairs_door, plant_room)",
+  "main": [
+   "white_concrete",
+   "polished_diorite"
+  ],
+  "secondary": [
+   "polished_tuff",
+   "smooth_stone",
+   "tuff_bricks"
+  ],
+  "accent": [
+   "dark_prismarine",
+   "yellow_concrete",
+   "black_concrete"
+  ],
+  "rgb": {
+   "white_concrete": [
+    207,
+    213,
+    214
+   ],
+   "polished_diorite": [
+    193,
+    193,
+    195
+   ],
+   "polished_tuff": [
+    98,
+    104,
+    100
+   ],
+   "smooth_stone": [
+    159,
+    159,
+    159
+   ],
+   "tuff_bricks": [
+    98,
+    103,
+    95
+   ],
+   "dark_prismarine": [
+    52,
+    92,
+    76
+   ],
+   "yellow_concrete": [
+    241,
+    175,
+    21
+   ],
+   "black_concrete": [
+    8,
+    10,
+    15
+   ]
+  }
+ },
+ "light": {
+  "why": "warm incandescent light and service runs (stairs_lit, plant_room)",
+  "main": [
+   "lantern"
+  ],
+  "secondary": [
+   "ochre_froglight",
+   "redstone_lamp"
+  ],
+  "accent": [
+   "lightning_rod",
+   "iron_chain",
+   "cauldron",
+   "iron_bars"
+  ],
+  "rgb": {
+   "lantern": [
+    106,
+    91,
+    84
+   ],
+   "ochre_froglight": [
+    245,
+    233,
+    182
+   ],
+   "redstone_lamp": [
+    95,
+    55,
+    30
+   ],
+   "lightning_rod": [
+    197,
+    111,
+    83
+   ],
+   "iron_chain": [
+    51,
+    58,
+    74
+   ],
+   "cauldron": [
+    74,
+    73,
+    75
+   ],
+   "iron_bars": [
+    137,
+    139,
+    136
+   ]
+  }
+ },
+ "_split": {
+  "main": 0.6,
+  "secondary": 0.3,
+  "accent": 0.1
+ },
+ "_method": "Dominant colours of each reference photo (median-cut, 6 colours) matched to 26.2 block textures by CIELAB distance; see design/README.md."
+}

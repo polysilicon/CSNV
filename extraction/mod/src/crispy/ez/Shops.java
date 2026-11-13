@@ -57,6 +57,7 @@ final class Shops {
             for (String tag : entity.entityTags()) if (tag.startsWith("ez.shop.")) id = tag.substring(8);
             if (id == null) return InteractionResult.PASS;
             if (hand == InteractionHand.MAIN_HAND) {
+                Flow.mark(p, "trader");
                 if (id.equals("plots")) Plots.menu(p);
                 else if (id.equals("contracts")) Contracts.menu(p);
                 else open(p, id);

@@ -6,6 +6,7 @@ import net.fabricmc.api.ModInitializer;
 public final class EzMod implements ModInitializer {
     @Override public void onInitialize() {
         Trace.init();        // first: it logs every click before any handler acts on it
+        Flow.init();         // 1.6.0: right after the tracer, so a click is noted before a handler marks it handled
         Coins.init();
         Shops.init();
         Plots.init();
