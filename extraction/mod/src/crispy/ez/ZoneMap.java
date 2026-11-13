@@ -93,6 +93,12 @@ final class ZoneMap {
                 boolean onX = (wx <= zx0 && zx0 < wx + scale) || (wx <= zx1 && zx1 < wx + scale), onZ = (wz <= zz0 && zz0 < wz + scale) || (wz <= zz1 && zz1 < wz + scale);
                 boolean inX = wx + scale > zx0 && wx <= zx1, inZ = wz + scale > zz0 && wz <= zz1;
                 if ((onX && inZ) || (onZ && inX)) { m.updateColor(px, row, MapColor.COLOR_RED.getPackedId(MapColor.Brightness.HIGH)); continue; }
+                // 1.8.12: the rings, as circles (middle yellow, inner orange, the Core magenta)
+                double dc = Math.hypot(x - Zone.CX, z - Zone.CZ);
+                MapColor ringC = null;
+                for (int r = 0; r < Zone.RING_R.length; r++)
+                    if (Math.abs(dc - Zone.RING_R[r]) < scale * 0.6) ringC = r == 0 ? MapColor.COLOR_MAGENTA : r == 1 ? MapColor.COLOR_ORANGE : MapColor.COLOR_YELLOW;
+                if (ringC != null && inX && inZ) { m.updateColor(px, row, ringC.getPackedId(MapColor.Brightness.HIGH)); continue; }
                 m.updateColor(px, row, c == MapColor.NONE ? MapColor.COLOR_BLACK.getPackedId(MapColor.Brightness.LOW) : c.getPackedId(br));
             }
             row++;
@@ -115,7 +121,7 @@ final class ZoneMap {
         }
         Plots.run(server, String.format("give %s minecraft:filled_map[minecraft:map_id=%d,minecraft:map_decorations={%s},"
                         + "minecraft:custom_name={text:\"Zone Map\",color:\"aqua\",italic:false,bold:true},"
-                        + "minecraft:lore=[{text:\"Green flags: extraction points\",color:\"green\",italic:false},{text:\"Yellow flags: traders\",color:\"yellow\",italic:false}]]",
+                        + "minecraft:lore=[{text:\"Green flags: extraction points\",color:\"green\",italic:false},{text:\"Yellow flags: traders\",color:\"yellow\",italic:false},{text:\"Rings: yellow middle, orange inner, magenta the Core\",color:\"light_purple\",italic:false},{text:\"Deeper in: better loot, harder raiders, rougher ruins\",color:\"gray\",italic:false}]]",
                 p.getGameProfile().name(), d().id, deco));
     }
 

@@ -280,6 +280,25 @@ final class SelfTest {
         InteractionResult wr = useBlock(f, camp, table, Direction.UP);
         check("workbench needs the upgrade, then opens", without && wr == InteractionResult.SUCCESS && "Gun Workbench".equals(Ui.LAST.get(f.p.getUUID())), "result " + wr);
         p.perks.remove("workbench");
+        // 1.8.11: stations open their menu in your own bunker; a timed recipe starts a job
+        Stations.load(server);
+        for (String[] st : new String[][]{{"minecraft:loom", "Sewing Table"}, {"minecraft:blast_furnace", "Kiln"}}) {
+            BlockPos at = new BlockPos(x - 3, F + 1, z + 3);
+            Plots.run(server, Plots.inCamp(String.format("setblock %d %d %d %s", at.getX(), at.getY(), at.getZ(), st[0])));
+            Ui.LAST.remove(f.p.getUUID());
+            InteractionResult sr = useBlock(f, camp, at, Direction.UP);
+            check("station opens in your bunker: " + st[1], sr == InteractionResult.SUCCESS && st[1].equals(Ui.LAST.get(f.p.getUUID())), "result " + sr + ", menu " + Ui.LAST.get(f.p.getUUID()));
+        }
+        Stations.Station kiln = Stations.BY_BLOCK.get("minecraft:blast_furnace");
+        Stations.Recipe charcoal = kiln == null ? null : Stations.recipe(kiln, "charcoal");
+        if (charcoal != null) {
+            f.p.getInventory().add(new ItemStack(Items.OAK_LOG, 2));
+            int before = Stations.jobs(p).size();
+            Stations.craft(f.p, kiln, charcoal, 1);
+            check("a timed station recipe starts a job", Stations.jobs(p).size() == before + 1, Stations.jobs(p).size() + " jobs");
+            Stations.jobs(p).clear();
+        }
+        f.p.getInventory().clearContent();
         // wall finish: walls change, a block of the same kind inside doesn't
         BlockPos marker = new BlockPos(x - 3, F + 1, z - 3), wallPos = new BlockPos(x + h, F + 3, z), ceil = new BlockPos(x - 1, F + 7, z + 1);
         String before = Plots.shell(p);

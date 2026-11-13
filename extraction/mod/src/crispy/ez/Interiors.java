@@ -71,19 +71,21 @@ final class Interiors {
     // wall props: a block id, or TABLE / CHAIR / SHELF2 / LOCKER / STACK / COUNTER / BEDROLL
     static final Theme[] THEMES = {
         new Theme("office", new String[]{"SHELF2", "TABLE", "TABLE", "CHAIR", "CHAIR", "minecraft:lectern", "minecraft:chiseled_bookshelf", "minecraft:potted_dead_bush", "minecraft:candle[candles=2,lit=false]"},
-                new String[]{"minecraft:gray_carpet", "minecraft:light_gray_carpet"}, 0.08f, 0.02f, 0.03f, 0),
+                new String[]{"minecraft:gray_carpet", "minecraft:light_gray_carpet"}, 0.08f, 0.02f, 0.03f, 1),
         new Theme("barracks", new String[]{"BEDROLL", "BEDROLL", "BEDROLL", "LOCKER", "LOCKER", "minecraft:mud_brick_wall", "CHAIR", "minecraft:lantern"},
-                new String[]{"minecraft:brown_carpet", "minecraft:green_carpet"}, 0.09f, 0.015f, 0.03f, 0),
+                new String[]{"minecraft:brown_carpet", "minecraft:green_carpet"}, 0.09f, 0.015f, 0.03f, 1),
         new Theme("storage", new String[]{"STACK", "STACK", "STACK", "minecraft:hay_block", "minecraft:mud_brick_wall", "minecraft:chipped_anvil", "CRATE"},
-                new String[]{"minecraft:cobblestone_slab", "minecraft:spruce_slab"}, 0.10f, 0.015f, 0.05f, 2),
+                new String[]{"minecraft:cobblestone_slab", "minecraft:spruce_slab"}, 0.10f, 0.015f, 0.05f, 3),
         new Theme("clinic", new String[]{"COUNTER", "COUNTER", "minecraft:brewing_stand", "minecraft:cauldron", "BEDROLL", "minecraft:candle[candles=3,lit=false]", "minecraft:potted_dead_bush"},
-                new String[]{"minecraft:white_carpet", "minecraft:light_gray_carpet"}, 0.08f, 0.02f, 0.02f, 0),
+                new String[]{"minecraft:white_carpet", "minecraft:light_gray_carpet"}, 0.08f, 0.02f, 0.02f, 1),
         new Theme("workshop", new String[]{"minecraft:stonecutter", "minecraft:fletching_table", "minecraft:smithing_table", "minecraft:chipped_anvil", "minecraft:grindstone[face=floor]", "STACK", "TABLE", "minecraft:lantern"},
-                new String[]{"minecraft:cobblestone_slab", "minecraft:gray_carpet"}, 0.09f, 0.015f, 0.04f, 1),
+                new String[]{"minecraft:cobblestone_slab", "minecraft:gray_carpet"}, 0.09f, 0.015f, 0.04f, 2),
         new Theme("mess", new String[]{"TABLE", "TABLE", "CHAIR", "CHAIR", "CHAIR", "minecraft:smoker", "minecraft:blast_furnace", "minecraft:cauldron", "COUNTER"},
-                new String[]{"minecraft:brown_carpet"}, 0.09f, 0.01f, 0.03f, 0),
+                new String[]{"minecraft:brown_carpet"}, 0.09f, 0.01f, 0.03f, 1),
+        new Theme("fortified", new String[]{"minecraft:mud_brick_wall", "minecraft:mud_brick_wall", "minecraft:iron_bars", "STACK", "CRATE", "minecraft:cobweb", "minecraft:chipped_anvil"},
+                new String[]{"minecraft:cobweb", "minecraft:cobblestone_slab", "minecraft:gravel"}, 0.11f, 0.03f, 0.06f, 2),
         new Theme("ransacked", new String[]{"STACK", "minecraft:mud_brick_wall", "minecraft:cobblestone_slab", "CHAIR", "SHELF2"},
-                new String[]{"minecraft:cobblestone_slab", "minecraft:andesite_slab", "minecraft:gravel", "minecraft:gray_carpet"}, 0.05f, 0.05f, 0.10f, 0),
+                new String[]{"minecraft:cobblestone_slab", "minecraft:andesite_slab", "minecraft:gravel", "minecraft:gray_carpet"}, 0.05f, 0.05f, 0.10f, 1),
     };
     static final Set<String> STATION_BLOCKS = Set.of("minecraft:loom", "minecraft:brewing_stand", "minecraft:blast_furnace", "minecraft:fletching_table",
             "minecraft:smoker", "minecraft:stonecutter", "minecraft:smithing_table");
@@ -118,7 +120,7 @@ final class Interiors {
                 lvl.setBlock(p, Blocks.AIR.defaultBlockState(), 2); spawnersRemoved++;
                 if (rng.nextFloat() < Zone.SPAWNER_CHANCE) Zone.makeSpawnPoint(server, p);
             } else if (be instanceof net.minecraft.world.level.block.entity.ChestBlockEntity || be instanceof net.minecraft.world.level.block.entity.BarrelBlockEntity) {
-                Zone.makeCrate(server, p);
+                crateOrClear(server, lvl, p, rng);
             }
         }
         Integer street = Zone.LC.street(lvl, cx, cz);
@@ -128,6 +130,15 @@ final class Interiors {
         }
         markDone(key);
     }
+
+    /** 1.8.11: loot belongs indoors. A container in a street chunk or under open sky becomes a crate one time in four
+     *  (the rest are removed); one inside a building always does. */
+    static void crateOrClear(MinecraftServer server, ServerLevel lvl, BlockPos p, Random rng) {
+        boolean outside = Zone.LC.isStreet(lvl, p.getX() >> 4, p.getZ() >> 4) || lvl.canSeeSky(p.above());
+        if (outside && rng.nextFloat() >= 0.25f) { lvl.removeBlockEntity(p); lvl.setBlock(p, Blocks.AIR.defaultBlockState(), 2); clearedOutside++; return; }
+        Zone.makeCrate(server, p);
+    }
+    static int clearedOutside;
 
     static void removeSpawners(ServerLevel lvl, LevelChunk ch) {
         for (BlockEntity be : new ArrayList<>(ch.getBlockEntities().values()))
@@ -147,7 +158,7 @@ final class Interiors {
                     if (be instanceof SpawnerBlockEntity) {
                         lvl.setBlock(p, Blocks.AIR.defaultBlockState(), 2); spawnersRemoved++;
                         if (rng.nextFloat() < Zone.SPAWNER_CHANCE) Zone.makeSpawnPoint(server, p);
-                    } else if (be instanceof net.minecraft.world.level.block.entity.ChestBlockEntity) { Zone.makeCrate(server, p); swept++; }
+                    } else if (be instanceof net.minecraft.world.level.block.entity.ChestBlockEntity) { crateOrClear(server, lvl, p, rng); swept++; }
                 }
                 long key = net.minecraft.world.level.ChunkPos.pack(cx, cz);
                 if (!done().contains(key) && !QUEUE.contains(key)) QUEUE.add(key);
@@ -157,6 +168,8 @@ final class Interiors {
 
     static void furnish(MinecraftServer server, ServerLevel lvl, int cx, int cz, int street, long key) {
         Random rng = new Random(key * 31 + 7);
+        int ring = Zone.tier((cx << 4) + 8, (cz << 4) + 8);
+        damage(lvl, cx << 4, cz << 4, street, ring, rng);
         List<BlockPos> placed = new ArrayList<>();
         int bx = cx << 4, bz = cz << 4;
         // the Lost Cities' crafting tables and furnaces become our station blocks
@@ -190,12 +203,12 @@ final class Interiors {
                     if (near) continue;
                     if (placed.stream().anyMatch(q -> q.distManhattan(p) < 3)) continue;
                     final int fy = y;
-                    Theme th = themeOf.computeIfAbsent(fy, k -> THEMES[new Random(key * 131 + fy * 7L).nextInt(THEMES.length)]);
+                    Theme th = themeOf.computeIfAbsent(fy, k -> pickTheme(new Random(key * 131 + fy * 7L), ring));
                     int walls = (n ? 1 : 0) + (so ? 1 : 0) + (e ? 1 : 0) + (w ? 1 : 0);
                     if (walls == 1 && rng.nextFloat() < th.wallP()) {
                         Direction toWall = n ? Direction.NORTH : so ? Direction.SOUTH : e ? Direction.EAST : Direction.WEST;
                         String pick = th.wall()[rng.nextInt(th.wall().length)];
-                        if (pick.equals("CRATE") || (th.crates() > 0 && cratesOn.getOrDefault(fy, 0) < th.crates() && rng.nextFloat() < 0.25f)) {
+                        if (pick.equals("CRATE") || (th.crates() > 0 && cratesOn.getOrDefault(fy, 0) < th.crates() && rng.nextFloat() < 0.35f)) {
                             if (cratesOn.getOrDefault(fy, 0) >= th.crates()) pick = "STACK";
                             else {   // a loot barrel: a real crate (Zone fills it now and refills it like any other)
                                 set(lvl, p, "minecraft:barrel[facing=up]");
@@ -209,12 +222,52 @@ final class Interiors {
                     } else if (walls == 2 && rng.nextFloat() < th.web() && lvl.getBlockState(p.above(2)).isAir() && !lvl.getBlockState(p.above(3)).isAir()) {
                         set(lvl, p.above(2), "minecraft:cobweb");   // high in the corner, over head height
                         placed.add(p); props++;
+                    } else if (walls == 0 && ring >= 3 && rng.nextFloat() < (ring == 4 ? 0.035f : 0.02f)) {
+                        set(lvl, p, "minecraft:cobweb");   // razor wire: slows you, never seals a room (props stay 3 apart)
+                        placed.add(p); props++;
                     } else if (walls == 0 && rng.nextFloat() < th.floorP()) {
                         set(lvl, p, th.floor()[rng.nextInt(th.floor().length)]);
                         placed.add(p); props++;
                     }
                 }
         furnished++;
+    }
+
+    /** 1.8.12: deeper rings lean to ransacked and fortified rooms (the outskirts are mostly lived-in). */
+    static Theme pickTheme(Random r, int ring) {
+        int[] extraRansacked = {0, 0, 2, 4, 6}, fortified = {0, 0, 0, 3, 5};
+        List<Theme> bag = new ArrayList<>();
+        for (Theme t : THEMES) {
+            int w = t.name().equals("ransacked") ? 1 + extraRansacked[ring] : t.name().equals("fortified") ? fortified[ring] : 2;
+            for (int i = 0; i < w; i++) bag.add(t);
+        }
+        return bag.get(r.nextInt(bag.size()));
+    }
+    /** 1.8.12: the deeper the ring, the rougher the building: windows blown out, cracked stone, scorch marks in the Core.
+     *  Only swaps blocks for blocks of the same solidity (glass for air or bars, bricks for cracked bricks), so nothing
+     *  that was walkable stops being walkable and no wall opens onto a fall. */
+    static void damage(ServerLevel lvl, int bx, int bz, int street, int ring, Random rng) {
+        float[] glass = {0, 0, 0.25f, 0.5f, 0.7f}, crack = {0, 0, 0.1f, 0.25f, 0.4f}, scorch = {0, 0, 0, 0.02f, 0.06f};
+        if (ring < 2) return;
+        for (int y = street - 1; y <= street + 44; y++)
+            for (int x = bx; x < bx + 16; x++)
+                for (int z = bz; z < bz + 16; z++) {
+                    BlockPos p = new BlockPos(x, y, z);
+                    BlockState st = lvl.getBlockState(p);
+                    if (st.isAir()) continue;
+                    String id = BuiltInRegistries.BLOCK.getKey(st.getBlock()).getPath();
+                    if (id.contains("glass")) {
+                        if (rng.nextFloat() < glass[ring]) set(lvl, p, ring == 4 && rng.nextFloat() < 0.15f ? "minecraft:iron_bars" : "minecraft:air");
+                    } else if (rng.nextFloat() < crack[ring]) {
+                        String to = switch (id) { case "stone_bricks" -> "minecraft:cracked_stone_bricks"; case "deepslate_bricks" -> "minecraft:cracked_deepslate_bricks";
+                            case "deepslate_tiles" -> "minecraft:cracked_deepslate_tiles"; case "polished_blackstone_bricks" -> "minecraft:cracked_polished_blackstone_bricks";
+                            case "nether_bricks" -> "minecraft:cracked_nether_bricks"; case "bricks" -> "minecraft:mud_bricks"; default -> null; };
+                        if (to != null) set(lvl, p, to);
+                    } else if (scorch[ring] > 0 && st.isCollisionShapeFullBlock(lvl, p) && lvl.canSeeSky(p.above()) && rng.nextFloat() < scorch[ring]
+                            && (id.contains("concrete") || id.contains("brick") || id.contains("stone") || id.contains("terracotta") || id.contains("andesite"))) {
+                        set(lvl, p, rng.nextBoolean() ? "minecraft:blackstone" : "minecraft:coal_block");
+                    }
+                }
     }
 
     static void prop(ServerLevel lvl, BlockPos p, String pick, Direction toWall, Random rng) {
@@ -235,11 +288,12 @@ final class Interiors {
     /** Roadside detail in a street chunk: 0-2 pieces, only where there's room round them so the street stays open. */
     static void streetDetail(MinecraftServer server, ServerLevel lvl, int cx, int cz, int street, long key) {
         Random rng = new Random(key * 17 + 3);
-        int n = rng.nextInt(3);
+        int ring = Zone.tier((cx << 4) + 8, (cz << 4) + 8);
+        int n = new int[]{0, 1, 2, 3, 4}[ring] + rng.nextInt(2) - (ring == 1 ? 1 : 0);   // outskirts 0-1 ... Core 4-5
         for (int k = 0; k < n; k++) {
             int x = (cx << 4) + 3 + rng.nextInt(10), z = (cz << 4) + 3 + rng.nextInt(10), y = street;
             boolean along = rng.nextBoolean();   // lies along x or along z
-            int len = 2 + rng.nextInt(2);
+            int len = 2 + rng.nextInt(2) + (ring >= 3 ? 1 + rng.nextInt(2) : 0);
             // room: the piece's cells plus one all round, clear for two blocks up, on solid ground
             boolean ok = true;
             for (int a = -1; a <= len && ok; a++) for (int b = -2; b <= 2 && ok; b++) {
@@ -247,7 +301,7 @@ final class Interiors {
                 ok = lvl.getBlockState(q).isAir() && lvl.getBlockState(q.above()).isAir() && solid(lvl, q.below());
             }
             if (!ok) continue;
-            int kind = rng.nextInt(4);
+            int kind = ring == 1 ? 3 : ring == 2 ? rng.nextInt(4) : rng.nextInt(6);   // outskirts: debris only; inner + Core: wire and rubble too
             for (int a = 0; a < len; a++) {
                 BlockPos q = along ? new BlockPos(x + a, y, z) : new BlockPos(x, y, z + a);
                 switch (kind) {
@@ -258,6 +312,12 @@ final class Interiors {
                         if (a > 0 && a < len - 1) set(lvl, q.above(), "minecraft:gray_concrete");
                         BlockPos side = along ? q.south() : q.east();
                         set(lvl, side, a == 0 || a == len - 1 ? "minecraft:black_concrete" : "minecraft:gray_concrete");
+                    }
+                    case 4 -> set(lvl, q, "minecraft:cobweb");                                              // razor wire
+                    case 5 -> {                                                                           // rubble you climb over
+                        set(lvl, q, a == len / 2 ? "minecraft:cobblestone" : "minecraft:cobblestone_slab");
+                        BlockPos side = along ? q.south() : q.east();
+                        set(lvl, side, "minecraft:cobblestone_slab");
                     }
                     default -> set(lvl, q, rng.nextBoolean() ? "minecraft:cobblestone_slab" : "minecraft:gravel");   // debris
                 }
