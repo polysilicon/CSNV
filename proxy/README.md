@@ -53,7 +53,7 @@ the old jar is `Geyser-Velocity-2.11.3.jar.bak`. If Bedrock shows "Terracotta", 
 
 ## Per-mode addresses + first-join welcome (CrispyTags 1.10.0) — staged 2026-11-09, deploy at night
 
-**Addresses:** `anarchy|skyblock|multiverse|factions|vanilla.crispyanarchy.net` go straight to that server
+**Addresses** (live in `velocity.toml` since 2026-11-13, applied with `velocity reload`; backup `.bak-modehosts`; Factions' entry replaced by `extraction`): `anarchy|skyblock|multiverse|vanilla|extraction.crispyanarchy.net` go straight to that server
 (velocity.toml `[forced-hosts]`, falling back to the lobby if the server is down). Plain `crispyanarchy.net` still goes
 to the lobby. Each needs a DNS SRV record like the main one: `_minecraft._tcp.<mode>` → priority 0, weight 5,
 port 13134, target `us.loclx.io` (Java only).
