@@ -51,6 +51,12 @@ final class Tools {
             return InteractionResult.PASS;
         });
         ServerTickEvents.END_SERVER_TICK.register(server -> {
+            try { smokeTick(server); }
+            catch (Exception ex) { System.err.println("[crispy-extraction] tools tick failed: " + ex); }
+        });
+    }
+
+    static void smokeTick(net.minecraft.server.MinecraftServer server) {
             ServerLevel city = server.getLevel(Zone.CITY);
             if (city == null) return;
             // smoke grenades: follow them while they fly, puff where they stop
@@ -78,7 +84,6 @@ final class Tools {
                 if (server.getTickCount() % 4 == 0)
                     s.lvl().sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, s.at().x, s.at().y + 1, s.at().z, 14, 1.8, 1.2, 1.8, 0.01);
             }
-        });
     }
 
     static InteractionResult grapple(ServerPlayer p, ItemStack st, net.minecraft.world.InteractionHand hand) {

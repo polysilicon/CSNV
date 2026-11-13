@@ -114,7 +114,8 @@ final class Armor {
     static void init() {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             if (server.getTickCount() % 10 != 0) return;
-            for (ServerPlayer p : server.getPlayerList().getPlayers()) tick(p);
+            for (ServerPlayer p : server.getPlayerList().getPlayers())
+                try { tick(p); } catch (Exception ex) { System.err.println("[crispy-extraction] armour tick failed: " + ex); }
         });
         UseBlockCallback.EVENT.register((pl, world, hand, hit) -> {
             if (!(pl instanceof ServerPlayer p)) return InteractionResult.PASS;

@@ -396,6 +396,9 @@ final class Design {
         long ezRecipes = server.getRecipeManager().getRecipes().stream().filter(r -> r.id().toString().contains("/ ez:")).count();
         out.addProperty("building_recipes", ezRecipes);
         SelfTest.check("crafting: building recipes loaded", ezRecipes >= 20, ezRecipes + " recipes");
+        boolean bounds = true;
+        for (int r = 1; r <= 4; r++) { int[] b = Events.ringBounds(r); if (!(b[0] < b[1]) || Zone.tier(Zone.CX + (b[0] + b[1]) / 2, Zone.CZ) != r) bounds = false; }
+        SelfTest.check("zone: each ring's event area lies inside that ring", bounds, "");
         boolean rings = Zone.tier(Zone.CX, Zone.CZ) == 4 && Zone.tier(Zone.CX + 120, Zone.CZ) == 3 && Zone.tier(Zone.CX + 200, Zone.CZ) == 2 && Zone.tier(Zone.CX + 350, Zone.CZ) == 1;
         SelfTest.check("zone: four rings from the centre out", rings, "");
         List<String> missing = new ArrayList<>();

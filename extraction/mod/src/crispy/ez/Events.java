@@ -38,7 +38,11 @@ final class Events {
     static long nextAt = -1;
 
     static void init() {
-        ServerTickEvents.END_SERVER_TICK.register(server -> { if (server.getTickCount() % 20 == 0) second(server); });
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            if (server.getTickCount() % 20 != 0) return;
+            try { second(server); }
+            catch (Exception ex) { System.err.println("[crispy-extraction] zone event failed (skipped): " + ex); ex.printStackTrace(); nextAt = System.currentTimeMillis() + 60_000L; }
+        });
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {   // leave nothing behind over a restart
             ServerLevel lvl = server.getLevel(Zone.CITY);
             if (lvl != null) for (Ev e : new ArrayList<>(ACTIVE)) end(server, lvl, e);
@@ -82,8 +86,12 @@ final class Events {
         for (int r : allowed) { roll -= w[r]; if (roll < 0) return r; }
         return allowed[0];
     }
+    /** Inner and outer distance from the centre of a ring (4 the Core ... 1 the outskirts). 1.8.2: these were swapped. */
+    static int[] ringBounds(int ring) {
+        return new int[]{ring == 4 ? 10 : Zone.RING_R[3 - ring], ring == 1 ? Zone.HALF - 40 : Zone.RING_R[4 - ring]};
+    }
     static BlockPos spotIn(ServerLevel lvl, int ring) {
-        int lo = ring == 4 ? 10 : Zone.RING_R[4 - ring], hi = ring == 1 ? Zone.HALF - 40 : Zone.RING_R[3 - ring];
+        int[] rb = ringBounds(ring); int lo = rb[0], hi = rb[1];
         for (int tries = 0; tries < 10; tries++) {
             double a = RNG.nextDouble() * Math.PI * 2, r = lo + RNG.nextDouble() * (hi - lo);
             BlockPos b = Zone.street(lvl, Zone.CX + (int) (Math.cos(a) * r), Zone.CZ + (int) (Math.sin(a) * r));
