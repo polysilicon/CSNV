@@ -16,6 +16,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 STATE = os.path.join(HERE, "votes_daily.json")
 LOBBY = "/AMPStorage/.ampdata/instances/CrispyLobby01/Minecraft/plugins/CrispyLobby/"
 CHANNEL_ID = 1564294972696563722   # 💬General-Chat (not bridged to the game)
+DAILY_POST = False   # the midnight card is off for now (2026-11-14); /vote still works
 MSO_ID = 587166
 UA = {"User-Agent": "Mozilla/5.0 (compatible; crispy-bot/1.0)"}
 LINK = re.compile(r'-\s*\{name:\s*([^,]+?),\s*url:\s*"([^"]+)"([^}]*)\}')
@@ -131,7 +132,7 @@ def register(bot, discord, app_commands):
 
     async def hook():
         await orig()
-        asyncio.create_task(daily(bot, discord))
+        if DAILY_POST: asyncio.create_task(daily(bot, discord))
     bot.setup_hook = hook
 
     @bot.tree.command(name="vote", description="Vote for Crispy: the vote links, our list ranking and top voters")

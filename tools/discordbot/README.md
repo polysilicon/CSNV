@@ -30,7 +30,7 @@ the host (it reads tokens from `/etc/crispybot.env`); these two modules are copi
   in the server is saved (`scans.json`: who, price, time); later cards add "Since first scan": % change (and x-multiple
   past 2x / 0.5x; for Polymarket each outcome's odds then -> now in points), who called it first and when.
 
-- `votes_daily.py`: at 00:03 UTC a vote card in General Chat (yesterday's is deleted): the lobby's vote links
+- `votes_daily.py` (daily post off for now: `DAILY_POST = False`): at 00:03 UTC a vote card in General Chat (yesterday's is deleted): the lobby's vote links
   (featured first), our minecraftservers.org rank and how many votes page 1 of its Anarchy list needs, top voters and
   streaks (read from the lobby's `votes.json`). `/vote` shows it on demand.
 
