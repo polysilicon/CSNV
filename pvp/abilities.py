@@ -59,6 +59,10 @@ SHIELD_DELAY = 5                     # Spartan energy shield: seconds without be
 
 GUN_TIER_BOOST = [0, 0.4, 0.8, 1.2, 1.8]   # Pack-a-Punch gun tiers (Outbreak): extra damage; III+ also slows, IV sets mobs on fire
 GUNS = []                             # keys of the gun abilities (filled in below)
+# dual wield: with a handgun in each hand, a main-hand shot is followed DUAL_DELAY ticks later by the off-hand gun
+# (aimed where you look then, with DUAL_SPREAD degrees of random spread)
+HANDGUNS = ["pistol", "m1911", "lucky", "militech_handgun", "laser_pistol"]
+DUAL_DELAY, DUAL_SPREAD = 3, 1.5
 BURN = "data merge entity @s[type=!minecraft:player] {Fire:80s}"   # Pack-a-Punch IV: mobs only
 def tiered(dmg, cmd):
     """Damage lines for each Pack-a-Punch gun tier (score pve.gun on the caster; unset = tier 0). cmd(d) -> command."""
@@ -535,6 +539,8 @@ def item_components(key):
         "minecraft:item_model": f"minecraft:{model}",
         "minecraft:custom_name": {"text": name, "color": color, "italic": False, "bold": True},
         "minecraft:lore": [{"text": l, "color": "gray", "italic": False} for l in lore]
+                          + ([{"text": "Dual-wield: another handgun in your off hand fires too", "color": "aqua", "italic": False}]
+                             if key in HANDGUNS else [])
                           + [{"text": f"Right-click · {cd} s cooldown", "color": "dark_gray", "italic": False}],
         "minecraft:max_stack_size": 1,
         "minecraft:enchantment_glint_override": True,
@@ -579,9 +585,29 @@ def build(fn, wj, lobby_box):
             "scoreboard players operation @s pvp.abn += #off pvp",
             "scoreboard players set @s pvp.rgt 3", "tag @s add pvp.caster",
             f"execute at @s run function {NS}:ability/fx/{key}",
+            *([f"execute if items entity @s weapon.mainhand {sel(key)} run function {NS}:ability/dual_arm"] if key in HANDGUNS else []),
             "tag @s remove pvp.caster", "tag @e[tag=pvp.hit] remove pvp.hit",
         ])
         fn(f"ability/fx/{key}", body)
+        if key in HANDGUNS:   # the off-hand shot (Extraction wraps it with its magazine check, see build.py ammo_gate)
+            fn(f"ability/dual/{key}", [
+                f"execute if entity @s[{lobby_box}] run return 0",
+                f"execute unless items entity @s weapon.offhand {sel(key)} run return 0",   # put away meanwhile
+                "execute if entity @s[gamemode=spectator] run return 0",
+                "execute if entity @s[tag=ez.downed] run return 0",                       # Extraction: on the ground
+                "tag @s add pvp.caster",
+                f"execute store success score #dc {NS} if predicate {NS}:coin",
+                f"execute if score #dc {NS} matches 1 at @s rotated ~{DUAL_SPREAD} ~-{DUAL_SPREAD / 2} run function {NS}:ability/fx/{key}",
+                f"execute if score #dc {NS} matches 0 at @s rotated ~-{DUAL_SPREAD} ~{DUAL_SPREAD / 2} run function {NS}:ability/fx/{key}",
+                "tag @s remove pvp.caster", "tag @e[tag=pvp.hit] remove pvp.hit",
+            ])
+    hg = [k for k in HANDGUNS if k in ABILITIES]
+    idx_of = {k: i for i, k in enumerate(ABILITIES, 1)}
+    wj(f"data/{NS}/predicate/coin.json", {"condition": "minecraft:random_chance", "chance": 0.5})
+    fn("ability/dual_arm", ["scoreboard players set @s pvp.dwk 0"]
+       + [f"execute if items entity @s weapon.offhand {sel(k)} run scoreboard players set @s pvp.dwk {idx_of[k]}" for k in hg]
+       + [f"execute if score @s pvp.dwk matches 1.. run scoreboard players set @s pvp.dw {DUAL_DELAY}"])
+    fn("ability/dual_fire", [f"execute if score @s pvp.dwk matches {idx_of[k]} run return run function {NS}:ability/dual/{k}" for k in hg])
     # one trigger for every ability item; the reward reads the item still in the hand
     wj(f"data/{NS}/advancement/ability/used.json", {"criteria": {"c": {"trigger": "minecraft:consume_item",
         "conditions": {"item": {"items": BASE}}}}, "rewards": {"function": f"{NS}:ability/used"}})
@@ -663,6 +689,8 @@ def build(fn, wj, lobby_box):
     has = lambda k: f"if items entity @s container.* {sel(k)}"
     fn("ability/tick", [
         f"execute as @a[scores={{pvp.rgt=1}}] run function {NS}:ability/regive",
+        f"execute as @a[scores={{pvp.dw=1}}] run function {NS}:ability/dual_fire",   # dual wield: the off-hand shot
+        "scoreboard players remove @a[scores={pvp.dw=1..}] pvp.dw 1",
         "scoreboard players remove @a[scores={pvp.rgt=2..}] pvp.rgt 1",
         f"execute as @e[type=minecraft:armor_stand,tag=pvp.nade] at @s run function {NS}:ability/nade_tick",
         # Borg Slam: hits everything around when Adam Smasher lands
@@ -719,5 +747,5 @@ def build(fn, wj, lobby_box):
                              "scoreboard players set @s pvp.abl 8",
                              "playsound minecraft:block.beacon.power_select player @s ~ ~ ~ 0.6 1.8",
                              "title @s actionbar {\"text\":\"◆ Shields recharged\",\"color\":\"dark_green\"}"])
-    return ["pvp.rgt dummy", "pvp.abk dummy", "pvp.abs dummy", "pvp.abn dummy", "pvp.id dummy", "pvp.ft dummy", "pvp.gk totalKillCount", "pvp.dmg minecraft.custom:minecraft.damage_taken", "pvp.sh dummy",
+    return ["pvp.rgt dummy", "pvp.abk dummy", "pvp.abs dummy", "pvp.abn dummy", "pvp.dw dummy", "pvp.dwk dummy", "pvp.id dummy", "pvp.ft dummy", "pvp.gk totalKillCount", "pvp.dmg minecraft.custom:minecraft.damage_taken", "pvp.sh dummy",
             "pvp.dab minecraft.custom:minecraft.damage_absorbed", "pvp.abl dummy"]

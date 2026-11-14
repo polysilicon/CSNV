@@ -112,6 +112,12 @@ def ammo_gate(name, lines):
     right-click, reloads from the Ammo in your inventory (ez.rl ticks, no shooting meanwhile). The gun item is still
     handed back after every use."""
     key = name.rsplit("/", 1)[1]
+    if name.startswith("ability/dual/") and key in MAGS:   # dual wield: the off-hand shot takes a round from that gun's magazine
+        i = lines.index("tag @s add pvp.caster")
+        return lines[:i] + [
+            "execute if score @s ez.rl matches 1.. run return 0",
+            f"execute unless score @s ez.m_{key} matches 1.. run return run function {NS}:noammo",
+            f"scoreboard players remove @s ez.m_{key} 1"] + lines[i:] + [f"function {NS}:gun/hud_{key}"]
     if name.startswith("ability/use/") and key in MAGS:
         cap = MAGS[key][0]
         i = lines.index("scoreboard players set @s pvp.rgt 3") + 1
