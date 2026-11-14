@@ -829,9 +829,9 @@ def build(out):
                         f"function {NS}:squad/leave"])
 
     # ---------------------------------------------------------------- crates and spawners
-    fn("crate/second", [   # 1.8.0: refills CRATE_EVERY s of game time after its last fill (ez.ct = when), when nobody is close
+    fn("crate/second", [   # 1.8.0: refills CRATE_EVERY s of game time after its last fill (ez.ct = when); 1.8.31: even with players beside it
         "scoreboard players operation #d ez = #now ez", "scoreboard players operation #d ez -= @s ez.ct",
-        f"execute if score #d ez matches {CRATE_EVERY * 20}.. unless entity @a[distance=..20] run function {NS}:crate/refill"])
+        f"execute if score #d ez matches {CRATE_EVERY * 20}.. run function {NS}:crate/refill"])
     wj(f"data/{NS}/tags/block/crate_blocks.json", {"values": ["minecraft:chest", "minecraft:trapped_chest", "minecraft:barrel"]})
     for t in TIERS:   # 1.8.8: every crate is a loot barrel (a building's chest becomes one)
         fn(f"crate/fill{t}", [f"setblock ~ ~ ~ minecraft:air", f"setblock ~ ~ ~ minecraft:barrel[facing=up]{{LootTable:\"{NS}:crate/t{t}\"}}"])

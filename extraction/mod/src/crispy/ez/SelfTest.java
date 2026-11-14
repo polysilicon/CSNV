@@ -242,7 +242,7 @@ final class SelfTest {
             }
             // 1.8.31: the restock countdown's wording
             check("crate restock countdown reads right", CrateTimer.label(20 * 452, false).equals("⟳ Restocks in 7:32")
-                    && CrateTimer.label(0, true).startsWith("⟳ Restocks once nobody"), CrateTimer.label(20 * 452, false));
+                    && CrateTimer.label(0, true).startsWith("⟳ Restocking"), CrateTimer.label(20 * 452, false));
             var gb = Guide.book().get(net.minecraft.core.component.DataComponents.WRITTEN_BOOK_CONTENT);
             check("the Field Guide has all its pages", gb != null && gb.pages().size() == Guide.PAGES.length, gb == null ? "no content" : gb.pages().size() + " pages");
             Plots.run(server, "scoreboard players reset ezrevive ez.time");

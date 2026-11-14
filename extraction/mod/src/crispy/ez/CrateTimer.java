@@ -15,9 +15,8 @@ import java.util.*;
 
 /**
  * Crate restock countdowns (1.8.31). A crate restocks CRATE_TICKS after its last fill (the datapack's crate/second:
- * marker score ez.ct = the game time it was filled) and only while nobody is within 20 blocks. Once a crate has been
- * opened, a small floating label above it shows how long is left ("⟳ Restocks in 7:32"), or that it is due but someone
- * is too close. Unopened crates (still holding their loot table) show nothing: no label means it's full.
+ * marker score ez.ct = the game time it was filled), players nearby or not. Once a crate has been
+ * opened, a small floating label above it shows how long is left ("⟳ Restocks in 7:32"). Unopened crates (still holding their loot table) show nothing: no label means it's full.
  * Labels exist only near players (within RANGE blocks), update once a second, and are removed when nobody's near;
  * labels left over from a restart are removed when they load.
  */
@@ -41,7 +40,7 @@ final class CrateTimer {
 
     static String label(long left, boolean playerNear) {
         if (left > 0) { long s = (left + 19) / 20; return "⟳ Restocks in " + s / 60 + ":" + String.format("%02d", s % 60); }
-        return playerNear ? "⟳ Restocks once nobody's within 20 blocks" : "⟳ Restocking";
+        return "⟳ Restocking...";   // due: the datapack refills it within a second
     }
 
     static void tick(MinecraftServer server) {
@@ -60,8 +59,7 @@ final class CrateTimer {
                 if (full) { keep.remove(m.getUUID()); continue; }   // unopened: its loot is still waiting
                 var info = sb.getPlayerScoreInfo(m, ct);
                 long left = info == null ? 0 : CRATE_TICKS - (now - info.value());
-                boolean near = !lvl.getEntitiesOfClass(ServerPlayer.class, new AABB(b).inflate(20), x -> !x.isSpectator()).isEmpty();
-                show(lvl, m, b, label(left, near), left > 0 ? "yellow" : "gray");
+                show(lvl, m, b, label(left, true), "yellow");
             }
         }
         // labels for crates nobody is near any more (or that restocked): gone

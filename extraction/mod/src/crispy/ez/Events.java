@@ -173,7 +173,7 @@ final class Events {
             }
             case LOCKDOWN -> {
                 e.ends = System.currentTimeMillis() + 3 * 60_000L;
-                // every loaded Core crate: due now (refills within a second, when nobody stands right next to it)
+                // every loaded Core crate: due now (refills within a second)
                 Plots.run(server, String.format("execute in lostcities:lostcity as @e[type=minecraft:marker,tag=ez.crate,x=%d,y=-64,z=%d,dx=%d,dy=400,dz=%d,scores={ez=4}] run scoreboard players set @s ez.ct -100000",
                         Zone.CX - Zone.RING_R[0], Zone.CZ - Zone.RING_R[0], 2 * Zone.RING_R[0], 2 * Zone.RING_R[0]));
                 for (int k = 0; k < 4; k++) {
