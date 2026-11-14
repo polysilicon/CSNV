@@ -111,6 +111,11 @@ final class DeathBox {
         String label = "☠ " + owner + "'s gear";
         fill(lvl, a, stacks.subList(0, Math.min(27, stacks.size())), label);
         if (b != null) fill(lvl, b, stacks.subList(27, stacks.size()), label);
+        if (held(lvl, a) + (b != null ? held(lvl, b) : 0) != stacks.size()) {   // something went wrong: keep the drops instead
+            clear(lvl, a); if (b != null) clear(lvl, b);
+            System.err.println("[crispy-extraction] death box for " + owner + " didn't hold the gear; left on the ground");
+            return false;
+        }
         String safe = owner.replaceAll("[^A-Za-z0-9_]", "");
         Plots.run(lvl.getServer(), String.format(java.util.Locale.ROOT,
                 "execute in lostcities:lostcity run summon minecraft:text_display %.1f %.2f %.1f {Tags:[\"ez.deathbox\"],billboard:\"center\","
@@ -128,11 +133,20 @@ final class DeathBox {
     static void fill(ServerLevel lvl, BlockPos p, List<ItemStack> stacks, String label) {
         lvl.setBlock(p, Blocks.BARREL.defaultBlockState(), 3);
         if (lvl.getBlockEntity(p) instanceof BarrelBlockEntity be) {
-            for (int i = 0; i < stacks.size() && i < 27; i++) be.setItem(i, stacks.get(i));
+            // name first: applying components also resets the barrel's contents, so filling must come after
             be.applyComponents(be.components(), net.minecraft.core.component.DataComponentPatch.builder()
                     .set(DataComponents.CUSTOM_NAME, Component.literal(label)).build());
+            for (int i = 0; i < stacks.size() && i < 27; i++) be.setItem(i, stacks.get(i));
             be.setChanged();
         }
+        // never lose gear: if the barrel didn't take it all, the caller is told and the items stay on the ground
+    }
+
+    static int held(ServerLevel lvl, BlockPos p) {
+        int n = 0;
+        if (lvl.getBlockEntity(p) instanceof BarrelBlockEntity be)
+            for (int i = 0; i < be.getContainerSize(); i++) if (!be.getItem(i).isEmpty()) n++;
+        return n;
     }
 
     static void expire(MinecraftServer server) {
