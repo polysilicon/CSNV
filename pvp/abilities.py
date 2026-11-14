@@ -637,6 +637,11 @@ def build(fn, wj, lobby_box):
             f"execute if entity @s[{lobby_box}] run return 0",
             # creative mode doesn't use items up: nothing to hand back
             "execute if entity @s[gamemode=creative] run return 0",
+            # that slot still holds this very gun: it was never taken (fast clicks can leave a use that didn't take
+            # the item), so handing one back would duplicate it and crowd out the other hand's gun
+            *[l for n in range(9) for l in (
+                f"execute if entity @s[tag=pvp.dbg] if score @s pvp.abs matches {n} if items entity @s hotbar.{n} {mine} run say [dbg] SKIP {k}: still in hotbar slot {n}",
+                f"execute if score @s pvp.abs matches {n} if items entity @s hotbar.{n} {mine} run return 0")],
             f"execute if entity @s[tag=pvp.dbg] run say [dbg] RETURN {k} to main/hotbar",
             *[f"execute if score @s pvp.abs matches {n} unless items entity @s hotbar.{n} * run return run loot replace entity @s hotbar.{n} loot {NS}:ability/{k}"
               for n in range(9)],
@@ -650,6 +655,8 @@ def build(fn, wj, lobby_box):
         fn(f"ability/regiveoff/{k}", [
             f"execute if entity @s[{lobby_box}] run return 0",
             "execute if entity @s[gamemode=creative] run return 0",
+            f"execute if entity @s[tag=pvp.dbg] if items entity @s weapon.offhand {sel(k)} run say [dbg] SKIP {k}: still in the off hand",
+            f"execute if items entity @s weapon.offhand {sel(k)} run return 0",
             f"execute if entity @s[tag=pvp.dbg] run say [dbg] RETURN {k} to OFF-hand",
             f"execute unless items entity @s weapon.offhand * run return run loot replace entity @s weapon.offhand loot {NS}:ability/{k}",
             f"loot give @s loot {NS}:ability/{k}",
