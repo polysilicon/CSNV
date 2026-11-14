@@ -19,7 +19,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SAVE = os.path.join(HERE, "newpairs.json")
 KEEP_S = 24 * 3600
 UA = {"User-Agent": "Mozilla/5.0 (compatible; crispy-bot/1.0)"}
-GT_NETWORKS = {"solana": 2, "base": 1, "eth": 1}   # network -> pages of 20 per poll
+GT_EVERY = {"solana": 1, "base": 2, "eth": 2}   # network -> poll every N rounds (one page of 20); GeckoTerminal's free limit is small
 GT_TO_DS = {"solana": "solana", "base": "base", "eth": "ethereum"}
 CHAIN_NAME = {"solana": "Solana", "base": "Base", "ethereum": "Ethereum"}
 SHOW = 10
@@ -85,28 +85,65 @@ def _ts(s):
     except Exception: return time.time()
 
 
-async def gt_poll(session):
-    for net, pages in GT_NETWORKS.items():
-        for page in range(1, pages + 1):
+def gt_coins(d, net=None):
+    """Coins from a GeckoTerminal pools response (new_pools or search, with include=base_token,dex)."""
+    toks = {i["id"]: i["attributes"] for i in d.get("included", []) if i.get("type") == "token"}
+    dexes = {i["id"]: i["attributes"].get("name") for i in d.get("included", []) if i.get("type") == "dex"}
+    out = []
+    for p in d.get("data", []):
+        a, rel = p.get("attributes", {}), p.get("relationships", {})
+        tok = toks.get(((rel.get("base_token") or {}).get("data") or {}).get("id"), {})
+        dex = dexes.get(((rel.get("dex") or {}).get("data") or {}).get("id")) or "DEX"
+        if dex.lower() == "pump.fun": dex = "pump.fun"
+        if not tok.get("address"): continue
+        n = net or ((rel.get("network") or {}).get("data") or {}).get("id") or "?"
+        mcap = a.get("market_cap_usd") or a.get("fdv_usd")
+        out.append({"t": _ts(a.get("pool_created_at") or ""), "chain": GT_TO_DS.get(n, n), "addr": tok["address"],
+                    "name": (tok.get("name") or "")[:60], "sym": (tok.get("symbol") or "")[:20], "src": dex,
+                    "mcap": float(mcap) if mcap else None, "sol": None})
+    return out
+
+
+async def live_search(session, topic):
+    """Coins under 24 h old matching the topic, from DexScreener's and GeckoTerminal's own search (so /newpairs
+    finds things launched before the bot started listening). Both are best-effort with short timeouts."""
+    from urllib.parse import quote
+    cut, found = time.time() - KEEP_S, []
+    async def ds():
+        async with session.get(f"https://api.dexscreener.com/latest/dex/search?q={quote(topic)}", headers=UA,
+                               timeout=aiohttp.ClientTimeout(total=8)) as r:
+            for p in ((await r.json()).get("pairs") or []) if r.status == 200 else []:
+                b = p.get("baseToken") or {}
+                if not b.get("address") or not p.get("pairCreatedAt"): continue
+                found.append({"t": p["pairCreatedAt"] / 1000, "chain": p.get("chainId") or "?", "addr": b["address"],
+                              "name": (b.get("name") or "")[:60], "sym": (b.get("symbol") or "")[:20],
+                              "src": "pump.fun" if (p.get("dexId") or "").startswith("pump") else (p.get("dexId") or "DEX").title(),
+                              "mcap": p.get("marketCap") or p.get("fdv"), "sol": None, "now": True})
+    async def gt():   # Solana, where event coins mostly launch; GeckoTerminal's search ranks the newest there well
+        for attempt in range(2):
+            async with session.get(f"https://api.geckoterminal.com/api/v2/search/pools?query={quote(topic)}&network=solana"
+                                   f"&include=base_token,dex", headers={**UA, "Accept": "application/json"},
+                                   timeout=aiohttp.ClientTimeout(total=15)) as r:
+                if r.status == 200: found.extend(dict(c, now=True) for c in gt_coins(await r.json(), "solana")); return
+                if r.status != 429: return
+            await asyncio.sleep(4)   # over the free limit for a moment: one retry
+    for res in await asyncio.gather(ds(), gt(), return_exceptions=True):
+        if isinstance(res, Exception): print(f"[newpairs] live search: {type(res).__name__}: {res}")
+    return [c for c in found if c["t"] >= cut]
+
+
+async def gt_poll(session, rnd):
+    for i, (net, every) in enumerate(GT_EVERY.items()):
+        if (rnd + i) % every: continue
+        for page in (1,):
             url = f"https://api.geckoterminal.com/api/v2/networks/{net}/new_pools?include=base_token,dex&page={page}"
             async with session.get(url, headers={**UA, "Accept": "application/json"}, timeout=aiohttp.ClientTimeout(total=15)) as r:
                 if r.status == 429: await asyncio.sleep(30); break   # over the free limit: skip this round
                 if r.status != 200: print(f"[newpairs] geckoterminal {net}: HTTP {r.status}"); break
                 d = await r.json()
-            toks = {i["id"]: i["attributes"] for i in d.get("included", []) if i.get("type") == "token"}
-            dexes = {i["id"]: i["attributes"].get("name") for i in d.get("included", []) if i.get("type") == "dex"}
-            for p in d.get("data", []):
-                a, rel = p.get("attributes", {}), p.get("relationships", {})
-                tok = toks.get(((rel.get("base_token") or {}).get("data") or {}).get("id"), {})
-                dex = dexes.get(((rel.get("dex") or {}).get("data") or {}).get("id")) or "DEX"
-                if dex.lower() == "pump.fun": dex = "pump.fun"
-                if not tok.get("address"): continue
-                mcap = a.get("market_cap_usd") or a.get("fdv_usd")
-                add({"t": _ts(a.get("pool_created_at") or ""), "chain": GT_TO_DS[net], "addr": tok["address"],
-                     "name": (tok.get("name") or "")[:60], "sym": (tok.get("symbol") or "")[:20], "src": dex,
-                     "mcap": float(mcap) if mcap else None, "sol": None})
-                stats["gt"] += 1
-            await asyncio.sleep(8)   # GeckoTerminal's free limit is low and shared: keep calls well apart
+            for c in gt_coins(d, net):
+                add(c); stats["gt"] += 1
+            await asyncio.sleep(6)
 
 
 async def poll_loop():
@@ -114,12 +151,12 @@ async def poll_loop():
     n = 0
     async with aiohttp.ClientSession() as session:
         while True:
-            try: await gt_poll(session)
+            try: await gt_poll(session, n)
             except Exception as e: print(f"[newpairs] geckoterminal: {type(e).__name__}: {e}")
             prune()
             n += 1
-            if n % 5 == 0: save()
-            await asyncio.sleep(45)
+            if n % 5 == 1: save()
+            await asyncio.sleep(55)
 
 
 def load():
@@ -182,7 +219,7 @@ def lines(found, live):
         url = m.get("url") or (f"https://pump.fun/coin/{c['addr']}" if c["src"] == "pump.fun" else
                                f"https://dexscreener.com/{c['chain']}/{c['addr']}")
         if m.get("mcap"): val = f"{_usd(m['mcap'])} mcap"
-        elif c.get("mcap"): val = f"{_usd(c['mcap'])} mcap at launch"
+        elif c.get("mcap"): val = f"{_usd(c['mcap'])} mcap" + ("" if c.get("now") else " at launch")
         elif c.get("sol"): val = f"{c['sol']:,.0f} SOL mcap at launch"
         else: val = "no trades yet"
         if m.get("liq"): val += f" · {_usd(m['liq'])} liq"
@@ -206,15 +243,18 @@ def register(bot, discord, app_commands):
     @app_commands.describe(topic="Words to look for in the coin's name or symbol, e.g. 'moon landing' or 'pepe'")
     async def newpairs_cmd(interaction: discord.Interaction, topic: str):
         topic = topic[:60]
-        found = search(topic)
-        if found is None:
+        if search(topic, []) is None:
             return await interaction.response.send_message("Give at least one word of 3+ letters to search for.", ephemeral=True)
         await interaction.response.defer()
-        span = (time.time() - COINS[0]["t"]) / 3600 if COINS else 0
-        covered = "the last 24 h" if span >= 23 else f"the last {max(span, 0.1):.1f} h (the list is still filling up)"
+        async with aiohttp.ClientSession() as session:
+            extra = search(topic, await live_search(session, topic))
+        seen = set()
+        found = []
+        for c in sorted(search(topic) + extra, key=lambda c: -c["t"]):
+            if (c["chain"], c["addr"]) not in seen: seen.add((c["chain"], c["addr"])); found.append(c)
+        covered = "the last 24 h"
         if not found:
-            return await interaction.followup.send(f"No new coins named like \"{topic}\" in {covered}. "
-                                                   f"({len(COINS):,} launches checked.)")
+            return await interaction.followup.send(f"No coins named like \"{topic}\" launched in {covered}.")
         shown = found[:SHOW]
         async with aiohttp.ClientSession() as session:
             live = await market(session, shown)

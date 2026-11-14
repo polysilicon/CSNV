@@ -20,7 +20,9 @@ the host (it reads tokens from `/etc/crispybot.env`); these two modules are copi
 - `newpairs.py`: `/newpairs <topic>` searches every coin launched in the last 24 h by name/symbol (newest 10, live
   market cap and liquidity from DexScreener, a risk warning). Feeds: pump.fun launches from PumpPortal's websocket
   (needs `websockets` in the venv) and new Solana/Base/Ethereum pools from GeckoTerminal (polled, which includes
-  pump.fun's own pools). Pump.fun's site API is behind bot protection and isn't used. The list is kept in
+  pump.fun's own pools). Each search also asks DexScreener's and GeckoTerminal's (Solana) search for coins under 24 h
+  old, so results don't depend on how long the bot has been listening. GeckoTerminal's free rate limit is small: the
+  poller takes one page a round to leave room. Pump.fun's site API is behind bot protection and isn't used. The list is kept in
   `newpairs.json` so restarts don't empty it. Wired in bot.py with `newpairs.register(...)`, which starts the feeds
   from `setup_hook`.
 
