@@ -23,7 +23,7 @@ import net.minecraft.network.chat.Component;
 public class SpawnCommand implements ModInitializer {
     @Override
     public void onInitialize() {
-        HandTag.init();   // 1.6.0: which hand a gun is really used from (pvp:ability/used)
+        HandTag.init();   // 1.6.1: /pvphand, which hand a gun was really used from (pvp:ability/used)
         ServerTickEvents.END_SERVER_TICK.register(Leaderboards::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Events::onTick);
         ServerTickEvents.END_SERVER_TICK.register(CoreSeek::onTick);

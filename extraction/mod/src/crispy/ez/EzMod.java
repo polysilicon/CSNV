@@ -5,7 +5,7 @@ import net.fabricmc.api.ModInitializer;
 /** Crispy Extraction Zone: chest-menu traders (Shops), player plots (Plots), the Lost Cities zone and game modes (Zone). */
 public final class EzMod implements ModInitializer {
     @Override public void onInitialize() {
-        HandTag.init();       // first: which hand a gun is really used from (pvp:ability/used)
+        HandTag.init();       // /pvphand: which hand a gun was really used from (pvp:ability/used)
         Trace.init();        // first: it logs every click before any handler acts on it
         Flow.init();         // 1.6.0: right after the tracer, so a click is noted before a handler marks it handled
         Armor.init();         // 1.7.0 milsim armour: set bonuses, vanilla armour swapped

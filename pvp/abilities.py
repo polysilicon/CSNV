@@ -620,6 +620,7 @@ def build(fn, wj, lobby_box):
     wj(f"data/{NS}/advancement/ability/used.json", {"criteria": {"c": {"trigger": "minecraft:consume_item",
         "conditions": {"item": {"items": BASE}}}}, "rewards": {"function": f"{NS}:ability/used"}})
     fn("ability/used", [f"advancement revoke @s only {NS}:ability/used",
+                        "pvphand",   # server mod: tags pvp.usedoff if the off hand's item is the one being used up
                         "data modify storage pvp:debug last set value {}",
                         "data modify storage pvp:debug last.main set from entity @s SelectedItem",
                         "data modify storage pvp:debug last.off set from entity @s equipment.offhand"]

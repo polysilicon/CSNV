@@ -1,31 +1,30 @@
 package crispy.pvp;
 
-import net.fabricmc.fabric.api.event.player.UseItemCallback;
-import net.minecraft.core.component.DataComponents;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 
 /**
- * Which hand an ability item (gun) is really used from. Minecraft tries the main hand first and, if that item is on
- * cooldown, falls through to the off hand; a datapack can't tell which one fired. This tags the player pvp.usedoff
- * when the off hand is used (and clears it for the main hand), so pvp:ability/used fires and hands back the right
- * gun. Registered before every other item-use listener and always lets the use go on.
+ * Which hand an ability item (gun) was really used from. Minecraft tries the main hand first and, if it thinks that
+ * item is on cooldown, also sends an off-hand use, so neither the click order nor the hands' contents say which item
+ * the server actually used up. /pvphand, run as the player first thing in pvp:ability/used (the consume_item reward,
+ * which runs while the item is still being used), reads the server's own record (getUsedItemHand) and tags the player
+ * pvp.usedoff for the off hand, or clears it for the main hand.
  */
 final class HandTag {
     private HandTag() {}
 
     static void init() {
-        UseItemCallback.EVENT.register((player, world, hand) -> {
-            if (player instanceof ServerPlayer p) {
-                ItemStack st = p.getItemInHand(hand);
-                if (st.is(Items.CLAY_BALL) && st.has(DataComponents.ITEM_MODEL)) {
-                    if (hand == InteractionHand.OFF_HAND) p.addTag("pvp.usedoff"); else p.removeTag("pvp.usedoff");
-                }
-            }
-            return InteractionResult.PASS;
-        });
+        CommandRegistrationCallback.EVENT.register((d, ctx, env) -> d.register(Commands.literal("pvphand")
+                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .executes(c -> {
+                    if (c.getSource().getEntity() instanceof ServerPlayer p) {
+                        boolean off = p.isUsingItem() && p.getUsedItemHand() == InteractionHand.OFF_HAND;
+                        if (off) p.addTag("pvp.usedoff"); else p.removeTag("pvp.usedoff");
+                        return off ? 2 : 1;
+                    }
+                    return 0;
+                })));
     }
 }
