@@ -637,8 +637,7 @@ def build(fn, wj, lobby_box):
             "execute if entity @s[gamemode=creative] run return 0",
             # that slot still holds this very gun: it was never taken (fast clicks can leave a use that didn't take
             # the item), so handing one back would duplicate it and crowd out the other hand's gun
-            *[l for n in range(9) for l in (
-                f"execute if score @s pvp.abs matches {n} if items entity @s hotbar.{n} {mine} run return 0")],
+            *[f"execute if score @s pvp.abs matches {n} if items entity @s hotbar.{n} {mine} run return 0" for n in range(9)],
             *[f"execute if score @s pvp.abs matches {n} unless items entity @s hotbar.{n} * run return run loot replace entity @s hotbar.{n} loot {NS}:ability/{k}"
               for n in range(9)],
             # never the off hand: an off-hand use has its own return (regive_off), and an off hand that's empty for a
