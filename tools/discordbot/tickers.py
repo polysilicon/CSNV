@@ -1,8 +1,11 @@
 """Cashtag cards for the Crispy Discord bot: "$AAPL" or "$BTC" in a message gets a reply with the price, the day's
 change and range, and a small chart of the day.
 
-Data: Yahoo Finance's public chart endpoint (no key). A stock is looked up as itself; a coin as <SYMBOL>-USD. The best
-known coins are tried as crypto first ($BTC is also a fund's ticker), anything else as a stock first, then as a coin.
+Data, all public and keyless:
+- currencies ($EUR, $JPY, ... ISO codes in FIAT): Yahoo Finance FX (<CODE>USD=X), shown both ways against the dollar;
+- the best-known coins (CRYPTO_FIRST): Yahoo <SYMBOL>-USD ($BTC is also a fund's ticker, so coins win there);
+- anything else: a stock on Yahoo first, then CoinGecko (thousands of smaller coins: the exact symbol with the largest
+  market cap), then Yahoo <SYMBOL>-USD.
 Information only, delayed by the source, not advice.
 """
 import io, re, time
@@ -12,6 +15,10 @@ from PIL import Image, ImageDraw
 CASHTAG = re.compile(r"(?<![\w$])\$([A-Za-z]{1,6}(?:[.-][A-Za-z]{1,2})?)(?![\w])")
 CRYPTO_FIRST = {"BTC", "ETH", "SOL", "XRP", "DOGE", "ADA", "BNB", "LTC", "AVAX", "DOT", "LINK", "POL", "MATIC", "SHIB",
                 "TRX", "TON", "XMR", "PEPE", "USDT", "USDC", "BCH", "XLM", "ATOM", "NEAR", "SUI", "APT", "ARB", "OP", "HBAR"}
+CURRENCY_NAMES = {'EUR': 'Euro', 'GBP': 'British pound', 'JPY': 'Japanese yen', 'CAD': 'Canadian dollar', 'AUD': 'Australian dollar', 'NZD': 'New Zealand dollar', 'CHF': 'Swiss franc', 'CNY': 'Chinese yuan', 'HKD': 'Hong Kong dollar', 'SGD': 'Singapore dollar', 'INR': 'Indian rupee', 'KRW': 'South Korean won', 'MXN': 'Mexican peso', 'BRL': 'Brazilian real', 'ARS': 'Argentine peso', 'CLP': 'Chilean peso', 'COP': 'Colombian peso', 'PEN': 'Peruvian sol', 'ZAR': 'South African rand', 'TRY': 'Turkish lira', 'RUB': 'Russian ruble', 'PLN': 'Polish zloty', 'CZK': 'Czech koruna', 'HUF': 'Hungarian forint', 'SEK': 'Swedish krona', 'NOK': 'Norwegian krone', 'DKK': 'Danish krone', 'ISK': 'Icelandic krona', 'ILS': 'Israeli shekel', 'AED': 'UAE dirham', 'SAR': 'Saudi riyal', 'QAR': 'Qatari riyal', 'KWD': 'Kuwaiti dinar', 'EGP': 'Egyptian pound', 'NGN': 'Nigerian naira', 'KES': 'Kenyan shilling', 'THB': 'Thai baht', 'VND': 'Vietnamese dong', 'IDR': 'Indonesian rupiah', 'MYR': 'Malaysian ringgit', 'PHP': 'Philippine peso', 'TWD': 'New Taiwan dollar', 'PKR': 'Pakistani rupee', 'BDT': 'Bangladeshi taka', 'UAH': 'Ukrainian hryvnia', 'RON': 'Romanian leu', 'BGN': 'Bulgarian lev'}
+FIAT = {"EUR", "GBP", "JPY", "CAD", "AUD", "NZD", "CHF", "CNY", "HKD", "SGD", "INR", "KRW", "MXN", "BRL", "ARS", "CLP",
+        "COP", "PEN", "ZAR", "TRY", "RUB", "PLN", "CZK", "HUF", "SEK", "NOK", "DKK", "ISK", "ILS", "AED", "SAR", "QAR",
+        "KWD", "EGP", "NGN", "KES", "THB", "VND", "IDR", "MYR", "PHP", "TWD", "PKR", "BDT", "UAH", "RON", "BGN"}
 UA = {"User-Agent": "Mozilla/5.0 (compatible; crispy-bot/1.0)"}
 MAX_PER_MESSAGE = 3
 _cache = {}   # symbol -> (time, result)
@@ -30,15 +37,44 @@ async def _chart(session, sym):
     return meta, closes
 
 
+async def _gecko(session, symbol):
+    """A coin CoinGecko knows by exactly this symbol (the one with the largest market cap): (sym, meta, closes)."""
+    base = "https://api.coingecko.com/api/v3/"
+    async with session.get(base + "search", params={"query": symbol}, headers=UA, timeout=aiohttp.ClientTimeout(total=10)) as r:
+        if r.status != 200: return None
+        coins = [c for c in (await r.json()).get("coins", []) if c.get("symbol", "").upper() == symbol]
+    if not coins: return None
+    coin = min(coins, key=lambda c: c.get("market_cap_rank") or 10 ** 9)
+    async with session.get(base + "coins/markets", params={"vs_currency": "usd", "ids": coin["id"], "sparkline": "true",
+                           "price_change_percentage": "24h"}, headers=UA, timeout=aiohttp.ClientTimeout(total=10)) as r:
+        if r.status != 200: return None
+        rows = await r.json()
+    if not rows or rows[0].get("current_price") is None: return None
+    m = rows[0]
+    price, ch = m["current_price"], m.get("price_change_24h")
+    meta = {"regularMarketPrice": price, "chartPreviousClose": (price - ch) if ch is not None else None, "currency": "USD",
+            "longName": m.get("name"), "regularMarketDayHigh": m.get("high_24h"), "regularMarketDayLow": m.get("low_24h"),
+            "source": "CoinGecko", "rank": m.get("market_cap_rank"), "geckoId": coin["id"]}
+    closes = ((m.get("sparkline_in_7d") or {}).get("price") or [])[-24:]   # hourly: the last day
+    return f"{symbol}-USD", meta, closes
+
+
 async def lookup(session, symbol):
     symbol = symbol.upper()
     hit = _cache.get(symbol)
     if hit and time.monotonic() - hit[0] < 60: return hit[1]
-    order = [f"{symbol}-USD", symbol] if symbol in CRYPTO_FIRST else [symbol, f"{symbol}-USD"]
     out = None
-    for s in order:
-        got = await _chart(session, s)
-        if got: out = (s, *got); break
+    if symbol in FIAT:
+        got = await _chart(session, f"{symbol}USD=X")
+        if got: out = (f"{symbol}USD=X", *got)
+    if out is None:
+        order = [f"{symbol}-USD", symbol, "gecko"] if symbol in CRYPTO_FIRST else [symbol, "gecko", f"{symbol}-USD"]
+        for s in order:
+            try:
+                got = await (_gecko(session, symbol) if s == "gecko" else _chart(session, s))
+            except Exception as e:
+                print(f"[tickers] {symbol} via {s}: {e}"); got = None
+            if got: out = got if s == "gecko" else (s, *got); break
     _cache[symbol] = (time.monotonic(), out)
     return out
 
@@ -60,8 +96,16 @@ def fmt(x, cur):
     sign = "$" if cur == "USD" else ""
     if abs(x) >= 1000: s = f"{x:,.2f}"
     elif abs(x) >= 1: s = f"{x:,.2f}"
-    else: s = f"{x:.6f}".rstrip("0")
+    else:   # small coins: three significant digits (PEPE is $0.00000388, not $0.000004)
+        import math
+        d = max(2, -int(math.floor(math.log10(abs(x)))) + 2) if x else 2
+        s = f"{x:.{d}f}"
     return sign + s + ("" if cur in ("USD", None) else f" {cur}")
+
+
+def fmt_rate(x):
+    if x is None: return "?"
+    return f"{x:,.4f}" if x < 10 else f"{x:,.2f}"
 
 
 def card(sym, meta, closes):
@@ -73,6 +117,19 @@ def card(sym, meta, closes):
     up = (ch or 0) >= 0
     name = meta.get("longName") or meta.get("shortName") or sym
     is_crypto = sym.endswith("-USD")
+    if sym.endswith("USD=X"):   # a currency: 1 unit in dollars, and a dollar in it
+        code = sym[:3]
+        title = f"{code} · {CURRENCY_NAMES.get(code, code)} vs the US dollar"
+        arrow = "▲" if up else "▼"
+        inv = (1 / price) if price else None
+        desc = (f"**1 {code} = ${fmt_rate(price)}**  ·  $1 = {fmt_rate(inv)} {code}\n"
+                + (f"{arrow} {pct:+.2f}% today" if pct is not None else ""))
+        hi, lo = meta.get("regularMarketDayHigh"), meta.get("regularMarketDayLow")
+        if (hi is None or lo is None) and closes: hi, lo = max(closes), min(closes)
+        fields = [("Day range", f"${fmt_rate(lo)} – ${fmt_rate(hi)}")] if hi and lo else []
+        return {"title": title, "description": desc, "color": 0x23A55A if up else 0xDA373C, "fields": fields,
+                "footer": "Currency · data from Yahoo Finance, may be delayed · not financial advice",
+                "url": f"https://finance.yahoo.com/quote/{sym}"}, chart_png(closes, up)
     hi, lo = meta.get("regularMarketDayHigh"), meta.get("regularMarketDayLow")
     if (hi is None or lo is None) and closes: hi, lo = max(closes), min(closes)
     title = f"{sym.replace('-USD', '')} · {name}"
@@ -82,9 +139,12 @@ def card(sym, meta, closes):
     exch = meta.get("fullExchangeName") or meta.get("exchangeName")
     if not is_crypto and exch: fields.append(("Exchange", exch))
     state = meta.get("marketState")
-    footer = ("Crypto · 24/7" if is_crypto else f"Market: {state.lower()}" if state else "Stock") + " · data from Yahoo Finance, may be delayed · not financial advice"
+    src = meta.get("source", "Yahoo Finance")
+    if meta.get("rank"): fields.append(("Market cap rank", f"#{meta['rank']}"))
+    footer = ("Crypto · 24/7" if is_crypto else f"Market: {state.lower()}" if state else "Stock") + f" · data from {src}, may be delayed · not financial advice"
+    url = f"https://www.coingecko.com/en/coins/{meta['geckoId']}" if meta.get("geckoId") else f"https://finance.yahoo.com/quote/{sym}"
     return {"title": title, "description": desc, "color": 0x23A55A if up else 0xDA373C, "fields": fields, "footer": footer,
-            "url": f"https://finance.yahoo.com/quote/{sym}"}, chart_png(closes, up)
+            "url": url}, chart_png(closes, up)
 
 
 def cashtags(text):
