@@ -580,6 +580,7 @@ def build(fn, wj, lobby_box):
             # Each hand has its own pending hand-back, so a quick off-hand shot (main gun still away) doesn't cancel the
             # main gun's return, and the off-hand item goes back to the off hand.
             "tag @s remove pvp.offuse",
+            f"execute if entity @s[tag=pvp.usedoff] if items entity @s weapon.offhand {sel(key)} run tag @s add pvp.offuse",   # the mod says so
             f"execute unless items entity @s weapon.mainhand {sel(key)} run tag @s add pvp.offuse",
             f"execute if entity @s[tag=!pvp.offuse] run scoreboard players set @s pvp.abk {idx}",
             "execute if entity @s[tag=!pvp.offuse] store result score @s pvp.abs run data get entity @s SelectedItemSlot",
@@ -587,7 +588,7 @@ def build(fn, wj, lobby_box):
             "execute if entity @s[tag=pvp.offuse] run scoreboard players set @s pvp.rgo 3",
             "execute if entity @s[tag=!pvp.offuse] run scoreboard players set @s pvp.rgt 3", "tag @s add pvp.caster",
             f"execute at @s run function {NS}:ability/fx/{key}",
-            *([f"execute if items entity @s weapon.mainhand {sel(key)} run function {NS}:ability/dual_arm"] if key in HANDGUNS else []),
+            *([f"execute if entity @s[tag=!pvp.offuse] run function {NS}:ability/dual_arm"] if key in HANDGUNS else []),
             "tag @s remove pvp.caster", "tag @e[tag=pvp.hit] remove pvp.hit",
         ])
         fn(f"ability/fx/{key}", body)
@@ -617,6 +618,9 @@ def build(fn, wj, lobby_box):
                         "data modify storage pvp:debug last set value {}",
                         "data modify storage pvp:debug last.main set from entity @s SelectedItem",
                         "data modify storage pvp:debug last.off set from entity @s equipment.offhand"]
+       # the server mod tags pvp.usedoff when the off hand was really used (main hand on cooldown): that one fired
+       + [f"execute if entity @s[tag=pvp.usedoff] if items entity @s weapon.offhand {sel(k)} run return run function {NS}:ability/use/{k}"
+          for k in ABILITIES]
        + [f"execute if items entity @s {h} {sel(k)} run return run function {NS}:ability/use/{k}"
           for h in ("weapon.mainhand", "weapon.offhand") for k in ABILITIES])
     # give the used item back (it was consumed): its hotbar slot, else the offhand, else anywhere

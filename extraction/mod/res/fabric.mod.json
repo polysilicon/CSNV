@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "crispy_extraction",
-  "version": "1.8.32",
+  "version": "1.8.33",
   "name": "Crispy Extraction Zone",
   "description": "Chest-menu traders, player plots and the Lost Cities zone hooks for the Extraction Zone server.",
   "environment": "server",
