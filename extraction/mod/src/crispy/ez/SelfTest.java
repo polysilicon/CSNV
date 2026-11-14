@@ -207,7 +207,8 @@ final class SelfTest {
                 boolean zoneHurts = dmgEv.allowDamage(le, le.damageSources().generic(), 5f);
                 le.invulnerableTime = 0;
                 le.hurtServer(city, le.damageSources().playerAttack(other), 1000f);
-                long bread = city.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, le.getBoundingBox().inflate(3), ie -> ie.getItem().is(Items.BREAD)).size();
+                long bread = city.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, le.getBoundingBox().inflate(3), ie -> ie.getItem().is(Items.BREAD)).size()
+                        + DeathBox.BOXES.stream().filter(b -> "ezrevive".equals(b.owner)).count();
                 check("only players can kill a stand-in, and its gear drops", !zoneHurts && "killed".equals(rec.state) && bread > 0, "zone damage " + zoneHurts + ", state " + rec.state + ", dropped " + bread);
                 for (Entity e : city.getEntities((Entity) null, le.getBoundingBox().inflate(4), e -> e instanceof net.minecraft.world.entity.item.ItemEntity)) e.discard();
                 Standin.back(server, fp);
@@ -215,6 +216,30 @@ final class SelfTest {
                 if (le.isAlive()) le.discard();
             }
             Standin.RECS.remove(fp.getUUID().toString()); Standin.save();
+            // 1.8.28: a death leaves its gear in a barrel (two for a full inventory), and the barrels expire
+            {
+                BlockPos dbAt = fp.blockPosition();
+                List<ItemStack> gear = new ArrayList<>();
+                for (int i = 0; i < 30; i++) gear.add(new ItemStack(Items.BREAD, 1 + i % 3));
+                int dbBefore = DeathBox.BOXES.size();
+                boolean ok = DeathBox.box(city, dbAt, "eztest", gear);
+                DeathBox.Box b = ok ? DeathBox.BOXES.get(DeathBox.BOXES.size() - 1) : null;
+                int inA = 0, inB = 0;
+                if (b != null && city.getBlockEntity(new BlockPos(b.x, b.y, b.z)) instanceof net.minecraft.world.level.block.entity.BarrelBlockEntity be)
+                    for (int i = 0; i < be.getContainerSize(); i++) if (!be.getItem(i).isEmpty()) inA++;
+                if (b != null && b.x2 != Integer.MIN_VALUE && city.getBlockEntity(new BlockPos(b.x2, b.y2, b.z2)) instanceof net.minecraft.world.level.block.entity.BarrelBlockEntity be2)
+                    for (int i = 0; i < be2.getContainerSize(); i++) if (!be2.getItem(i).isEmpty()) inB++;
+                check("a death leaves its gear in a box (two for a full inventory)", ok && inA == 27 && inB == 3 && DeathBox.BOXES.size() == dbBefore + 1,
+                        "boxed " + ok + ", " + inA + " + " + inB + " stacks");
+                if (b != null) {
+                    b.until = 0; DeathBox.expire(server);
+                    boolean gone = !city.getBlockState(new BlockPos(b.x, b.y, b.z)).is(Blocks.BARREL)
+                            && (b.x2 == Integer.MIN_VALUE || !city.getBlockState(new BlockPos(b.x2, b.y2, b.z2)).is(Blocks.BARREL));
+                    check("a death box disappears when its time is up", gone && !DeathBox.BOXES.contains(b), "removed " + gone);
+                }
+                for (DeathBox.Box x : DeathBox.BOXES) if ("ezrevive".equals(x.owner) || "eztest".equals(x.owner)) x.until = 0;
+                DeathBox.expire(server);   // the stand-in's box and this one: barrels and labels gone
+            }
             var gb = Guide.book().get(net.minecraft.core.component.DataComponents.WRITTEN_BOOK_CONTENT);
             check("the Field Guide has all its pages", gb != null && gb.pages().size() == Guide.PAGES.length, gb == null ? "no content" : gb.pages().size() + " pages");
             Plots.run(server, "scoreboard players reset ezrevive ez.time");

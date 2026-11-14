@@ -146,15 +146,18 @@ final class Standin {
         r.killer = by instanceof ServerPlayer k ? k.getScoreboardName() : null;
         save();   // first: the gear drops below, and the player's own copy is cleared when they log in
         var ops = lvl.getServer().registryAccess().createSerializationContext(JsonOps.INSTANCE);
+        List<ItemStack> gear = new ArrayList<>();
         for (JsonElement j : r.items) {
-            try {
-                ItemStack s = ItemStack.CODEC.parse(ops, j).getOrThrow();
+            try { gear.add(ItemStack.CODEC.parse(ops, j).getOrThrow()); }
+            catch (Exception ex) { System.err.println("[crispy-extraction] stand-in item: " + ex); }
+        }
+        if (!DeathBox.box(lvl, m.blockPosition(), r.name, gear))   // 1.8.28: into a death box, like a real death
+            for (ItemStack s : gear) {
                 ItemEntity ie = new ItemEntity(lvl, m.getX(), m.getY() + 0.5, m.getZ(), s);
                 ie.setDefaultPickUpDelay();
                 lvl.addFreshEntity(ie);
-            } catch (Exception ex) { System.err.println("[crispy-extraction] stand-in item: " + ex); }
-        }
-        if (by instanceof ServerPlayer k) k.sendSystemMessage(t("You killed " + r.name + "'s stand-in: their gear is on the ground.", ChatFormatting.RED));
+            }
+        if (by instanceof ServerPlayer k) k.sendSystemMessage(t("You killed " + r.name + "'s stand-in: their gear is in a box where they stood.", ChatFormatting.RED));
         System.out.println("[crispy-extraction] stand-in for " + r.name + " killed by " + r.killer);
     }
 
