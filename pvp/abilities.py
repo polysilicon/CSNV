@@ -630,8 +630,10 @@ def build(fn, wj, lobby_box):
        + [f"execute if items entity @s {h} {sel(k)} run return run function {NS}:ability/use/{k}"
           for h in ("weapon.mainhand", "weapon.offhand") for k in ABILITIES])
     # give the used item back (it was consumed): its hotbar slot, else the offhand, else anywhere
+    # after every hand-back, resend the inventory (server mod): a click the client mispredicted can leave a gun
+    # hidden on screen that the server still has
     fn("ability/regive", ["scoreboard players set @s pvp.rgt 0"] + [
-        f"execute if score @s pvp.abk matches {i} run return run function {NS}:ability/regive/{k}" for i, k in enumerate(ABILITIES, 1)])
+        f"execute if score @s pvp.abk matches {i} run function {NS}:ability/regive/{k}" for i, k in enumerate(ABILITIES, 1)] + ["pvpsync"])
     for k in ABILITIES:
         mine = sel(k)
         fn(f"ability/regive/{k}", [
@@ -651,7 +653,7 @@ def build(fn, wj, lobby_box):
             f"loot give @s loot {NS}:ability/{k}",
         ])
     fn("ability/regive_off", ["scoreboard players set @s pvp.rgo 0"] + [
-        f"execute if score @s pvp.ako matches {i} run return run function {NS}:ability/regiveoff/{k}" for i, k in enumerate(ABILITIES, 1)])
+        f"execute if score @s pvp.ako matches {i} run function {NS}:ability/regiveoff/{k}" for i, k in enumerate(ABILITIES, 1)] + ["pvpsync"])
     for k in ABILITIES:
         fn(f"ability/regiveoff/{k}", [
             f"execute if entity @s[{lobby_box}] run return 0",
