@@ -58,14 +58,32 @@ def since(first, price, fmt):
     return f"{arrow} **{pct:+,.1f}%**{x} · {base}"
 
 
-def decorate(em, message, key, price, fmt):
-    """Add the scanner and, if someone scanned it before, the change since then, to a discord.Embed."""
+def since_odds(first, now):
+    """Polymarket: each outcome's odds then and now, in percentage points, biggest current odds first."""
+    then = first.get("price") or {}
+    rows = []
+    for label in sorted(now, key=lambda k: -now[k])[:4]:
+        p1 = now[label]
+        if label in then:
+            d = (p1 - then[label]) * 100
+            arrow = "▲" if d > 0.5 else "▼" if d < -0.5 else "•"
+            rows.append(f"{arrow} {label[:40]}: {then[label] * 100:.0f}% → **{p1 * 100:.0f}%** ({d:+.0f} pts)")
+        else: rows.append(f"• {label[:40]}: **{p1 * 100:.0f}%** (new)")
+    return "\n".join(rows + [f"first scanned by **{first['by']}** <t:{first['t']}:R>"])[:1024]
+
+
+def decorate(em, message, key, price, fmt=None, user=None, guild=None, odds=False):
+    """Add the scanner and, if someone scanned it before, the change since then, to a discord.Embed.
+    `message` gives the scanner and server; for a slash command pass message=None, user= and guild= instead.
+    odds=True: `price` is {outcome: probability} (Polymarket)."""
     import discord
-    user = message.author
+    user = user or message.author
+    guild = guild if message is None else message.guild
     name = getattr(user, "display_name", None) or user.name
     em.set_author(name=f"Scanned by {name}", icon_url=user.display_avatar.url if user.display_avatar else None)
     try:
-        first = note(message.guild.id if message.guild else 0, key, user.id, discord.utils.escape_markdown(name), price)
+        first = note(guild.id if guild else 0, key, user.id, discord.utils.escape_markdown(name), price or None)
     except Exception as e:
         print(f"[scans] {key}: {e}"); return
-    if first: em.add_field(name="Since first scan", value=since(first, price, fmt), inline=False)
+    if first: em.add_field(name="Since first scan", inline=False,
+                           value=since_odds(first, price or {}) if odds else since(first, price, fmt))

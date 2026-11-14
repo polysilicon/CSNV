@@ -8,6 +8,7 @@ Data: Polymarket's public Gamma API (no key). Information only, not advice.
 """
 import json, re
 import aiohttp
+import scans
 
 API = "https://gamma-api.polymarket.com/"
 LINK = re.compile(r"https?://(?:www\.)?polymarket\.com/(?:[a-z]{2}/)?event/([a-z0-9-]+)", re.I)
@@ -45,6 +46,23 @@ def money(v):
     try: v = float(v)
     except (TypeError, ValueError): return "?"
     return f"${v / 1e6:,.1f}M" if v >= 1e6 else f"${v / 1e3:,.0f}K" if v >= 1e3 else f"${v:,.0f}"
+
+
+def odds(e):
+    """{outcome: probability} as the card shows them (for scans.py's 'since first scan')."""
+    markets = [m for m in e.get("markets", []) if m.get("outcomePrices")]
+    open_ms = [m for m in markets if not m.get("closed")] or markets
+    out = {}
+    if len(open_ms) == 1:
+        m = open_ms[0]
+        for i, o in enumerate(json.loads(m.get("outcomes") or "[]")[:SHOW]):
+            p = _price(m, i)
+            if p is not None: out[o] = p
+    else:
+        for m in open_ms:
+            p = _price(m)
+            if p is not None: out[m.get("groupItemTitle") or m.get("question") or "?"] = p
+    return out
 
 
 def card(e, others=()):
@@ -89,7 +107,10 @@ async def reply_links(message, discord):
     async with aiohttp.ClientSession() as session:
         for slug in slugs:
             e = await event(session, slug)
-            if e: await message.reply(embed=embed(discord, card(e)), mention_author=False)
+            if not e: continue
+            em = embed(discord, card(e))
+            scans.decorate(em, message, f"p:{e.get('slug', slug)}", odds(e), odds=True)
+            await message.reply(embed=em, mention_author=False)
 
 
 def register(bot, discord, app_commands):
@@ -102,4 +123,6 @@ def register(bot, discord, app_commands):
             if not found:
                 return await interaction.followup.send(f"No open Polymarket market matches \"{search[:100]}\".")
             e = await event(session, found[0]["slug"]) or found[0]
-            await interaction.followup.send(embed=embed(discord, card(e, found[1:])))
+            em = embed(discord, card(e, found[1:]))
+            scans.decorate(em, None, f"p:{e.get('slug', '')}", odds(e), user=interaction.user, guild=interaction.guild, odds=True)
+            await interaction.followup.send(embed=em)
