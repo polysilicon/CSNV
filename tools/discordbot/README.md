@@ -17,6 +17,15 @@ the host (it reads tokens from `/etc/crispybot.env`); these two modules are copi
 - `dex.py`: a Solana or 0x (EVM) contract address, in text or in a token-site link, gets a DexScreener card: price,
   1 h / 24 h change, liquidity, volume, market cap, pair age, and a warning for thin or brand-new tokens. Non-tokens: no reply.
 
+- `newpairs.py`: `/newpairs <topic>` searches every coin launched in the last 24 h by name/symbol (newest 10, live
+  market cap and liquidity from DexScreener, a risk warning). Feeds: pump.fun launches from PumpPortal's websocket
+  (needs `websockets` in the venv) and new Solana/Base/Ethereum pools from GeckoTerminal (polled, which includes
+  pump.fun's own pools). Pump.fun's site API is behind bot protection and isn't used. The list is kept in
+  `newpairs.json` so restarts don't empty it. Wired in bot.py with `newpairs.register(...)`, which starts the feeds
+  from `setup_hook`.
+
+`/console` was removed from bot.py on 2026-11-14 (backup `bot.py.bak-console`); `/mc` with its allowlist remains.
+
 Deploy: copy the modules into `/opt/crispybot`, `systemctl restart crispybot`. Backup of the pre-change bot:
 `bot.py.bak-media-tickers`. Keep yt-dlp current (`/opt/crispybot/venv/bin/pip install -U "yt-dlp[default,curl-cffi]"`):
 the sites change often and old versions stop working.
