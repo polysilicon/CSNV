@@ -7,7 +7,8 @@ An ability is an item in the hotbar: right-click to use it.
   runs while the item is still in the hand: it works out which ability that is from the item model
   and runs pvp:ability/use/<key>, which remembers the ability and the selected hotbar slot. The last used item is
   kept in storage pvp:debug for troubleshooting.
-- 3 ticks later pvp:ability/regive puts the item back in that slot (not sooner: if the slot is emptied and refilled
+- 3 ticks later pvp:ability/regive puts the item back in that slot (only if the player now carries fewer of it than
+  when they used it: pvp.abn, so duplicates of the same item never block the hand-back) (not sooner: if the slot is emptied and refilled
   before the server syncs the inventory, the client never hears about either change and keeps showing it empty), or the offhand if it came from there, otherwise the
   inventory. Never twice, and never in the lobby.
 
@@ -571,6 +572,11 @@ def build(fn, wj, lobby_box):
         fn(f"ability/use/{key}", [
             f"scoreboard players set @s pvp.abk {idx}",
             "execute store result score @s pvp.abs run data get entity @s SelectedItemSlot",
+            # (before anything that can return early, e.g. Extraction's magazine check) how many of this item the player carries right now (the used one is still in the hand): regive hands it
+            # back only if the count went down, so a second copy elsewhere in the inventory no longer swallows it
+            f"execute store result score @s pvp.abn if items entity @s container.* {sel(key)}",
+            f"execute store result score #off pvp if items entity @s weapon.offhand {sel(key)}",
+            "scoreboard players operation @s pvp.abn += #off pvp",
             "scoreboard players set @s pvp.rgt 3", "tag @s add pvp.caster",
             f"execute at @s run function {NS}:ability/fx/{key}",
             "tag @s remove pvp.caster", "tag @e[tag=pvp.hit] remove pvp.hit",
@@ -592,8 +598,11 @@ def build(fn, wj, lobby_box):
         mine = sel(k)
         fn(f"ability/regive/{k}", [
             f"execute if entity @s[{lobby_box}] run return 0",
-            f"execute if items entity @s container.* {mine} run return 0",
-            f"execute if items entity @s weapon.offhand {mine} run return 0",
+            # nothing missing (the use was cancelled, or it's already back): don't hand out a second copy
+            f"execute store result score #now pvp if items entity @s container.* {mine}",
+            f"execute store result score #off pvp if items entity @s weapon.offhand {mine}",
+            "scoreboard players operation #now pvp += #off pvp",
+            "execute if score #now pvp >= @s pvp.abn run return 0",
             *[f"execute if score @s pvp.abs matches {n} unless items entity @s hotbar.{n} * run return run loot replace entity @s hotbar.{n} loot {NS}:ability/{k}"
               for n in range(9)],
             f"execute unless items entity @s weapon.offhand * run return run loot replace entity @s weapon.offhand loot {NS}:ability/{k}",
@@ -710,5 +719,5 @@ def build(fn, wj, lobby_box):
                              "scoreboard players set @s pvp.abl 8",
                              "playsound minecraft:block.beacon.power_select player @s ~ ~ ~ 0.6 1.8",
                              "title @s actionbar {\"text\":\"◆ Shields recharged\",\"color\":\"dark_green\"}"])
-    return ["pvp.rgt dummy", "pvp.abk dummy", "pvp.abs dummy", "pvp.id dummy", "pvp.ft dummy", "pvp.gk totalKillCount", "pvp.dmg minecraft.custom:minecraft.damage_taken", "pvp.sh dummy",
+    return ["pvp.rgt dummy", "pvp.abk dummy", "pvp.abs dummy", "pvp.abn dummy", "pvp.id dummy", "pvp.ft dummy", "pvp.gk totalKillCount", "pvp.dmg minecraft.custom:minecraft.damage_taken", "pvp.sh dummy",
             "pvp.dab minecraft.custom:minecraft.damage_absorbed", "pvp.abl dummy"]
