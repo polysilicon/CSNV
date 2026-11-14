@@ -1,6 +1,14 @@
 # CrispyLobby
 
 Paper 26.2 plugin for the Lobby (`CrispyLobby01`). It provides:
+- **Daily voting** (1.23.0): vote days are UTC days (when minecraftservers.org and most lists reset). Each player's
+  sites voted today (`voted`), streak (`streak`, `best`, `lastDay`) and reminder opt-out (`noRemind`) are kept in
+  `votes.json`. A day's first vote adds `votes.streak-bonus` points for the streak reached; a vote on the
+  `featured: true` link adds `votes.featured-bonus`. `/vote links` lists the featured site first and ticks the ones
+  done today; the vote menu shows today's count, the streak and a reminders on/off bell (slot 43). Every
+  `votes.remind-minutes` (90), players on any server who haven't voted on the featured site today get a clickable
+  reminder (lobby directly, other servers by RCON tellraw). `service:` on a link names what the site sends with its
+  votes when it doesn't start like the link's name (Minecraft-Server-List sends `MCSL`).
 - **Animated and staff-given tags** (1.17.0): a tag can have `animation: <TAB animation>` (the tab list and name tags
   use `%animation:<name>%`, through `tags_anim.json` and CrispyTags 1.8.0; chat and menus keep the still `display`) and
   `granted: true` (not sold; hidden unless owned). `/vote grant <player> <tag|color|chat>:<id>` and `/vote revoke ...`

@@ -40,6 +40,13 @@ network-stats:
 # Admin: /vote give <player> [n], /vote points <player> <+/-n>, /vote reload.
 votes:
   points-per-vote: 1
+  # 1.23 daily voting (vote days are UTC days, like the list sites'). The featured link is listed first, is the one
+  # reminders point to, and gives featured-bonus extra points. A day's first vote adds the streak bonus for the
+  # longest streak reached (days in a row with a vote). remind-minutes: how often players who haven't voted on the
+  # featured site today get a reminder in chat, on every server (0 = off; players can switch it off in /vote).
+  featured-bonus: 1
+  streak-bonus: {3: 1, 7: 2, 14: 3}
+  remind-minutes: 90
   announce: true            # "X voted" in the lobby
   discord-relay: true       # also log it as a "<Votes> ..." chat line: the Discord bot posts it and cross-chats it to every server
   rcon-announce: false      # tellraw it to every server directly (turn on if the bot is down; else it shows twice)
@@ -47,8 +54,8 @@ votes:
   links:
     - {name: TopG, url: "https://topg.org/minecraft-servers/server-687311"}
     - {name: Planet Minecraft, url: "https://www.planetminecraft.com/server/crispy-anarchy-1-16-no-rules-survival/vote/"}
-    - {name: MinecraftServers.org, url: "https://minecraftservers.org/vote/587166"}
-    - {name: Minecraft-Server-List, url: "https://minecraft-server-list.com/server/503605/vote/"}
+    - {name: MinecraftServers.org, url: "https://minecraftservers.org/vote/587166", featured: true}
+    - {name: Minecraft-Server-List, url: "https://minecraft-server-list.com/server/503605/vote/", service: MCSL}
     - {name: MMTop200, url: "https://mmtop200.com/vote/5176"}
     - {name: Minecraft-MP, url: "https://minecraft-mp.com/server/365762/vote/"}
     - {name: ServerTilt, url: "https://www.servertilt.com/minecraft-servers/crispy-anarchy/vote"}

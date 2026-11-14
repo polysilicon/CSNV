@@ -29,7 +29,9 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.ZoneOffset;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -53,7 +55,15 @@ public class Votes implements Listener {
         Set<String> owned = new HashSet<>();
         String tag, color, chat;
         String trail;   // pre-1.5 walking trails; refunded and cleared on load
+        // 1.23: daily voting. voted = vote-link name -> UTC day of the last vote there (only today's matter);
+        // streak = days in a row with at least one vote, lastDay = the UTC day of the last vote, best = longest streak
+        Map<String, String> voted = new HashMap<>();
+        int streak, best; String lastDay;
+        boolean noRemind;   // /vote remind off
     }
+    /** A vote site from votes.links: name and url shown to players, service = the name the site sends with its votes
+     *  (if it doesn't start like the name), featured = shown first with a bonus. */
+    record Link(String name, String url, String service, boolean featured) {}
     /** A vote-reward server. key names it here and in saved data (pending rewards); proxy is its Velocity name. */
     record Server(String key, String label, Material icon, Rcon rcon, List<String> reward, List<String> commands, String proxy) {}
     /** A tag costs vote points, or (earned tags) has a requirement instead: an advancement, a network stat milestone
@@ -101,6 +111,9 @@ public class Votes implements Listener {
     int pointsPerVote; boolean announce, botRelay, rconAnnounce;
     final Map<UUID, String> firstSeen = new HashMap<>();   // uuid -> earliest known date on the network, "yyyy-MM-dd" ("9999" if none)
     Set<String> testUsers = Set.of();
+    final List<Link> links = new ArrayList<>();
+    int featuredBonus, remindMinutes;
+    final TreeMap<Integer, Integer> streakBonus = new TreeMap<>();   // streak days -> bonus points on that day's first vote
 
     Votes(CrispyLobby plugin) {
         this.plugin = plugin;
@@ -117,6 +130,7 @@ public class Votes implements Listener {
             if (pd.months == null) pd.months = new HashMap<>();
             if (pd.pending == null) pd.pending = new HashMap<>();
             if (pd.owned == null) pd.owned = new HashSet<>();
+            if (pd.voted == null) pd.voted = new HashMap<>();
             int refund = 0;   // trails were retired in 1.5.0: give their points back
             for (Iterator<String> it = pd.owned.iterator(); it.hasNext(); ) {
                 String k = it.next();
@@ -143,6 +157,20 @@ public class Votes implements Listener {
         rconAnnounce = c.getBoolean("rcon-announce", false);
         testUsers = new HashSet<>();
         for (String u : c.getStringList("test-usernames")) testUsers.add(u.toLowerCase(Locale.ROOT));
+        links.clear();
+        for (Map<?, ?> l : c.getMapList("links")) {
+            String url = String.valueOf(l.get("url"));
+            if (l.get("name") == null || url.contains("CHANGE_ME")) continue;
+            links.add(new Link(String.valueOf(l.get("name")), url, l.get("service") == null ? null : String.valueOf(l.get("service")),
+                    Boolean.TRUE.equals(l.get("featured"))));
+        }
+        links.sort(Comparator.comparing((Link l) -> !l.featured()));   // featured first, the rest in config order
+        featuredBonus = c.getInt("featured-bonus", 1);
+        remindMinutes = c.getInt("remind-minutes", 90);
+        streakBonus.clear();
+        ConfigurationSection sb = c.getConfigurationSection("streak-bonus");
+        if (sb != null) for (String k : sb.getKeys(false)) try { streakBonus.put(Integer.parseInt(k), sb.getInt(k)); } catch (NumberFormatException ignored) {}
+        else { streakBonus.put(3, 1); streakBonus.put(7, 2); streakBonus.put(14, 3); }
         Path root = Path.of(plugin.getConfig().getString("network-stats.instances-dir", "/AMPStorage/.ampdata/instances"));
         ConfigurationSection ss = c.getConfigurationSection("servers");
         if (ss != null) for (String k : ss.getKeys(false)) {
@@ -196,6 +224,7 @@ public class Votes implements Listener {
             Bukkit.getScheduler().runTask(plugin, () -> { if (p.isOnline()) command(p, w[0], Arrays.copyOfRange(w, 1, w.length)); });
         });
         Bukkit.getScheduler().runTaskTimer(plugin, this::cycle, 100L, 100L);
+        Bukkit.getScheduler().runTaskTimer(plugin, this::remindAll, 20L * 60 * 5, 20L * 60);   // checks every minute, sends every remind-minutes
     }
     void stop() { save(); worker.shutdownNow(); servers.values().forEach(s -> s.rcon().close()); }
 
@@ -275,6 +304,23 @@ public class Votes implements Listener {
         PD pd = pd(user);
         pd.unclaimed += n; pd.points += n * pointsPerVote; pd.total += n;
         pd.months.merge(month(), n, Integer::sum);
+        List<String> extras = new ArrayList<>();
+        if (!service.equals("an admin") && !service.equals("TestSite")) {
+            String today = today();
+            if (!today.equals(pd.lastDay)) {   // the day's first vote: the streak goes on (or starts again)
+                pd.streak = LocalDate.now(ZoneOffset.UTC).minusDays(1).toString().equals(pd.lastDay) ? pd.streak + 1 : 1;
+                pd.best = Math.max(pd.best, pd.streak);
+                pd.lastDay = today;
+                Map.Entry<Integer, Integer> e = streakBonus.floorEntry(pd.streak);
+                if (e != null && e.getValue() > 0) { pd.points += e.getValue(); extras.add("&6+" + e.getValue() + " &7for your &6" + pd.streak + "-day streak"); }
+            }
+            Link l = linkFor(service);
+            if (l != null) {
+                pd.voted.values().removeIf(d -> !d.equals(today));
+                pd.voted.put(l.name(), today);
+                if (l.featured() && featuredBonus > 0) { pd.points += featuredBonus; extras.add("&b+" + featuredBonus + " &7bonus for &b" + l.name()); }
+            }
+        }
         save();
         String line = "&a" + pd.name + " &7voted for CrispyAnarchy on &f" + service + "&7! &eClaim vote rewards: &f/vote";
         if (announce) {
@@ -290,6 +336,10 @@ public class Votes implements Listener {
         Player p = Bukkit.getPlayerExact(user);
         if (p != null) {
             msg(p, "&aThanks for voting! &7You have &e" + pd.unclaimed + " &7reward" + (pd.unclaimed == 1 ? "" : "s") + " to claim and &d" + pd.points + " &7vote points. &f/vote");
+            for (String x : extras) msg(p, x);
+            int left = (int) links.stream().filter(l -> !votedToday(pd, l)).count();
+            if (left > 0) p.sendMessage(c("&d&lVote &8» &7" + left + " more site" + (left == 1 ? "" : "s") + " to vote on today, each one another reward. ")
+                    .append(c("&a&n[Vote links]").clickEvent(ClickEvent.runCommand("/vote links")).hoverEvent(HoverEvent.showText(c("&7Show the vote links")))));
             p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.7f, 1.4f);
         }
     }
@@ -303,6 +353,66 @@ public class Votes implements Listener {
             if (p.isOnline()) p.sendMessage(c("&d&lVote &8» &7You have &e" + pd.unclaimed + " &7unclaimed vote reward" + (pd.unclaimed == 1 ? "" : "s") + ". ")
                     .append(c("&a&n[Claim]").clickEvent(ClickEvent.runCommand("/vote")).hoverEvent(HoverEvent.showText(c("&7Open /vote")))));
         }, 60L);
+    }
+
+    // ------------------------------------------------------------------ daily voting (1.23)
+    /** Vote days are UTC days: minecraftservers.org and most lists start a new day at midnight UTC. */
+    static String today() { return LocalDate.now(ZoneOffset.UTC).toString(); }
+    static String norm(String s) { return s == null ? "" : s.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", ""); }
+    /** The vote link a site's votes belong to: its `service`, or a name that starts the same as the service name
+     *  ("TopG" / "TopG.org", "Planet Minecraft" / "PlanetMinecraft.com"). */
+    Link linkFor(String service) {
+        String n = norm(service);
+        if (n.isEmpty()) return null;
+        for (Link l : links) if (l.service() != null && norm(l.service()).equals(n)) return l;
+        for (Link l : links) { String ln = norm(l.name()); if (!ln.isEmpty() && (n.startsWith(ln) || ln.startsWith(n))) return l; }
+        return null;
+    }
+    static boolean votedToday(PD pd, Link l) { return pd != null && today().equals(pd.voted.get(l.name())); }
+    Link featured() { return links.stream().filter(Link::featured).findFirst().orElse(links.isEmpty() ? null : links.get(0)); }
+    /** "You haven't voted today" with a click-to-vote link, or null if they have (on the featured site) or opted out. */
+    Component reminder(PD pd) {
+        Link f = featured();
+        if (f == null || (pd != null && (pd.noRemind || votedToday(pd, f)))) return null;
+        String streak = pd != null && pd.streak > 0 && LocalDate.now(ZoneOffset.UTC).minusDays(1).toString().equals(pd.lastDay)
+                ? " &6Keep your " + pd.streak + "-day streak going!" : "";
+        return c("&d&lVote &8» &7You haven't voted today." + streak + " ")
+                .append(c("&b&n[" + f.name() + "]").clickEvent(ClickEvent.openUrl(f.url())).hoverEvent(HoverEvent.showText(c("&7Vote on " + f.name()
+                        + (f.featured() && featuredBonus > 0 ? "\n&b+" + featuredBonus + " bonus point" + (featuredBonus == 1 ? "" : "s") : "") + "\n&8" + f.url()))))
+                .append(c(" &a&n[All sites]").clickEvent(ClickEvent.runCommand("/vote links")).hoverEvent(HoverEvent.showText(c("&7Every vote site"))))
+                .append(c(" &8&n[Stop reminders]").clickEvent(ClickEvent.runCommand("/vote remind off")).hoverEvent(HoverEvent.showText(c("&7Turn these reminders off"))));
+    }
+    long lastRemind = System.currentTimeMillis();
+    /** Every remind-minutes: remind everyone on the network who hasn't voted on the featured site today (the lobby
+     *  directly, the other servers through RCON). */
+    void remindAll() {
+        if (remindMinutes <= 0 || System.currentTimeMillis() - lastRemind < remindMinutes * 60_000L) return;
+        lastRemind = System.currentTimeMillis();
+        Link f = featured();
+        if (f == null) return;
+        Set<String> skip = new HashSet<>();   // lower-case names that voted today or opted out
+        players.forEach((k, pd) -> { if (pd.noRemind || votedToday(pd, f)) skip.add(k); });
+        for (Player p : Bukkit.getOnlinePlayers()) { if (!skip.contains(p.getName().toLowerCase(Locale.ROOT))) { Component r = reminder(players.get(p.getName().toLowerCase(Locale.ROOT))); if (r != null) p.sendMessage(r); } }
+        String json = remindJson(f);
+        List<Server> all = new ArrayList<>(servers.values());
+        worker.submit(() -> {
+            for (Server s : all) {
+                try { for (String name : online(s)) if (!skip.contains(name.toLowerCase(Locale.ROOT))) s.rcon().cmd("tellraw " + name + " " + json); }
+                catch (IOException ignored) {}
+            }
+        });
+    }
+    /** The reminder as tellraw JSON for the other servers. Click events are given in both the old (clickEvent) and
+     *  the 1.21.5+ (click_event) spelling; each version ignores the one it doesn't know. */
+    String remindJson(Link f) {
+        String url = f.url().replace("\"", "");
+        String bonus = f.featured() && featuredBonus > 0 ? " (+" + featuredBonus + " bonus point" + (featuredBonus == 1 ? "" : "s") + ")" : "";
+        return "[{\"text\":\"Vote » \",\"color\":\"light_purple\",\"bold\":true},"
+                + "{\"text\":\"You haven't voted today. \",\"color\":\"gray\",\"bold\":false},"
+                + "{\"text\":\"[" + f.name() + "]\",\"color\":\"aqua\",\"underlined\":true,\"bold\":false,"
+                + "\"clickEvent\":{\"action\":\"open_url\",\"value\":\"" + url + "\"},\"click_event\":{\"action\":\"open_url\",\"url\":\"" + url + "\"},"
+                + "\"hoverEvent\":{\"action\":\"show_text\",\"contents\":\"Vote on " + f.name() + bonus + "\"},\"hover_event\":{\"action\":\"show_text\",\"value\":\"Vote on " + f.name() + bonus + "\"}},"
+                + "{\"text\":\"" + bonus + "  /vote for every site (turn reminders off there)\",\"color\":\"dark_gray\",\"bold\":false}]";
     }
 
     // ------------------------------------------------------------------ claiming
@@ -426,7 +536,9 @@ public class Votes implements Listener {
         Menu m = menu("main", 5, "&d&lVote Rewards");
         put(m, 4, item(Material.NETHER_STAR, "&d&lYour votes", List.of(
                 "&7Unclaimed rewards: &e" + pd.unclaimed, "&7Vote points: &d" + pd.points,
-                "&7Votes this month: &f" + pd.months.getOrDefault(month(), 0) + " &8· &7total: &f" + pd.total, "",
+                "&7Votes this month: &f" + pd.months.getOrDefault(month(), 0) + " &8· &7total: &f" + pd.total,
+                "&7Voted today: &f" + links.stream().filter(l -> votedToday(pd, l)).count() + "&7/&f" + links.size() + " sites"
+                        + (pd.streak > 0 && (today().equals(pd.lastDay) || LocalDate.now(ZoneOffset.UTC).minusDays(1).toString().equals(pd.lastDay)) ? " &8· &6" + pd.streak + "-day streak" : ""), "",
                 "&7Every vote = &e1 reward &7you can send to any", "&7server below, plus &d" + pointsPerVote + " vote point" + (pointsPerVote == 1 ? "" : "s") + " &7for cosmetics.", "",
                 "&eClick for the vote links"), pd.unclaimed > 0), "links");
         int[] slots = {19, 20, 21, 22, 23, 24, 25};
@@ -442,6 +554,8 @@ public class Votes implements Listener {
             if (pd.unclaimed > 1) lore.add("&aShift-click &7to send all &e" + pd.unclaimed);
             put(m, slots[i++], item(s.icon(), s.label(), lore, pend > 0), "claim:" + s.key());
         }
+        put(m, 43, item(pd.noRemind ? Material.GRAY_DYE : Material.BELL, "&e&lVote reminders: " + (pd.noRemind ? "&cOff" : "&aOn"),
+                List.of("&7Every " + remindMinutes + " minutes, a reminder in chat", "&7if you haven't voted today.", "", "&eClick to turn " + (pd.noRemind ? "on" : "off")), false), "remind");
         put(m, 39, item(Material.GOLD_INGOT, "&6&lTop voters", List.of("&7This month's top 10 in chat"), false), "top");
         Tag tg = pd.tag == null ? null : tags.get(pd.tag);
         NameColor nc = pd.color == null ? null : colors.get(pd.color), cc = pd.chat == null ? null : chatColors.get(pd.chat);
@@ -957,6 +1071,7 @@ public class Votes implements Listener {
         UUID u = p.getUniqueId();
         if (a.equals("links")) { p.closeInventory(); links(p); }
         else if (a.equals("top")) { p.closeInventory(); top(p); }
+        else if (a.equals("remind")) { PD pd = pd(p.getName()); pd.noRemind = !pd.noRemind; save(); p.playSound(Sound.UI_BUTTON_CLICK, 0.6f, 1f); open(p); }
         else if (a.equals("back")) open(p);
         else if (a.startsWith("claim:")) claim(p, a.substring(6), shift);
         else if (a.startsWith("pg:")) { pageOf.merge(u, Integer.parseInt(a.substring(3)), Integer::sum); reopen(p, m.kind); }
@@ -1088,14 +1203,18 @@ public class Votes implements Listener {
     void top(CommandSender s) { top(new Viewer.Local(s)); }
     void links(Viewer s) {
         msg(s, "&eVote for CrispyAnarchy &7- every vote is a reward you can send to any server, plus vote points for cosmetics:");
-        int shown = 0;
-        for (Map<?, ?> l : plugin.getConfig().getMapList("votes.links")) {
-            String name = String.valueOf(l.get("name")), url = String.valueOf(l.get("url"));
-            if (url.contains("CHANGE_ME")) continue;
-            s.sendMessage(c("&8» &b&n" + name).clickEvent(ClickEvent.openUrl(url)).hoverEvent(HoverEvent.showText(Component.text(url))));
-            shown++;
+        PD pd = players.get(s.getName().toLowerCase(Locale.ROOT));
+        for (Link l : links) {
+            boolean done = votedToday(pd, l);
+            String tail = done ? " &a✔ voted today" : l.featured() && featuredBonus > 0 ? " &b★ +" + featuredBonus + " bonus point" + (featuredBonus == 1 ? "" : "s") : "";
+            s.sendMessage(c((done ? "&8» &7&m" : "&8» &b&n") + l.name()).append(c(tail))
+                    .clickEvent(ClickEvent.openUrl(l.url())).hoverEvent(HoverEvent.showText(Component.text(l.url()))));
         }
-        if (shown == 0) msg(s, "&7Vote links are coming soon.");
+        if (links.isEmpty()) msg(s, "&7Vote links are coming soon.");
+        else {
+            Map.Entry<Integer, Integer> next = pd == null ? streakBonus.firstEntry() : streakBonus.higherEntry(pd.streak);
+            msg(s, "&7Vote every day for a streak bonus" + (next != null ? " &8(&6+" + next.getValue() + " &8a day from day " + next.getKey() + ")" : "") + "&7. A new vote day starts at midnight UTC.");
+        }
     }
 
     void top(Viewer s) {
@@ -1120,6 +1239,12 @@ public class Votes implements Listener {
             case "links" -> links(s);
             case "top" -> top(s);
             case "go" -> { if (s instanceof Player p && a.length > 1) connect(p, a[1]); }
+            case "remind" -> {
+                PD pd = pd(s.getName());
+                pd.noRemind = a.length > 1 ? a[1].equalsIgnoreCase("off") : !pd.noRemind;
+                save();
+                msg(s, pd.noRemind ? "Vote reminders &coff&7. &f/vote remind on &7to turn them back on." : "Vote reminders &aon&7.");
+            }
             case "test", "give" -> {
                 if (!admin || a.length < 2) { msg(s, "&7/vote give <player> [amount]"); return true; }
                 int n = a.length > 2 ? Math.max(1, Integer.parseInt(a[2])) : 1;
