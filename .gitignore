@@ -3,3 +3,5 @@ launcher/csnv-launch
 launcher/csnv-launch.exe
 __pycache__/
 extraction/worldgen/*_26.2.json   # vanilla game data: copied from the 26.2 server jar, not committed
+
+tools/creators/data/   # creator outreach tracker: third parties' contact details, kept out of git
