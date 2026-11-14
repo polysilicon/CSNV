@@ -11,12 +11,13 @@ brand-new player (empty inventory, no XP), so only genuinely new players are wel
   (/trigger cw_help) and [Other modes] (/lobby, the proxy).
 - [Survival tips] works for anyone, any time: /trigger cw_help.
 - Their first death (once): a line about random respawns and beds, with the tips button.
-- Test it yourself (ops): /function crispy_welcome:test - scatters you like a new player (random_spawn:place) and
+- Test it yourself: /trigger cw_test (players in TESTERS) or /function crispy_welcome:test (ops) - scatters you like a new player (random_spawn:place) and
   runs the whole sequence, including the first-death line on your next death. Inventory is untouched.
 """
 import json, os, shutil, sys
 
 OUT = os.path.join(sys.argv[1], "crispy_welcome")
+TESTERS = ["lbxd"]   # may run /trigger cw_test (no op needed)
 FN = os.path.join(OUT, "data", "crispy_welcome", "function")
 
 
@@ -53,6 +54,7 @@ fn("load", [
     "scoreboard objectives add cw_deaths deathCount",
     "scoreboard objectives add cw_life minecraft.custom:minecraft.time_since_death",
     "scoreboard objectives add cw_help trigger",
+    "scoreboard objectives add cw_test trigger",     # testers only (TESTERS): replay the new-player experience
 ])
 
 fn("tick", [
@@ -60,6 +62,8 @@ fn("tick", [
     "execute as @a[scores={cw_t=0}] at @s run function crispy_welcome:show",
     "execute as @a[scores={cw_help=1..}] run function crispy_welcome:tips",
     "scoreboard players enable @a cw_help",
+    *[f"scoreboard players enable @a[name={n}] cw_test" for n in TESTERS],
+    "execute as @a[scores={cw_test=1..}] run function crispy_welcome:test",
     # first death of a welcomed player, shown 2 s after they respawn
     "execute as @a[scores={cw_new=1,cw_deaths=1..,cw_life=40..}] run function crispy_welcome:first_death",
 ])
@@ -119,6 +123,7 @@ fn("first_death", [
 ])
 
 fn("test", [
+    "scoreboard players set @s cw_test 0",
     tellraw(t("Testing the new-player welcome: scattering you like a brand-new player...", "yellow")),
     "function random_spawn:place",
     "function crispy_welcome:new",
