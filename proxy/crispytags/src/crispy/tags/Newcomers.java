@@ -52,7 +52,7 @@ final class Newcomers {
         UUID u = p.getUniqueId();
         boolean isNew = false;
         if (!greeted.contains(u)) {
-            try { if (!known(u)) { pending.add(u); isNew = true; } }
+            try { if (!known(u)) { pending.add(u); isNew = true; if (plugin.invites != null) plugin.invites.newPlayer(p); } }
             catch (Exception ex) { /* can't tell: treat as known, never greet a regular by mistake */ }
         }
         // 1.11.0, where players come from: the address they typed (each listing site and channel gets its own,

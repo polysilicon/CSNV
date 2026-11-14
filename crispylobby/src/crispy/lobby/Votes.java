@@ -1269,6 +1269,18 @@ public class Votes implements Listener {
                 Player t = Bukkit.getPlayerExact(a[1]);
                 if (t != null && sub.equals("grant")) msg(t, "&aYou've been given " + (key.startsWith("tag:") ? tags.get(id).display() : key) + "&a! &7/cosmetics to wear it.");
             }
+            case "bonus" -> {   // 1.24: rewards that aren't votes (invite-a-friend): /vote bonus <player> <points> <rewards> [why...]
+                if (!admin || a.length < 4) { msg(s, "&7/vote bonus <player> <points> <rewards> [reason]"); return true; }
+                int pts = Integer.parseInt(a[2]), rw = Integer.parseInt(a[3]);
+                String why = a.length > 4 ? String.join(" ", Arrays.copyOfRange(a, 4, a.length)) : "a bonus";
+                PD pd = pd(a[1]);
+                pd.points = Math.max(0, pd.points + pts); pd.unclaimed = Math.max(0, pd.unclaimed + rw);
+                save();
+                plugin.getLogger().info("Bonus for " + a[1] + ": " + pts + " points, " + rw + " rewards (" + why + ")");
+                Player t = Bukkit.getPlayerExact(a[1]);
+                if (t != null) msg(t, "&a+" + pts + " vote points" + (rw > 0 ? " &7and &e" + rw + " reward" + (rw == 1 ? "" : "s") + " to claim" : "") + " &7for " + why + ". &f/vote");
+                msg(s, a[1] + ": +" + pts + " points, +" + rw + " rewards (" + why + ").");
+            }
             case "points" -> {
                 if (!admin || a.length < 3) { msg(s, "&7/vote points <player> <amount>"); return true; }
                 PD pd = pd(a[1]); pd.points = Math.max(0, pd.points + Integer.parseInt(a[2])); save();

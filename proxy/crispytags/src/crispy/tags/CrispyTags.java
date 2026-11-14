@@ -48,6 +48,7 @@ public class CrispyTags {
             "extraction", "Extraction01", "skyblock", "Falling01");
     static final MinecraftChannelIdentifier CHANNEL = MinecraftChannelIdentifier.from("crispy:vote");
     final ProxyServer proxy;
+    Invites invites;
     Map<String, String> tags = Map.of();
     long mtime = -1;
     // name colours bought in /cosmetics (the lobby writes namecolors.json next to tags.json): shown in the tab list too
@@ -64,6 +65,7 @@ public class CrispyTags {
 
     @Subscribe public void onInit(ProxyInitializeEvent e) {
         proxy.getChannelRegistrar().register(CHANNEL);
+        invites = new Invites(this); invites.start();                    // 1.12.0: invite a friend (/invite, /invitedby)
         proxy.getEventManager().register(this, new Newcomers(this));   // 1.10.0: first-join welcome wherever they land
         proxy.getEventManager().register(this, new ChannelCap(this));  // 1.11.0: big mod packs no longer kicked by the lobby
         var cm = proxy.getCommandManager();

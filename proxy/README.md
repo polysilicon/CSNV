@@ -90,3 +90,11 @@ hub): set in AMP (CrispyLobby01 > Allow Flight), because AMP rewrites server.pro
 same player-count settings as `main.conf`. Every other address keeps `main.conf`. Apply edits with `minimotd reload`
 (no restart). The key includes the port the game reports, which is 13134 through the SRV record. Backups:
 `plugin_settings.conf.bak-sbmotd`, `extra-configs/skyblock.conf.bak-example` (the plugin's default example).
+
+## Invite a friend (CrispyTags 1.12.0, `Invites.java`)
+`/invite` explains it; a new player types `/invitedby <name>` in their first 48 h (first logins are recorded when
+`Newcomers` sees a player with no save file anywhere, and they're told about it 75 s after that first login). After 60
+minutes online in total (counted by the proxy, any server) the lobby pays over RCON: `vote bonus <new> 5 1 ...` and
+`vote bonus <inviter> 10 0 ...` (CrispyLobby 1.24.0); an inviter's 3rd paid invite runs `vote grant <inviter> tag:recruiter`.
+The inviter must have played here (any server's usercache.json); two players can't name each other. Data:
+`plugins/crispytags/invites.json` on the proxy. No IP checks: every player arrives from the tunnel's address.
