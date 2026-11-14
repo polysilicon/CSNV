@@ -61,28 +61,60 @@ def _download(url, folder, limit):
         return (files[0] if files else None), info
 
 
+PLATFORM = {"tiktok.com": "TikTok", "twitter.com": "Twitter", "x.com": "X", "instagram.com": "Instagram"}
+
+
+async def fetch(url, host, limit):
+    """(path to an uploadable file or None, info) for one link, in a temp folder the caller removes."""
+    tmp = tempfile.mkdtemp(prefix="crispy-media-")
+    try:
+        path, info = await asyncio.wait_for(asyncio.to_thread(_download, url, tmp, limit), timeout=90)
+        if path and os.path.getsize(path) <= limit: return tmp, path, info
+    except Exception as e:
+        print(f"[media] {url}: {type(e).__name__}: {str(e)[:160]}")
+    return tmp, None, {}
+
+
 async def reply_videos(message, discord):
+    """Post each linked video as Yoink's own message, without repeating the link. A message that is only links is
+    replaced (deleted once the videos are up); one with other words keeps them and just loses its preview. Both need
+    Manage Messages in the channel; without it Yoink replies with the video and leaves the message as it is."""
     found = links(message.content)
     if not found: return
     now = time.monotonic()
     if now - _last.get(message.author.id, 0) < COOLDOWN: return
     _last[message.author.id] = now
     limit = (getattr(message.guild, "filesize_limit", None) or 10 * 1024 * 1024) - 256 * 1024
+    leftover = message.content
+    for url, _ in found: leftover = leftover.replace(url, "")
+    leftover = LINK.sub("", leftover).strip()
+    me = message.guild.me if message.guild else None
+    can_manage = bool(me and message.channel.permissions_for(me).manage_messages)
+    replace = can_manage and not leftover          # nothing but links: Yoink's post stands in for it
+    who = message.author.display_name
+    posted = 0
+    import shutil
     for url, host in found:
-        sent = False
-        with tempfile.TemporaryDirectory(prefix="crispy-media-") as tmp:
-            try:
-                async with message.channel.typing():
-                    path, info = await asyncio.wait_for(asyncio.to_thread(_download, url, tmp, limit), timeout=90)
-                if path and os.path.getsize(path) <= limit:
-                    who = info.get("uploader") or info.get("channel") or ""
-                    caption = f"🎬 {('**' + who + '**: ') if who else ''}<{url}>"
-                    await message.reply(content=caption[:1900], file=discord.File(path, filename="video.mp4"), mention_author=False)
-                    sent = True
-            except Exception as e:
-                print(f"[media] {url}: {type(e).__name__}: {str(e)[:160]}")
-        if not sent:
-            try:
-                await message.reply(content=fixed(await expand(url), host), mention_author=False)
-            except Exception as e:
-                print(f"[media] fallback {url}: {e}")
+        async with message.channel.typing():
+            tmp, path, info = await fetch(url, host, limit)
+        try:
+            creator = info.get("uploader") or info.get("channel") or ""
+            plat = PLATFORM[host]
+            caption = f"🎬 **{who}** shared {'an' if plat[0] in 'AEIOUX' else 'a'} {plat} video" + (f" from **{creator}**" if creator else "")
+            if path:
+                kw = {"content": caption[:1900], "file": discord.File(path, filename="video.mp4")}
+            else:   # too big, too long or blocked: the same post on a mirror that plays inline
+                kw = {"content": f"{caption}\n{fixed(await expand(url), host)}"[:1900]}
+            if replace: await message.channel.send(**kw)
+            else: await message.reply(mention_author=False, **kw)
+            posted += 1
+        except Exception as e:
+            print(f"[media] posting {url}: {e}")
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+    if not posted or not can_manage: return
+    try:
+        if replace: await message.delete()          # only once the videos are up
+        else: await message.edit(suppress=True)     # keep their words, drop the link preview
+    except Exception as e:
+        print(f"[media] tidy original: {e}")
