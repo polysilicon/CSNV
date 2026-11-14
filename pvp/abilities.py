@@ -587,10 +587,6 @@ def build(fn, wj, lobby_box):
             f"execute if entity @s[tag=pvp.offuse] run scoreboard players set @s pvp.ako {idx}",
             "execute if entity @s[tag=pvp.offuse] run scoreboard players set @s pvp.rgo 3",
             "execute if entity @s[tag=!pvp.offuse] run scoreboard players set @s pvp.rgt 3", "tag @s add pvp.caster",
-            f"execute if entity @s[tag=pvp.dbg,tag=pvp.offuse,tag=pvp.usedoff] run say [dbg] USE {key} OFF-hand (mod said off)",
-            f"execute if entity @s[tag=pvp.dbg,tag=pvp.offuse,tag=!pvp.usedoff] run say [dbg] USE {key} OFF-hand (main hand lacked it)",
-            f"execute if entity @s[tag=pvp.dbg,tag=!pvp.offuse,tag=pvp.usedoff] run say [dbg] USE {key} MAIN-hand (mod said off!)",
-            f"execute if entity @s[tag=pvp.dbg,tag=!pvp.offuse,tag=!pvp.usedoff] run say [dbg] USE {key} MAIN-hand",
             f"execute at @s run function {NS}:ability/fx/{key}",
             *([f"execute if entity @s[tag=!pvp.offuse] run function {NS}:ability/dual_arm"] if key in HANDGUNS else []),
             "tag @s remove pvp.caster", "tag @e[tag=pvp.hit] remove pvp.hit",
@@ -603,7 +599,6 @@ def build(fn, wj, lobby_box):
                 "execute if entity @s[gamemode=spectator] run return 0",
                 "execute if entity @s[tag=ez.downed] run return 0",                       # Extraction: on the ground
                 "tag @s add pvp.caster",
-                f"execute if entity @s[tag=pvp.dbg] run say [dbg] DUAL {key} (no item used)",
                 f"execute store success score #dc {NS} if predicate {NS}:coin",
                 f"execute if score #dc {NS} matches 1 at @s rotated ~{DUAL_SPREAD} ~-{DUAL_SPREAD / 2} run function {NS}:ability/fx/{key}",
                 f"execute if score #dc {NS} matches 0 at @s rotated ~-{DUAL_SPREAD} ~{DUAL_SPREAD / 2} run function {NS}:ability/fx/{key}",
@@ -643,9 +638,7 @@ def build(fn, wj, lobby_box):
             # that slot still holds this very gun: it was never taken (fast clicks can leave a use that didn't take
             # the item), so handing one back would duplicate it and crowd out the other hand's gun
             *[l for n in range(9) for l in (
-                f"execute if entity @s[tag=pvp.dbg] if score @s pvp.abs matches {n} if items entity @s hotbar.{n} {mine} run say [dbg] SKIP {k}: still in hotbar slot {n}",
                 f"execute if score @s pvp.abs matches {n} if items entity @s hotbar.{n} {mine} run return 0")],
-            f"execute if entity @s[tag=pvp.dbg] run say [dbg] RETURN {k} to main/hotbar",
             *[f"execute if score @s pvp.abs matches {n} unless items entity @s hotbar.{n} * run return run loot replace entity @s hotbar.{n} loot {NS}:ability/{k}"
               for n in range(9)],
             # never the off hand: an off-hand use has its own return (regive_off), and an off hand that's empty for a
@@ -658,9 +651,7 @@ def build(fn, wj, lobby_box):
         fn(f"ability/regiveoff/{k}", [
             f"execute if entity @s[{lobby_box}] run return 0",
             "execute if entity @s[gamemode=creative] run return 0",
-            f"execute if entity @s[tag=pvp.dbg] if items entity @s weapon.offhand {sel(k)} run say [dbg] SKIP {k}: still in the off hand",
             f"execute if items entity @s weapon.offhand {sel(k)} run return 0",
-            f"execute if entity @s[tag=pvp.dbg] run say [dbg] RETURN {k} to OFF-hand",
             f"execute unless items entity @s weapon.offhand * run return run loot replace entity @s weapon.offhand loot {NS}:ability/{k}",
             f"loot give @s loot {NS}:ability/{k}",
         ])
