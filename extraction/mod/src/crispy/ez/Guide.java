@@ -39,6 +39,7 @@ final class Guide {
             {"YOUR BUNKER", "/bunker, or the steps in camp. Store gear in Stash Crates.\n\nThe Builder sells stations: Sewing Table, Med Bench, Kiln, Reloading Bench, Still, Tool Bench and Salvage Bench."},
             {"SALVAGE", "At a Salvage Bench, break spare armour and guns into Cloth, Scrap, Wire, Gun Parts and Armour Plate.\n\nSell them to the Broker or craft with them."},
             {"TRADERS", "Quartermaster: guns, blades, ammo, meds, armour.\nBuilder: blocks and stations.\nThe Broker: buys valuables.\nBunker Manager: your bunker.\nThe Fixer: contracts that pay extra."},
+            {"DUAL WIELD", "Hold a handgun in each hand (F swaps hands): one right-click fires both, the off hand a moment later.\n\nPistol and M1911. Twice the fire rate, a little less accurate. Shots use the guns' magazines: two of the same gun share one."},
             {"MELEE", "No ammo, wears out with use.\n\nCombat Knife: fast.\nMachete: all-round.\nFire Axe: heavy hits.\nSledgehammer: huge hits, sends raiders flying, slows you.\n\nQuartermaster, Tool Bench, or crates."},
             {"TOOLS", "Grappling Hook: pulls you to a block.\nParachute: slow fall.\nSmoke Grenade: blocks raider gunfire.\nRope Ladder: climb out.\nRepair Kit: mends worn armour.\n\nCraft them at your stations."},
     };

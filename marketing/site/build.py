@@ -379,7 +379,7 @@ def pvp():
     <li><b>Waves</b> get bigger and tougher every round, with new mob types unlocking as you go. Every fifth wave brings a giant boss.</li>
     <li><b>Points</b>: 100 per kill plus a bonus for everyone still standing when a wave is cleared.</li>
     <li><b>The Arsenal</b> in the middle of the map sells healing, food, perk drinks (extra hearts, speed, strength and more), armour upgrades, and a <b>weapon upgrade</b> in four tiers for whatever you're holding, including guns.</li>
-    <li><b>Wall guns</b>: four guns per map are mounted on the walls to buy, from a pistol to an assault rifle.</li>
+    <li><b>Wall guns</b>: four guns per map are mounted on the walls to buy, from a pistol to an assault rifle. Hold a handgun in each hand to dual-wield them: one click fires both.</li>
     <li><b>The Mystery Box</b> rolls one of 19 prizes: powerful wonder weapons, character gear and abilities, guns, or a teddy bear and half your points back.</li>
     <li><b>Power-ups</b> drop from kills: revive the whole team, one-hit kills, double points, or a nuke that wipes the wave.</li>
     <li><b>Revive</b> a downed teammate by crouching next to them for three seconds.</li>
@@ -460,7 +460,7 @@ def extraction():
   <h2>Downed, not dead</h2>
   <p>A fatal hit puts you on the ground for 45 seconds. Another player can crouch beside you to get you back up, or finish you off and take your gear. A Self-Revive Injector, rare in the inner city or made in your bunker, gets you up on your own.</p>
   <h2>Guns and enemies</h2>
-  <p>Pistols, SMGs, shotguns, rifles and a machine gun, each with a magazine you have to reload. The city is held by Infected, Bandit Gunners, Raiders and Riflemen, and the armed ones shoot back. When the shooting has to stop, there are blades: a combat knife, a machete, a fire axe and a sledgehammer.</p>
+  <p>Pistols, SMGs, shotguns, rifles and a machine gun, each with a magazine you have to reload. Hold a handgun in each hand to dual-wield: one click fires both, at the cost of a little accuracy. The city is held by Infected, Bandit Gunners, Raiders and Riflemen, and the armed ones shoot back. When the shooting has to stop, there are blades: a combat knife, a machete, a fire axe and a sledgehammer.</p>
   {figs(("ez-firefight", "First-person gunfire down a city street at armed raiders by a concrete building", "Trading shots with raiders in the street."),
         ("ez-commander", "The Commander, a heavily armed boss with a red health bar, on a dark street at night", "The Commander, waiting in the Core."))}
   <h2>Contracts, the Commander and zone events</h2>
