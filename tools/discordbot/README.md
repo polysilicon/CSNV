@@ -14,6 +14,9 @@ the host (it reads tokens from `/etc/crispybot.env`); these two modules are copi
 - `polymarket.py`: a polymarket.com/event link gets an odds card (each outcome's implied chance as a bar, volume,
   end date); `/polymarket <search>` finds the best open market (Gamma API, no key).
 
+- `dex.py`: a Solana or 0x (EVM) contract address, in text or in a token-site link, gets a DexScreener card: price,
+  1 h / 24 h change, liquidity, volume, market cap, pair age, and a warning for thin or brand-new tokens. Non-tokens: no reply.
+
 Deploy: copy the modules into `/opt/crispybot`, `systemctl restart crispybot`. Backup of the pre-change bot:
 `bot.py.bak-media-tickers`. Keep yt-dlp current (`/opt/crispybot/venv/bin/pip install -U "yt-dlp[default,curl-cffi]"`):
 the sites change often and old versions stop working.
