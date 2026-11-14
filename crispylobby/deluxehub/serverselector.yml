@@ -1,0 +1,236 @@
+# Lobby server selector (DeluxeHub menu 'serverselector', opened by the Nether Star in hotbar slot 5).
+# Live copy: CrispyLobby01/Minecraft/plugins/DeluxeHub/menus/serverselector.yml. Apply with: deluxehub reload
+#
+# 2026-11-14 rework: every server keeps its old slot and icon, so regulars find things where they always were.
+# Each card reads the same way: name, a one-line "what kind of game" tag, two or three plain sentences, the three
+# facts people ask first (PvP, rules, progress), then "Click to join". The empty top-left corner holds a new
+# "Not sure? Start here" guide that maps what you feel like playing to a server.
+#
+#   row 1:  [Start here] .  .  .  [Card game] .  [Card game] .  .
+#   row 2:   .  .  [Crispy Anarchy]  .  [Extraction Zone]  .  [Vanilla Anarchy]  .  .
+#   row 3:   .  .  [Multiverse]  .  [Skyblock]  .  [Vote rewards]  .  .
+
+slots: 27
+title: "&8Pick a server"
+
+refresh:
+  enabled: false
+  rate: 40
+
+items:
+  filler:
+    material: GRAY_STAINED_GLASS_PANE
+    display_name: '&r'
+    slot: -1
+
+  # ---- new: the guide (top-left, matching the info book in hotbar slot 1)
+  start_here:
+    material: BOOK
+    slot: 0
+    amount: 1
+    glow: true
+    display_name: '&f&lNot sure? Start here'
+    lore:
+      - '&8Pick by what you feel like doing'
+      - ''
+      - '&7Plain survival, no extras &8» &aVanilla Anarchy'
+      - '&7Survival with custom gear &8» &eCrispy Anarchy'
+      - '&7Build and grind, no griefing &8» &bSkyblock'
+      - '&7Quick fights and minigames &8» &dMultiverse'
+      - '&7Loot, shoot and get out &8» &6Extraction Zone'
+      - '&7Something quick right here &8» &fthe card games'
+      - ''
+      - '&7Change servers any time with &f/lobby'
+      - '&7Your tags and vote points'
+      - '&7work on every server.'
+    actions:
+      - '[CLOSE]'
+      - '[MESSAGE] &r'
+      - '[MESSAGE] &f&lWhich server is for me?'
+      - '[MESSAGE] &aVanilla Anarchy &8- &7plain survival: no rules, no claims, no custom items.'
+      - '[MESSAGE] &eCrispy Anarchy &8- &7no-rules survival with custom enchants and items.'
+      - '[MESSAGE] &bSkyblock &8- &7grow your own island; skills, pets, minions and a player market.'
+      - '[MESSAGE] &dMultiverse &8- &7pick a character and fight, or team up in the PvE modes.'
+      - '[MESSAGE] &6Extraction Zone &8- &7loot a ruined city with guns and get out alive.'
+      - '[MESSAGE] &fCard games &8- &7Uno and a poker roguelike, played right here in the lobby.'
+      - '[MESSAGE] &7Open the selector again with the &eNether Star&7. Back to the lobby any time: &f/lobby'
+      - '[MESSAGE] &r'
+
+  # ---- lobby games (top row, same slots as before)
+  balatro:
+    material: EMERALD
+    slot: 4
+    amount: 1
+    glow: true
+    display_name: '&6&lBalatro &e&lCraft'
+    lore:
+      - '&8Card game · Solo · In the lobby'
+      - ''
+      - '&7A poker roguelike: play poker hands'
+      - '&7to beat each round''s target score.'
+      - '&7Mobs are your jokers, ores your suits.'
+      - ''
+      - '&fDaily run: &7same seed for everyone'
+      - ''
+      - '&a▶ Click to play &8(/balatro)'
+    actions:
+      - '[CLOSE]'
+      - '[COMMAND] balatro'
+
+  uno:
+    material: RED_CONCRETE
+    slot: 6
+    amount: 1
+    glow: true
+    display_name: '&c&lU&e&lN&a&lO'
+    lore:
+      - '&8Card game · 2-8 players · In the lobby'
+      - ''
+      - '&7The classic card game. Play with'
+      - '&7friends, or fill empty seats with bots.'
+      - ''
+      - '&fTurns: &730 seconds'
+      - ''
+      - '&a▶ Click to play &8(/uno)'
+    actions:
+      - '[CLOSE]'
+      - '[COMMAND] uno'
+
+  # ---- servers (same slots and icons as before)
+  CrispyAnarchy:
+    material: TNT
+    slot: 11
+    amount: 1
+    glow: true
+    display_name: '&e&lCrispy Anarchy'
+    lore:
+      - '&8Survival · Anarchy · Custom gear'
+      - ''
+      - '&7Survive on one huge, old map where'
+      - '&7anything goes. Find custom enchants'
+      - '&7and items you won''t see anywhere else.'
+      - ''
+      - '&fPvP: &cOn everywhere'
+      - '&fRules: &cNone &8(no claims, griefing allowed)'
+      - ''
+      - '&a▶ Click to join'
+    actions:
+      - '[CLOSE]'
+      - '[MESSAGE] &7Sending you to &eCrispy Anarchy&7...'
+      - '[PROXY] anarchy'
+
+  extraction:
+    material: CROSSBOW
+    slot: 13
+    amount: 1
+    glow: true
+    display_name: '&6&lExtraction Zone &a&lNEW'
+    lore:
+      - '&8Shooter · Loot and escape · PvP'
+      - ''
+      - '&7Gear up in camp, drop into a ruined'
+      - '&7city, grab loot and reach an exit.'
+      - '&7Die in there and you lose what you carry.'
+      - '&7Team up with players you meet, or don''t.'
+      - ''
+      - '&fPvP: &cOn in the zone &8· &asafe in camp'
+      - '&fProgress: &7your stash and upgrades, kept'
+      - ''
+      - '&a▶ Click to join &8(guide in game: /guide)'
+    actions:
+      - '[CLOSE]'
+      - '[MESSAGE] &7Sending you to &6Extraction Zone&7...'
+      - '[PROXY] extraction'
+
+  survival:
+    material: GRASS_BLOCK
+    slot: 15
+    amount: 1
+    glow: false
+    display_name: '&a&lVanilla Anarchy'
+    lore:
+      - '&8Survival · Anarchy · Pure vanilla'
+      - ''
+      - '&7Minecraft exactly as it comes: no'
+      - '&7custom items, no plugins in your way.'
+      - ''
+      - '&fPvP: &cOn everywhere'
+      - '&fRules: &cNone &8(no claims, griefing allowed)'
+      - ''
+      - '&a▶ Click to join'
+    actions:
+      - '[CLOSE]'
+      - '[MESSAGE] &7Sending you to &aVanilla Anarchy&7...'
+      - '[PROXY] vanilla'
+
+  pvp:
+    material: NETHERITE_SWORD
+    slot: 20
+    amount: 1
+    glow: true
+    display_name: '&d&lMultiverse'
+    lore:
+      - '&8PvP · Minigames · Play as a character'
+      - ''
+      - '&7Pick one of 36 characters, each with'
+      - '&7their own powers, gear and size.'
+      - ''
+      - '&dPvP Arena &8- &7free-for-all fights'
+      - '&dDuels &8- &71 vs 1 against a friend'
+      - '&2Outbreak &8- &7survive zombie waves together'
+      - '&5The Tower &8- &7climb floors, pick upgrades'
+      - ''
+      - '&fPvP: &7in the arena and duels only'
+      - '&fProgress: &7wins and best waves on leaderboards'
+      - ''
+      - '&a▶ Click to join'
+    actions:
+      - '[CLOSE]'
+      - '[MESSAGE] &7Sending you to &dMultiverse&7...'
+      - '[PROXY] multiverse'
+
+  falling:
+    material: OAK_SAPLING
+    slot: 22
+    amount: 1
+    glow: true
+    display_name: '&b&lSkyblock'
+    lore:
+      - '&8Island survival · Progression · Trading'
+      - ''
+      - '&7Start on your own floating island (pick'
+      - '&7one of 7) and grow it into an empire.'
+      - ''
+      - '&bSkills &8· &6Player market &8· &dPets &8· &aMinions'
+      - '&7Mines and forests with levelled mobs'
+      - '&7Buy a plot in the hub for a shop or home'
+      - ''
+      - '&fPvP: &aOff in the hub and zones'
+      - '&fGriefing: &aNone &8(islands are protected)'
+      - '&fProgress: &7your island and skills, kept'
+      - ''
+      - '&a▶ Click to join'
+    actions:
+      - '[CLOSE]'
+      - '[MESSAGE] &7Sending you to &bSkyblock&7...'
+      - '[PROXY] skyblock'
+
+  # ---- lobby extras
+  vote:
+    material: NETHER_STAR
+    slot: 24
+    amount: 1
+    glow: true
+    display_name: '&d&lVote Rewards'
+    lore:
+      - '&8Free rewards · Every server'
+      - ''
+      - '&7Vote for us on server list sites.'
+      - '&7Each vote gives you:'
+      - '&f • &7a reward on the server you choose'
+      - '&f • &7points for &bcosmetics &7(tags, trails)'
+      - ''
+      - '&a▶ Click to vote &8(/vote)'
+    actions:
+      - '[CLOSE]'
+      - '[COMMAND] vote'
