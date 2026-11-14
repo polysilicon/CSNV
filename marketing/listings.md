@@ -87,6 +87,13 @@ Enchants. Pick the ones each site offers; most allow 5-10.
 each with a still `.png`/`.jpg` (the gamemodes and the address in one frame, for sites that only take still images, like Minecraft-Server-List) and an `.mp4` (H.264, same 13.3 s loop; `assets/banner/gif2mp4.py` makes it from the GIF). Regenerate with
 `python3 assets/banner/make_network_banner.py <out.gif> <w> <h> <address>`.
 
+## Gallery images
+
+`assets/listing-gallery/`: `00-cover.jpg` (the four gamemodes and the address) and 12 captioned screenshots, three per
+gamemode, all 1600x900 JPG. Upload the cover as the main image, then the rest in order. Rebuild with
+`python3 assets/banner/make_listing_gallery.py assets/listing-gallery` (captions and shots are listed in the script;
+nothing showing another franchise's characters).
+
 ## The 7 sites
 
 Log in to each and edit the existing listing (keep the listing itself: its votes and rank stay with it).
