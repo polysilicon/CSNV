@@ -7,7 +7,7 @@ An ability is an item in the hotbar: right-click to use it.
   runs while the item is still in the hand: it works out which ability that is from the item model
   and runs pvp:ability/use/<key>, which remembers the ability and the selected hotbar slot. The last used item is
   kept in storage pvp:debug for troubleshooting.
-- 3 ticks later pvp:ability/regive puts the item back in that slot (an off-hand use has its own pending hand-back,
+- 3 ticks later pvp:ability/regive puts the item back in that slot, else anywhere in the inventory but the off hand (an off-hand use has its own pending hand-back,
   pvp:ability/regive_off, which goes back to the off hand; creative mode, which doesn't use items up, gets nothing) (not sooner: if the slot is emptied and refilled
   before the server syncs the inventory, the client never hears about either change and keeps showing it empty), or the offhand if it came from there, otherwise the
   inventory. Never twice, and never in the lobby.
@@ -630,7 +630,8 @@ def build(fn, wj, lobby_box):
             "execute if entity @s[gamemode=creative] run return 0",
             *[f"execute if score @s pvp.abs matches {n} unless items entity @s hotbar.{n} * run return run loot replace entity @s hotbar.{n} loot {NS}:ability/{k}"
               for n in range(9)],
-            f"execute unless items entity @s weapon.offhand * run return run loot replace entity @s weapon.offhand loot {NS}:ability/{k}",
+            # never the off hand: an off-hand use has its own return (regive_off), and an off hand that's empty for a
+            # moment is waiting for that item, not this one
             f"loot give @s loot {NS}:ability/{k}",
         ])
     fn("ability/regive_off", ["scoreboard players set @s pvp.rgo 0"] + [
