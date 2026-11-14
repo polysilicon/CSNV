@@ -240,6 +240,9 @@ final class SelfTest {
                 for (DeathBox.Box x : DeathBox.BOXES) if ("ezrevive".equals(x.owner) || "eztest".equals(x.owner)) x.until = 0;
                 DeathBox.expire(server);   // the stand-in's box and this one: barrels and labels gone
             }
+            // 1.8.31: the restock countdown's wording
+            check("crate restock countdown reads right", CrateTimer.label(20 * 452, false).equals("⟳ Restocks in 7:32")
+                    && CrateTimer.label(0, true).startsWith("⟳ Restocks once nobody"), CrateTimer.label(20 * 452, false));
             var gb = Guide.book().get(net.minecraft.core.component.DataComponents.WRITTEN_BOOK_CONTENT);
             check("the Field Guide has all its pages", gb != null && gb.pages().size() == Guide.PAGES.length, gb == null ? "no content" : gb.pages().size() + " pages");
             Plots.run(server, "scoreboard players reset ezrevive ez.time");

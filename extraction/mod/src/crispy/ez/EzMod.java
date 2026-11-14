@@ -13,7 +13,8 @@ public final class EzMod implements ModInitializer {
         Revive.init();        // 1.8.17 downed / revived / finished off, Self-Revive, extraction waves
         Standin.init();       // 1.8.21 logging out mid-raid leaves a stand-in; the timer keeps going
         Guide.init();
-        DeathBox.init();      // 1.8.28 a player's gear goes into a barrel where they died in the zone         // 1.8.21 the Field Guide (/guide)
+        DeathBox.init();
+        CrateTimer.init();    // 1.8.31 floating restock countdowns over opened crates      // 1.8.28 a player's gear goes into a barrel where they died in the zone         // 1.8.21 the Field Guide (/guide)
         Interiors.init();     // 1.8.8 stations in the zone are wreckage         // 1.8.0 grappling hook, repair kit, smoke
         Coins.init();
         Shops.init();
