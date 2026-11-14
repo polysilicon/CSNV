@@ -120,7 +120,7 @@ def ammo_gate(name, lines):
             f"scoreboard players remove @s ez.m_{key} 1"] + lines[i:] + [f"function {NS}:gun/hud_{key}"]
     if name.startswith("ability/use/") and key in MAGS:
         cap = MAGS[key][0]
-        i = lines.index("scoreboard players set @s pvp.rgt 3") + 1
+        i = lines.index("execute if entity @s[tag=!pvp.offuse] run scoreboard players set @s pvp.rgt 3") + 1   # after both hand-backs are booked
         lines = lines[:i] + [
             f"scoreboard players set @s ez.cap {cap}",   # Extended Magazine (workbench): +50%
             f"execute if items entity @s weapon.mainhand *[minecraft:custom_data~{{ezmod:{{mag:1b}}}}] run scoreboard players set @s ez.cap {cap + cap // 2}",

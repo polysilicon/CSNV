@@ -30,7 +30,7 @@ final class Guide {
     static final String[][] PAGES = {
             {"FIELD GUIDE", "Extraction Zone\n\nDeploy, loot, and get out alive.\n\nLost this book? Type /guide."},
             {"RAIDS", "Right-click the helipad in camp to deploy. You have 25:00 to reach an extraction point (the flare columns, marked on your map) and hold it for 30 s.\n\nDie and you drop everything you carried."},
-            {"THE RINGS", "Outskirts, middle ring, inner ring, the Core. The closer to the centre, the tougher the raiders and the better the loot. The Commander holds the Core.\n\nCrates refill every 10 minutes."},
+            {"THE RINGS", "Outskirts, middle ring, inner ring, the Core. The closer to the centre, the tougher the raiders and the better the loot. The Commander holds the Core.\n\nCrates restock every 10 minutes. An opened crate shows a countdown above it."},
             {"EXTRACTING", "Starting an extraction fires a flare: a wave of raiders comes for you, and a second one at the halfway mark.\n\nStep off the point and the count starts again."},
             {"DOWNED", "A fatal hit in the zone puts you down for 45 s.\n\nAnother player crouching beside you for 5 s gets you up. Any player can hit you instead to finish you off and take your gear."},
             {"SELF-REVIVE", "A Self-Revive Injector gets you up on your own: hold crouch for 3 s while downed.\n\nRare in inner ring and Core crates, or made at a Med Bench. You can carry one."},

@@ -448,7 +448,7 @@ def extraction():
   <ol>
     <li><b>Gear up in camp.</b> Buy guns, ammo, armour and medkits from the Quartermaster with Gold Coins, and take a contract from the Fixer.</li>
     <li><b>Deploy.</b> Board at the helipad and you are dropped on a street at the edge of the zone.</li>
-    <li><b>Loot.</b> Search crates in buildings. The closer to the city centre, the better the loot and the tougher the enemies.</li>
+    <li><b>Loot.</b> Search crates in buildings. The closer to the city centre, the better the loot and the tougher the enemies. Crates restock every 10 minutes, and an opened crate shows a countdown above it.</li>
     <li><b>Extract.</b> Reach one of the extraction points and hold it for 30 seconds before the 25-minute timer ends. The flare draws a wave of raiders, so expect a fight.</li>
   </ol>
   {figs(("ez-camp", "The Extraction Zone camp from above: a helipad marked with an H, lamp posts, sandbags and watchtowers", "The camp: gear up, then deploy from the helipad."),
