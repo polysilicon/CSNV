@@ -26,6 +26,10 @@ the host (it reads tokens from `/etc/crispybot.env`); these two modules are copi
   `newpairs.json` so restarts don't empty it. Wired in bot.py with `newpairs.register(...)`, which starts the feeds
   from `setup_hook`.
 
+- `scans.py`: ticker and contract-address cards say "Scanned by <name>" (with avatar). The first scan of each thing
+  in the server is saved (`scans.json`: who, price, time); later cards add "Since first scan": % change (and x-multiple
+  past 2x / 0.5x), who called it first and when.
+
 `/console` was removed from bot.py on 2026-11-14 (backup `bot.py.bak-console`); `/mc` with its allowlist remains.
 
 Deploy: copy the modules into `/opt/crispybot`, `systemctl restart crispybot`. Backup of the pre-change bot:

@@ -10,6 +10,7 @@ Information only, delayed by the source, not advice.
 """
 import io, re, time
 import aiohttp
+import scans
 from PIL import Image, ImageDraw
 
 CASHTAG = re.compile(r"(?<![\w$])\$([A-Za-z]{1,6}(?:[.-][A-Za-z]{1,2})?)(?![\w])")
@@ -170,5 +171,8 @@ async def reply_cards(message, discord):
             e = discord.Embed(title=data["title"], description=data["description"], color=data["color"], url=data["url"])
             for n, v in data["fields"]: e.add_field(name=n, value=v, inline=True)
             e.set_footer(text=data["footer"])
+            cur = meta.get("currency") or "USD"
+            scans.decorate(e, message, "t:" + sym, meta.get("regularMarketPrice"),
+                           (lambda x: f"${fmt_rate(x)}") if sym.endswith("USD=X") else (lambda x: fmt(x, cur)))
             f = discord.File(png, filename=f"{sym}.png"); e.set_image(url=f"attachment://{sym}.png")
             await message.reply(embed=e, file=f, mention_author=False)

@@ -12,6 +12,7 @@ Information only, not advice.
 """
 import re, time
 import aiohttp
+import scans
 
 EVM = re.compile(r"(?<![0-9A-Za-z])0x[0-9a-fA-F]{40}(?![0-9A-Za-z])")
 SOL = re.compile(r"(?<![1-9A-HJ-NP-Za-km-z])[1-9A-HJ-NP-Za-km-z]{32,44}(?![1-9A-HJ-NP-Za-km-z])")
@@ -130,4 +131,7 @@ async def reply_cards(message, discord):
             for n, v in d["fields"]: em.add_field(name=n, value=v, inline=True)
             if d["image"]: em.set_thumbnail(url=d["image"])
             em.set_footer(text=d["footer"])
+            chain = got["pair"].get("chainId") or "?"
+            scans.decorate(em, message, f"d:{chain}:{a if not a.startswith('0x') else a.lower()}", got["price"],
+                           lambda x: usd(x, small=True))
             await message.reply(embed=em, mention_author=False)
