@@ -35,3 +35,13 @@ list. **No land claiming and no bases.**
 - **Data**: `config/crispy_clans.json`. On 2026-11-08 it was seeded from the old plugin's `plugins/Clans/*.yml` (24 clans,
   52 members, names from `usercache.json`, kills kept; owners kept, no officers). The old base locations were not
   carried over (no bases).
+
+## Market deaths keep items (1.3.0, `MarketKeep.java`)
+
+PvP stays on in the market (`crispy:market`), but a player killed there keeps their inventory (main, armour, off hand)
+and XP: just before the death (`ServerLivingEntityEvents.ALLOW_DEATH`, skipped when a totem is about to save them)
+they're set aside and cleared so nothing drops, saved to `config/crispy_market_keep.dat`, and put back into the same
+slots on respawn (`ServerPlayerEvents.COPY_FROM`). keep_inventory is server-wide and YAWP 0.6.3 has no keep-inventory
+flag, hence the mod. Implants: the live `crispy_cyberware` datapack's `death/died` returns early in the market into
+`death/market` (keeps the slots, resets cooldowns/heat/psychosis, tags `cy.mdead`), and `death/market_respawned`
+(from `tick`) re-applies the attribute implants after respawn (backups `*.bak-marketkeep`).

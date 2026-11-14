@@ -20,6 +20,7 @@ public final class AnarchyMod implements ModInitializer {
         OpTools.init();
         Crypto.init();
         Bank.init();
+        MarketKeep.init();   // 1.3.0: keep items and XP when killed in the market
         UseEntityCallback.EVENT.register((player, world, hand, entity, hit) -> {
             if (!(entity instanceof Interaction) || !(player instanceof ServerPlayer p)) return InteractionResult.PASS;
             boolean doc = entity.entityTags().contains("cy.doc"), ench = entity.entityTags().contains("ce.enchanter");
