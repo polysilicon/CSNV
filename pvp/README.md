@@ -658,6 +658,12 @@ level, y -61), far from every other map, for trying builds and mechanics. Light-
 /function pvp:admin/clear_testarena    wipe everything inside (blocks up to 80 above the floor, entities) and rebuild the floor
 /function pvp:admin/build_testarena    (re)build it
 ```
+**Kit chests**: along the inside of the north wall (z -2064, x 1938, 1940, ...) one chest per character, named after
+them with a sign above, holding everything custom their kit hands out: weapons and items with custom components,
+ability items and all the armour (heads included). Plain food/arrows and implants (the admin room has those) are left
+out. Generated at the end of the build from the kit functions themselves (`build_test_chests`), so they follow kit
+changes; `admin/testarena_chests` re-places and refills them (build_testarena and clear_testarena run it).
+
 `pvp.admin` players inside it are left alone by the stray check, so you can switch to survival or adventure to test as
 a normal player.
 

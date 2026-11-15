@@ -1071,6 +1071,7 @@ def build_testarena():
         b.append(f"fill {ax} {fl + 4} {az} {bx} {fl + 4} {bz} minecraft:sea_lantern")
         b.append(f"fill {ax} {fl + TEST_WALL} {az} {bx} {fl + TEST_WALL} {bz} minecraft:sea_lantern")
     b += ["kill @e[tag=pvp.testholo]"]   # no hologram (removed 2026-11-15); the kill clears any old one
+    b.append(f"function {NS}:admin/testarena_chests")   # one chest per character's kit along the north wall
     fn("admin/build_testarena", [fload, f"schedule function {NS}:admin/build_testarena2 3s replace",
                                  say("@s", "Building the test arena in 3 seconds (loading its chunks)...", "gold")])
     fn("admin/build_testarena2", b + [unload, f"tellraw @a[tag=pvp.admin] {tj({'text': 'Test arena built.', 'color': 'gold'})}"])
@@ -2210,7 +2211,50 @@ def arsenal(cz):
     body = npc("pvp.shopnpc", (sx, sy, cz + 0.5), "☣ Arsenal ☣", "green", "sniper", 180, hand="crossbow", chest="netherite_chestplate")
     return [f"kill @e[tag=pvp.shopnpc,x={sx},y={sy},z={cz + 0.5},distance=..4]"] + body[1:]
 
+KIT_CHEST_SKIP = {"custom", "custom_give", "custom_pve", "give_pve", "valid_pve", "pick", "roll", "roll_hw"}   # not characters
+
+
+def build_test_chests():
+    """Test arena kit chests, written last because it reads the kit functions build() wrote: one chest per character
+    along the inside of the north wall (named after the character, with a sign above), holding everything custom the
+    kit hands out: items with components, ability items (loot pvp:ability/...) and all armour. Plain food/arrows and
+    implants (installed, not items; the admin room has them) are left out. admin/testarena_chests (re)places and
+    refills them; build_testarena2 runs it, so clear_testarena resets them too."""
+    import glob, re as _re
+    kdir = os.path.join(OUT, "data", NS, "function", "kit")
+    kits = []
+    for path in sorted(glob.glob(os.path.join(kdir, "*.mcfunction"))):
+        key = os.path.basename(path)[:-len(".mcfunction")]
+        if key in KIT_CHEST_SKIP: continue
+        name, items = key.title(), []
+        for line in open(path, encoding="utf-8").read().splitlines():
+            m = _re.match(r'tellraw @s \[\{"text":"Kit: ".*?\},\{"text":"([^"]+)"', line)
+            if m: name = m.group(1); continue
+            m = _re.match(r"give @s (minecraft:[a-z_]+\[.*\])( \d+)?$", line)
+            if m: items.append(("item", m.group(1), (m.group(2) or " 1").strip())); continue
+            m = _re.match(r"item replace entity @s (armor\.\w+|weapon\.offhand) with (minecraft:[a-z_]+(?:\[.*\])?)( \d+)?$", line)
+            if m: items.append(("item", m.group(2), (m.group(3) or " 1").strip())); continue
+            m = _re.match(r"loot give @s loot (pvp:ability/[a-z0-9_]+)$", line)
+            if m: items.append(("loot", m.group(1), "")); continue
+        if items: kits.append((key, name, items[:27]))
+    x0, z0, fl = TEST_X - TEST_R, TEST_Z - TEST_R, AY
+    cmds = []
+    for i, (key, name, items) in enumerate(kits):
+        x = x0 + 2 + 2 * (i % 62); z = z0 + 2 * (i // 62)   # one row along the north wall (62 fit)
+        label = tj({"text": name, "color": "gold"})
+        cmds.append(f"setblock {x} {fl + 1} {z} minecraft:chest[facing=south]{{CustomName:{label}}} replace")
+        sign = tj(name[:15])
+        cmds.append(f"setblock {x} {fl + 2} {z} minecraft:dark_oak_wall_sign[facing=south]{{front_text:{{messages:[{sign},\"\",\"\",\"\"],has_glowing_text:1b,color:\"yellow\"}}}} replace")
+        cmds.append(f"data modify block {x} {fl + 1} {z} Items set value []")
+        for slot, (kind, it, n) in enumerate(items):
+            cmds.append(f"loot replace block {x} {fl + 1} {z} container.{slot} loot {it}" if kind == "loot"
+                        else f"item replace block {x} {fl + 1} {z} container.{slot} with {it} {n}")
+    fn("admin/testarena_chests", cmds)
+    print(f"test arena kit chests: {len(kits)} characters, most items in one: {max(len(k[2]) for k in kits)}")
+
+
 if __name__ == "__main__":
     OUT = os.path.join(sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "dist"), "crispy_pvp")
     build()
+    build_test_chests()
     print(f"built {OUT} ({sum(len(f) for _, _, f in os.walk(OUT))} files)")
