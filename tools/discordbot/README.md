@@ -34,6 +34,10 @@ the host (it reads tokens from `/etc/crispybot.env`); these two modules are copi
   (featured first), our minecraftservers.org rank and how many votes page 1 of its Anarchy list needs, top voters and
   streaks (read from the lobby's `votes.json`). `/vote` shows it on demand.
 
+- Tweets (`medialinks.py`): an X/Twitter post without a video gets a tweet card from FxTwitter's public API (author,
+  text, first photo, quoted tweet, counts, time); video tweets work as before. Any `$TICKER` in a tweet's text gets the
+  ticker chart card (`tickers.post_cards`, credited to whoever shared it).
+
 `/console` was removed from bot.py on 2026-11-14 (backup `bot.py.bak-console`); `/mc` with its allowlist remains.
 
 Deploy: copy the modules into `/opt/crispybot`, `systemctl restart crispybot`. Backup of the pre-change bot:

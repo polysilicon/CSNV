@@ -1,5 +1,7 @@
 """Video links for the Crispy Discord bot: a TikTok, Twitter/X or Instagram link in a message gets a reply with the
-video itself, so it plays in Discord.
+video itself, so it plays in Discord. An X/Twitter post without a video (text, photos) gets a tweet card instead
+(FxTwitter's public API: author, text, first photo, quoted tweet, counts), and any $TICKER in a tweet's text gets the
+usual ticker chart card (tickers.post_cards).
 
 1. Download it with yt-dlp (one file with sound, no ffmpeg needed) and upload it, if it fits the server's upload
    limit and is under MAX_SECONDS long.
@@ -62,6 +64,53 @@ def _download(url, folder, limit):
 
 
 PLATFORM = {"tiktok.com": "TikTok", "twitter.com": "Twitter", "x.com": "X", "instagram.com": "Instagram"}
+STATUS = re.compile(r"/status(?:es)?/(\d+)")
+
+
+async def fetch_tweet(url):
+    """The tweet behind an X/Twitter link from FxTwitter's public API (no key), or None."""
+    m = STATUS.search(url)
+    if not m: return None
+    import aiohttp
+    try:
+        async with aiohttp.ClientSession() as s:
+            async with s.get(f"https://api.fxtwitter.com/status/{m.group(1)}", timeout=aiohttp.ClientTimeout(total=10),
+                             headers={"User-Agent": "Mozilla/5.0 (compatible; crispy-bot/1.0)"}) as r:
+                if r.status != 200: return None
+                return (await r.json()).get("tweet")
+    except Exception as e:
+        print(f"[media] tweet {url}: {type(e).__name__}: {e}")
+        return None
+
+
+def _n(x):
+    try: x = int(x)
+    except (TypeError, ValueError): return "0"
+    return f"{x / 1e6:.1f}M" if x >= 1e6 else f"{x / 1e3:.1f}K" if x >= 1e4 else f"{x:,}"
+
+
+def tweet_embed(discord, t, who):
+    """A tweet as a Discord embed: author, text, first photo, the tweet it quotes, counts and time."""
+    a = t.get("author") or {}
+    text = (t.get("text") or "").strip()
+    em = discord.Embed(description=text[:4000] or None, url=t.get("url"), color=0x1D9BF0,
+                       timestamp=__import__("datetime").datetime.fromtimestamp(t["created_timestamp"], __import__("datetime").timezone.utc)
+                       if t.get("created_timestamp") else None)
+    em.set_author(name=f"{a.get('name', '?')} (@{a.get('screen_name', '?')})"[:250], url=t.get("url"), icon_url=a.get("avatar_url") or None)
+    photos = ((t.get("media") or {}).get("photos") or [])
+    if photos: em.set_image(url=photos[0].get("url"))
+    q = t.get("quote")
+    if q:
+        qa = (q.get("author") or {}).get("screen_name", "?")
+        em.add_field(name=f"Quoting @{qa}", value=((q.get("text") or "").strip()[:900] or "(media)") + (f"\n[open]({q.get('url')})" if q.get("url") else ""), inline=False)
+    em.set_footer(text=f"X · 💬 {_n(t.get('replies'))}  🔁 {_n(t.get('retweets'))}  ❤ {_n(t.get('likes'))}"
+                       + (f"  👁 {_n(t.get('views'))}" if t.get("views") else "") + f" · shared by {who}")
+    return em
+
+
+def has_video(t):
+    m = (t or {}).get("media") or {}
+    return bool(m.get("videos")) or any(x.get("type") in ("video", "gif") for x in (m.get("all") or []))
 POST_TEXT_MAX = 700   # characters of the post's caption shown under the video
 
 
@@ -110,7 +159,20 @@ async def reply_videos(message, discord):
     who = message.author.display_name
     posted = 0
     import shutil
+    import tickers
     for url, host in found:
+        tw = await fetch_tweet(url) if host in ("twitter.com", "x.com") else None
+        if tw and not has_video(tw):   # a text/photo tweet: Yoink's own card, then charts for its $tickers
+            try:
+                kw = {"content": f"🐦 **{who}** shared a post", "embed": tweet_embed(discord, tw, who)}
+                if replace: await message.channel.send(**kw)
+                else: await message.reply(mention_author=False, **kw)
+                posted += 1
+                syms = tickers.cashtags(tw.get("text") or "")
+                if syms: await tickers.post_cards(message, discord, syms, send=message.channel.send)
+            except Exception as e:
+                print(f"[media] tweet card {url}: {e}")
+            continue
         async with message.channel.typing():
             tmp, path, info = await fetch(url, host, limit)
         try:
@@ -126,6 +188,9 @@ async def reply_videos(message, discord):
             if replace: await message.channel.send(**kw)
             else: await message.reply(mention_author=False, **kw)
             posted += 1
+            if tw:   # a video tweet: charts for its $tickers too
+                syms = tickers.cashtags(tw.get("text") or "")
+                if syms: await tickers.post_cards(message, discord, syms, send=message.channel.send)
         except Exception as e:
             print(f"[media] posting {url}: {e}")
         finally:

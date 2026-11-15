@@ -157,8 +157,14 @@ def cashtags(text):
 
 
 async def reply_cards(message, discord):
-    syms = cashtags(message.content)
+    await post_cards(message, discord, cashtags(message.content))
+
+
+async def post_cards(message, discord, syms, send=None):
+    """Ticker cards for these symbols, credited to message's author. send: how to post (default: reply to message;
+    tweets.py passes channel.send when the original message has been replaced)."""
     if not syms: return
+    send = send or (lambda **kw: message.reply(mention_author=False, **kw))
     async with aiohttp.ClientSession() as session:
         for s in syms:
             try:
@@ -175,4 +181,4 @@ async def reply_cards(message, discord):
             scans.decorate(e, message, "t:" + sym, meta.get("regularMarketPrice"),
                            (lambda x: f"${fmt_rate(x)}") if sym.endswith("USD=X") else (lambda x: fmt(x, cur)))
             f = discord.File(png, filename=f"{sym}.png"); e.set_image(url=f"attachment://{sym}.png")
-            await message.reply(embed=e, file=f, mention_author=False)
+            await send(embed=e, file=f)
