@@ -29,6 +29,22 @@ RIFT = (0, 120, -640)        # the Sky Lord's Rift: only players wearing [Sky Lo
 RIFT_GATE = "r_skylord"
 RIFT_RES = ["amethyst_block", "amethyst_cluster", "crying_obsidian", "gilded_blackstone", "nether_gold_ore", "nether_quartz_ore", "ancient_debris", "obsidian"]
 RIFT_BIOME = "soul_sand_valley"   # no rain (it put out the blazes), soul particles and a blue haze
+# The Warlands (2026-11-15, not open to players yet): a PvPvE island south of the hub. PvP on, everything you carry drops
+# when you die, Lv 30-45 mobs, the richest regrowing ores, a Treasure Node and War Spoils. Players drop in at a random
+# spot (Zones.java), so nobody can camp an entrance; there is no hub portal or NPC yet (the mod only lets ops and
+# players tagged cs_warlands_tester in). Layout: warlands/island.py.
+WAR = (0, 110, 620)
+WAR_HALF, WAR_Y = 80, (WAR[1] - 36, WAR[1] + 45)
+WAR_MOBS = ["vindicator", "wither_skeleton", "piglin_brute", "blaze", "pillager", "husk", "wither_skeleton", "vindicator"]
+WAR_BIOME = "basalt_deltas"       # no rain, drifting ash
+WAR_NODE_CHARGE, WAR_NODE_HOLD = 1200, 30   # seconds (of someone being there) to charge; seconds to hold it uncontested
+def _war_island():
+    import importlib.util, os
+    spec = importlib.util.spec_from_file_location("warlands_island", os.path.join(os.path.dirname(os.path.abspath(__file__)), "warlands", "island.py"))
+    m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+    return m
+WAR_ISLAND = _war_island()
+WAR_G, WAR_SPAWNS, WAR_DROPS, WAR_RES, WAR_NODE = WAR_ISLAND.gen()
 STONES = ["stone", "cobblestone", "andesite", "diorite", "granite", "tuff", "deepslate", "cobbled_deepslate"]
 ORES = ["coal_ore", "iron_ore", "copper_ore", "gold_ore", "lapis_ore", "redstone_ore", "diamond_ore", "emerald_ore"]
 LOGS = ["oak_log", "birch_log", "spruce_log", "dark_oak_log", "cherry_log"]
@@ -41,9 +57,12 @@ ZONES = [
     ("rift", "Sky Lord's Rift", RIFT, 34, (RIFT[1] - 28, RIFT[1] + 22), RIFT_RES,
      # no piglins in the Rift: brutes fight wither skeletons and zombify in the overworld
      90, ["wither_skeleton", "pillager", "vindicator", "blaze", "wither_skeleton"], (RIFT[0] + 0.5, RIFT[1] + 1, RIFT[2] - 27.5, 0)),
+    # the Warlands' "warp" is only the island centre: players are dropped in at a random drop point (cfg warlands.drops)
+    ("warlands", "The Warlands", WAR, WAR_HALF, WAR_Y, [b.split("[")[0] for b in WAR_RES], 60, WAR_MOBS, (WAR[0] + 0.5, WAR[1] + 30, WAR[2] + 0.5, 0)),
 ]
 ZONE_CAP = 8          # mobs per zone at once (+2 per player there)
-SPAWN_EVERY = {"mines": 8, "woods": 3, "rift": 4}   # a new mob about every N seconds per zone (a 1-in-N roll each second) until the cap
+ZONE_CAP_BY = {"warlands": 20}   # the Warlands is far bigger and meant to be dangerous
+SPAWN_EVERY = {"mines": 8, "woods": 3, "rift": 4, "warlands": 2}   # a new mob about every N seconds per zone (a 1-in-N roll each second) until the cap
 
 
 def build(NS, fn, js, txt, snbt, Build):
@@ -56,6 +75,9 @@ def build(NS, fn, js, txt, snbt, Build):
         "zones": [{"key": k, "name": n, "x1": c[0] - h, "z1": c[2] - h, "x2": c[0] + h, "z2": c[2] + h, "y1": y[0], "y2": y[1],
                    "allow": [f"minecraft:{b}" for b in allow], "secs": secs, "warp": list(w), "gate": RIFT_GATE if k == "rift" else ""}
                   for k, n, c, h, y, allow, secs, mobs, w in ZONES],
+        # the Warlands drop-in points (absolute ground positions; Zones.java drops players in above a random one)
+        "warlands": {"drops": [[WAR[0] + x, WAR[1] + y, WAR[2] + z] for x, y, z in WAR_DROPS],
+                     "node": [WAR[0] + WAR_NODE[0], WAR[1] + WAR_NODE[1], WAR[2] + WAR_NODE[2]]},
     }
     box = lambda z: f"x={z[2][0] - z[3]},y={z[4][0]},z={z[2][2] - z[3]},dx={2 * z[3]},dy={z[4][1] - z[4][0]},dz={2 * z[3]}"
 
@@ -353,9 +375,9 @@ def build(NS, fn, js, txt, snbt, Build):
     fn("zones/portals_v2", "\n".join(cmds[-5:] + wood_cmds[-5:]))
     fn("zones/build_all", "\n".join([
         "kill @e[type=minecraft:text_display,tag=cs_zonel]",
-        *[f"forceload add {c[0] - h - 2} {c[2] - h - 2} {c[0] + h + 2} {c[2] + h + 2}" for k, n, c, h, *_ in ZONES],
+        *[f"forceload add {c[0] - h - 2} {c[2] - h - 2} {c[0] + h + 2} {c[2] + h + 2}" for k, n, c, h, *_ in ZONES if k != "warlands"],
         f"function {NS}:zones/build_mines", f"function {NS}:zones/build_woods",
-        *[f"forceload remove {c[0] - h - 2} {c[2] - h - 2} {c[0] + h + 2} {c[2] + h + 2}" for k, n, c, h, *_ in ZONES],
+        *[f"forceload remove {c[0] - h - 2} {c[2] - h - 2} {c[0] + h + 2} {c[2] + h + 2}" for k, n, c, h, *_ in ZONES if k != "warlands"],
         "scoreboard players set #zonesv cs_cfg 1"]))
 
     # ---- the Sky Lord's Rift: a dark floating island torn open by an amethyst geode. Rolling blackstone ground with soul
@@ -554,14 +576,15 @@ def build(NS, fn, js, txt, snbt, Build):
     sec = []
     for z in ZONES:
         key, name, c, h, y, allow, secs, mobs, w = z
-        spawns = {"mines": mine_spawns, "woods": woods_spawns, "rift": rift_spawns}[key]
+        spawns = {"mines": mine_spawns, "woods": woods_spawns, "rift": rift_spawns, "warlands": WAR_SPAWNS}[key]
         rp = (c[0], c[1], c[2] - 33) if key == "mines" else (c[0], c[1], c[2] - 31)
-        sec += [f"execute if entity @a[{box(z)}] positioned {rp[0]} {rp[1]} {rp[2]} run function {NS}:portal/fx_{key}"]
+        if key != "warlands":   # no portal there (players drop in)
+            sec += [f"execute if entity @a[{box(z)}] positioned {rp[0]} {rp[1]} {rp[2]} run function {NS}:portal/fx_{key}"]
         sec += [f"execute unless entity @a[{box(z)}] run kill @e[tag=cs_zone_{key}]",
                 f"execute if entity @a[{box(z)}] run function {NS}:zones/{key}/tick"]
         roll = [f"execute store result score #n cs_tmp if entity @e[tag=cs_zone_{key}]",
                 f"execute store result score #pl cs_tmp if entity @a[{box(z)}]",
-                f"scoreboard players operation #pl cs_tmp *= #2c cs_tmp", f"scoreboard players add #pl cs_tmp {ZONE_CAP}",
+                f"scoreboard players operation #pl cs_tmp *= #2c cs_tmp", f"scoreboard players add #pl cs_tmp {ZONE_CAP_BY.get(key, ZONE_CAP)}",
                 "execute if score #n cs_tmp >= #pl cs_tmp run return 0",
                 f"execute store result score #r cs_tmp run random value 1..{SPAWN_EVERY.get(key, 3)}", "execute unless score #r cs_tmp matches 1 run return 0",
                 f"execute store result score #r cs_tmp run random value 1..{len(spawns)}"]
@@ -652,6 +675,97 @@ def build(NS, fn, js, txt, snbt, Build):
         lt("nether_star", 1, None, 0.12), lt("silence_armor_trim_smithing_template", 1, None, 0.08)]})
     sec.append(f"execute if entity @a[{rbox}] run function {NS}:zones/rift/boss_roll")
     sec.append(f"execute unless entity @a[{rbox}] if score #rboss cs_tmp matches 1 unless entity @e[tag=cs_rift_boss] run function {NS}:zones/rift/boss_gone")
+
+    # ---- the Warlands (not open to players yet)
+    wz = next(z for z in ZONES if z[0] == "warlands")
+    wbox = box(wz)
+    X0, Y0, Z0 = WAR
+    lo_x, hi_x, lo_z, hi_z = X0 - WAR_HALF, X0 + WAR_HALF, Z0 - WAR_HALF, Z0 + WAR_HALF
+    fl_add, fl_rem = f"forceload add {lo_x} {lo_z} {hi_x} {hi_z}", f"forceload remove {lo_x} {lo_z} {hi_x} {hi_z}"
+    runs = WAR_ISLAND.fill_runs(WAR_G)
+    parts = [runs[i:i + 3000] for i in range(0, len(runs), 3000)]
+    clear = [f"fill {lo_x} {y} {lo_z} {hi_x} {y} {hi_z} minecraft:air" for y in range(WAR_Y[0], WAR_Y[1] + 1)]   # 161x161 a layer: under the fill limit
+    biome = [f"fillbiome {lo_x} {y} {lo_z} {hi_x} {y} {hi_z} minecraft:{WAR_BIOME}" for y in range(WAR_Y[0] - 4, WAR_Y[1] + 4, 1)]
+    fn("zones/warlands/build_0", "\n".join([f"kill @e[tag=cs_zone_warlands]", "kill @e[type=minecraft:item,"+wbox+"]"] + clear + biome
+                                           + [f"schedule function {NS}:zones/warlands/build_1 2t replace"]))
+    for i, part in enumerate(parts, 1):
+        cmds = [f"setblock {X0 + x0} {Y0 + y} {Z0 + z} minecraft:{b}" if x0 == x1 else f"fill {X0 + x0} {Y0 + y} {Z0 + z} {X0 + x1} {Y0 + y} {Z0 + z} minecraft:{b}"
+                for x0, y, z, x1, b in part]
+        nxt = [f"schedule function {NS}:zones/warlands/build_{i + 1} 2t replace"] if i < len(parts) else \
+              [fl_rem, f"tellraw @a[tag=cs_staff_msg] {{text:\"The Warlands are built ({len(runs)} fills).\",color:\"gold\"}}", "tag @a remove cs_staff_msg"]
+        fn(f"zones/warlands/build_{i}", "\n".join(cmds + nxt))
+    fn("zones/build_warlands", "\n".join(["tag @s add cs_staff_msg", fl_add,
+                                           f"tellraw @s {{text:\"Building the Warlands in {len(parts) + 1} parts (about {len(parts) * 2 // 20 + 1} s)...\",color:\"gold\"}}",
+                                           f"schedule function {NS}:zones/warlands/build_0 20t replace"]))
+    # War Spoils: the Warlands' own currency (an item, so it drops when you die like everything else)
+    spoils = {"function": "minecraft:set_components", "components": {
+        "minecraft:custom_name": {"text": "War Spoils", "color": "red", "bold": True, "italic": False},
+        "minecraft:lore": [{"text": "Taken from the Warlands.", "color": "gray", "italic": False},
+                           {"text": "Its own currency: spend it on Warlands gear.", "color": "dark_gray", "italic": False}],
+        "minecraft:enchantment_glint_override": True, "minecraft:rarity": "epic",
+        "minecraft:custom_data": {"cs_spoils": True}}}
+    def spoils_pool(lo, hi, chance=1.0):
+        p = {"rolls": 1, "entries": [{"type": "minecraft:item", "name": "minecraft:echo_shard", "functions": [
+            spoils, {"function": "minecraft:set_count", "count": {"type": "minecraft:uniform", "min": lo, "max": hi}}]}]}
+        if chance < 1: p["conditions"] = [{"condition": "minecraft:random_chance", "chance": chance}]
+        return p
+    def lt2(it, lo, hi=None, chance=1.0):
+        e = {"type": "minecraft:item", "name": f"minecraft:{it}"}
+        if hi: e["functions"] = [{"function": "minecraft:set_count", "count": {"type": "minecraft:uniform", "min": lo, "max": hi}}]
+        p = {"rolls": 1, "entries": [e]}
+        if chance < 1: p["conditions"] = [{"condition": "minecraft:random_chance", "chance": chance}]
+        return p
+    js(f"data/{NS}/loot_table/warlands/spoils_mob.json", {"pools": [spoils_pool(1, 1)]})          # Zones: 10% of mob kills
+    js(f"data/{NS}/loot_table/warlands/spoils_guard.json", {"pools": [spoils_pool(2, 4)]})        # every Node Guardian
+    js(f"data/{NS}/loot_table/warlands/node.json", {"pools": [
+        spoils_pool(10, 16), lt2("netherite_ingot", 1, 2), lt2("diamond_block", 1, 3), lt2("enchanted_golden_apple", 1, None, 0.5),
+        lt2("totem_of_undying", 1, None, 0.2), lt2("netherite_upgrade_smithing_template", 1, None, 0.25), lt2("elytra", 1, None, 0.05)]})
+    # the Treasure Node (only ticks while someone is in the Warlands; messages go to players there, nobody else, for now)
+    tx, ty, tz = X0 + WAR_NODE[0], Y0 + WAR_NODE[1], Z0 + WAR_NODE[2]
+    plat = f"x={tx - 9},y={ty},z={tz - 9},dx=18,dy=4,dz=18"
+    here = f"@a[{wbox}]"
+    def say(text, color="gold", extra=None):
+        parts_ = [{"text": "⚑ ", "color": "dark_red"}, {"text": text, "color": color}] + (extra or [])
+        return f"tellraw {here} {snbt(parts_)}"
+    guard = ("{Tags:[\"cs_zone_mob\",\"cs_zone_warlands\",\"cs_wguard\"],PersistenceRequired:1b,"
+             "equipment:{head:{id:\"minecraft:netherite_helmet\",count:1},mainhand:{id:\"minecraft:netherite_axe\",count:1}},drop_chances:{head:0f,mainhand:0f}%s}")
+    fn("zones/warlands/node_sec", "\n".join([
+        "scoreboard players add #wst cs_tmp 0", "scoreboard players add #wch cs_tmp 0", "scoreboard players add #whold cs_tmp 0",
+        f"execute if score #wst cs_tmp matches 0 run function {NS}:zones/warlands/node_charge",
+        f"execute if score #wst cs_tmp matches 1 unless entity @e[tag=cs_wguard] run function {NS}:zones/warlands/node_open",
+        f"execute if score #wst cs_tmp matches 2 run function {NS}:zones/warlands/node_hold",
+        f"execute if score #wst cs_tmp matches 1.. run particle minecraft:end_rod {tx} {ty + 9} {tz} 1.5 3 1.5 0.02 24 force",
+        f"execute if score #wst cs_tmp matches 2 run particle minecraft:dust{{color:[1.0,0.2,0.1],scale:2}} {tx} {ty + 1.2} {tz} 7 0.2 7 0 40 force"]))
+    fn("zones/warlands/node_charge", "\n".join([
+        "scoreboard players add #wch cs_tmp 1",
+        f"execute if score #wch cs_tmp matches {WAR_NODE_CHARGE - 60} run " + say("The Treasure Node charges in 1 minute.", "yellow"),
+        f"execute if score #wch cs_tmp matches {WAR_NODE_CHARGE}.. run function {NS}:zones/warlands/node_ready"]))
+    fn("zones/warlands/node_ready", "\n".join([
+        "scoreboard players set #wst cs_tmp 1", "scoreboard players set #wch cs_tmp 0",
+        say("The Treasure Node is charged! ", "gold", [{"text": "Kill its guardians, then hold the platform alone for 30 s.", "color": "yellow"}]),
+        f"playsound minecraft:block.beacon.activate master {here} {tx} {ty} {tz} 4 0.6",
+        *[f"summon minecraft:{m} {tx + dx} {ty + 1} {tz + dz} " + guard % (",CustomName:{text:\"Node Guardian\",color:\"dark_red\",bold:true}")
+          for m, (dx, dz) in zip(["vindicator", "wither_skeleton", "vindicator", "wither_skeleton"], [(-5, -5), (5, -5), (-5, 5), (5, 5)])]]))
+    fn("zones/warlands/node_open", "\n".join([
+        "scoreboard players set #wst cs_tmp 2", "scoreboard players set #whold cs_tmp 0",
+        say("The guardians are down: ", "gold", [{"text": "hold the Treasure Node alone for 30 s!", "color": "yellow"}]),
+        f"playsound minecraft:item.goat_horn.sound.0 master {here} {tx} {ty} {tz} 4 1"]))
+    fn("zones/warlands/node_hold", "\n".join([
+        f"execute store result score #on cs_tmp if entity @a[{plat},gamemode=!spectator]",
+        "execute if score #on cs_tmp matches 1 run scoreboard players add #whold cs_tmp 1",
+        f"execute if score #on cs_tmp matches 1 run title @a[{plat}] actionbar [{{text:\"⚑ Holding the node \",color:\"gold\"}},{{score:{{name:\"#whold\",objective:\"cs_tmp\"}},color:\"yellow\"}},{{text:\"/{WAR_NODE_HOLD}\",color:\"yellow\"}}]",
+        f"execute if score #on cs_tmp matches 2.. run title @a[{plat}] actionbar {{text:\"⚔ Contested! Only one player can hold the node\",color:\"red\",bold:true}}",
+        f"execute if score #on cs_tmp matches 1 if score #whold cs_tmp matches {WAR_NODE_HOLD}.. as @a[{plat},gamemode=!spectator,limit=1] run function {NS}:zones/warlands/node_win"]))
+    fn("zones/warlands/node_win", "\n".join([
+        f"loot give @s loot {NS}:warlands/node",
+        f"tellraw {here} [{{text:\"⚑ \",color:\"dark_red\"}},{{selector:\"@s\",color:\"yellow\"}},{{text:\" looted the Treasure Node! It charges again in 20 minutes.\",color:\"gold\"}}]",
+        f"playsound minecraft:ui.toast.challenge_complete master {here} {tx} {ty} {tz} 4 1",
+        "scoreboard players set #wst cs_tmp 0", "scoreboard players set #wch cs_tmp 0", "scoreboard players set #whold cs_tmp 0"]))
+    # everyone left: guardians despawn with the other zone mobs; the node comes back charged a minute after the next arrival
+    fn("zones/warlands/node_pause", "\n".join(["scoreboard players set #wst cs_tmp 0", f"scoreboard players set #wch cs_tmp {WAR_NODE_CHARGE - 60}",
+                                                "scoreboard players set #whold cs_tmp 0"]))
+    sec.append(f"execute if entity @a[{wbox}] run function {NS}:zones/warlands/node_sec")
+    sec.append(f"execute unless entity @a[{wbox}] if score #wst cs_tmp matches 1.. run function {NS}:zones/warlands/node_pause")
 
     fn("zones/second", "\n".join(sec))
     fn("zones/tp", "$execute in minecraft:overworld run tp @s $(x) $(y) $(z) $(yaw) 0")

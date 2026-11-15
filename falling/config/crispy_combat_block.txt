@@ -1,0 +1,11 @@
+# Commands refused while in combat on Crispy Skyblock (crispy-chattags 1.10.0+; read live, no restart needed to edit).
+# Combat = 15 s after hitting or being hit by a player, which on Skyblock only happens in the Warlands.
+# /lobby, /hub (proxy) and /vote, /cosmetics are already refused in combat.
+warp
+island
+is
+visit
+tpa
+tpahere
+tpaccept
+plots

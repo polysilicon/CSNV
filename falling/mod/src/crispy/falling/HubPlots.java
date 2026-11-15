@@ -96,7 +96,9 @@ final class HubPlots {
     }
     public static boolean noPvp(Player victim, Player attacker) {
         boolean hub = inHub(victim) || inHub(attacker);
-        boolean zone = Zones.at(victim.level(), victim.blockPosition()) != null || Zones.at(attacker.level(), attacker.blockPosition()) != null;
+        Zones.Zone zv = Zones.at(victim.level(), victim.blockPosition()), za = Zones.at(attacker.level(), attacker.blockPosition());
+        if (!hub && Warlands.is(zv) && Warlands.is(za)) return Warlands.pvpBlocked(victim, attacker);   // PvP is on in the Warlands
+        boolean zone = zv != null || za != null;
         if (!hub && !zone) return false;
         if (attacker instanceof ServerPlayer sp && sp != victim) sp.sendOverlayMessage(t(hub ? "PvP is off in the hub." : "PvP is off in the resource zones.", ChatFormatting.RED));
         return true;

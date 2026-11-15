@@ -177,6 +177,29 @@ and gives +2 hearts. Staff: `/pets grant <player> <pet>`.
   `crispy_skyblock:stash` (`ServerPlayerMixin` on `ServerPlayer.die`) and given back on respawn (or on join, after a
   restart). Nothing changes if keep_inventory is on.
 
+## The Warlands (2.18.0, not open to players yet)
+A PvPvE island south of the hub at (0, 110, 620): `warlands/island.py` lays it out (scorched blackstone and basalt,
+magma cracks, a sunken lava channel whose every source is enclosed, four sunken resource fields of the richest
+regrowing ores, a raised Treasure Node platform with an obsidian obelisk and a beacon, ruined walls, pillars and four
+rim watchtowers), `expansion.py` makes it a resource zone (`warlands`, box 161x161, y 74-155, ores regrow after 60 s,
+Lv 30-45 mobs up to 20 + 2 per player, a spawn roll every 2 s, biome basalt_deltas), `Warlands.java` runs the rules.
+- Hidden: no hub portal, no NPC, not in the warps menu; `/warp warlands` only works for ops and players tagged
+  `cs_warlands_tester` (`/warlands tester <player>` toggles it). Cfg `warlands.open: 1b` would open it to everyone.
+- Entry: a random drop-in above one of 30 drop points (`cfg warlands.drops`), the furthest from other players among
+  12 random picks (25+ blocks if possible), with slow falling; 15 s of protection from players (attacking ends it).
+- PvP on; dying drops everything (no zone stash). Leaving with /warp takes 5 s unhurt; the combat tag
+  (`config/crispy_combat_block.txt`, crispy-chattags 1.10.0) blocks /warp, /island, /is, /visit, /tpa* and /plots
+  for 15 s after a hit.
+- Treasure Node (`zones/warlands/node_*`, only ticks while someone is there): charges for 20 min, then 4 Lv 50 Node
+  Guardians spawn on it; once they're dead, the one player standing alone on the platform for 30 s gets
+  `loot_table/warlands/node` (10-16 War Spoils, netherite, diamond blocks, a chance of a god apple, totem, upgrade
+  template or elytra). Messages only go to players in the Warlands for now. Everyone leaving pauses it (it comes back
+  charged a minute after the next arrival).
+- War Spoils: an echo shard named War Spoils (custom_data cs_spoils); 10% of mob kills drop one, guardians 2-4.
+  Nothing spends them yet (a shop is planned).
+- Build: `/warlands build` (or `function crispy_skyblock:zones/build_warlands`): clears the box, sets the biome and
+  places the island in 7 parts 2 ticks apart. `/warlands go` drops an op in.
+
 ## Hub plots (2.10.0)
 
 The hub island is about twice as wide as before (radius ~92-100, hub area |x|,|z| <= 104; the fishing pond with its

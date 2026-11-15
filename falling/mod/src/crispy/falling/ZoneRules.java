@@ -126,8 +126,9 @@ public final class ZoneRules {
             lv = z.key().equals("mines")
                     ? 2 + (int) Math.round(0.75 * (z.y2() - 12 - m.getBlockY())) + roll   // the rim is 12 below the box top: deeper = harder
                     : z.key().equals("rift") ? 15 + m.getRandom().nextInt(16)              // the Sky Lord's Rift: 15-30
+                    : Warlands.is(z) ? Warlands.level(m)                                   // the Warlands: 30-45, guardians 50
                     : 3 + m.getRandom().nextInt(6);
-            lv = Math.max(1, Math.min(30, lv));
+            lv = Math.max(1, Math.min(60, lv));
             m.addTag("cs_lv_" + lv);
             AttributeInstance hp = m.getAttribute(Attributes.MAX_HEALTH), dmg = m.getAttribute(Attributes.ATTACK_DAMAGE);
             if (hp != null) { hp.removeModifier(HP); hp.addPermanentModifier(new AttributeModifier(HP, HP_PER_LV * lv, AttributeModifier.Operation.ADD_MULTIPLIED_BASE)); }
@@ -143,7 +144,7 @@ public final class ZoneRules {
         float hp = Math.max(0, m.getHealth()), max = m.getMaxHealth();
         int bars = 10, full = (int) Math.ceil(bars * hp / Math.max(1, max));
         ChatFormatting col = hp > max * 0.5 ? ChatFormatting.GREEN : hp > max * 0.25 ? ChatFormatting.YELLOW : ChatFormatting.RED;
-        ChatFormatting lvCol = lv >= 20 ? ChatFormatting.DARK_RED : lv >= 12 ? ChatFormatting.GOLD : lv >= 6 ? ChatFormatting.YELLOW : ChatFormatting.GREEN;
+        ChatFormatting lvCol = lv >= 40 ? ChatFormatting.DARK_PURPLE : lv >= 20 ? ChatFormatting.DARK_RED : lv >= 12 ? ChatFormatting.GOLD : lv >= 6 ? ChatFormatting.YELLOW : ChatFormatting.GREEN;
         MutableComponent c = t("[Lv " + lv + "] ", lvCol).append(m.getType().getDescription().copy().withStyle(ChatFormatting.WHITE)).append(t(" ", ChatFormatting.WHITE));
         c.append(t("|".repeat(full), col)).append(t("|".repeat(bars - full), ChatFormatting.DARK_GRAY));
         c.append(t(" " + (int) Math.ceil(hp) + "/" + (int) max + "❤", ChatFormatting.RED));
@@ -153,6 +154,7 @@ public final class ZoneRules {
     /** LivingEntityMixin: a levelled zone mob died; pay the killer 2 coins per level. */
     public static void onMobDeath(LivingEntity dead, DamageSource source) {
         if (!(dead instanceof Mob m) || !isZoneMob(m)) return;
+        Warlands.mobDied(dead);
         int lv = level(m);
         if (lv <= 0) return;
         ServerPlayer killer = source.getEntity() instanceof ServerPlayer sp ? sp : dead.getKillCredit() instanceof ServerPlayer sp2 ? sp2 : null;
@@ -237,7 +239,8 @@ public final class ZoneRules {
     public static void onPlayerDeath(ServerPlayer p) {
         if (deathTick < tick - 3) deaths.clear();
         deaths.add(p.position()); deathTick = tick;
-        if (Zones.at(p.level(), p.blockPosition()) == null || ((ServerLevel) p.level()).getGameRules().get(net.minecraft.world.level.gamerules.GameRules.KEEP_INVENTORY)) return;
+        Zones.Zone dz = Zones.at(p.level(), p.blockPosition());
+        if (dz == null || Warlands.is(dz) || ((ServerLevel) p.level()).getGameRules().get(net.minecraft.world.level.gamerules.GameRules.KEEP_INVENTORY)) return;   // the Warlands: everything drops
         MinecraftServer server = p.level().getServer();
         RegistryOps<Tag> ops = server.registryAccess().createSerializationContext(NbtOps.INSTANCE);
         CompoundTag all = server.getCommandStorage().get(STASH);

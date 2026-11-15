@@ -47,6 +47,7 @@ public class SkyblockMod implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(Pets::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Zones::onTick);
         ServerTickEvents.END_SERVER_TICK.register(ZoneRules::onTick);
+        ServerTickEvents.END_SERVER_TICK.register(Warlands::onTick);
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register(ZoneRules::onEntityLoad);
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register(Pets::onEntityLoad);
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register((e, lvl) -> Minions.refreshHead(lvl.getServer(), e));
@@ -100,6 +101,7 @@ public class SkyblockMod implements ModInitializer {
             Bazaar.register(d);
             Pets.register(d);
             Zones.register(d);
+            Warlands.register(d);
             HubPlots.register(d);
             Guide.register(d);
             Visits.register(d);

@@ -147,7 +147,7 @@ final class Zones {
                                 in ? ChatFormatting.GREEN : ChatFormatting.RED), t("You can't build here", ChatFormatting.DARK_GRAY)), in),
                         (pl, c) -> warp(pl, z.key()));
             }
-            zs = zs.stream().filter(z -> !z.key().equals("rift")).toList();
+            zs = zs.stream().filter(z -> !z.key().equals("rift") && !z.key().equals(Warlands.KEY)).toList();   // the Warlands: not listed (yet)
             for (int i = 0; i < zs.size() && i < slots.length; i++) {
                 Zone z = zs.get(i);
                 boolean mines = z.key().equals("mines");
@@ -160,8 +160,13 @@ final class Zones {
     }
 
     static int warp(ServerPlayer p, String where) {
-        MinecraftServer server = p.level().getServer();
         p.closeContainer();
+        if (Warlands.startExit(p, where)) return 1;   // leaving the Warlands takes a few seconds
+        return doWarp(p, where);
+    }
+
+    static int doWarp(ServerPlayer p, String where) {
+        MinecraftServer server = p.level().getServer();
         String cmd = switch (where) {
             case "hub" -> "function crispy_skyblock:act/hub";
             case "home" -> "function crispy_skyblock:act/home";
@@ -169,6 +174,10 @@ final class Zones {
             default -> {
                 Zone z = zones(server).stream().filter(x -> x.key().equals(where)).findFirst().orElse(null);
                 if (z == null || z.warp().length < 4) yield null;
+                if (Warlands.is(z)) {   // hidden unless allowed; a random drop-in, not a fixed warp
+                    if (!Warlands.allowed(p)) yield null;
+                    Warlands.dropIn(p); yield "";
+                }
                 if (!z.gate().isEmpty() && !p.entityTags().contains("ctag." + z.gate()) && !staff(p)) {
                     // not wearing the tag: the chat-tags mod explains, with a click to equip it if they can
                     server.getCommands().performPrefixedCommand(p.createCommandSourceStack().withSuppressedOutput().withPermission(LevelBasedPermissionSet.GAMEMASTER),
