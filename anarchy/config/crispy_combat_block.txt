@@ -1,0 +1,14 @@
+# Commands refused while in combat on Crispy Anarchy (crispy-chattags 1.10.0+; read live, no restart needed to edit).
+# Combat = 15 s after hitting or being hit by a player. One command per line; a line also covers anything after it.
+# /lobby, /hub, /server, /vote and /cosmetics are already refused in combat by the proxy and the chat-tags mod.
+home
+spawn
+back
+rtp
+wild
+warp
+tpa
+tpahere
+tpaccept
+tpyes
+trigger market
