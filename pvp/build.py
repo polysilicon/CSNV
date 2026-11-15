@@ -31,6 +31,10 @@ def box(cx, cz, r, y0, dy): return f"x={cx - r - 1},y={y0},z={cz - r - 1},dx={2 
 # admin room under the lobby: chests of every custom enchant (max-level books) and every cyberware item
 ROOM_Y = LOBBY_Y - 10                # room floor; interior ROOM_Y+1..ROOM_Y+4
 ROOM_BOX = f"x=-10,y={ROOM_Y},z=-5,dx=20,dy=6,dz=10"
+# Admin test arena (2026-11-15): a walled 128x128 flat area far from everything else, for trying builds and mechanics.
+# /function pvp:admin/testarena (in, creative), /function pvp:admin/leave (out), /function pvp:admin/clear_testarena.
+TEST_X, TEST_Z, TEST_R, TEST_WALL = 2000, -2000, 64, 24      # centre, half-size, wall height above the floor
+TEST_BOX = f"x={TEST_X - TEST_R - 1},y={AY - 2},z={TEST_Z - TEST_R - 1},dx={2 * TEST_R + 2},dy=400,dz={2 * TEST_R + 2}"
 ENCHANTS = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "enchants.json")))   # from crispy_enchants
 IMPLANT_KEYS = ["kiroshi", "subdermal", "titanium", "lungs", "gorilla", "mantis", "tendons", "lynx", "grip", "reflex", "biomon",
                 "heart", "sandy", "berserk", "launcher", "cyberskeleton", "neuro"]   # cyber:item/<key> loot tables (cyberskeleton: PvP test-only)
@@ -770,7 +774,7 @@ def build():
         f"function {NS}:arena/second",
         f"execute as @a[tag=pvp.spec,tag=!pvp.instands] run function {NS}:to_lobby",
         # anyone (in adventure) outside the lobby and both arenas goes back to the lobby
-        f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[tag=pvp.inarena] {" ".join(f"unless entity @s[{b}]" for b in PVE_BOXES.values())} unless entity @s[tag=pvp.admin,{ROOM_BOX}] unless entity @s[tag=pvp.instands] unless entity @s[tag=pvp.duel] unless entity @s[{TOWER_BOX}] unless entity @s[tag=mo.in] {GAMES["keep"]} run function {NS}:to_lobby",   # mo.in: Micro Outbreak; cg.all: Crispy Games (micro/second keeps them in its room)
+        f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[tag=pvp.inarena] {" ".join(f"unless entity @s[{b}]" for b in PVE_BOXES.values())} unless entity @s[tag=pvp.admin,{ROOM_BOX}] unless entity @s[tag=pvp.admin,{TEST_BOX}] unless entity @s[tag=pvp.instands] unless entity @s[tag=pvp.duel] unless entity @s[{TOWER_BOX}] unless entity @s[tag=mo.in] {GAMES["keep"]} run function {NS}:to_lobby",   # mo.in: Micro Outbreak; cg.all: Crispy Games (micro/second keeps them in its room)
         f"function {NS}:pve/second",
         f"function {NS}:ability/second",
         f"execute as @a[{LOBBY_BOX},tag=!pvp.spec] unless items entity @s container.* minecraft:flint unless items entity @s weapon.offhand minecraft:flint run item replace entity @s hotbar.8 with {DUEL_ITEM}",
@@ -1046,6 +1050,46 @@ def build_velocity():
     ])
 
 
+def build_testarena():
+    """Admin test arena: interior x TEST_X-TEST_R..TEST_X+TEST_R-1 (same for z), floor = the superflat grass level (AY).
+    Light-grey floor with a darker line every 8 blocks and a sea lantern at each 16-block crossing (lit: no mob spawns),
+    deepslate walls TEST_WALL high with a lantern band, a hologram with the commands at the entry point."""
+    x0, x1, z0, z1 = TEST_X - TEST_R, TEST_X + TEST_R - 1, TEST_Z - TEST_R, TEST_Z + TEST_R - 1
+    fl = AY   # the grass layer: floor blocks replace it, players stand on AY + 1
+    fload = f"forceload add {x0 - 1} {z0 - 1} {x1 + 1} {z1 + 1}"
+    unload = f"forceload remove {x0 - 1} {z0 - 1} {x1 + 1} {z1 + 1}"
+    b = [f"fill {x0} {fl} {z0} {x1} {fl} {z1} minecraft:light_gray_concrete"]
+    for x in range(x0, x1 + 1, 8): b.append(f"fill {x} {fl} {z0} {x} {fl} {z1} minecraft:gray_concrete")
+    for z in range(z0, z1 + 1, 8): b.append(f"fill {x0} {fl} {z} {x1} {fl} {z} minecraft:gray_concrete")
+    for x in range(x0, x1 + 1, 16):
+        for z in range(z0, z1 + 1, 16): b.append(f"setblock {x} {fl} {z} minecraft:sea_lantern")
+    b.append(f"fill {TEST_X - 1} {fl} {TEST_Z - 1} {TEST_X} {fl} {TEST_Z} minecraft:gold_block")   # the centre
+    wl = (x0 - 1, x1 + 1, z0 - 1, z1 + 1)
+    for (ax, az, bx, bz) in ((wl[0], wl[2], wl[1], wl[2]), (wl[0], wl[3], wl[1], wl[3]), (wl[0], wl[2], wl[0], wl[3]), (wl[1], wl[2], wl[1], wl[3])):
+        b.append(f"fill {ax} {fl} {az} {bx} {fl + TEST_WALL} {bz} minecraft:polished_deepslate")
+        b.append(f"fill {ax} {fl + 4} {az} {bx} {fl + 4} {bz} minecraft:sea_lantern")
+        b.append(f"fill {ax} {fl + TEST_WALL} {az} {bx} {fl + TEST_WALL} {bz} minecraft:sea_lantern")
+    b += ["kill @e[tag=pvp.testholo]",
+          f"summon minecraft:text_display {TEST_X + 0.5} {fl + 4} {TEST_Z + 0.5} {{Tags:[\"pvp.testholo\"],billboard:\"center\",background:0,"
+          f"text:[{{\"text\":\"ADMIN TEST ARENA\",\"color\":\"gold\",\"bold\":true}},{{\"text\":\"\\n128 x 128 · lines every 8 blocks, lanterns every 16\\n"
+          f"/function pvp:admin/clear_testarena wipes it · /function pvp:admin/leave\",\"color\":\"gray\"}}]}}"]
+    fn("admin/build_testarena", [fload, f"schedule function {NS}:admin/build_testarena2 3s replace",
+                                 say("@s", "Building the test arena in 3 seconds (loading its chunks)...", "gold")])
+    fn("admin/build_testarena2", b + [unload, f"tellraw @a[tag=pvp.admin] {tj({'text': 'Test arena built.', 'color': 'gold'})}"])
+    # wipe: everything above the floor inside the walls (in 32768-block pieces: the fill limit), and any non-player entity
+    clear = [f"kill @e[type=!player,tag=!pvp.testholo,x={x0},y={fl + 1},z={z0},dx={2 * TEST_R - 1},dy=300,dz={2 * TEST_R - 1}]"]
+    for y in range(fl + 1, fl + 1 + 80, 16):
+        for z in range(z0, z1 + 1, 16):
+            clear.append(f"fill {x0} {y} {z} {x1} {y + 15} {min(z + 15, z1)} minecraft:air")
+    fn("admin/clear_testarena", [fload, f"schedule function {NS}:admin/clear_testarena2 3s replace",
+                                 say("@s", "Clearing the test arena in 3 seconds...", "gold")])
+    fn("admin/clear_testarena2", clear + [f"fill {x0} {fl} {z0} {x1} {fl} {z1} minecraft:light_gray_concrete replace minecraft:air",
+                                          f"function {NS}:admin/build_testarena2"])
+    fn("admin/testarena", ["tag @s add pvp.admin", "gamemode creative @s", f"execute in minecraft:overworld run tp @s {TEST_X + 0.5} {fl + 1} {TEST_Z + 8.5} 180 0",
+                           say("@s", "Admin test arena. /gamemode survival or adventure to test as a player (you won't be sent back); "
+                                     "/function pvp:admin/clear_testarena wipes it; /function pvp:admin/leave goes back.", "gold")])
+
+
 def build_room():
     """Sealed admin room under the lobby. Ops: /function pvp:admin/room (in, creative), /function pvp:admin/leave."""
     Y = ROOM_Y
@@ -1084,6 +1128,7 @@ def build_room():
     fn("admin/room", ["tag @s add pvp.admin", "gamemode creative @s", f"tp @s 0.5 {Y + 1} 0.5 180 0",   # keeps your implants (for /pvpkit create)
                       say("@s", "Admin room: take what you need. /function pvp:admin/leave to go back.", "gold")])
     fn("admin/leave", ["tag @s remove pvp.admin", f"function {NS}:to_lobby"])
+    build_testarena()
     # /function pvp:admin/unbreakable: every item with durability you carry (inventory, armor, offhand) becomes unbreakable;
     # food, potions etc. are left alone so they still stack
     wj(f"data/{NS}/item_modifier/unbreakable.json", {"function": "minecraft:set_components", "components": {"minecraft:unbreakable": {}}})

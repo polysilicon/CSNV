@@ -648,6 +648,19 @@ Each rotation map is built on its own (force-load it first, e.g. Mustafar at -70
 keys: mustafar, swamp, tegridy, quahog, bikini, mushroom, springfield, albuquerque, greenhill, rainey.
 `pvp:admin/build_pve_<ruins|mine|neon|hellfort>` rebuilds one Outbreak map. `pvp:admin/place_npc` re-places just the lobby NPCs and signs. The lobby chunks stay force-loaded.
 
+## Admin test arena
+A walled 128 x 128 flat area at x 2000, z -2000 (interior x 1936..2063, z -2064..-1937, floor at the superflat grass
+level, y -61), far from every other map, for trying builds and mechanics. Light-grey floor with a darker line every
+8 blocks, a sea lantern every 16 (lit, so no mob spawns), gold blocks at the centre, polished deepslate walls 24 high.
+```
+/function pvp:admin/testarena          go in (tags you pvp.admin, creative mode)
+/function pvp:admin/leave              back to the lobby
+/function pvp:admin/clear_testarena    wipe everything inside (blocks up to 80 above the floor, entities) and rebuild the floor
+/function pvp:admin/build_testarena    (re)build it
+```
+`pvp.admin` players inside it are left alone by the stray check, so you can switch to survival or adventure to test as
+a normal player.
+
 ## Admin room
 A sealed room under the lobby (floor y 90) holds:
 - a max-level book of every custom enchant (193 of them), in chests labelled by gear type: melee, ranged, tools, armor;
