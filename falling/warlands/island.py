@@ -76,8 +76,9 @@ def gen(seed=7):
         for x in range(fx - rad, fx + rad + 1):
             for z in range(fz - rad, fz + rad + 1):
                 if surf(x, z) is None or math.hypot(x - fx, z - fz) >= rad: continue
-                deep = math.hypot(x - fx, z - fz) < rad - 3
-                y = surf(x, z) - (sink if deep else 0)
+                dd = math.hypot(x - fx, z - fz)
+                deep = dd < rad - 3
+                y = surf(x, z) - min(sink, max(0, int((rad - dd) / 2)))   # a bowl: 1 deeper every 2 blocks in
                 for yy in range(y + 1, surf(x, z) + 1): G.pop((x, yy, z), None)
                 put(x, y, z, "stone" if not deep else "tuff")
                 if rng.random() < 0.30: put(x, y, z, rng.choice(ores))
@@ -97,8 +98,7 @@ def gen(seed=7):
         for w in range(-1, 2): chan.add((x0 + w, t))
     for (x, z) in chan:
         if surf(x, z) is None or not inner(x, z, 6): continue
-        y = surf(x, z) - 2
-        for yy in range(y, surf(x, z) + 1): G.pop((x, yy, z), None)
+        y = surf(x, z)                       # flush with the ground: a hazard you can step out of, not a pit
         put(x, y, z, "lava"); put(x, y - 1, z, "blackstone")
     for (x, y, z), b in list(G.items()):      # any lava source that could spill becomes magma
         if b != "lava": continue
@@ -121,6 +121,25 @@ def gen(seed=7):
             for z in (-1, 0, 1): put(x, y, z, "obsidian" if y < ty + 7 else "gold_block")
     put(0, ty + 8, 0, "beacon")
     node = (0, ty, 0)
+
+    # ---- walkable everywhere: no ground step over 1 block between neighbours (the bowls, the edge of the node
+    # platform...). Lower columns are built up (never cut down) until every step is climbable; the platform stays put.
+    fixed = {(x, z) for (x, z) in top if math.hypot(x, z) <= NODE_R + 0.5}
+    lava_cols = {(x, z) for (x, y, z), b in G.items() if b == "lava"}
+    changed = True
+    while changed:
+        changed = False
+        for (x, z), h in list(top.items()):
+            if (x, z) in fixed or (x, z) in lava_cols: continue
+            need = max((top[(x + dx, z + dz)] for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)) if (x + dx, z + dz) in top), default=h) - 1
+            if need > h:
+                surface_block = G.get((x, h, z), "blackstone")
+                if surface_block in ("lava",): continue
+                for y in range(h, need): put(x, y, z, "blackstone")
+                put(x, need, z, surface_block if surface_block not in ("amethyst_cluster[facing=up]",) else "blackstone")
+                top[(x, z)] = need; changed = True
+    steps = max((abs(top[(x, z)] - top[(x + 1, z)]) for (x, z) in top if (x + 1, z) in top and (x, z) not in lava_cols and (x + 1, z) not in lava_cols), default=0)
+    globals()["MAX_STEP"] = steps
 
     # ---- cover: ruined walls and broken pillars (never on the node platform or in a field)
     def clear_spot(x, z): return surf(x, z) is not None and math.hypot(x, z) > NODE_R + 3 and inner(x, z, 3) \
@@ -187,4 +206,4 @@ def fill_runs(G):
 if __name__ == "__main__":
     G, s, d, res, node = gen()
     print(len(G), "blocks,", len(fill_runs(G)), "fill runs,", len(s), "spawns,", len(d), "drops, node", node)
-    print("lava sources:", sum(1 for b in G.values() if b == "lava"))
+    print("lava sources:", sum(1 for b in G.values() if b == "lava"), "| largest ground step left:", MAX_STEP)
