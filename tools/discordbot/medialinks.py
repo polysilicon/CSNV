@@ -62,6 +62,22 @@ def _download(url, folder, limit):
 
 
 PLATFORM = {"tiktok.com": "TikTok", "twitter.com": "Twitter", "x.com": "X", "instagram.com": "Instagram"}
+POST_TEXT_MAX = 700   # characters of the post's caption shown under the video
+
+
+def post_text(info):
+    """The post's own caption (tweet text, TikTok/Instagram description) as a Discord quote, or "".
+    A trailing t.co link (X adds one pointing at the media itself) is dropped; long text is cut at POST_TEXT_MAX."""
+    text = (info.get("description") or "").strip()
+    if not text: return ""
+    text = re.sub(r"\s*https?://t\.co/\S+\s*$", "", text).strip()
+    lines = [l.rstrip() for l in text.splitlines()]
+    while lines and not lines[-1].strip(): lines.pop()
+    text = "\n".join(lines).strip()
+    if not text: return ""
+    if len(text) > POST_TEXT_MAX: text = text[:POST_TEXT_MAX].rsplit(" ", 1)[0] + "…"
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return "\n".join("> " + l if l.strip() else ">" for l in text.splitlines())
 
 
 async def fetch(url, host, limit):
@@ -101,6 +117,8 @@ async def reply_videos(message, discord):
             creator = info.get("uploader") or info.get("channel") or ""
             plat = PLATFORM[host]
             caption = f"🎬 **{who}** shared {'an' if plat[0] in 'AEIOUX' else 'a'} {plat} video" + (f" from **{creator}**" if creator else "")
+            quote = post_text(info)
+            if quote: caption += "\n" + quote
             if path:
                 kw = {"content": caption[:1900], "file": discord.File(path, filename="video.mp4")}
             else:   # too big, too long or blocked: the same post on a mirror that plays inline
