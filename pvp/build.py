@@ -1054,7 +1054,7 @@ def build_velocity():
 def build_testarena():
     """Admin test arena: interior x TEST_X-TEST_R..TEST_X+TEST_R-1 (same for z), floor = the superflat grass level (AY).
     Light-grey floor with a darker line every 8 blocks and a sea lantern at each 16-block crossing (lit: no mob spawns),
-    deepslate walls TEST_WALL high with a lantern band, a hologram with the commands at the entry point."""
+    deepslate walls TEST_WALL high with a lantern band."""
     x0, x1, z0, z1 = TEST_X - TEST_R, TEST_X + TEST_R - 1, TEST_Z - TEST_R, TEST_Z + TEST_R - 1
     fl = AY   # the grass layer: floor blocks replace it, players stand on AY + 1
     fload = f"forceload add {x0 - 1} {z0 - 1} {x1 + 1} {z1 + 1}"
@@ -1070,10 +1070,7 @@ def build_testarena():
         b.append(f"fill {ax} {fl} {az} {bx} {fl + TEST_WALL} {bz} minecraft:polished_deepslate")
         b.append(f"fill {ax} {fl + 4} {az} {bx} {fl + 4} {bz} minecraft:sea_lantern")
         b.append(f"fill {ax} {fl + TEST_WALL} {az} {bx} {fl + TEST_WALL} {bz} minecraft:sea_lantern")
-    b += ["kill @e[tag=pvp.testholo]",
-          f"summon minecraft:text_display {TEST_X + 0.5} {fl + 4} {TEST_Z + 0.5} {{Tags:[\"pvp.testholo\"],billboard:\"center\",background:0,"
-          f"text:[{{\"text\":\"ADMIN TEST ARENA\",\"color\":\"gold\",\"bold\":true}},{{\"text\":\"\\n128 x 128 · lines every 8 blocks, lanterns every 16\\n"
-          f"/function pvp:admin/clear_testarena wipes it · /function pvp:admin/leave\",\"color\":\"gray\"}}]}}"]
+    b += ["kill @e[tag=pvp.testholo]"]   # no hologram (removed 2026-11-15); the kill clears any old one
     fn("admin/build_testarena", [fload, f"schedule function {NS}:admin/build_testarena2 3s replace",
                                  say("@s", "Building the test arena in 3 seconds (loading its chunks)...", "gold")])
     fn("admin/build_testarena2", b + [unload, f"tellraw @a[tag=pvp.admin] {tj({'text': 'Test arena built.', 'color': 'gold'})}"])
