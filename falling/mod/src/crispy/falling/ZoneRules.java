@@ -105,7 +105,10 @@ public final class ZoneRules {
                         1.4f + ow.getRandom().nextFloat() * 0.4f);
             }
             if (tick % 5 == 0) {
-                for (Mob m : ow.getEntitiesOfClass(Mob.class, box, ZoneRules::isZoneMob)) levelUp(m, z);
+                for (Mob m : ow.getEntitiesOfClass(Mob.class, box, ZoneRules::isZoneMob)) {
+                    try { levelUp(m, z); }   // never let one mob's nameplate take the server down
+                    catch (Exception ex) { System.err.println("[crispy-skyblock] zone mob " + m.getStringUUID() + ": " + ex); }
+                }
                 for (Mob m : ow.getEntitiesOfClass(Mob.class, box, ZoneRules::outsider)) m.discard();   // anything that slipped in
             }
         }
@@ -141,8 +144,8 @@ public final class ZoneRules {
     }
 
     static Component nameplate(Mob m, int lv) {
-        float hp = Math.max(0, m.getHealth()), max = m.getMaxHealth();
-        int bars = 10, full = (int) Math.ceil(bars * hp / Math.max(1, max));
+        float max = Math.max(1, m.getMaxHealth()), hp = Math.max(0, Math.min(m.getHealth(), max));   // health can briefly exceed max
+        int bars = 10, full = Math.max(0, Math.min(bars, (int) Math.ceil(bars * hp / max)));
         ChatFormatting col = hp > max * 0.5 ? ChatFormatting.GREEN : hp > max * 0.25 ? ChatFormatting.YELLOW : ChatFormatting.RED;
         ChatFormatting lvCol = lv >= 40 ? ChatFormatting.DARK_PURPLE : lv >= 20 ? ChatFormatting.DARK_RED : lv >= 12 ? ChatFormatting.GOLD : lv >= 6 ? ChatFormatting.YELLOW : ChatFormatting.GREEN;
         MutableComponent c = t("[Lv " + lv + "] ", lvCol).append(m.getType().getDescription().copy().withStyle(ChatFormatting.WHITE)).append(t(" ", ChatFormatting.WHITE));
