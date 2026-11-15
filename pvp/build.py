@@ -705,7 +705,7 @@ def build():
     fn("load", [
         *[f"scoreboard objectives add {o}" for o in [
             *ab_objectives,
-            "pvp dummy", "pvp.kit trigger", "pvp.spawn trigger", "pvp.kn playerKillCount", "pvp.dead deathCount",
+            "pvp dummy", "pvp.kit trigger", "pvp.spawn trigger", "testarena trigger", "pvp.kn playerKillCount", "pvp.dead deathCount",
             "pvp.left minecraft.custom:minecraft.leave_game", "pvp.streak dummy", "pvp.best dummy",
             "pvp.hurt minecraft.custom:minecraft.damage_taken", "pvp.ct dummy",
             "pvp.cur dummy", "pvp.mastery trigger", "pvp.mastered dummy", "pvp.kk dummy", "pvp.kd dummy",
@@ -774,7 +774,8 @@ def build():
         f"function {NS}:arena/second",
         f"execute as @a[tag=pvp.spec,tag=!pvp.instands] run function {NS}:to_lobby",
         # anyone (in adventure) outside the lobby and both arenas goes back to the lobby
-        f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[tag=pvp.inarena] {" ".join(f"unless entity @s[{b}]" for b in PVE_BOXES.values())} unless entity @s[tag=pvp.admin,{ROOM_BOX}] unless entity @s[tag=pvp.admin,{TEST_BOX}] unless entity @s[tag=pvp.instands] unless entity @s[tag=pvp.duel] unless entity @s[{TOWER_BOX}] unless entity @s[tag=mo.in] {GAMES["keep"]} run function {NS}:to_lobby",   # mo.in: Micro Outbreak; cg.all: Crispy Games (micro/second keeps them in its room)
+        f"execute as @a[gamemode=adventure] unless entity @s[{LOBBY_BOX}] unless entity @s[tag=pvp.inarena] {" ".join(f"unless entity @s[{b}]" for b in PVE_BOXES.values())} unless entity @s[tag=pvp.admin,{ROOM_BOX}] unless entity @s[tag=pvp.admin,{TEST_BOX}] unless entity @s[tag=pvp.tin,{TEST_BOX}] unless entity @s[tag=pvp.instands] unless entity @s[tag=pvp.duel] unless entity @s[{TOWER_BOX}] unless entity @s[tag=mo.in] {GAMES["keep"]} run function {NS}:to_lobby",   # mo.in: Micro Outbreak; cg.all: Crispy Games (micro/second keeps them in its room)
+        f"function {NS}:testarena/second",
         f"function {NS}:pve/second",
         f"function {NS}:ability/second",
         f"execute as @a[{LOBBY_BOX},tag=!pvp.spec] unless items entity @s container.* minecraft:flint unless items entity @s weapon.offhand minecraft:flint run item replace entity @s hotbar.8 with {DUEL_ITEM}",
@@ -1085,6 +1086,49 @@ def build_testarena():
                                  say("@s", "Clearing the test arena in 3 seconds...", "gold")])
     fn("admin/clear_testarena2", clear + [f"fill {x0} {fl} {z0} {x1} {fl} {z1} minecraft:light_gray_concrete replace minecraft:air",
                                           f"function {NS}:admin/build_testarena2"])
+    # ---- guests (creators): access without op. Staff: /function pvp:admin/arena_invite {name:"Steve"} (they must be online),
+    # /function pvp:admin/arena_uninvite {name:"Steve"}, /function pvp:admin/arena_guests. Guests: /trigger testarena
+    # (1 in, 2 out, 3 survival, 4 creative, 5 adventure). pvp.tguest = invited, pvp.tin = inside as a guest.
+    # Safety (testarena/second, every second): a guest who leaves the arena is sent to the lobby (to_lobby clears the
+    # inventory and sets adventure, so no creative items get out); an invited guest outside it in any mode but
+    # adventure gets the same (e.g. after logging out inside).
+    def b(label, cmd, color, hover):
+        return {"text": label, "color": color, "bold": True, "underlined": True,
+                "click_event": {"action": "run_command", "command": cmd}, "hover_event": {"action": "show_text", "value": hover}}
+    howto = tj([{"text": ""}, {"text": "You're invited to the Crispy test arena! ", "color": "gold", "bold": True},
+                {"text": "A walled area for building and filming. ", "color": "gray"},
+                b("[Go in]", "/trigger testarena set 1", "green", "Creative mode in the test arena (/trigger testarena)"), {"text": " "},
+                b("[Leave]", "/trigger testarena set 2", "red", "Back to the lobby (/trigger testarena set 2)"),
+                {"text": "  Inside: ", "color": "gray"},
+                b("[Survival]", "/trigger testarena set 3", "yellow", "/trigger testarena set 3"), {"text": " "},
+                b("[Creative]", "/trigger testarena set 4", "aqua", "/trigger testarena set 4"), {"text": " "},
+                b("[Adventure]", "/trigger testarena set 5", "light_purple", "/trigger testarena set 5")])
+    fn("admin/arena_invite", ["$tag $(name) add pvp.tguest", f"$tellraw $(name) {howto}",
+                              '$tellraw @s {"text":"Invited $(name) to the test arena (they use /trigger testarena).","color":"gold"}'])
+    fn("admin/arena_uninvite", ["$execute as $(name) if entity @s[tag=pvp.tin] run function pvp:testarena/exit", "$tag $(name) remove pvp.tguest",
+                                '$tellraw $(name) {"text":"Your test arena invite has ended.","color":"gray"}',
+                                '$tellraw @s {"text":"$(name) can no longer use the test arena.","color":"gold"}'])
+    fn("admin/arena_guests", ['tellraw @s [{"text":"Test arena guests online: ","color":"gold"},{"selector":"@a[tag=pvp.tguest]","color":"white"}]'])
+    fn("testarena/second", [
+        "scoreboard players enable @a[tag=pvp.tguest] testarena",
+        "execute as @a[scores={testarena=1..}] run function pvp:testarena/trigger",
+        f"execute as @a[tag=pvp.tin] unless entity @s[{TEST_BOX}] run function pvp:testarena/exit",
+        f"execute as @a[tag=pvp.tguest,tag=!pvp.tin,gamemode=!adventure] run function pvp:to_lobby",
+    ])
+    fn("testarena/trigger", [
+        "execute if score @s testarena matches 1 unless entity @s[tag=pvp.tguest] run tellraw @s {\"text\":\"You need an invite from staff for the test arena.\",\"color\":\"red\"}",
+        "execute if score @s testarena matches 1 if entity @s[tag=pvp.tguest,tag=!pvp.tin] run function pvp:testarena/enter",
+        "execute if score @s testarena matches 2 if entity @s[tag=pvp.tin] run function pvp:testarena/exit",
+        "execute if score @s testarena matches 3 if entity @s[tag=pvp.tin] run gamemode survival @s",
+        "execute if score @s testarena matches 4 if entity @s[tag=pvp.tin] run gamemode creative @s",
+        "execute if score @s testarena matches 5 if entity @s[tag=pvp.tin] run gamemode adventure @s",
+        "scoreboard players set @s testarena 0",
+    ])
+    fn("testarena/enter", [f"function {NS}:to_lobby", "tag @s add pvp.tin", "gamemode creative @s",
+                           f"execute in minecraft:overworld run tp @s {TEST_X + 0.5} {fl + 1} {TEST_Z + 8.5} 180 0",
+                           say("@s", "Welcome to the test arena! Build and film freely inside the walls. /trigger testarena set 2 to leave "
+                                     "(your creative items stay here). 3 survival, 4 creative, 5 adventure.", "gold")])
+    fn("testarena/exit", ["tag @s remove pvp.tin", f"function {NS}:to_lobby", say("@s", "You left the test arena.", "gray")])
     fn("admin/testarena", ["tag @s add pvp.admin", "gamemode creative @s", f"execute in minecraft:overworld run tp @s {TEST_X + 0.5} {fl + 1} {TEST_Z + 8.5} 180 0",
                            say("@s", "Admin test arena. /gamemode survival or adventure to test as a player (you won't be sent back); "
                                      "/function pvp:admin/clear_testarena wipes it; /function pvp:admin/leave goes back.", "gold")])

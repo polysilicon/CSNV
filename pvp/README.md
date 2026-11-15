@@ -661,6 +661,15 @@ level, y -61), far from every other map, for trying builds and mechanics. Light-
 `pvp.admin` players inside it are left alone by the stray check, so you can switch to survival or adventure to test as
 a normal player.
 
+**Guests (creators) without op:** `/function pvp:admin/arena_invite {name:"Steve"}` (they must be online; the tag
+`pvp.tguest` stays until revoked) sends them clickable instructions. They use `/trigger testarena`: 1 (or plain
+`/trigger testarena`) goes in, in creative; 2 leaves; 3/4/5 switch to survival/creative/adventure while inside.
+`/function pvp:admin/arena_uninvite {name:"Steve"}` takes it away (and sends them out if inside),
+`/function pvp:admin/arena_guests` lists invited guests online. Safety (`testarena/second`): a guest who leaves the
+arena box (flying over the wall, /lobby and back...) goes through `to_lobby`, which clears the inventory and sets
+adventure, so creative items never leave; an invited guest outside it in any mode but adventure gets the same.
+Guests can't run commands (no op), and mob griefing is off server-wide, so spawned mobs can't break anything.
+
 ## Admin room
 A sealed room under the lobby (floor y 90) holds:
 - a max-level book of every custom enchant (193 of them), in chests labelled by gear type: melee, ranged, tools, armor;
