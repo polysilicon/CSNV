@@ -34,6 +34,7 @@ ROOM_BOX = f"x=-10,y={ROOM_Y},z=-5,dx=20,dy=6,dz=10"
 # Admin test arena (2026-11-15): a walled 128x128 flat area far from everything else, for trying builds and mechanics.
 # /function pvp:admin/testarena (in, creative), /function pvp:admin/leave (out), /function pvp:admin/clear_testarena.
 TEST_X, TEST_Z, TEST_R, TEST_WALL = 2000, -2000, 64, 24      # centre, half-size, wall height above the floor
+ROMAN_T = ["I", "II", "III", "IV"]
 TEST_BOX = f"x={TEST_X - TEST_R - 1},y={AY - 2},z={TEST_Z - TEST_R - 1},dx={2 * TEST_R + 2},dy=400,dz={2 * TEST_R + 2}"
 ENCHANTS = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "enchants.json")))   # from crispy_enchants
 IMPLANT_KEYS = ["kiroshi", "subdermal", "titanium", "lungs", "gorilla", "mantis", "tendons", "lynx", "grip", "reflex", "biomon",
@@ -706,7 +707,7 @@ def build():
     fn("load", [
         *[f"scoreboard objectives add {o}" for o in [
             *ab_objectives,
-            "pvp dummy", "pvp.kit trigger", "pvp.spawn trigger", "testarena trigger", "pvp.kn playerKillCount", "pvp.dead deathCount",
+            "pvp dummy", "pvp.kit trigger", "pvp.spawn trigger", "testarena trigger", "pvp.dumt dummy", "pvp.dumn dummy", "pvp.dumi dummy", "pvp.kn playerKillCount", "pvp.dead deathCount",
             "pvp.left minecraft.custom:minecraft.leave_game", "pvp.streak dummy", "pvp.best dummy",
             "pvp.hurt minecraft.custom:minecraft.damage_taken", "pvp.ct dummy",
             "pvp.cur dummy", "pvp.mastery trigger", "pvp.mastered dummy", "pvp.kk dummy", "pvp.kd dummy",
@@ -743,6 +744,7 @@ def build():
         f"function {NS}:tower/tick",
         f"function {NS}:micro/tick",
         f"function {NS}:games/tick",
+        f"execute if entity @e[type=minecraft:husk,tag=pvp.dummy,limit=1] run function {NS}:testarena/dummy_tick",
         f"execute as @a[tag=!pvp.seen] run function {NS}:to_lobby",
         f"execute as @a[scores={{pvp.left=1..}}] run function {NS}:to_lobby",
         f"execute as @e[type=minecraft:player,scores={{pvp.dead=1..}}] run function {NS}:respawned",
@@ -1073,6 +1075,7 @@ def build_testarena():
         b.append(f"fill {ax} {fl + TEST_WALL} {az} {bx} {fl + TEST_WALL} {bz} minecraft:sea_lantern")
     b += ["kill @e[tag=pvp.testholo]"]   # no hologram (removed 2026-11-15); the kill clears any old one
     b.append(f"function {NS}:admin/testarena_chests")   # one chest per character's kit along the north wall
+    b.append(f"function {NS}:testarena/props")           # free Pack-a-Punch station and the damage dummies
     fn("admin/build_testarena", [fload, f"schedule function {NS}:admin/build_testarena2 3s replace",
                                  say("@s", "Building the test arena in 3 seconds (loading its chunks)...", "gold")])
     fn("admin/build_testarena2", b + [unload, f"tellraw @a[tag=pvp.admin] {tj({'text': 'Test arena built.', 'color': 'gold'})}"])
@@ -1128,6 +1131,83 @@ def build_testarena():
                            say("@s", "Welcome to the test arena! Build and film freely inside the walls. /trigger testarena set 2 to leave "
                                      "(your creative items stay here). 3 survival, 4 creative, 5 adventure.", "gold")])
     fn("testarena/exit", ["tag @s remove pvp.tin", f"function {NS}:to_lobby", say("@s", "You left the test arena.", "gray")])
+    # ---- free Pack-a-Punch station and training dummies (2026-11-15)
+    # Station: an enchanting table with an interaction box (advancement testarena_pap): right-click holding a gun to step
+    # that gun's tier 0 -> I -> II -> III -> IV -> 0, free. Tiers are the per-gun pve.g.<gun> scores Outbreak uses (and
+    # reset by to_lobby). Dummies: husks (guns ignore mannequins, which every NPC is) with no AI, a target block for a
+    # head, 1024 health and full knockback resistance; every tick each one's lost health is the damage it just took,
+    # shown on the text above it (last hit, total, hits; the total resets after 5 s without a hit), then it heals.
+    PX, PZ = TEST_X + 6, TEST_Z - 6
+    DUMMIES = [(TEST_X - 4, TEST_Z - 10, "No armour", "{}"),
+               (TEST_X + 0, TEST_Z - 10, "Iron armour", '{head:{id:"minecraft:target",count:1},chest:{id:"minecraft:iron_chestplate",count:1},legs:{id:"minecraft:iron_leggings",count:1},feet:{id:"minecraft:iron_boots",count:1}}'),
+               (TEST_X - 8, TEST_Z - 10, "Diamond armour", '{head:{id:"minecraft:target",count:1},chest:{id:"minecraft:diamond_chestplate",count:1},legs:{id:"minecraft:diamond_leggings",count:1},feet:{id:"minecraft:diamond_boots",count:1}}')]
+    sign = lambda x, y, z, lines, facing="south": (f"setblock {x} {y} {z} minecraft:dark_oak_wall_sign[facing={facing}]{{front_text:{{messages:[" +
+                                                  ",".join(tj(l) for l in (lines + ["", "", "", ""])[:4]) + "],has_glowing_text:1b,color:\"yellow\"}} replace")
+    pr = ["kill @e[tag=pvp.testpap]", "kill @e[type=minecraft:husk,tag=pvp.dummy]", "kill @e[tag=pvp.dummytxt]",
+          f"setblock {PX} {fl + 1} {PZ} minecraft:enchanting_table",
+          f"setblock {PX} {fl} {PZ} minecraft:gold_block",
+          f"summon minecraft:interaction {PX + 0.5} {fl + 1} {PZ + 0.5} {{Tags:[\"pvp.testpap\"],width:1.1f,height:1.1f,response:1b}}",
+          # a deepslate post behind the table with the sign on it, above the table
+          f"fill {PX} {fl + 1} {PZ - 1} {PX} {fl + 2} {PZ - 1} minecraft:polished_deepslate",
+          sign(PX, fl + 2, PZ, ["Pack-a-Punch", "(free)", "right-click", "holding a gun"])]
+    for x, z, label, eq in DUMMIES:
+        heq = eq if eq != "{}" else '{head:{id:"minecraft:target",count:1}}'
+        pr += [f"summon minecraft:husk {x + 0.5} {fl + 1} {z + 0.5} {{Tags:[\"pvp.dummy\"],NoAI:1b,Silent:1b,PersistenceRequired:1b,"
+               f"Rotation:[0f,0f],equipment:{heq},drop_chances:{{head:0f,chest:0f,legs:0f,feet:0f}},"
+               f"attributes:[{{id:\"minecraft:max_health\",base:1024d}},{{id:\"minecraft:knockback_resistance\",base:1d}}],Health:1024f}}",
+               f"summon minecraft:text_display {x + 0.5} {fl + 3.2} {z + 0.5} {{Tags:[\"pvp.dummytxt\"],billboard:\"center\",background:1610612736,"
+               f"text:[{{\"text\":\"{label}\",\"color\":\"gold\",\"bold\":true}},{{\"text\":\"\\nHit me!\",\"color\":\"gray\",\"bold\":false}}]}}"]
+    fn("testarena/props", pr)
+    wj(f"data/{NS}/advancement/testarena_pap.json", {"criteria": {"c": {"trigger": "minecraft:player_interacted_with_entity", "conditions": {"entity": [{
+        "condition": "minecraft:entity_properties", "entity": "this",
+        "predicate": {"minecraft:entity_type": "minecraft:interaction", "minecraft:nbt": "{Tags:[\"pvp.testpap\"]}"}}]}}},
+        "rewards": {"function": f"{NS}:testarena/pap"}})
+    fn("testarena/pap", [f"advancement revoke @s only {NS}:testarena_pap",
+                         "execute as @e[type=minecraft:interaction,tag=pvp.testpap,distance=..8] run data remove entity @s interaction",
+                         *[f"execute if items entity @s weapon.mainhand {abilities.sel(k)} run return run function {NS}:testarena/pap_k/{k}" for k in abilities.GUNS],
+                         say("@s", "Hold a gun to Pack-a-Punch it (free here: each click is the next tier, after IV back to none).", "red")])
+    for k in abilities.GUNS:
+        gname = abilities.ABILITIES[k][0]
+        fn(f"testarena/pap_k/{k}", [
+            f"scoreboard players add @s pve.g.{k} 1",
+            f"execute if score @s pve.g.{k} matches 5.. run scoreboard players set @s pve.g.{k} 0",
+            *[f"execute if items entity @s {sl} {abilities.sel(k)} run item modify entity @s {sl} {NS}:gunlore/{k}"
+              for sl in [f"container.{i}" for i in range(36)] + ["weapon.offhand"]],
+            "playsound minecraft:block.anvil.use player @s ~ ~ ~ 1 0.8", "particle minecraft:totem_of_undying ~ ~1 ~ 0.4 0.6 0.4 0.3 20",
+            f"execute if score @s pve.g.{k} matches 0 run {say('@s', gname + ': back to no Pack-a-Punch.', 'gray')}",
+            *[f"execute if score @s pve.g.{k} matches {t} run "
+              + f"title @s actionbar {tj({'text': gname + ' ' + '★' * t + ' Pack-a-Punch ' + ROMAN_T[t - 1], 'color': 'gold', 'bold': True})}" for t in range(1, 5)]])
+    # damage readout
+    fn("testarena/dummy_tick", [f"execute as @e[type=minecraft:husk,tag=pvp.dummy] at @s run function {NS}:testarena/dummy_one"])
+    fn("testarena/dummy_one", [
+        "execute store result score #dh pvp run data get entity @s Health 10",
+        f"execute if score #dh pvp matches 10240.. run return run function {NS}:testarena/dummy_idle",
+        "scoreboard players set #dd pvp 10240", "scoreboard players operation #dd pvp -= #dh pvp",
+        "data modify entity @s Health set value 1024f",
+        "scoreboard players operation @s pvp.dumt += #dd pvp", "scoreboard players add @s pvp.dumn 1", "scoreboard players set @s pvp.dumi 0",
+        "scoreboard players set #10 pvp 10",
+        "scoreboard players operation #a pvp = #dd pvp", "scoreboard players operation #a pvp /= #10 pvp",
+        "scoreboard players operation #b pvp = #dd pvp", "scoreboard players operation #b pvp %= #10 pvp",
+        "scoreboard players operation #c pvp = @s pvp.dumt", "scoreboard players operation #c pvp /= #10 pvp",
+        "scoreboard players operation #e pvp = @s pvp.dumt", "scoreboard players operation #e pvp %= #10 pvp",
+        f"execute store result storage {NS}:dummy a int 1 run scoreboard players get #a pvp",
+        f"execute store result storage {NS}:dummy b int 1 run scoreboard players get #b pvp",
+        f"execute store result storage {NS}:dummy t int 1 run scoreboard players get #c pvp",
+        f"execute store result storage {NS}:dummy u int 1 run scoreboard players get #e pvp",
+        f"execute store result storage {NS}:dummy n int 1 run scoreboard players get @s pvp.dumn",
+        f"function {NS}:testarena/dummy_show with storage {NS}:dummy",
+    ])
+    fn("testarena/dummy_show", [
+        '$execute as @e[type=minecraft:text_display,tag=pvp.dummytxt,distance=..4,sort=nearest,limit=1] run data modify entity @s text set value '
+        '[{"text":"Last hit: $(a).$(b)","color":"red","bold":true},{"text":"\\nTotal: $(t).$(u) · $(n) hits","color":"white","bold":false},'
+        '{"text":"\\n(1 heart = 2 damage)","color":"gray","bold":false}]'])
+    fn("testarena/dummy_idle", [
+        "scoreboard players add @s pvp.dumi 1",
+        f"execute if score @s pvp.dumi matches 100 if score @s pvp.dumn matches 1.. run function {NS}:testarena/dummy_reset"])
+    fn("testarena/dummy_reset", [
+        "scoreboard players set @s pvp.dumt 0", "scoreboard players set @s pvp.dumn 0",
+        'execute as @e[type=minecraft:text_display,tag=pvp.dummytxt,distance=..4,sort=nearest,limit=1] run data modify entity @s text set value '
+        '[{"text":"Training dummy","color":"gold","bold":true},{"text":"\\nHit me!","color":"gray","bold":false}]'])
     fn("admin/testarena", ["tag @s add pvp.admin", "gamemode creative @s", f"execute in minecraft:overworld run tp @s {TEST_X + 0.5} {fl + 1} {TEST_Z + 8.5} 180 0",
                            say("@s", "Admin test arena. /gamemode survival or adventure to test as a player (you won't be sent back); "
                                      "/function pvp:admin/clear_testarena wipes it; /function pvp:admin/leave goes back.", "gold")])
@@ -2265,6 +2345,12 @@ def build_test_chests():
         for slot, (kind, it, n) in enumerate(items):
             cmds.append(f"loot replace block {x} {fl + 1} {z} container.{slot} loot {it}" if kind == "loot"
                         else f"item replace block {x} {fl + 1} {z} container.{slot} with {it} {n}")
+    # all the guns in one chest at the end of the row (every gun ability, wall-buys and the Toy Rifle included)
+    i = len(kits); x = x0 + 2 + 2 * (i % 62); z = z0 + 2 * (i // 62)
+    cmds += [f"setblock {x} {fl + 1} {z} minecraft:chest[facing=south]{{CustomName:{tj({'text': 'All guns', 'color': 'red', 'bold': True})}}} replace",
+             f"setblock {x} {fl + 2} {z} minecraft:dark_oak_wall_sign[facing=south]{{front_text:{{messages:[{tj('ALL GUNS')},\"\",\"\",\"\"],has_glowing_text:1b,color:\"red\"}}}} replace",
+             f"data modify block {x} {fl + 1} {z} Items set value []",
+             *[f"loot replace block {x} {fl + 1} {z} container.{slot} loot {NS}:ability/{k}" for slot, k in enumerate(abilities.GUNS[:27])]]
     fn("admin/testarena_chests", cmds)
     print(f"test arena kit chests: {len(kits)} characters, most items in one: {max(len(k[2]) for k in kits)}")
 

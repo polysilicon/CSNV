@@ -666,6 +666,18 @@ ability items and all the armour (heads included). Plain food/arrows and implant
 out. Generated at the end of the build from the kit functions themselves (`build_test_chests`), so they follow kit
 changes; `admin/testarena_chests` re-places and refills them (build_testarena and clear_testarena run it).
 
+**All guns**: a chest at the end of the kit-chest row (x 2022, z -2064) with every gun ability (character guns,
+wall-buys, the Toy Rifle).
+**Free Pack-a-Punch**: the enchanting table at 2006 -60 -2006 (sign above it; interaction `pvp.testpap`, advancement
+`testarena_pap` -> `testarena/pap`): right-click holding a gun to step that gun's tier 0 -> I -> II -> III -> IV -> 0, no
+points. Same per-gun scores as Outbreak (`pve.g.<gun>`), so to_lobby resets them.
+**Training dummies**: three husks at z -2010 (x 1996 no armour, 2000 iron, 1992 diamond), no AI, a target block for a
+head, 1024 health, no knockback. Guns ignore mannequins (every NPC is one), hence husks. Every tick
+(`testarena/dummy_tick`, only while one is loaded) each dummy's lost health is the damage it just took: the text above
+it shows the last hit, the total and the hit count (one decimal; 1 heart = 2 damage), then it heals to full. The total
+resets after 5 s without a hit. `testarena/props` (run by build_testarena / clear_testarena) re-places the station and
+dummies.
+
 `pvp.admin` players inside it are left alone by the stray check, so you can switch to survival or adventure to test as
 a normal player.
 
