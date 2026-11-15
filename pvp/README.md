@@ -306,12 +306,14 @@ Everyone starts as a **random character**.
     The tier is stored on the item as `custom_model_data` strings (`pvp_tier1`..`4`) and shown as gold lore stars. It
     used to be `custom_data.pvp_tier`, but crispy_enchants' migration wipes small `custom_data` every 2 s, so the tier
     vanished and tier I could be bought again and again.
-  - **Guns** (gun abilities) can be Pack-a-Punched too, for the same prices: hold any gun and it upgrades **all** your
-    guns (score `pve.gun`, since a gun item is swapped for a fresh one after every shot). Tier I +40 % damage, II +80 %,
-    III +120 % and hits slow the target, IV +180 % and also sets mobs on fire. Like the armor upgrade, it resets when you
-    go down. Gun lore shows your tier and the damage it does: the gun loot tables run item modifier
-    `pvp:gunlore/<gun>`, which adds the line for the holder's `pve.gun`, and buying a tier rewrites every gun you carry
-    (`pve/up/gun_lore`).
+  - **Guns** (gun abilities) can be Pack-a-Punched too, for the same prices, **one gun at a time** (since
+    2026-11-15): hold a gun and it upgrades that gun only. Each gun's tier is its own score, `pve.g.<gun>` (a gun item
+    is swapped for a fresh one after every shot, so the tier can't live on the item; two copies of the same gun, e.g.
+    dual-wielded M1911s, share it). Tier I +40 % damage, II +80 %, III +120 % and hits slow the target, IV +180 % and
+    also sets mobs on fire. Every tier resets when you go down, like the armor upgrade. `pve.gun` is now only a working
+    register: each shot (`ability/fx/<gun>`) loads that gun's tier into it before the damage lines, and the purchase
+    (`pve/up/gun` -> `gun_k/<gun>` -> `gun_core` -> `gun_t<n>`) loads, upgrades and stores it back. Gun lore shows that
+    gun's tier: `pvp:gunlore/<gun>` checks `pve.g.<gun>`. Micro Outbreak's Rifle upgrade sets `pve.g.toy_rifle`.
   - **Wall-buys**: Outbreak-only guns (no character has them), 4 per map, right-click to buy (`WALL_BUYS`, per map in
     `WALL_MAPS`): M1911 500 (every map), Olympia 750, MP40 1,000, Kar98k 1,250, Stakeout 1,500, STG-44 1,750.
     | Gun | Type | Damage | Fire rate | Range |

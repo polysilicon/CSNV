@@ -553,7 +553,7 @@ def item_components(key):
 
 ROMAN = ["I", "II", "III", "IV", "V"]
 def gun_lore(key):
-    """Item modifier for a gun: its lore, plus a Pack-a-Punch line for the tier of whoever it's given to (pve.gun).
+    """Item modifier for a gun: its lore, plus a Pack-a-Punch line for that gun's tier for whoever it's given to (pve.g.<key>).
     Guns are handed back after every shot, so the line follows the player's tier without touching the item."""
     lore = item_components(key)["minecraft:lore"]
     dmg = float(re.search(r"(\d+(?:\.\d+)?) damage", ABILITIES[key][4][1]).group(1))
@@ -563,7 +563,7 @@ def gun_lore(key):
         extra = (" · hits slow" if t >= 3 else "") + (" · sets mobs on fire" if t >= 4 else "")
         out.append({"function": "minecraft:set_lore", "mode": "append",
                     "lore": [{"text": f"{'★' * t} Pack-a-Punched {ROMAN[t - 1]}: {d:g} damage{extra}", "color": "gold", "italic": False}],
-                    "conditions": [{"condition": "minecraft:entity_scores", "entity": "this", "scores": {"pve.gun": {"min": t, "max": t}}}]})
+                    "conditions": [{"condition": "minecraft:entity_scores", "entity": "this", "scores": {f"pve.g.{key}": {"min": t, "max": t}}}]})
     return out
 
 
@@ -591,7 +591,11 @@ def build(fn, wj, lobby_box):
             *([f"execute if entity @s[tag=!pvp.offuse] run function {NS}:ability/dual_arm"] if key in HANDGUNS else []),
             "tag @s remove pvp.caster", "tag @e[tag=pvp.hit] remove pvp.hit",
         ])
-        fn(f"ability/fx/{key}", body)
+        # Pack-a-Punch is per gun (2026-11-15): each gun's tier is its own score pve.g.<key>; the shot code reads
+        # pve.gun, so load this gun's tier into it first (no score = tier 0; Extraction has none, so always 0 there)
+        fn(f"ability/fx/{key}", (["scoreboard players set @s pve.gun 0",
+                                  f"execute if score @s pve.g.{key} matches 1.. run scoreboard players operation @s pve.gun = @s pve.g.{key}"]
+                                 if key in GUNS else []) + body)
         if key in HANDGUNS:   # the off-hand shot (Extraction wraps it with its magazine check, see build.py ammo_gate)
             fn(f"ability/dual/{key}", [
                 f"execute if entity @s[{lobby_box}] run return 0",

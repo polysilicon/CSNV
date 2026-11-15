@@ -466,6 +466,7 @@ PERK_RESET = ["tag @s remove pvp.master", "attribute @s minecraft:scale modifier
               "attribute @s minecraft:movement_speed modifier remove pvp:size_spd", "attribute @s minecraft:attack_damage modifier remove pvp:fists",
               "attribute @s minecraft:attack_speed modifier remove pvp:fists", "attribute @s minecraft:max_health modifier remove pvp:jug", "attribute @s minecraft:max_health modifier remove pvp:arm",
               "tag @s remove pve.jug", "tag @s remove pve.cola", "tag @s remove pve.dt", "tag @s remove pve.phd", "scoreboard players set @s pve.arm 0", "scoreboard players set @s pve.gun 0"]
+PERK_RESET += [f"scoreboard players reset @s pve.g.{k}" for k in abilities.GUNS]   # per-gun Pack-a-Punch tiers
 PERK_RESET += tower.PERK_RESET   # the Tower's upgrade modifiers go with the other per-run perks
 TOWER_BOX = box(tower.TCX, tower.TCZ, tower.R + 1, AY - 1, tower.WALL_H + 4)
 CELLS_NEEDED = 3   # Power Cells (from boss waves) to assemble the Annihilator
@@ -712,7 +713,7 @@ def build():
             "pvp.elo dummy", "pvp.dwin dummy", "pvp.dloss dummy", "pvp.dfrom dummy", "pvp.dtm dummy", "pvp.dpit dummy",
             "pvp.duela trigger", "pvp.dueld trigger", "pvp.duelstats trigger", *[f"pvp.mx{k[0]} dummy" for k in ALL_KITS],
             *[f"pvp.hw{c[0]} dummy" for c in HW_COSMETICS], "pvp.hwwins dummy", *MICRO["objectives"], *GAMES["objectives"], *CORE["objectives"],
-            "pve dummy", "pve.join trigger", "pve.buy trigger", "pve.k totalKillCount", "pve.kit dummy", "pve.best dummy", "pve.arm dummy", "pve.gun dummy", "pve.map dummy", "pve.rv dummy", "pve.wb dummy"]],
+            "pve dummy", "pve.join trigger", "pve.buy trigger", "pve.k totalKillCount", "pve.kit dummy", "pve.best dummy", "pve.arm dummy", "pve.gun dummy", *[f"pve.g.{k} dummy" for k in abilities.GUNS], "pve.map dummy", "pve.rv dummy", "pve.wb dummy"]],
         'scoreboard objectives add pvp.kills playerKillCount {"text":"⚔ Kills","color":"aqua","bold":true}',
         'scoreboard objectives add pve.pts dummy {"text":"☣ Points","color":"green","bold":true}',
         "scoreboard objectives setdisplay sidebar pvp.kills",
@@ -1484,24 +1485,39 @@ def build_upgrades():
                   "particle minecraft:totem_of_undying ~ ~1 ~ 0.4 0.6 0.4 0.3 30",
                   say("@s", f"Weapon upgraded to tier {roman[t - 1]}." + (" Next: " + f"{WEAPON_UP[t]:,} points." if t < N else " Maxed out!"), "gold")]
         fn(f"pve/up/weapon_t{t}", lines)
-    # guns: a gun item is swapped for a fresh one after every shot, so the tier is on the player (pve.gun) and covers
-    # all their guns; it resets when they go down, like the armor upgrade
-    pct = lambda t: f"+{round(abilities.GUN_TIER_BOOST[t] * 100)} % gun damage" + (", hits slow" if t >= 3 else "") + (", sets mobs on fire" if t >= 4 else "")
-    fn("pve/up/gun", ["scoreboard players add @s pve.gun 0",
-                      f"execute if score @s pve.gun matches {N}.. run return run {say('@s', f'Your guns are already fully upgraded (tier {roman[N - 1]}).', 'gold')}",
-                      *[f"execute if score @s pve.gun matches {t - 1} run return run function {P}/gun_t{t}" for t in range(1, N + 1)]])
-    # rewrite the lore of every gun the player carries, so it shows the new tier straight away
+    # guns (per gun since 2026-11-15): a gun item is swapped for a fresh one after every shot, so each gun's tier is a
+    # score on the player, pve.g.<gun>; Pack-a-Punch upgrades the gun in your hand. pve.gun is the working register:
+    # gun_k/<gun> loads that gun's tier into it, gun_core buys the next tier, and the result goes back. All tiers reset
+    # when you go down, like the armor upgrade.
+    pct = lambda t: f"+{round(abilities.GUN_TIER_BOOST[t] * 100)} % damage" + (", hits slow" if t >= 3 else "") + (", sets mobs on fire" if t >= 4 else "")
+    fn("pve/up/gun", [*[f"execute if items entity @s weapon.mainhand {abilities.sel(k)} run return run function {P}/gun_k/{k}" for k in abilities.GUNS],
+                      say("@s", "Hold the gun you want to Pack-a-Punch.", "red")])
+    for k in abilities.GUNS:
+        gname = abilities.ABILITIES[k][0]
+        fn(f"pve/up/gun_k/{k}", [
+            "scoreboard players set @s pve.gun 0",
+            f"execute if score @s pve.g.{k} matches 1.. run scoreboard players operation @s pve.gun = @s pve.g.{k}",
+            f"data modify storage {NS}:gun name set value {tj(gname)}",
+            f"function {P}/gun_core",
+            f"scoreboard players operation @s pve.g.{k} = @s pve.gun",
+            # rewrite the lore of every copy of this gun the player carries, so it shows the new tier straight away
+            *[f"execute if items entity @s {sl} {abilities.sel(k)} run item modify entity @s {sl} {NS}:gunlore/{k}"
+              for sl in [f"container.{i}" for i in range(36)] + ["weapon.offhand"]]])
+    fn("pve/up/gun_core", [f"execute if score @s pve.gun matches {N}.. run return run {say('@s', f'This gun is already fully upgraded (tier {roman[N - 1]}).', 'gold')}",
+                           *[f"execute if score @s pve.gun matches {t - 1} run return run function {P}/gun_t{t}" for t in range(1, N + 1)]])
+    # kept for anything that still calls it: rewrites every gun's lore (each reads its own tier)
     fn("pve/up/gun_lore", [f"execute if items entity @s {sl} {abilities.sel(k)} run item modify entity @s {sl} {NS}:gunlore/{k}"
                            for sl in [f"container.{i}" for i in range(36)] + ["weapon.offhand"] for k in abilities.GUNS])
     for t in range(1, N + 1):
         cost = WEAPON_UP[t - 1]
         fn(f"pve/up/gun_t{t}", [
             f"execute if score @s pve.pts matches ..{cost - 1} run return run {afford(f'Pack-a-Punch {roman[t - 1]}', cost)}",
-            f"scoreboard players remove @s pve.pts {cost}", f"scoreboard players set @s pve.gun {t}", f"function {P}/gun_lore",
+            f"scoreboard players remove @s pve.pts {cost}", f"scoreboard players set @s pve.gun {t}",
             f"title @s actionbar {tj({'text': '★' * t + ' PACK-A-PUNCH ' + roman[t - 1] + ': ' + pct(t), 'color': 'gold', 'bold': True})}",
             "playsound minecraft:block.anvil.use player @s ~ ~ ~ 1 0.8", "playsound minecraft:block.beacon.power_select player @s ~ ~ ~ 1 1.4",
             "particle minecraft:totem_of_undying ~ ~1 ~ 0.4 0.6 0.4 0.3 30",
-            say("@s", f"All your guns upgraded to tier {roman[t - 1]} ({pct(t)})." + (f" Next: {WEAPON_UP[t]:,} points." if t < N else " Maxed out!"), "gold")])
+            f"tellraw @s [{{\"text\":\"\"}},{{\"nbt\":\"name\",\"storage\":\"{NS}:gun\",\"color\":\"gold\",\"bold\":true}},"
+            f"{tj({'text': f' upgraded to tier {roman[t - 1]} ({pct(t)}).' + (f' Next: {WEAPON_UP[t]:,} points.' if t < N else ' Maxed out!'), 'color': 'gold'})}]"])
     # armor: I = +1 Protection on every worn piece, II = Resistance I, III = +2 hearts (all until you go down)
     wj(f"data/{NS}/item_modifier/up/armor.json", [em({"protection": 1}), em({"unbreaking": 1})])
     arm = {1: [*[f"item modify entity @s armor.{sl} {NS}:up/armor" for sl in ("head", "chest", "legs", "feet")]],

@@ -103,7 +103,7 @@ def build(b):
             m = {1: "chainmail", 2: "iron", 3: "diamond"}[n]
             return [f"item replace entity @s armor.{sl} with minecraft:{m}_{pc}[minecraft:unbreakable={{}}]"
                     for sl, pc in (("chest", "chestplate"), ("legs", "leggings"), ("feet", "boots"))]
-        if key == "rifle": return [f"scoreboard players set @s pve.gun {n}"]   # the gun tiers, as Pack-a-Punch does in Outbreak
+        if key == "rifle": return [f"scoreboard players set @s pve.g.toy_rifle {n}"]   # the Toy Rifle's tier (per-gun Pack-a-Punch score)
         if key == "health": return [f"attribute @s minecraft:max_health modifier remove {NS}:micro_hp",
                                     f"attribute @s minecraft:max_health modifier add {NS}:micro_hp {4 * n} add_value", "effect give @s minecraft:instant_health 1 1 true"]
         if key == "speed": return [f"attribute @s minecraft:movement_speed modifier add {NS}:micro_spd 0.2 add_multiplied_base"]
