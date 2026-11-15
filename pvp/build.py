@@ -2351,6 +2351,28 @@ def build_test_chests():
              f"setblock {x} {fl + 2} {z} minecraft:dark_oak_wall_sign[facing=south]{{front_text:{{messages:[{tj('ALL GUNS')},\"\",\"\",\"\"],has_glowing_text:1b,color:\"red\"}}}} replace",
              f"data modify block {x} {fl + 1} {z} Items set value []",
              *[f"loot replace block {x} {fl + 1} {z} container.{slot} loot {NS}:ability/{k}" for slot, k in enumerate(abilities.GUNS[:27])]]
+    # Anarchy's custom gear (2026-11-15): the named weapons and armour sets sold in the Anarchy market, copied exactly
+    # from its shop trades into anarchy_items.json (vanilla enchants only, so they work here unchanged). Chests along
+    # the inside of the south wall, facing north: one for the weapons, the armour split without breaking up a set.
+    ai = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "anarchy_items.json"), encoding="utf-8"))
+    groups = [("Anarchy weapons", ai["weapons"])]
+    cur, sets = [], []
+    for it in ai["armour"]:
+        if sets and it["set"] != sets[-1]["set"] and len([x for x in cur]) + sum(1 for y in ai["armour"] if y["set"] == it["set"]) > 27:
+            groups.append(("Anarchy armour", cur)); cur = []
+        cur.append(it); sets.append(it)
+    if cur: groups.append(("Anarchy armour", cur))
+    n_arm = sum(1 for g in groups if g[0] == "Anarchy armour")
+    zs, k_arm = TEST_Z + TEST_R - 1, 0
+    for j, (title, items) in enumerate(groups):
+        x = x0 + 2 + 2 * j
+        if title == "Anarchy armour": k_arm += 1; title = f"Anarchy armour {k_arm}/{n_arm}"
+        sub = items[0].get("set", "") + (" - " + items[-1]["set"] if items[-1].get("set") and items[-1]["set"] != items[0].get("set") else "")
+        cmds += [f"setblock {x} {fl + 1} {zs} minecraft:chest[facing=north]{{CustomName:{tj({'text': title, 'color': 'dark_red', 'bold': True})}}} replace",
+                 f"setblock {x} {fl + 2} {zs} minecraft:dark_oak_wall_sign[facing=north]{{front_text:{{messages:[{tj('ANARCHY')},{tj('weapons' if 'weapons' in title else 'armour')},{tj(sub[:15])},\"\"],has_glowing_text:1b,color:\"red\"}}}} replace",
+                 f"data modify block {x} {fl + 1} {zs} Items set value []"]
+        for slot, it in enumerate(items[:27]):
+            cmds.append(f"data modify block {x} {fl + 1} {zs} Items append value {{Slot:{slot}b,{it['item'][1:]}")
     fn("admin/testarena_chests", cmds)
     print(f"test arena kit chests: {len(kits)} characters, most items in one: {max(len(k[2]) for k in kits)}")
 

@@ -668,6 +668,10 @@ changes; `admin/testarena_chests` re-places and refills them (build_testarena an
 
 **All guns**: a chest at the end of the kit-chest row (x 2022, z -2064) with every gun ability (character guns,
 wall-buys, the Toy Rifle).
+**Anarchy gear**: along the inside of the south wall (z -1937, x 1938/1940/1942, facing north) the named weapons
+(17) and armour sets (54, split over two chests without breaking up a set) sold in the Anarchy market, copied exactly
+from its shop trades into `anarchy_items.json` (vanilla enchants only, so they work here as they are). Re-extract it
+from Anarchy's `crispy_market` `spawn_shops.mcfunction` if the market changes.
 **Free Pack-a-Punch**: the enchanting table at 2006 -60 -2006 (sign above it; interaction `pvp.testpap`, advancement
 `testarena_pap` -> `testarena/pap`): right-click holding a gun to step that gun's tier 0 -> I -> II -> III -> IV -> 0, no
 points. Same per-gun scores as Outbreak (`pve.g.<gun>`), so to_lobby resets them.

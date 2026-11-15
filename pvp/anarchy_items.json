@@ -1,0 +1,345 @@
+{
+ "source": "Anarchy market shop trades (crispy_market spawn_shops.mcfunction), extracted 2026-11-15",
+ "weapons": [
+  {
+   "name": "Killer Bow",
+   "item": "{id:\"minecraft:bow\",count:1,components:{\"minecraft:custom_name\":{text:\"Killer Bow\",italic:false,color:\"gold\",bold:true},\"minecraft:enchantments\":{\"minecraft:power\":5,\"minecraft:punch\":2,\"minecraft:flame\":1,\"minecraft:infinity\":1,\"minecraft:unbreaking\":3}}}"
+  },
+  {
+   "name": "'OG' Fast Bow",
+   "item": "{id:\"minecraft:crossbow\",count:1,components:{\"minecraft:custom_name\":{text:\"'OG' Fast Bow\",italic:false,color:\"dark_gray\",bold:true},\"minecraft:enchantments\":{\"minecraft:quick_charge\":5,\"minecraft:unbreaking\":10}}}"
+  },
+  {
+   "name": "Piglin Brute's Axe",
+   "item": "{id:\"minecraft:golden_axe\",count:1,components:{\"minecraft:custom_name\":{text:\"Piglin Brute's Axe\",italic:false,color:\"red\"},\"minecraft:lore\":[{text:\"Scorch III\",italic:false,color:\"green\"},{text:\"Abiding I\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:mending\":1,\"minecraft:sharpness\":60,\"minecraft:looting\":10,\"minecraft:knockback\":5,\"minecraft:unbreaking\":10}}}"
+  },
+  {
+   "name": "Heavy Battleaxe",
+   "item": "{id:\"minecraft:iron_axe\",count:1,components:{\"minecraft:custom_name\":{text:\"Heavy Battleaxe\",italic:false,color:\"gold\",bold:true},\"minecraft:lore\":[{text:\"» Effects:\",italic:false,color:\"blue\"},{text:\"Slow, 1, 100\",italic:false,color:\"dark_aqua\"}],\"minecraft:enchantments\":{\"minecraft:sharpness\":12,\"minecraft:smite\":10,\"minecraft:knockback\":2,\"minecraft:unbreaking\":5}}}"
+  },
+  {
+   "name": "Iron Scythe",
+   "item": "{id:\"minecraft:iron_hoe\",count:1,components:{\"minecraft:custom_name\":{text:\"Iron Scythe\",italic:false,color:\"gray\",bold:true},\"minecraft:lore\":[{text:\"» Effects:\",italic:false,color:\"blue\"},{text:\"Wither, 2, 10\",italic:false,color:\"red\"},{text:\"Slow, 2, 10\",italic:false,color:\"red\"},{text:\"Weakness, 2, 10\",italic:false,color:\"red\"}],\"minecraft:enchantments\":{\"minecraft:sharpness\":15,\"minecraft:knockback\":2,\"minecraft:unbreaking\":3}}}"
+  },
+  {
+   "name": "Blade Of Fire",
+   "item": "{id:\"minecraft:iron_sword\",count:1,components:{\"minecraft:custom_name\":{text:\"Blade Of Fire\",italic:false,color:\"gold\",bold:true},\"minecraft:lore\":[{text:\"Rage II\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:mending\":1,\"minecraft:sharpness\":8,\"minecraft:looting\":3,\"minecraft:fire_aspect\":10,\"minecraft:unbreaking\":4},\"minecraft:repair_cost\":1}}"
+  },
+  {
+   "name": "Meteorite Axe",
+   "item": "{id:\"minecraft:netherite_axe\",count:1,components:{\"minecraft:custom_name\":{text:\"Meteorite Axe\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:enchantments\":{\"minecraft:mending\":1,\"minecraft:sharpness\":30,\"minecraft:efficiency\":30,\"minecraft:looting\":5,\"minecraft:smite\":10,\"minecraft:unbreaking\":10}}}"
+  },
+  {
+   "name": "Meteorite Hoe",
+   "item": "{id:\"minecraft:netherite_hoe\",count:1,components:{\"minecraft:custom_name\":{text:\"Meteorite Hoe\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:enchantments\":{\"minecraft:mending\":1,\"minecraft:silk_touch\":1,\"minecraft:sharpness\":5,\"minecraft:efficiency\":30,\"minecraft:unbreaking\":10}}}"
+  },
+  {
+   "name": "121334143",
+   "item": "{id:\"minecraft:netherite_sword\",count:1,components:{\"minecraft:custom_name\":{text:\"121334143\",obfuscated:true,italic:false,color:\"dark_blue\",bold:true},\"minecraft:enchantments\":{\"minecraft:mending\":1,\"minecraft:sharpness\":85,\"minecraft:fire_aspect\":10,\"minecraft:knockback\":1,\"minecraft:unbreaking\":5}}}"
+  },
+  {
+   "name": "Godlike123",
+   "item": "{id:\"minecraft:netherite_sword\",count:1,components:{\"minecraft:custom_name\":{text:\"Godlike123\",obfuscated:true,italic:false,color:\"aqua\",bold:true},\"minecraft:lore\":[{text:\"Godlike I\",italic:false,color:\"aqua\"}],\"minecraft:enchantments\":{\"minecraft:mending\":1,\"minecraft:sharpness\":85,\"minecraft:fire_aspect\":10,\"minecraft:knockback\":1,\"minecraft:unbreaking\":5}}}"
+  },
+  {
+   "name": "Meteorite Sword",
+   "item": "{id:\"minecraft:netherite_sword\",count:1,components:{\"minecraft:custom_name\":{text:\"Meteorite Sword\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:enchantments\":{\"minecraft:mending\":1,\"minecraft:sharpness\":5,\"minecraft:sweeping_edge\":3,\"minecraft:looting\":3,\"minecraft:unbreaking\":3},\"minecraft:repair_cost\":1}}"
+  },
+  {
+   "name": "Meteorite Sword MkII Looting LXXV",
+   "item": "{id:\"minecraft:netherite_sword\",count:1,components:{\"minecraft:custom_name\":{text:\"Meteorite Sword MkII Looting LXXV\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:enchantments\":{\"minecraft:mending\":1,\"minecraft:sharpness\":30,\"minecraft:sweeping_edge\":3,\"minecraft:looting\":75,\"minecraft:unbreaking\":5},\"minecraft:repair_cost\":1}}"
+  },
+  {
+   "name": "Meteorite Sword TII",
+   "item": "{id:\"minecraft:netherite_sword\",count:1,components:{\"minecraft:custom_name\":{text:\"Meteorite Sword TII\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:enchantments\":{\"minecraft:mending\":1,\"minecraft:sharpness\":10,\"minecraft:sweeping_edge\":2,\"minecraft:looting\":10,\"minecraft:knockback\":2,\"minecraft:unbreaking\":5}}}"
+  },
+  {
+   "name": "Meteorite Sword of Fire",
+   "item": "{id:\"minecraft:netherite_sword\",count:1,components:{\"minecraft:custom_name\":{text:\"Meteorite Sword of Fire\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:enchantments\":{\"minecraft:mending\":1,\"minecraft:sharpness\":10,\"minecraft:looting\":9,\"minecraft:fire_aspect\":5,\"minecraft:knockback\":1}}}"
+  },
+  {
+   "name": "Poseidon's Staff",
+   "item": "{id:\"minecraft:trident\",count:1,components:{\"minecraft:custom_name\":{text:\"Poseidon's Staff\",italic:true,color:\"dark_blue\",bold:true},\"minecraft:enchantments\":{\"minecraft:impaling\":10,\"minecraft:sharpness\":10,\"minecraft:riptide\":5,\"minecraft:loyalty\":10,\"minecraft:knockback\":10,\"minecraft:vanishing_curse\":1,\"minecraft:unbreaking\":10}}}"
+  },
+  {
+   "name": "Naughty Cane",
+   "item": "{id:\"minecraft:wooden_hoe\",count:1,components:{\"minecraft:custom_name\":{text:\"Naughty Cane\",italic:false,color:\"dark_red\",bold:true},\"minecraft:lore\":[{text:\"» Effects:\",italic:false,color:\"blue\"},{text:\"Weakness, 2, 5\",italic:false,color:\"red\"},{text:\"Slow, 2, 5\",italic:false,color:\"red\"}],\"minecraft:enchantments\":{\"minecraft:sharpness\":10,\"minecraft:knockback\":10,\"minecraft:mending\":1},\"minecraft:repair_cost\":1}}"
+  },
+  {
+   "name": "Poisoner's Sword",
+   "item": "{id:\"minecraft:wooden_sword\",count:1,components:{\"minecraft:custom_name\":{text:\"Poisoner's Sword\",italic:false,color:\"dark_green\"},\"minecraft:lore\":[{text:\"» Effects:\",italic:false,color:\"blue\"},{text:\"Poison, 2, 15\",italic:false,color:\"red\"}],\"minecraft:enchantments\":{\"minecraft:sharpness\":10,\"minecraft:fire_aspect\":10,\"minecraft:unbreaking\":10},\"minecraft:unbreakable\":{}}}"
+  }
+ ],
+ "armour": [
+  {
+   "name": "Amon Chestplate",
+   "set": "Amon",
+   "item": "{id:\"minecraft:leather_chestplate\",count:1,components:{\"minecraft:custom_name\":{text:\"Amon Chestplate\",italic:false,color:\"gold\",bold:true},\"minecraft:lore\":[{text:\"Frozen III\",italic:false,color:\"aqua\"},{text:\"Smoke Bomb VIII\",italic:false,color:\"aqua\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"},{text:\"Exterminator III\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:fire_protection\":8,\"minecraft:protection\":20,\"minecraft:projectile_protection\":10}}}"
+  },
+  {
+   "name": "Amon Leggings",
+   "set": "Amon",
+   "item": "{id:\"minecraft:leather_leggings\",count:1,components:{\"minecraft:custom_name\":{text:\"Amon Leggings\",italic:false,color:\"gold\",bold:true},\"minecraft:lore\":[{text:\"Frozen III\",italic:false,color:\"aqua\"},{text:\"Smoke Bomb VIII\",italic:false,color:\"aqua\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"},{text:\"Exterminator III\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:fire_protection\":8,\"minecraft:protection\":20,\"minecraft:projectile_protection\":10}}}"
+  },
+  {
+   "name": "Amon Boots",
+   "set": "Amon",
+   "item": "{id:\"minecraft:leather_boots\",count:1,components:{\"minecraft:custom_name\":{text:\"Amon Boots\",italic:false,color:\"gold\",bold:true},\"minecraft:lore\":[{text:\"Frozen III\",italic:false,color:\"aqua\"},{text:\"Smoke Bomb VIII\",italic:false,color:\"aqua\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"},{text:\"Exterminator III\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:fire_protection\":8,\"minecraft:protection\":20,\"minecraft:projectile_protection\":10}}}"
+  },
+  {
+   "name": "Bedrock Chestplate",
+   "set": "Bedrock",
+   "item": "{id:\"minecraft:leather_chestplate\",count:1,components:{\"minecraft:custom_name\":{text:\"Bedrock Chestplate\",italic:false,color:\"dark_blue\",bold:true},\"minecraft:lore\":[{text:\"Spirits X\",italic:false,color:\"yellow\"},{text:\"Creeper Armor III\",italic:false,color:\"yellow\"},{text:\"Angelic V\",italic:false,color:\"yellow\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"}],\"minecraft:enchantments\":{\"minecraft:vanishing_curse\":1,\"minecraft:protection\":20,\"minecraft:blast_protection\":20},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":6250849}}"
+  },
+  {
+   "name": "Bedrock Leggings",
+   "set": "Bedrock",
+   "item": "{id:\"minecraft:leather_leggings\",count:1,components:{\"minecraft:custom_name\":{text:\"Bedrock Leggings\",italic:false,color:\"dark_blue\",bold:true},\"minecraft:lore\":[{text:\"Enlighted III\",italic:false,color:\"gold\"},{text:\"Overload III\",italic:false,color:\"gold\"},{text:\"Creeper Armor III\",italic:false,color:\"yellow\"},{text:\"Angelic V\",italic:false,color:\"yellow\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"}],\"minecraft:enchantments\":{\"minecraft:vanishing_curse\":1,\"minecraft:protection\":20,\"minecraft:blast_protection\":20},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":6250849}}"
+  },
+  {
+   "name": "Bedrock Boots",
+   "set": "Bedrock",
+   "item": "{id:\"minecraft:leather_boots\",count:1,components:{\"minecraft:custom_name\":{text:\"Bedrock Boots\",italic:false,color:\"dark_blue\",bold:true},\"minecraft:lore\":[{text:\"Enlighted III\",italic:false,color:\"gold\"},{text:\"Creeper Armor III\",italic:false,color:\"yellow\"},{text:\"Angelic V\",italic:false,color:\"yellow\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"}],\"minecraft:enchantments\":{\"minecraft:vanishing_curse\":1,\"minecraft:protection\":20,\"minecraft:soul_speed\":3,\"minecraft:blast_protection\":20,\"minecraft:depth_strider\":4},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":6250849}}"
+  },
+  {
+   "name": "Blue Spirit Chestplate",
+   "set": "Blue Spirit",
+   "item": "{id:\"minecraft:leather_chestplate\",count:1,components:{\"minecraft:custom_name\":{text:\"Blue Spirit Chestplate\",italic:false,color:\"yellow\",bold:true},\"minecraft:lore\":[{text:\"Trickster VIII\",italic:false,color:\"aqua\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"},{text:\"Dodge V\",italic:false,color:\"yellow\"},{text:\"Exterminator III\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:unbreaking\":20,\"minecraft:projectile_protection\":10,\"minecraft:protection\":10},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":4673362}}"
+  },
+  {
+   "name": "Blue Spirit Leggings",
+   "set": "Blue Spirit",
+   "item": "{id:\"minecraft:leather_leggings\",count:1,components:{\"minecraft:custom_name\":{text:\"Blue Spirit Leggings\",italic:false,color:\"yellow\",bold:true},\"minecraft:lore\":[{text:\"Trickster VIII\",italic:false,color:\"aqua\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"},{text:\"Dodge V\",italic:false,color:\"yellow\"},{text:\"Exterminator III\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:unbreaking\":20,\"minecraft:projectile_protection\":10,\"minecraft:protection\":10},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":4673362}}"
+  },
+  {
+   "name": "Blue Spirit Boots",
+   "set": "Blue Spirit",
+   "item": "{id:\"minecraft:leather_boots\",count:1,components:{\"minecraft:custom_name\":{text:\"Blue Spirit Boots\",italic:false,color:\"yellow\",bold:true},\"minecraft:lore\":[{text:\"Trickster VIII\",italic:false,color:\"aqua\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"},{text:\"Dodge V\",italic:false,color:\"yellow\"},{text:\"Exterminator III\",italic:false,color:\"gold\"},{text:\"Gears III\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:unbreaking\":20,\"minecraft:projectile_protection\":10,\"minecraft:protection\":10},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":4673362}}"
+  },
+  {
+   "name": "Candy Cane Boots",
+   "set": "Candy Cane",
+   "item": "{id:\"minecraft:leather_boots\",count:1,components:{\"minecraft:custom_name\":{text:\"Candy Cane Boots\",italic:false,color:\"red\",bold:true},\"minecraft:lore\":[{text:\"Shuffle III\",italic:false,color:\"gray\"},{text:\"EnderShift III\",italic:false,color:\"green\"},{text:\"Balanced Landing III\",italic:false,color:\"aqua\"},{text:\"Frozen III\",italic:false,color:\"aqua\"},{text:\"Stormcaller IV\",italic:false,color:\"aqua\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"},{text:\"Spirits V\",italic:false,color:\"yellow\"},{text:\"Enlighted III\",italic:false,color:\"gold\"},{text:\"Lava Walker I\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:blast_protection\":10,\"minecraft:mending\":1,\"minecraft:feather_falling\":10,\"minecraft:fire_protection\":15,\"minecraft:protection\":10,\"minecraft:projectile_protection\":10,\"minecraft:depth_strider\":5,\"minecraft:soul_speed\":5,\"minecraft:unbreaking\":50},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":6579300}}"
+  },
+  {
+   "name": "Enclave Chestplate",
+   "set": "Enclave",
+   "item": "{id:\"minecraft:netherite_chestplate\",count:1,components:{\"minecraft:custom_name\":{text:\"Enclave Chestplate\",italic:false,color:\"dark_green\"},\"minecraft:lore\":[{text:\"Stormcaller IV\",italic:false,color:\"aqua\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"},{text:\"Wither V\",italic:false,color:\"aqua\"}],\"minecraft:enchantments\":{\"minecraft:unbreaking\":3,\"minecraft:projectile_protection\":10,\"minecraft:protection\":10,\"minecraft:fire_protection\":10,\"minecraft:blast_protection\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Enclave Leggings",
+   "set": "Enclave",
+   "item": "{id:\"minecraft:netherite_leggings\",count:1,components:{\"minecraft:custom_name\":{text:\"Enclave Leggings\",italic:false,color:\"dark_green\"},\"minecraft:lore\":[{text:\"Stormcaller IV\",italic:false,color:\"aqua\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"},{text:\"Wither V\",italic:false,color:\"aqua\"}],\"minecraft:enchantments\":{\"minecraft:unbreaking\":3,\"minecraft:projectile_protection\":10,\"minecraft:protection\":10,\"minecraft:fire_protection\":10,\"minecraft:blast_protection\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Enclave Boots",
+   "set": "Enclave",
+   "item": "{id:\"minecraft:netherite_boots\",count:1,components:{\"minecraft:custom_name\":{text:\"Enclave Boots\",italic:false,color:\"dark_green\"},\"minecraft:lore\":[{text:\"Stormcaller IV\",italic:false,color:\"aqua\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"},{text:\"Wither V\",italic:false,color:\"aqua\"},{text:\"Gears III\",italic:false,color:\"gold\"},{text:\"Quiver VI\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:unbreaking\":3,\"minecraft:projectile_protection\":10,\"minecraft:protection\":10,\"minecraft:fire_protection\":10,\"minecraft:blast_protection\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Flight Boots",
+   "set": "Flight",
+   "item": "{id:\"minecraft:leather_boots\",count:1,components:{\"minecraft:custom_name\":{text:\"Flight Boots\",italic:false,color:\"gold\",bold:true},\"minecraft:lore\":[{text:\"Take Off I\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:unbreaking\":3},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":16755865}}"
+  },
+  {
+   "name": "Golem Chestplate",
+   "set": "Golem",
+   "item": "{id:\"minecraft:iron_chestplate\",count:1,components:{\"minecraft:custom_name\":\"§a§lGolem Chestplate\",\"minecraft:enchantments\":{\"minecraft:unbreaking\":5,\"minecraft:projectile_protection\":10,\"minecraft:protection\":10,\"minecraft:blast_protection\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Golem Pants",
+   "set": "Golem",
+   "item": "{id:\"minecraft:iron_leggings\",count:1,components:{\"minecraft:custom_name\":\"§a§lGolem Pants\",\"minecraft:enchantments\":{\"minecraft:unbreaking\":5,\"minecraft:projectile_protection\":10,\"minecraft:protection\":10,\"minecraft:blast_protection\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Golem Boots",
+   "set": "Golem",
+   "item": "{id:\"minecraft:iron_boots\",count:1,components:{\"minecraft:custom_name\":\"§a§lGolem Boots\",\"minecraft:lore\":[\"§9» Effects:\",\"§3Slow, 0, 100\"],\"minecraft:enchantments\":{\"minecraft:unbreaking\":5,\"minecraft:projectile_protection\":10,\"minecraft:protection\":10,\"minecraft:blast_protection\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Guardian Chestplate",
+   "set": "Guardian",
+   "item": "{id:\"minecraft:diamond_chestplate\",count:1,components:{\"minecraft:custom_name\":{text:\"Guardian Chestplate\",italic:false,color:\"dark_aqua\",bold:true},\"minecraft:lore\":[{text:\"Armored IV\",italic:false,color:\"gold\"},{text:\"Mighty Cactus II\",italic:false,color:\"light_purple\"}],\"minecraft:enchantments\":{\"minecraft:unbreaking\":4,\"minecraft:projectile_protection\":8,\"minecraft:protection\":8,\"minecraft:thorns\":4,\"minecraft:depth_strider\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Guardian Leggings",
+   "set": "Guardian",
+   "item": "{id:\"minecraft:diamond_leggings\",count:1,components:{\"minecraft:custom_name\":{text:\"Guardian Leggings\",italic:false,color:\"dark_aqua\",bold:true},\"minecraft:lore\":[{text:\"Armored IV\",italic:false,color:\"gold\"},{text:\"Mighty Cactus II\",italic:false,color:\"light_purple\"}],\"minecraft:enchantments\":{\"minecraft:unbreaking\":4,\"minecraft:projectile_protection\":8,\"minecraft:protection\":8,\"minecraft:thorns\":4,\"minecraft:depth_strider\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Guardian Boots",
+   "set": "Guardian",
+   "item": "{id:\"minecraft:diamond_boots\",count:1,components:{\"minecraft:custom_name\":{text:\"Guardian Boots\",italic:false,color:\"dark_aqua\",bold:true},\"minecraft:lore\":[{text:\"Armored IV\",italic:false,color:\"gold\"},{text:\"Mighty Cactus II\",italic:false,color:\"light_purple\"}],\"minecraft:enchantments\":{\"minecraft:unbreaking\":4,\"minecraft:projectile_protection\":8,\"minecraft:protection\":8,\"minecraft:thorns\":4,\"minecraft:depth_strider\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Halloween Helmet",
+   "set": "Halloween",
+   "item": "{id:\"minecraft:golden_helmet\",count:1,components:{\"minecraft:custom_name\":{text:\"Halloween Helmet\",italic:false,underlined:true,color:\"gold\"},\"minecraft:lore\":[{text:\"Poisoned IV\",italic:false,color:\"aqua\"},{text:\"Wither V\",italic:false,color:\"aqua\"},{text:\"Spirits X\",italic:false,color:\"yellow\"}],\"minecraft:enchantments\":{\"minecraft:aqua_affinity\":1,\"minecraft:blast_protection\":10,\"minecraft:depth_strider\":10,\"minecraft:feather_falling\":10,\"minecraft:fire_aspect\":10,\"minecraft:fire_protection\":10,\"minecraft:mending\":1,\"minecraft:protection\":10,\"minecraft:soul_speed\":10,\"minecraft:thorns\":10,\"minecraft:unbreaking\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Halloween Chestplate",
+   "set": "Halloween",
+   "item": "{id:\"minecraft:golden_chestplate\",count:1,components:{\"minecraft:custom_name\":{text:\"Halloween Chestplate\",italic:false,underlined:true,color:\"gold\"},\"minecraft:lore\":[{text:\"Poisoned IV\",italic:false,color:\"aqua\"},{text:\"Wither V\",italic:false,color:\"aqua\"},{text:\"Spirits X\",italic:false,color:\"yellow\"},{text:\"Fat VI\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:aqua_affinity\":1,\"minecraft:blast_protection\":10,\"minecraft:depth_strider\":10,\"minecraft:feather_falling\":10,\"minecraft:fire_aspect\":10,\"minecraft:fire_protection\":10,\"minecraft:mending\":1,\"minecraft:protection\":10,\"minecraft:soul_speed\":10,\"minecraft:thorns\":10,\"minecraft:unbreaking\":10},\"minecraft:unbreakable\":{},\"minecraft:repair_cost\":1}}"
+  },
+  {
+   "name": "Halloween Leggings",
+   "set": "Halloween",
+   "item": "{id:\"minecraft:golden_leggings\",count:1,components:{\"minecraft:custom_name\":{text:\"Halloween Leggings\",italic:false,underlined:true,color:\"gold\"},\"minecraft:lore\":[{text:\"Poisoned IV\",italic:false,color:\"aqua\"},{text:\"Wither V\",italic:false,color:\"aqua\"},{text:\"Spirits X\",italic:false,color:\"yellow\"},{text:\"Overload III\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:aqua_affinity\":1,\"minecraft:blast_protection\":10,\"minecraft:depth_strider\":10,\"minecraft:feather_falling\":10,\"minecraft:fire_aspect\":10,\"minecraft:fire_protection\":10,\"minecraft:mending\":1,\"minecraft:protection\":10,\"minecraft:soul_speed\":10,\"minecraft:thorns\":10,\"minecraft:unbreaking\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Halloween Boots",
+   "set": "Halloween",
+   "item": "{id:\"minecraft:golden_boots\",count:1,components:{\"minecraft:custom_name\":{text:\"Halloween Boots\",italic:false,underlined:true,color:\"gold\"},\"minecraft:lore\":[{text:\"Poisoned IV\",italic:false,color:\"aqua\"},{text:\"Undead Ruse X\",italic:false,color:\"aqua\"},{text:\"Wither V\",italic:false,color:\"aqua\"},{text:\"Spirits X\",italic:false,color:\"yellow\"}],\"minecraft:enchantments\":{\"minecraft:aqua_affinity\":1,\"minecraft:blast_protection\":10,\"minecraft:depth_strider\":10,\"minecraft:feather_falling\":10,\"minecraft:fire_aspect\":10,\"minecraft:fire_protection\":10,\"minecraft:mending\":1,\"minecraft:protection\":10,\"minecraft:soul_speed\":10,\"minecraft:thorns\":10,\"minecraft:unbreaking\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Mech Suit",
+   "set": "Mech",
+   "item": "{id:\"minecraft:netherite_chestplate\",count:1,components:{\"minecraft:custom_name\":{text:\"Mech Suit\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:lore\":[{text:\"» Effects:\",italic:false,color:\"blue\"},{text:\"Fire_resistance, 1, 100\",italic:false,color:\"dark_aqua\"}],\"minecraft:enchantments\":{\"minecraft:vanishing_curse\":1,\"minecraft:unbreaking\":5,\"minecraft:mending\":1,\"minecraft:projectile_protection\":15,\"minecraft:protection\":20,\"minecraft:fire_protection\":5,\"minecraft:blast_protection\":20},\"minecraft:unbreakable\":{},\"minecraft:repair_cost\":1}}"
+  },
+  {
+   "name": "Mech Legs",
+   "set": "Mech",
+   "item": "{id:\"minecraft:netherite_leggings\",count:1,components:{\"minecraft:custom_name\":{text:\"Mech Legs\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:lore\":[{text:\"» Effects:\",italic:false,color:\"blue\"},{text:\"Speed, 1, 100\",italic:false,color:\"dark_aqua\"}],\"minecraft:enchantments\":{\"minecraft:vanishing_curse\":1,\"minecraft:unbreaking\":5,\"minecraft:mending\":1,\"minecraft:projectile_protection\":15,\"minecraft:protection\":20,\"minecraft:fire_protection\":5,\"minecraft:blast_protection\":20},\"minecraft:unbreakable\":{},\"minecraft:repair_cost\":1}}"
+  },
+  {
+   "name": "Mech Feet",
+   "set": "Mech",
+   "item": "{id:\"minecraft:netherite_boots\",count:1,components:{\"minecraft:custom_name\":{text:\"Mech Feet\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:lore\":[\"§9» Effects:\",\"§3Jump, 1, 100\"],\"minecraft:enchantments\":{\"minecraft:vanishing_curse\":1,\"minecraft:unbreaking\":5,\"minecraft:projectile_protection\":15,\"minecraft:mending\":1,\"minecraft:protection\":20,\"minecraft:fire_protection\":5,\"minecraft:feather_falling\":10,\"minecraft:blast_protection\":20,\"minecraft:depth_strider\":5},\"minecraft:unbreakable\":{},\"minecraft:repair_cost\":1}}"
+  },
+  {
+   "name": "Meteorite Helm",
+   "set": "Meteorite",
+   "item": "{id:\"minecraft:netherite_helmet\",count:1,components:{\"minecraft:custom_name\":{text:\"Meteorite Helm\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:lore\":[{text:\"Divine Enlighted III\",italic:false,color:\"light_purple\"}],\"minecraft:enchantments\":{\"minecraft:respiration\":10,\"minecraft:blast_protection\":50,\"minecraft:aqua_affinity\":1,\"minecraft:fire_protection\":10,\"minecraft:protection\":50,\"minecraft:projectile_protection\":20,\"minecraft:unbreaking\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Meteorite Chestplate",
+   "set": "Meteorite",
+   "item": "{id:\"minecraft:netherite_chestplate\",count:1,components:{\"minecraft:custom_name\":{text:\"Meteorite Chestplate\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:lore\":[{text:\"Divine Enlighted III\",italic:false,color:\"light_purple\"}],\"minecraft:enchantments\":{\"minecraft:blast_protection\":50,\"minecraft:fire_protection\":10,\"minecraft:protection\":50,\"minecraft:projectile_protection\":20,\"minecraft:unbreaking\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Meteorite Leggings",
+   "set": "Meteorite",
+   "item": "{id:\"minecraft:netherite_leggings\",count:1,components:{\"minecraft:custom_name\":{text:\"Meteorite Leggings\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:lore\":[{text:\"Divine Enlighted III\",italic:false,color:\"light_purple\"},{text:\"Godly Overload III\",italic:false,color:\"light_purple\"}],\"minecraft:enchantments\":{\"minecraft:blast_protection\":50,\"minecraft:fire_protection\":10,\"minecraft:protection\":50,\"minecraft:projectile_protection\":20,\"minecraft:unbreaking\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Meteorite Boots",
+   "set": "Meteorite",
+   "item": "{id:\"minecraft:netherite_boots\",count:1,components:{\"minecraft:custom_name\":{text:\"Meteorite Boots\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:lore\":[{text:\"Divine Enlighted III\",italic:false,color:\"light_purple\"}],\"minecraft:enchantments\":{\"minecraft:blast_protection\":50,\"minecraft:feather_falling\":50,\"minecraft:fire_protection\":10,\"minecraft:protection\":50,\"minecraft:projectile_protection\":20,\"minecraft:unbreaking\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Nether Explorer Chestpiece",
+   "set": "Nether Explorer",
+   "item": "{id:\"minecraft:golden_chestplate\",count:1,components:{\"minecraft:custom_name\":{text:\"Nether Explorer Chestpiece\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:enchantments\":{\"minecraft:vanishing_curse\":1,\"minecraft:unbreaking\":10,\"minecraft:soul_speed\":10,\"minecraft:mending\":1,\"minecraft:protection\":8,\"minecraft:fire_protection\":10,\"minecraft:thorns\":10,\"minecraft:blast_protection\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Obsidian Helmet",
+   "set": "Obsidian",
+   "item": "{id:\"minecraft:leather_helmet\",count:1,components:{\"minecraft:custom_name\":{text:\"Obsidian Helmet\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:enchantments\":{\"minecraft:unbreaking\":20,\"minecraft:protection\":15,\"minecraft:blast_protection\":10},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":4326494}}"
+  },
+  {
+   "name": "Obsidian Chestplate",
+   "set": "Obsidian",
+   "item": "{id:\"minecraft:leather_chestplate\",count:1,components:{\"minecraft:custom_name\":{text:\"Obsidian Chestplate\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:lore\":[{text:\"» Effects:\",italic:false,color:\"blue\"},{text:\"Damage_resistance, 1, 10\",italic:false,color:\"dark_aqua\"}],\"minecraft:enchantments\":{\"minecraft:unbreaking\":20,\"minecraft:protection\":15,\"minecraft:blast_protection\":10},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":4326494}}"
+  },
+  {
+   "name": "Obsidian Leggings",
+   "set": "Obsidian",
+   "item": "{id:\"minecraft:leather_leggings\",count:1,components:{\"minecraft:custom_name\":{text:\"Obsidian Leggings\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:enchantments\":{\"minecraft:unbreaking\":20,\"minecraft:protection\":15,\"minecraft:blast_protection\":10},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":4326494}}"
+  },
+  {
+   "name": "Obsidian Boots",
+   "set": "Obsidian",
+   "item": "{id:\"minecraft:leather_boots\",count:1,components:{\"minecraft:custom_name\":\"§5§lObsidian Boots\",\"minecraft:lore\":[\"§9» Effects:\",\"§3Slow, 0, 10\"],\"minecraft:enchantments\":{\"minecraft:unbreaking\":20,\"minecraft:protection\":15,\"minecraft:blast_protection\":10},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":4326494}}"
+  },
+  {
+   "name": "Phantom Fall Boots",
+   "set": "Phantom Fall",
+   "item": "{id:\"minecraft:leather_boots\",count:1,components:{\"minecraft:custom_name\":{text:\"Phantom Fall Boots\",italic:false,color:\"dark_blue\",bold:true},\"minecraft:lore\":[{text:\"Balanced Landing III\",italic:false,color:\"aqua\"},{text:\"Jelly Legs III\",italic:false,color:\"yellow\"}],\"minecraft:enchantments\":{\"minecraft:unbreaking\":10,\"minecraft:mending\":1,\"minecraft:feather_falling\":255},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":0}}"
+  },
+  {
+   "name": "Pumpkin Chestpiece",
+   "set": "Pumpkin",
+   "item": "{id:\"minecraft:leather_chestplate\",count:1,components:{\"minecraft:custom_name\":{text:\"Pumpkin Chestpiece\",italic:false,color:\"gold\",bold:true},\"minecraft:lore\":[{text:\"Cactus II\",italic:false,color:\"aqua\"},{text:\"Poisoned IV\",italic:false,color:\"aqua\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"},{text:\"Wither V\",italic:false,color:\"aqua\"},{text:\"Spirits X\",italic:false,color:\"yellow\"},{text:\"Enlighted III\",italic:false,color:\"gold\"},{text:\"Overload III\",italic:false,color:\"gold\"},{text:\"Unholy V\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:unbreaking\":20,\"minecraft:mending\":1,\"minecraft:protection\":10,\"minecraft:projectile_protection\":10,\"minecraft:blast_protection\":10,\"minecraft:fire_protection\":10},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":15757836}}"
+  },
+  {
+   "name": "Pumpkin Pants",
+   "set": "Pumpkin",
+   "item": "{id:\"minecraft:leather_leggings\",count:1,components:{\"minecraft:custom_name\":{text:\"Pumpkin Pants\",italic:false,color:\"gold\",bold:true},\"minecraft:lore\":[{text:\"Cactus II\",italic:false,color:\"aqua\"},{text:\"Poisoned IV\",italic:false,color:\"aqua\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"},{text:\"Wither V\",italic:false,color:\"aqua\"},{text:\"Spirits X\",italic:false,color:\"yellow\"},{text:\"Enlighted III\",italic:false,color:\"gold\"},{text:\"Overload III\",italic:false,color:\"gold\"},{text:\"Unholy V\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:unbreaking\":20,\"minecraft:mending\":1,\"minecraft:protection\":10,\"minecraft:projectile_protection\":10,\"minecraft:fire_protection\":10,\"minecraft:blast_protection\":10},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":15757836}}"
+  },
+  {
+   "name": "Pumpkin Boots",
+   "set": "Pumpkin",
+   "item": "{id:\"minecraft:leather_boots\",count:1,components:{\"minecraft:custom_name\":{text:\"Pumpkin Boots\",italic:false,color:\"gold\",bold:true},\"minecraft:lore\":[{text:\"Cactus II\",italic:false,color:\"aqua\"},{text:\"Poisoned IV\",italic:false,color:\"aqua\"},{text:\"Undead Ruse X\",italic:false,color:\"aqua\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"},{text:\"Wither V\",italic:false,color:\"aqua\"},{text:\"Spirits X\",italic:false,color:\"yellow\"},{text:\"Enlighted III\",italic:false,color:\"gold\"},{text:\"Overload III\",italic:false,color:\"gold\"},{text:\"Unholy V\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:unbreaking\":20,\"minecraft:mending\":1,\"minecraft:protection\":10,\"minecraft:projectile_protection\":10,\"minecraft:fire_protection\":10,\"minecraft:blast_protection\":10},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":24850}}"
+  },
+  {
+   "name": "Snowman Chestplate",
+   "set": "Snowman",
+   "item": "{id:\"minecraft:iron_chestplate\",count:1,components:{\"minecraft:custom_name\":{text:\"Snowman Chestplate\",italic:false,color:\"dark_gray\",bold:true},\"minecraft:lore\":[{text:\"Curse V\",italic:false,color:\"green\"},{text:\"Sustain IV\",italic:false,color:\"green\"},{text:\"Ward IV\",italic:false,color:\"green\"},{text:\"Frozen III\",italic:false,color:\"aqua\"},{text:\"Stormcaller IV\",italic:false,color:\"aqua\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"},{text:\"Angelic V\",italic:false,color:\"yellow\"},{text:\"Armored IV\",italic:false,color:\"gold\"},{text:\"Enlighted III\",italic:false,color:\"gold\"},{text:\"Fat VI\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:blast_protection\":10,\"minecraft:thorns\":5,\"minecraft:mending\":1,\"minecraft:fire_protection\":20,\"minecraft:protection\":8,\"minecraft:projectile_protection\":10,\"minecraft:unbreaking\":15},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Snowman Leggings",
+   "set": "Snowman",
+   "item": "{id:\"minecraft:iron_leggings\",count:1,components:{\"minecraft:custom_name\":{text:\"Snowman Leggings\",italic:false,color:\"dark_gray\",bold:true},\"minecraft:lore\":[{text:\"Curse V\",italic:false,color:\"green\"},{text:\"Ward IV\",italic:false,color:\"green\"},{text:\"Frozen III\",italic:false,color:\"aqua\"},{text:\"Stormcaller IV\",italic:false,color:\"aqua\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"},{text:\"Angelic V\",italic:false,color:\"yellow\"},{text:\"Armored IV\",italic:false,color:\"gold\"},{text:\"Enlighted III\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:blast_protection\":10,\"minecraft:thorns\":5,\"minecraft:mending\":1,\"minecraft:fire_protection\":20,\"minecraft:protection\":8,\"minecraft:projectile_protection\":10,\"minecraft:unbreaking\":15},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Snowman Boots",
+   "set": "Snowman",
+   "item": "{id:\"minecraft:iron_boots\",count:1,components:{\"minecraft:custom_name\":{text:\"Snowman Boots\",italic:false,color:\"dark_gray\",bold:true},\"minecraft:lore\":[{text:\"Curse V\",italic:false,color:\"green\"},{text:\"Ward IV\",italic:false,color:\"green\"},{text:\"Balanced Landing III\",italic:false,color:\"aqua\"},{text:\"Frozen III\",italic:false,color:\"aqua\"},{text:\"Stormcaller IV\",italic:false,color:\"aqua\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"},{text:\"Angelic V\",italic:false,color:\"yellow\"},{text:\"Armored IV\",italic:false,color:\"gold\"},{text:\"Enlighted III\",italic:false,color:\"gold\"},{text:\"Lava Walker I\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:blast_protection\":10,\"minecraft:thorns\":5,\"minecraft:mending\":1,\"minecraft:feather_falling\":4,\"minecraft:fire_protection\":20,\"minecraft:protection\":8,\"minecraft:projectile_protection\":10,\"minecraft:unbreaking\":15},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Stanta Chestplate",
+   "set": "Stanta",
+   "item": "{id:\"minecraft:leather_chestplate\",count:1,components:{\"minecraft:custom_name\":{text:\"Stanta Chestplate\",italic:false,color:\"dark_red\",bold:true},\"minecraft:lore\":[{text:\"Curse V\",italic:false,color:\"green\"},{text:\"Sustain IV\",italic:false,color:\"green\"},{text:\"Ward IV\",italic:false,color:\"green\"},{text:\"Frozen III\",italic:false,color:\"aqua\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"},{text:\"Angelic V\",italic:false,color:\"yellow\"},{text:\"Armored IV\",italic:false,color:\"gold\"},{text:\"Enlighted III\",italic:false,color:\"gold\"},{text:\"Fat VI\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:blast_protection\":10,\"minecraft:mending\":1,\"minecraft:fire_protection\":10,\"minecraft:protection\":10,\"minecraft:unbreaking\":50},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":11546150}}"
+  },
+  {
+   "name": "Stanta Leggings",
+   "set": "Stanta",
+   "item": "{id:\"minecraft:leather_leggings\",count:1,components:{\"minecraft:custom_name\":{text:\"Stanta Leggings\",italic:false,color:\"dark_red\",bold:true},\"minecraft:lore\":[{text:\"Sustain IV\",italic:false,color:\"green\"},{text:\"Ward IV\",italic:false,color:\"green\"},{text:\"Frozen III\",italic:false,color:\"aqua\"},{text:\"Stormcaller IV\",italic:false,color:\"aqua\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"},{text:\"Angelic V\",italic:false,color:\"yellow\"},{text:\"Armored IV\",italic:false,color:\"gold\"},{text:\"Enlighted III\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:blast_protection\":10,\"minecraft:mending\":1,\"minecraft:fire_protection\":10,\"minecraft:protection\":10,\"minecraft:unbreaking\":50},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":11546150}}"
+  },
+  {
+   "name": "Stanta Boots",
+   "set": "Stanta",
+   "item": "{id:\"minecraft:leather_boots\",count:1,components:{\"minecraft:custom_name\":{text:\"Stanta Boots\",italic:false,color:\"dark_red\",bold:true},\"minecraft:lore\":[{text:\"EnderShift III\",italic:false,color:\"green\"},{text:\"Sustain IV\",italic:false,color:\"green\"},{text:\"Ward IV\",italic:false,color:\"green\"},{text:\"Balanced Landing III\",italic:false,color:\"aqua\"},{text:\"Frozen III\",italic:false,color:\"aqua\"},{text:\"Voodoo VI\",italic:false,color:\"aqua\"},{text:\"Angelic V\",italic:false,color:\"yellow\"},{text:\"Jelly Legs III\",italic:false,color:\"yellow\"},{text:\"Armored IV\",italic:false,color:\"gold\"},{text:\"Enlighted III\",italic:false,color:\"gold\"}],\"minecraft:enchantments\":{\"minecraft:blast_protection\":10,\"minecraft:mending\":1,\"minecraft:feather_falling\":15,\"minecraft:fire_protection\":10,\"minecraft:protection\":10,\"minecraft:unbreaking\":50},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":1908001}}"
+  },
+  {
+   "name": "Thorns Enchanted Meteorite Helm",
+   "set": "Thorns Enchanted Meteorite",
+   "item": "{id:\"minecraft:netherite_helmet\",count:1,components:{\"minecraft:custom_name\":{text:\"Thorns Enchanted Meteorite Helm\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:lore\":[{text:\"Divine Enlighted III\",italic:false,color:\"light_purple\"}],\"minecraft:enchantments\":{\"minecraft:respiration\":10,\"minecraft:blast_protection\":50,\"minecraft:thorns\":50,\"minecraft:aqua_affinity\":1,\"minecraft:fire_protection\":10,\"minecraft:protection\":50,\"minecraft:projectile_protection\":20,\"minecraft:unbreaking\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Thorns Enchanted Meteorite Chestplate",
+   "set": "Thorns Enchanted Meteorite",
+   "item": "{id:\"minecraft:netherite_chestplate\",count:1,components:{\"minecraft:custom_name\":{text:\"Thorns Enchanted Meteorite Chestplate\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:lore\":[{text:\"Divine Enlighted III\",italic:false,color:\"light_purple\"}],\"minecraft:enchantments\":{\"minecraft:blast_protection\":50,\"minecraft:thorns\":50,\"minecraft:fire_protection\":10,\"minecraft:protection\":50,\"minecraft:projectile_protection\":20,\"minecraft:unbreaking\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Thorns Enchanted Meteorite Leggings",
+   "set": "Thorns Enchanted Meteorite",
+   "item": "{id:\"minecraft:netherite_leggings\",count:1,components:{\"minecraft:custom_name\":{text:\"Thorns Enchanted Meteorite Leggings\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:lore\":[{text:\"Divine Enlighted III\",italic:false,color:\"light_purple\"},{text:\"Godly Overload III\",italic:false,color:\"light_purple\"}],\"minecraft:enchantments\":{\"minecraft:blast_protection\":50,\"minecraft:thorns\":50,\"minecraft:fire_protection\":10,\"minecraft:protection\":50,\"minecraft:projectile_protection\":20,\"minecraft:unbreaking\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Thorns Enchanted Meteorite Boots",
+   "set": "Thorns Enchanted Meteorite",
+   "item": "{id:\"minecraft:netherite_boots\",count:1,components:{\"minecraft:custom_name\":{text:\"Thorns Enchanted Meteorite Boots\",italic:false,color:\"dark_purple\",bold:true},\"minecraft:lore\":[{text:\"Divine Enlighted III\",italic:false,color:\"light_purple\"}],\"minecraft:enchantments\":{\"minecraft:blast_protection\":50,\"minecraft:thorns\":50,\"minecraft:feather_falling\":50,\"minecraft:fire_protection\":10,\"minecraft:protection\":50,\"minecraft:projectile_protection\":20,\"minecraft:unbreaking\":10},\"minecraft:unbreakable\":{}}}"
+  },
+  {
+   "name": "Wings",
+   "set": "Wings",
+   "item": "{id:\"minecraft:elytra\",count:1,components:{\"minecraft:custom_name\":{text:\"Wings\",italic:false,color:\"gold\",bold:true},\"minecraft:enchantments\":{\"minecraft:vanishing_curse\":1,\"minecraft:unbreaking\":10,\"minecraft:mending\":1,\"minecraft:projectile_protection\":10,\"minecraft:protection\":10,\"minecraft:fire_protection\":10,\"minecraft:thorns\":10,\"minecraft:blast_protection\":10}}}"
+  },
+  {
+   "name": "Wither Chestplate",
+   "set": "Wither",
+   "item": "{id:\"minecraft:leather_chestplate\",count:1,components:{\"minecraft:custom_name\":{text:\"Wither Chestplate\",italic:false,color:\"blue\"},\"minecraft:lore\":[{text:\"Explosive immunity III\",italic:false,color:\"aqua\"},{text:\"Creeper Armor III\",italic:false,color:\"yellow\"}],\"minecraft:enchantments\":{\"minecraft:vanishing_curse\":1,\"minecraft:protection\":20,\"minecraft:projectile_protection\":20,\"minecraft:mending\":1,\"minecraft:soul_speed\":5,\"minecraft:fire_protection\":10,\"minecraft:thorns\":10,\"minecraft:blast_protection\":20},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":3847130}}"
+  },
+  {
+   "name": "Wither Leggings",
+   "set": "Wither",
+   "item": "{id:\"minecraft:leather_leggings\",count:1,components:{\"minecraft:custom_name\":{text:\"Wither Leggings\",italic:false,color:\"blue\"},\"minecraft:lore\":[{text:\"Explosive immunity III\",italic:false,color:\"aqua\"},{text:\"Creeper Armor III\",italic:false,color:\"yellow\"}],\"minecraft:enchantments\":{\"minecraft:vanishing_curse\":1,\"minecraft:protection\":20,\"minecraft:projectile_protection\":20,\"minecraft:mending\":1,\"minecraft:soul_speed\":5,\"minecraft:fire_protection\":10,\"minecraft:thorns\":10,\"minecraft:blast_protection\":20},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":3847130}}"
+  },
+  {
+   "name": "Wither Boots",
+   "set": "Wither",
+   "item": "{id:\"minecraft:leather_boots\",count:1,components:{\"minecraft:custom_name\":{text:\"Wither Boots\",italic:false,color:\"blue\"},\"minecraft:lore\":[{text:\"Explosive immunity III\",italic:false,color:\"aqua\"},{text:\"Creeper Armor III\",italic:false,color:\"yellow\"}],\"minecraft:enchantments\":{\"minecraft:vanishing_curse\":1,\"minecraft:soul_speed\":5,\"minecraft:mending\":1,\"minecraft:projectile_protection\":20,\"minecraft:protection\":20,\"minecraft:fire_protection\":10,\"minecraft:feather_falling\":10,\"minecraft:thorns\":10,\"minecraft:blast_protection\":20},\"minecraft:unbreakable\":{},\"minecraft:dyed_color\":3847130}}"
+  }
+ ]
+}
