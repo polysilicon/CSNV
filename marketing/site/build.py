@@ -65,6 +65,7 @@ def page(path, title, desc, body, crumbs=None, extra_ld=(), image="/img/og.jpg",
             {"@type": "ListItem", "position": i + 1, "name": n, "item": SITE + p} for i, (p, n) in enumerate([("/", "Home")] + crumbs)]})
     graph += list(extra_ld)
     nav = "".join(f'<a href="{p}"{" aria-current=\"page\"" if p == path else ""}>{n}</a>' for p, n in NAV)
+    nav += f'<a class="nav-discord" href="{DISCORD}" rel="noopener">Discord</a>'
     return f"""<!doctype html>
 <html lang="en">
 <head>
