@@ -38,6 +38,10 @@ the host (it reads tokens from `/etc/crispybot.env`); these two modules are copi
   text, first photo, quoted tweet, counts, time); video tweets work as before. Any `$TICKER` in a tweet's text gets the
   ticker chart card (`tickers.post_cards`, credited to whoever shared it).
 
+- `gametickers.py`: `$TICKER` in Minecraft chat (any bridged server) gets a one-line price reply on that server (price, day
+  change, change since the first scan; hover for the range, click for the chart). Same lookup and scan history as
+  Discord; credited to the linked Discord account if there is one. 6 s cooldown per player, 2 symbols a line.
+
 `/console` was removed from bot.py on 2026-11-14 (backup `bot.py.bak-console`); `/mc` with its allowlist remains.
 
 Deploy: copy the modules into `/opt/crispybot`, `systemctl restart crispybot`. Backup of the pre-change bot:
