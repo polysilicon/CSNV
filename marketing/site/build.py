@@ -21,9 +21,9 @@ UPDATED = date.today().isoformat()
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 VOTE = [
+    ("MinecraftServers.org", "https://minecraftservers.org/vote/587166"),   # first: the featured site (+1 bonus vote point)
     ("TopG", "https://topg.org/minecraft-servers/server-687311"),
     ("Planet Minecraft", "https://www.planetminecraft.com/server/crispy-anarchy-1-16-no-rules-survival/vote/"),
-    ("MinecraftServers.org", "https://minecraftservers.org/vote/587166"),
     ("Minecraft-Server-List", "https://minecraft-server-list.com/server/503605/vote/"),
     ("MMTop200", "https://mmtop200.com/vote/5176"),
     ("Minecraft-MP", "https://minecraft-mp.com/server/365762/vote/"),
@@ -267,6 +267,7 @@ def anarchy():
 
   <h2>The market, the bank and crypto</h2>
   <p>The market is a separate area full of villager shops that trade in Gold Coins and Coin Bags. The Banker exchanges 36 emeralds or 36 diamonds for one Gold Coin, 16 coins for a block of netherite, and 64 coins for a Coin Bag. Next to the bank, a crypto trader buys and sells Bitcoin at a price that moves up and down like a real cryptocurrency, with its own price chart.</p>
+  <p>PvP is on in the market too, but if you're killed there you keep your items, XP and implants. Everywhere else, you drop everything. And there's a combat tag: for 15 seconds after a fight you can't teleport away with <code>/home</code>, <code>/spawn</code>, <code>/tpa</code> and the like.</p>
   {fig("anarchy-crypto", "The Crypto Exchange trader at his desk in the Crispy Anarchy market, with a Bitcoin on the counter", "The Crypto Exchange: buy and sell Bitcoin at a live, moving price.")}
   <p>Somewhere in the world there is also a black market. Its location is not published: you have to find it. Find it once and you earn the [Black Market] tag, which opens doors that stay shut for everyone else.</p>
   {fig("anarchy-blackmarket", "A market merchant on Crispy Anarchy who only trades with players wearing the Black Market tag", "Some merchants only deal with players who have found the black market.")}
@@ -544,7 +545,8 @@ def join():
 
 
 def vote():
-    rows = "".join(f'<li><a href="{u}" rel="noopener">{n}</a></li>' for n, u in VOTE)
+    rows = "".join(f'<li><a href="{u}" rel="noopener">{n}</a>' + (' <span class="note">+1 bonus vote point</span>' if i == 0 else '') + '</li>'
+                   for i, (n, u) in enumerate(VOTE))
     body = f"""
 <section class="wrap block head">
   <p class="kicker">Vote</p>
@@ -553,9 +555,18 @@ def vote():
 </section>
 <section class="wrap block"><ol class="votes">{rows}</ol>
 <p class="note">Type <code>/vote</code> in game to see your vote points and claim rewards.</p></section>
+<section class="wrap block">
+  <h2>Streaks and reminders</h2>
+  <ul>
+    <li>Each vote is one reward, which you send to Anarchy, Skyblock, Multiverse or Extraction Zone in <code>/vote</code>, plus vote points for cosmetic tags and colours.</li>
+    <li>Vote every day for a streak: your first vote each day earns an extra point from day 3, two from day 7 and three from day 14.</li>
+    <li>A vote on MinecraftServers.org earns one extra point.</li>
+    <li>If you haven't voted today you get a reminder in chat every 90 minutes; switch it off with the bell in <code>/vote</code>. <code>/vote links</code> ticks off the sites you've done today. A new vote day starts at midnight UTC.</li>
+  </ul>
+</section>
 """
     return page("/vote/", "Vote for Crispy Anarchy – Daily Vote Rewards",
-                "Vote for the Crispy Anarchy Minecraft server on 7 server lists and earn in-game rewards on Anarchy, Skyblock or PvP.",
+                "Vote for the Crispy Anarchy Minecraft server on 7 server lists and earn in-game rewards on Anarchy, Skyblock, Multiverse or Extraction Zone, with daily streak bonuses.",
                 body, crumbs=[("/vote/", "Vote")])
 
 

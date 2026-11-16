@@ -6,6 +6,64 @@ spots or anything else players are meant to find.
 
 NEWS = [
     {
+        "slug": "extraction-death-boxes-dual-wield-crate-timers",
+        "date": "2026-11-16",
+        "title": "Extraction Zone: death boxes, dual wielding and crate timers",
+        "summary": "Your gear now waits in a barrel where you died, you can fire two handguns at once, and opened crates show when they restock.",
+        "image": "/img/shots/ez-firefight.webp",
+        "body": """
+<p>Three changes to <a href="/extraction-zone/">Extraction Zone</a> since launch:</p>
+<ul>
+<li><b>Death boxes.</b> When you die in the zone, what you were carrying goes into a barrel where you fell, labelled with your name, instead of scattering on the ground. It stays for 15 minutes. You can run back for it, and so can anyone else.</li>
+<li><b>Dual wielding.</b> Hold a handgun in each hand and one click fires both, a moment apart, at the cost of a little accuracy.</li>
+<li><b>Crate timers.</b> A crate you've opened shows a small countdown above it until it restocks. Crates restock every 10 minutes whether or not anyone is nearby, so camping one doesn't block it.</li>
+</ul>
+<p>All three are in the Field Guide (<code>/guide</code>).</p>
+<figure class="pic"><img src="/img/shots/ez-firefight.webp" alt="A firefight in the streets of the Extraction Zone city" width="1600" height="900" loading="lazy"><figcaption>A firefight in the city.</figcaption></figure>
+""",
+    },
+    {
+        "slug": "vote-streaks-invite-friends-prices-in-chat",
+        "date": "2026-11-16",
+        "title": "Vote streaks, rewards for inviting friends, and prices in chat",
+        "summary": "Daily vote streaks earn bonus points, inviting a friend pays you both, and typing a ticker like $BTC in chat shows its price.",
+        "body": """
+<h2>Vote streaks</h2>
+<ul>
+<li><b>Streak bonus.</b> Vote at least once a day and your streak grows. Your first vote each day earns an extra point from day 3, two from day 7 and three from day 14.</li>
+<li><b>MinecraftServers.org bonus.</b> A vote on <a href="https://minecraftservers.org/vote/587166" rel="noopener">MinecraftServers.org</a> earns one extra vote point.</li>
+<li><b>Reminders.</b> If you haven't voted today, you get a clickable reminder in chat every 90 minutes. Turn it off with the bell in <code>/vote</code>.</li>
+<li><code>/vote links</code> now ticks off the sites you've already voted on today. A new vote day starts at midnight UTC.</li>
+</ul>
+<h2>Invite a friend</h2>
+<p>Type <code>/invite</code> on any server to see how it works. A new player types <code>/invitedby &lt;your name&gt;</code> in their first two days. Once they've played for an hour, you get 10 vote points and they get 5 points and a free vote reward. Bring three friends and you earn the <b>[Recruiter]</b> tag.</p>
+<h2>Prices in chat</h2>
+<p>Type a ticker such as <code>$BTC</code>, <code>$NVDA</code> or <code>$EUR</code> in chat on any server and the price shows up in chat, with the day's change. Hover for the day's range, click for the chart. It's the same lookup our Discord bot uses.</p>
+<h2>A clearer server selector</h2>
+<p>The lobby's server selector has been rewritten so each mode says what it is, whether PvP is on and what you keep. Everything is in the same place as before, and a new <b>Not sure? Start here</b> book in the corner suggests a mode for what you feel like playing.</p>
+""",
+    },
+    {
+        "slug": "anarchy-welcome-market-combat-tag-outbreak-pack-a-punch",
+        "date": "2026-11-16",
+        "title": "Anarchy: a new-player welcome, safer market deaths and a combat tag; Outbreak: Pack-a-Punch per gun",
+        "summary": "New players on Anarchy get a welcome and survival tips, you keep your items if you die in the market, and you can't teleport out of a fight. Outbreak's Pack-a-Punch now upgrades one gun at a time.",
+        "image": "/img/low.webp",
+        "body": """
+<h2>Anarchy</h2>
+<ul>
+<li><b>A welcome for new players.</b> Brand-new players now get a short welcome after they land, with buttons for the market, clans, survival tips and the other modes. The tips are there for anyone with <code>/trigger cw_help</code>. Nothing else about spawn has changed: it's still anarchy.</li>
+<li><b>Safer market deaths.</b> PvP is still on in the market, but if you're killed there you keep your items, XP and implants. Everywhere else you drop everything as before.</li>
+<li><b>Combat tag.</b> For 15 seconds after you hit or are hit by a player, you can't use <code>/home</code>, <code>/spawn</code>, <code>/back</code>, <code>/rtp</code>, <code>/warp</code>, <code>/tpa</code> (or accept one), the market teleport, or leave for another server. No more teleporting out of a fight.</li>
+</ul>
+<h2>Multiverse: Outbreak</h2>
+<ul>
+<li><b>Pack-a-Punch per gun.</b> The Arsenal's weapon upgrade now upgrades only the gun you're holding. Each gun has its own tier, I to IV, shown in its description, so you choose which guns to invest in. Tiers still reset when you go down.</li>
+<li><b>Dual wielding.</b> Hold a handgun in each hand to fire both with one click.</li>
+</ul>
+""",
+    },
+    {
         "slug": "extraction-zone-open",
         "date": "2026-11-13",
         "title": "Extraction Zone is open",
