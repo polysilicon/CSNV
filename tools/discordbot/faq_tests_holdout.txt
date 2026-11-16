@@ -1,0 +1,43 @@
+# Held-out set: written after tuning on faq_tests.txt and never tuned on. Run: python3 faq_eval.py faq_tests_holdout.txt
+what do i type to join crispy | server IP
+iphone players can join? | Bedrock players join || Bedrock anarchy server
+is 1.21.4 supported | versions can join
+can i use baritone | have rules
+how many years has the map been running | ever been reset
+where do i go to play extraction zone | switch between game modes
+are skyblock and anarchy inventories linked | inventory carry over
+why am i combat tagged | teleport away
+how do i report someone who griefed my base | report a player || have rules
+someone is threatening me irl | report a player
+i got an idea for skyblock | suggest an idea
+voting sites? | vote for the server
+is voting worth doing | get for voting
+my vote rewards never showed up | didn't get my reward
+what time do votes reset | vote day reset
+where do i spend my points | vote points for
+how do i change the color of my chat | vote points for
+whats the referral reward | inviting a friend
+discord invite link pls | Discord server
+how do i verify my account on discord | link my Minecraft
+can i lose stuff in the market area | Anarchy market
+is there a normal survival server | Vanilla Anarchy || other game modes
+how do i pick a starter island | start on Skyblock
+how many people can be on one island | Skyblock with friends
+where is the bazaar | Skyblock commands
+any minigames? | games in the lobby || other game modes
+are there ranks you can buy | free
+who's online on anarchy | online right now
+is the lobby up | server up
+did i vote today | vote points do I have
+am i linked to discord | Discord account linked
+yoink what can you help with | What can you do
+hey there | Hello
+thank u | Thanks
+where can i see the doge price | crypto or stock price
+can i message an admin | contact staff
+how do i get access to more channels | Discord roles
+do i lose everything if i die in extraction | die in the zone
+can you play multiverse by yourself | Multiverse alone
+how do i craft a beacon | -
+can you ban my friend | -
+what's 2+2 | -

@@ -182,6 +182,75 @@ FAQ = [
      "World spawn is at X 287, Z -207 in the overworld. You can explore the area around it on the 3D map at www.crispyanarchy.net/spawn-map/."),
 ]
 
+# The rest of the network: /faq/ shows these under their own headings. Yoink (the Discord bot) reads every FAQPage on
+# the site for /ask, so a question added here is one the bot can answer after its next refresh (tools/discordbot/faq.py).
+FAQ_MORE = [
+    ("Getting around", [
+        ("How do I switch between game modes?",
+         "Every mode is on the same address. You arrive in the lobby: use the Pick a Server item in your hotbar and choose a mode. "
+         "Type /lobby (or /hub) on any server to go back and pick another one."),
+        ("Does my inventory carry over between game modes?",
+         "No. Each mode has its own world, inventory and progress. What you keep everywhere is your vote points, your cosmetics "
+         "(tags, name colours and chat colours) and your Discord link."),
+        ("Are there games in the lobby?",
+         "Yes. UNO for 2 to 8 players (bots fill empty seats; type /uno) and a solo poker card game with a daily run on the same seed for everyone. Both are in the lobby's Pick a Server menu."),
+        ("Can I teleport away in the middle of a fight?",
+         "No. Hitting or being hit by another player puts you in combat for 15 seconds. Until it runs out you can't leave with /lobby or /hub, "
+         "and on Anarchy and Skyblock commands like /home, /spawn, /back, /tpa, /warp and /island are blocked too."),
+        ("How do I report a player or a bug?",
+         f"Open a ticket in the Crispy Discord ({DISCORD}); the ticket channel is linked in the welcome channel. Anarchy has no gameplay rules, "
+         "so griefing and PvP there are not reportable, but the community rules (no hate speech, harassment, doxxing or spam) apply everywhere."),
+        ("Where can I suggest an idea for the server?",
+         f"In the suggestions channel on the Crispy Discord ({DISCORD})."),
+    ]),
+    ("Voting and rewards", [
+        ("How do I vote for the server?",
+         "Open www.crispyanarchy.net/vote/ (or type /vote in game for the links) and vote on each site with your exact Minecraft username. "
+         "You can vote on every site once a day."),
+        ("What do I get for voting?",
+         "Each vote gives you one reward, which you send to Anarchy, Skyblock, Multiverse or Extraction Zone from the /vote menu, plus vote points for cosmetics. "
+         "A vote on MinecraftServers.org gives one extra point, and voting every day builds a streak: your first vote each day earns an extra point from day 3, two from day 7 and three from day 14."),
+        ("I voted but didn't get my reward. What do I do?",
+         "Rewards aren't handed out on their own: type /vote and click a server to send a reward there (shift-click sends them all), and it arrives when you're online on that server. "
+         "Some vote sites take a few minutes to report a vote. Check that you typed your exact username. If it still hasn't shown up after an hour, open a ticket on Discord."),
+        ("When does the vote day reset?",
+         "At midnight UTC, the same time the vote sites reset. If you haven't voted today you get a reminder in chat every 90 minutes; switch it off with the bell in /vote."),
+        ("What are vote points for?",
+         "Cosmetics: tags next to your name, name colours and chat colours, which work on every server. Type /cosmetics to buy and wear them. Some tags can't be bought and are earned instead, for example by topping a leaderboard."),
+        ("Do I get anything for inviting a friend?",
+         "Yes. Your friend types /invitedby <your name> within their first 48 hours on the network. Once they've played 60 minutes, they get 5 vote points and a vote reward and you get 10 vote points. "
+         "Bring three friends and you also earn the [Recruiter] tag. Type /invite in game for the details."),
+    ]),
+    ("Discord", [
+        ("Is there a Discord server?",
+         f"Yes: {DISCORD}. Game chat from every server is relayed there, and you can pick roles in the welcome channel to see the channels you want."),
+        ("How do I link my Minecraft account to Discord?",
+         "Join any Crispy server, then in Discord type /link with your exact Minecraft name (Bedrock players include the leading dot). "
+         "Yoink sends a 6-digit code to you in game chat; type /verify with that code in Discord within 5 minutes. /unlink removes the link."),
+        ("What does linking my Discord account do?",
+         "Players can ping you from game chat by your Minecraft name, you can run a few commands such as /msg, /tpa, /home and /spawn from Discord with /mc, "
+         "and price checks you make in game are credited to your Discord name."),
+    ]),
+    ("Anarchy", [
+        ("Can I lose my items if I'm killed in the Anarchy market?",
+         "No. PvP stays on in the market, but if you die there you keep your inventory and respawn with it. A totem in your hand still saves you as usual. "
+         "Items on the market's armor stands and in its item frames can't be taken either."),
+        ("What is Vanilla Anarchy?",
+         "The same idea as Anarchy, with no gameplay rules and no claims, but plain survival: no custom enchantments, implants or market. Pick it in the lobby."),
+    ]),
+    ("Skyblock", [
+        ("How do I start on Skyblock?",
+         "Pick Skyblock in the lobby. The first time you go to your island you choose one of seven themed starter islands. "
+         "Every player also gets a Skyblock Guide book with how-to pages and recipes (lost it? /guide book). Walk through the portal on your island to reach the hub, where the merchants and the Bazaar are."),
+        ("Can I play Skyblock with friends?",
+         "Yes. Type /invite <player> while they're online to add them to your island. An island holds 4 members at first, and up to 8 with the co-op upgrades in /island upgrades. /visit <player> lets you look around someone else's island."),
+        ("What are the main Skyblock commands?",
+         "/island for the island menu, /challenges, /skills, /collections, /pets, /bazaar (or /bz), /shop, /island level and /island top for the island rankings, "
+         "and /warp hub, /warp mines or /warp woods for the resource zones."),
+    ]),
+]
+FAQ_ALL = FAQ + [qa for _, qas in FAQ_MORE for qa in qas]
+
 
 def home():
     modes = [
@@ -577,11 +646,11 @@ def faq():
   <h1>Crispy Anarchy questions and answers</h1>
   {join_box(True)}
 </section>
-<section class="wrap block"><div class="faq open">{faq_html(FAQ)}</div></section>
-"""
-    return page("/faq/", "Crispy Anarchy FAQ – IP, Rules, Versions, Bedrock",
-                "Answers about the Crispy Anarchy Minecraft server: the IP, rules, resets, Bedrock support, versions and game modes.",
-                body, crumbs=[("/faq/", "FAQ")], extra_ld=[faq_ld(FAQ)])
+<section class="wrap block"><h2>The server</h2><div class="faq open">{faq_html(FAQ)}</div></section>
+""" + "".join(f'<section class="wrap block"><h2>{e(h)}</h2><div class="faq open">{faq_html(qas)}</div></section>\n' for h, qas in FAQ_MORE)
+    return page("/faq/", "Crispy Anarchy FAQ – IP, Rules, Versions, Bedrock, Voting",
+                "Answers about the Crispy Anarchy Minecraft server: the IP, rules, resets, Bedrock support, versions, game modes, voting, Discord and Skyblock.",
+                body, crumbs=[("/faq/", "FAQ")], extra_ld=[faq_ld(FAQ_ALL)])
 
 
 def notfound():

@@ -42,8 +42,21 @@ the host (it reads tokens from `/etc/crispybot.env`); these two modules are copi
   change, change since the first scan; hover for the range, click for the chart). Same lookup and scan history as
   Discord; credited to the linked Discord account if there is one. 6 s cooldown per player, 2 symbols a line.
 
+- `faq.py` + `faq_extra.toml`: `/ask <question>`, mentioning @Yoink with a question, or `!ask <question>` (in Discord, or in
+  game chat on any bridged server, answered to that player by tellraw) answers questions about the servers, with no
+  language model. Answers come from the website: every FAQPage on www.crispyanarchy.net (the /faq/ page and the mode
+  pages' question sections, `marketing/site/build.py`) is read every 6 h, so a question added to the site is one Yoink
+  answers after the next refresh or `/askadmin reload` (the last good copy is kept in `faq_site.json`).
+  `faq_extra.toml` adds bot-only answers, live ones (who's online, your vote points/streak from the lobby's
+  `votes.json`, your Discord link) and extra phrasings for site questions; edit it on the host, then `/askadmin reload`.
+  Matching blends a small sentence-embedding model (fastembed + BAAI/bge-small-en-v1.5 in the venv, model cached in
+  `.fastembed/`; 2 threads, ~5 ms a question, the bot is ~360 MB with it) with keyword scores; without fastembed it
+  falls back to keywords. Questions it can't answer confidently go to `faq_misses.jsonl` (`/askadmin misses`).
+  `/askadmin status | test <q>` for staff. Tests: `python3 faq_eval.py [faq_tests_holdout.txt] [--words]`
+  (2026-11-16: 97% on the tuning set, 88% on the held-out set; 71% held-out with keywords only).
+
 `/console` was removed from bot.py on 2026-11-14 (backup `bot.py.bak-console`); `/mc` with its allowlist remains.
 
 Deploy: copy the modules into `/opt/crispybot`, `systemctl restart crispybot`. Backup of the pre-change bot:
-`bot.py.bak-media-tickers`. Keep yt-dlp current (`/opt/crispybot/venv/bin/pip install -U "yt-dlp[default,curl-cffi]"`):
+`bot.py.bak-media-tickers` (before /ask: `bot.py.bak-faq`). Keep yt-dlp current (`/opt/crispybot/venv/bin/pip install -U "yt-dlp[default,curl-cffi]"`):
 the sites change often and old versions stop working.

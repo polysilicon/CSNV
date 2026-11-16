@@ -1,0 +1,107 @@
+# /ask test set: "question | part of the expected answer's question" ("-" = should NOT be answered confidently).
+# Phrased the way players write (typos, slang, no punctuation), and deliberately NOT copied from faq_extra.toml's alts.
+# Run: python3 faq_eval.py (it builds the site locally and prints the hit rate).
+yo whats the server ip | server IP
+how do i get on the server | server IP
+what address do i type in | server IP
+can my little brother join from his ipad | Bedrock players join || Bedrock anarchy server
+i play on nintendo switch can i join | Bedrock players join
+whats the port for bedrock | Bedrock players join || port does Crispy Anarchy use
+does 1.12.2 work | versions can join
+which version of minecraft do i need | versions can join
+do i need to own minecraft to play | cracked
+can i play with a pirated account | cracked
+is there any rules at all | have rules
+am i allowed to destroy other peoples bases | have rules
+is it ok to use meteor client | have rules
+has the world ever been wiped | ever been reset
+how old is this map | ever been reset
+what are the spawn coordinates | spawn on Crispy
+how do i go from anarchy to skyblock | switch between game modes
+how do i get back to the hub server | switch between game modes
+where do i pick which server to play | switch between game modes
+if i go to skyblock will i keep my anarchy items | inventory carry over
+are inventories separate on each server | inventory carry over
+someone hit me and now i cant /home | teleport away
+why does it say i cant do that while in combat | teleport away
+how long does combat last | teleport away
+someone is using kill aura how do i report | report a player
+where do i report a glitch | report a player
+a player is saying slurs in chat | report a player
+where do i put suggestions | suggest an idea
+i want to suggest a new feature | suggest an idea
+whats the link to vote | vote for the server
+how can i support the server | vote for the server
+what rewards do u get from voting | get for voting
+do you get stuff for voting every day | get for voting
+i voted 3 times and got nothing | didn't get my reward
+how do i redeem my vote rewards | didn't get my reward
+when can i vote again tomorrow | vote day reset
+how do i stop the vote reminder spam | vote day reset
+what can i buy with vote points | vote points for
+how do i get a rainbow name | vote points for
+how do i get one of those tags next to my name | vote points for
+i brought my friend do i get anything | inviting a friend
+my friend told me about the server how do i give him credit | inviting a friend
+how do i get recruiter | inviting a friend
+whats the discord server | Discord server
+is there a discord | Discord server
+how do i connect my mc account with discord | link my Minecraft
+the link code isnt showing up | link my Minecraft
+what happens when i link my account | linking my Discord
+why would i link discord | linking my Discord
+can i get killed in the market | Anarchy market
+do i drop my stuff if i die at market | Anarchy market
+what is the difference between anarchy and vanilla | Vanilla Anarchy
+is there a server without custom enchants | Vanilla Anarchy
+how do i make an island | start on Skyblock
+im new to skyblock what do i do | start on Skyblock
+can my friend join my skyblock island | Skyblock with friends
+how do i add someone to my island | Skyblock with friends
+how do i sell stuff on skyblock | Skyblock commands
+where are minions in skyblock | Skyblock commands
+how do i see my skill levels | Skyblock commands
+what other games do you have | other game modes
+is there a pvp server | other game modes
+how is this different from 2b2t | 2b2t
+can i play uno | games in the lobby
+does it need optifine or forge | mods or a special client
+do i need a texture pack | mods or a special client
+is it pay to win | free
+does it cost money | free
+can i get reported for what i say in chat | chat reports
+is anyone on right now | online right now
+how many people are playing | online right now
+is skyblock online | server up
+the server isnt working is it down | server up
+how many vote points have i got | vote points do I have
+whats my streak | vote points do I have
+is my discord connected to my mc | Discord account linked
+what commands do you have | What can you do
+who are you | What can you do
+hello | Hello
+thanks bro | Thanks
+what is crispymon | modded server
+is there a pokemon server | modded server
+how do i see the btc price | crypto or stock price
+can you check eth price | crypto or stock price
+why does yoink repost tiktoks | TikTok or Twitter
+how do i talk to an admin | contact staff
+i need help with something | contact staff || What can you do
+how do i get the politics role | Discord roles
+i cant see the anarchy channels | Discord roles
+can i chat with people in game from discord | talk to people in game
+can i play extraction zone alone | team up || Extraction Zone open
+what happens when i die in extraction | die in the zone
+what if i disconnect during a raid | log out in the middle
+is extraction zone out yet | Extraction Zone open
+how many characters in multiverse | many characters
+can i play multiverse solo | Multiverse alone
+do my multiverse items save | gear carry over
+what is an anarchy server | What is a Minecraft anarchy server
+whats the best way to make money on skyblock | -
+how do i build a nether portal | -
+can you give me op | -
+whats the weather like | -
+what is the meaning of life | -
+how do i get elytra | -

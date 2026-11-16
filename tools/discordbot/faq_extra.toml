@@ -1,0 +1,160 @@
+# Yoink's /ask: what the bot knows beyond the website.
+#
+# Most answers come from the website: every FAQ on www.crispyanarchy.net (the /faq/ page and the question sections on
+# the mode pages) is read every few hours, so a question added to marketing/site/build.py and deployed is one Yoink
+# can answer. This file adds:
+#   [[entry]]  answers that don't belong on a public page (bot features, small talk, other servers), and live answers
+#              (live = "online" | "myvotes" | "mylink" | "help"), which the bot fills in with real data.
+#   [alts]     extra ways people ask a website question, keyed by the website's exact question text. They only
+#              help the matcher; the answer always comes from the site. If the site's question text changes,
+#              /askadmin status lists the alts that no longer match anything.
+# Edit on the host (/opt/crispybot/faq_extra.toml), then /askadmin reload in Discord. No restart needed.
+
+[[entry]]
+id = "online"
+live = "online"
+q = "Who is online right now?"
+a = "Who's on each server right now."
+alts = ["who is online", "is anyone on", "anyone playing rn", "how many people are on", "is anyone online on anarchy",
+        "who's on", "player list", "is the server dead", "is anyone playing skyblock", "online players", "is anyone on right now",
+        "who is playing", "how many players"]
+
+[[entry]]
+id = "status"
+live = "online"
+q = "Is the server up?"
+a = "Which servers are up right now."
+alts = ["is the server down", "server down?", "is skyblock up", "is anarchy online", "is multiverse working", "is extraction online", "is vanilla up", "is the lobby down", "is anarchy up", "is the server offline", "server status", "is skyblock down",
+        "cant connect is it down", "is it down"]
+
+[[entry]]
+id = "myvotes"
+live = "myvotes"
+q = "How many vote points do I have?"
+a = "Your vote points, rewards waiting and streak."
+alts = ["my vote points", "how many points do i have", "what's my vote streak", "have i voted today", "my streak",
+        "how many votes do i have", "check my votes", "my rewards", "did my vote count", "how many unclaimed rewards do i have"]
+
+[[entry]]
+id = "mylink"
+live = "mylink"
+q = "Is my Discord account linked?"
+a = "Whether your Discord is linked to a Minecraft account."
+alts = ["am i linked", "is my account linked", "which minecraft account is linked", "check my link", "did my link work"]
+
+[[entry]]
+id = "help"
+live = "help"
+q = "What can you do, Yoink?"
+a = "What Yoink can help with."
+alts = ["what can you do", "help", "commands", "what are your commands", "who are you", "what is yoink", "what does this bot do",
+        "how do i use you", "yoink help", "bot commands", "what can i ask"]
+
+[[entry]]
+id = "hello"
+q = "Hello"
+a = "Hey! Ask me anything about the Crispy servers: the IP, voting, Discord linking, Skyblock, Anarchy and more."
+alts = ["hi", "hey", "hello yoink", "yo", "sup", "good morning", "hey yoink", "hiya", "wassup"]
+
+[[entry]]
+id = "thanks"
+q = "Thanks"
+a = "Any time! 🙌"
+alts = ["thank you", "ty", "thx", "thanks yoink", "tysm", "appreciate it", "cheers", "nice thanks"]
+
+[[entry]]
+id = "crispymon"
+q = "Is there a modded server?"
+a = "Yes: **Crispymon**, a modded creature-catching server, at `crispymon.org:12673`. It's separate from the main network, so it has its own address and needs its modpack. Pick the Modded Minecraft role in the welcome channel to see its channels."
+alts = ["crispymon", "what is crispymon", "crispymon ip", "modded server", "is there a modpack server", "cobblemon",
+        "pixelmon server", "modded minecraft ip", "pokemon server", "pokemon"]
+
+[[entry]]
+id = "tickers"
+q = "How do I check a crypto or stock price?"
+a = "Type a cashtag like `$BTC`, `$NVDA` or `$EUR` in any Discord channel and Yoink posts a price card with a chart. It works in game chat too: Yoink answers on that server. Paste a Solana or 0x contract address for a token card, `/newpairs <topic>` finds coins launched in the last 24 hours, and `/polymarket <search>` shows betting odds. Information only, not financial advice."
+alts = ["price of bitcoin", "how do i check crypto", "stock price", "$btc", "ticker command", "how do the price cards work",
+        "crypto prices", "how to check a coin", "new coins", "polymarket odds", "what is newpairs"]
+
+[[entry]]
+id = "video"
+q = "Can Yoink post TikTok or Twitter videos?"
+a = "Yes: paste a TikTok, X/Twitter or Instagram post link and Yoink replies with the video so it plays in Discord (up to 2 links a message). Text tweets get a tweet card, with price charts for any `$TICKER` in them."
+alts = ["tiktok video", "twitter link not embedding", "why does the bot post videos", "instagram reel", "embed twitter video"]
+
+[[entry]]
+id = "staff"
+q = "How do I contact staff?"
+a = "Open a ticket in the Crispy Discord: the ticket channel is linked in the welcome channel."
+alts = ["contact staff", "talk to an admin", "who is the owner", "need help from staff", "admin help", "open a ticket", "support",
+        "how do i get help", "message a mod", "appeal a ban", "i got banned"]
+
+[[entry]]
+id = "roles"
+q = "How do I get Discord roles?"
+a = "In the welcome channel, tap the buttons under **Pick your roles**: CrispyAnarchy for the main network, Modded Minecraft for Crispymon and Politics for political discussion, stocks and crypto. Tap again to remove a role."
+alts = ["discord roles", "how do i see more channels", "politics role", "get a role", "role buttons", "i can't see channels"]
+
+[[entry]]
+id = "chatbridge"
+q = "Can I talk to people in game from Discord?"
+a = "Yes. The server chat channel is bridged: messages there appear in game as [Discord] and game chat from every server is posted there. Link your account with `/link` so people in game can ping you with @yourname."
+alts = ["discord to game chat", "game chat in discord", "talk to players from discord", "how does the chat bridge work"]
+
+[alts]
+"What is the Crispy Anarchy server IP?" = ["how do i get on", "how to play on crispy", "join address", "ip", "whats the ip", "server ip", "server address", "how do i join", "how to join",
+    "what's the address", "ip pls", "how do i connect", "what do i put in the server address", "port", "what is the port"]
+"Can Bedrock players join Crispy Anarchy?" = ["bedrock ip", "can i play on phone", "can i join on mobile", "pe", "mcpe",
+    "can i play on xbox", "can i join on switch", "ps4", "playstation", "bedrock edition", "pocket edition", "can i play on ipad"]
+"Which Minecraft versions can join?" = ["does my version work", "1.8", "1.12", "1.16", "1.19", "what versions are supported", "what version", "what version is the server", "can i join on 1.8", "1.20", "1.21",
+    "is it 1.21", "which version should i use", "supported versions", "outdated client", "outdated server"]
+"Is Crispy Anarchy cracked?" = ["cracked", "do i need premium", "can i play without buying minecraft", "tlauncher", "non premium",
+    "offline mode"]
+"Does Crispy Anarchy have rules?" = ["is meteor allowed", "can i use wurst", "are cheats allowed", "is killing allowed", "rules", "what are the rules", "is griefing allowed", "can i grief", "is hacking allowed",
+    "are hacks allowed", "can i use hacked clients", "is pvp allowed", "can i raid bases", "is xray allowed"]
+"Has the Crispy Anarchy map ever been reset?" = ["map reset", "will the map reset", "when was the last reset", "how old is the map",
+    "how old is the server", "is the world reset"]
+"Where is spawn on Crispy Anarchy?" = ["spawn coords", "spawn coordinates", "where is spawn", "spawn location"]
+"How do I switch between game modes?" = ["back to hub", "server menu", "pick a server", "where is the compass", "hub", "lobby", "how do i get to skyblock", "how do i change servers", "go back to lobby", "switch servers",
+    "how to go to anarchy", "how do i leave", "/lobby", "server selector", "how to play extraction", "how do i get to multiverse",
+    "change gamemode", "how to go to vanilla"]
+"Does my inventory carry over between game modes?" = ["keep items between servers", "do i keep my stuff on other servers", "do items transfer between servers", "is my inventory shared",
+    "will i lose my stuff if i switch servers", "shared inventory"]
+"Can I teleport away in the middle of a fight?" = ["cant use home after getting hit", "how long is combat tag", "combat tag", "combat log", "can i home in combat", "why can't i tp",
+    "why can't i use commands", "combat logging", "can i warp during pvp", "it says im in combat", "why can't i go to lobby"]
+"How do I report a player or a bug?" = ["report a player", "report a hacker", "report a bug", "found a bug", "someone is hacking",
+    "report someone", "glitch", "exploit", "someone is being racist", "someone is harassing me"]
+"How do I vote for the server?" = ["support the server", "how can i help the server grow", "help the server", "vote", "vote links", "where do i vote", "how to vote", "vote sites", "voting"]
+"What do I get for voting?" = ["vote rewards", "what are vote rewards", "is voting worth it", "what does voting give", "vote streak",
+    "streak bonus", "why should i vote"]
+"I voted but didn't get my reward. What do I do?" = ["didnt get my vote reward", "vote not working", "my vote didnt count",
+    "vote rewards missing", "where are my vote rewards", "how do i claim vote rewards", "claim rewards", "i voted and got nothing"]
+"What are vote points for?" = ["what do vote points do", "how do i spend vote points", "cosmetics", "how do i get a tag",
+    "how do i get a chat color", "name color", "how do i change my name color", "tags", "how to get a prefix", "chat colour"]
+"When does the vote day reset?" = ["when can i vote again", "vote reset time", "vote reminders", "turn off vote reminders",
+    "stop vote messages"]
+"Do I get anything for inviting a friend?" = ["give credit to the friend who invited me", "who invited me", "invite a friend", "referral", "invite rewards", "invitedby", "recruiter tag",
+    "i was invited by someone", "how do i get the recruiter tag", "refer a friend"]
+"How do I link my Minecraft account to Discord?" = ["how do i link", "link discord", "link my account", "link minecraft to discord",
+    "how to verify", "verify code", "where is my link code", "i didnt get a code", "unlink"]
+"What does linking my Discord account do?" = ["what does /link do", "what do i get for linking", "why should i link", "what is linking for", "benefits of linking", "what is /mc"]
+"Is there a Discord server?" = ["discord", "discord link", "discord invite", "whats the discord"]
+"Can I lose my items if I'm killed in the Anarchy market?" = ["market pvp", "is the market safe", "do i keep items at the market",
+    "market keep inventory", "can people kill me at the market", "market safe zone"]
+"What is Vanilla Anarchy?" = ["vanilla", "vanilla server", "is there a vanilla server", "pure anarchy", "anarchy without custom items"]
+"How do I start on Skyblock?" = ["skyblock", "how to start skyblock", "how do i get an island", "new to skyblock", "skyblock guide",
+    "where is the hub", "how do i get to the hub"]
+"Can I play Skyblock with friends?" = ["skyblock coop", "co-op island", "join my friends island", "add friend to island",
+    "island invite", "how do i join someone's island", "island members"]
+"What are the main Skyblock commands?" = ["skill level", "my skills", "collections", "sell items", "skyblock commands", "bazaar", "minions", "pets", "skills", "island level", "challenges",
+    "how do i sell items on skyblock", "where are the mines"]
+"What other game modes does the network have?" = ["what games are there", "what other servers do you have", "game modes", "what servers are there", "what can i play", "other servers",
+    "what modes", "list of servers", "is there a pvp server"]
+"Are there games in the lobby?" = ["uno", "card games", "lobby games", "how do i play uno", "poker"]
+"How is Crispy Anarchy different from 2b2t?" = ["2b2t", "is this like 2b2t", "2b2t clone"]
+"Do I need mods or a special client?" = ["do i need a modpack", "resource pack", "do i need forge", "do i need fabric",
+    "can i use optifine", "can i use lunar", "texture pack"]
+"Is Crispy Anarchy free?" = ["is it free", "pay to win", "p2w", "is there a store", "do i have to pay", "ranks for sale"]
+"Are chat reports turned off?" = ["chat reporting", "can i get chat reported", "no chat reports", "ncr"]
+"Where can I suggest an idea for the server?" = ["suggestion", "i have an idea", "feature request", "can you add"]
+"Does gear carry over between games?" = ["do my multiverse items save", "do i keep my kit", "multiverse progress", "is multiverse progress saved"]
