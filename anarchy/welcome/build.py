@@ -95,6 +95,8 @@ fn("show", [
              button("[Survival tips]", "green", "/trigger cw_help", "How not to lose everything on day one.\nAny time: /trigger cw_help"),
              t("  "),
              button("[Other modes]", "light_purple", "/lobby", "Back to the lobby: Skyblock, Multiverse,\nExtraction Zone and Vanilla")]),
+    tellraw([t("Questions? Type ", "gray"), t("!ask <question>", "yellow"), t(" in chat and Yoink answers, e.g. ", "gray"),
+             t("!ask how do I vote", "aqua")]),
     tellraw(t(" ")),
 ])
 
@@ -106,6 +108,7 @@ TIPS = [
     "The Market (/trigger market) sells custom enchantments for XP and cyberware implants for diamonds.",
     "Want a team? /clan list shows the clans; ask in chat to join one.",
     "Chat here is shared with every Crispy server and the Discord, so say hi.",
+    "Questions about the server? Type !ask <question> in chat and Yoink, the Crispy bot, answers.",
 ]
 fn("tips", [
     "scoreboard players set @s cw_help 0",

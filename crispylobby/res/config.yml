@@ -388,6 +388,7 @@ welcome:
     - "&d&lWelcome to Crispy, &f%player%&d&l!"
     - "&7Five worlds and a hub, with chat that follows you everywhere. New here? &dMultiverse &7is the quickest way in:"
     - "&7pick one of 36 characters and fight, or take on Outbreak's zombie waves solo."
+    - "&7Questions? Type &e!ask <question> &7in chat and Yoink answers, e.g. &e!ask how do I vote"
   announce: true              # tell the lobby
   discord-relay: true         # and Discord + every server, through the bot
   announce-line: "&d✦ &f%player% &djoined Crispy for the first time. Say hi!"
