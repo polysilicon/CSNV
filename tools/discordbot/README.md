@@ -52,6 +52,9 @@ the host (it reads tokens from `/etc/crispybot.env`); these two modules are copi
   Matching blends a small sentence-embedding model (fastembed + BAAI/bge-small-en-v1.5 in the venv, model cached in
   `.fastembed/`; 2 threads, ~5 ms a question, the bot is ~360 MB with it) with keyword scores; without fastembed it
   falls back to keywords. Questions it can't answer confidently go to `faq_misses.jsonl` (`/askadmin misses`).
+  Telling people about it: a "type !ask <question>" tip in game chat every 75 min on servers with players on (rotating
+  examples, click to start), and when someone asks a question in game or Discord that Yoink can answer well (score >= 0.80)
+  it suggests !ask to them, at most once a day per player / once a week per Discord user (`faq_hints.json`).
   `/askadmin status | test <q>` for staff. Tests: `python3 faq_eval.py [faq_tests_holdout.txt] [--words]`
   (2026-11-16: 97% on the tuning set, 88% on the held-out set; 71% held-out with keywords only).
 

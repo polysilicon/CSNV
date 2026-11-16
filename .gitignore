@@ -8,3 +8,4 @@ tools/creators/data/   # creator outreach tracker: third parties' contact detail
 tools/discordbot/.fastembed/
 tools/discordbot/faq_site.json
 tools/discordbot/faq_misses.jsonl
+tools/discordbot/faq_hints.json

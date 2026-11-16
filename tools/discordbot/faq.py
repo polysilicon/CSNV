@@ -19,6 +19,10 @@ How a question is matched (no language model, nothing leaves the machine)
   best guess and offers the next ones, below SUGGEST it says it doesn't know and points to tickets. Every question
   that isn't answered confidently goes to faq_misses.jsonl, so new entries can be written for what people really ask.
 
+Telling people: every TIP_MINUTES a one-line "type !ask <question>" tip goes to game chat on servers with players on,
+and when someone asks in chat (game or Discord) a question Yoink can answer well, it suggests !ask to them (in game
+only to that player, click to ask; at most once a day per player, once a week per Discord user; faq_hints.json).
+
 Where it works: /ask in Discord, mentioning @Yoink with a question, "!ask <question>" in Discord, and "!ask
 <question>" in game chat on any bridged server (answered to that player only, by tellraw).
 Staff: /askadmin reload | status | misses | test <question>.
@@ -40,6 +44,13 @@ GAME_MAX = 230                   # characters of an answer shown in game chat
 MODEL = "BAAI/bge-small-en-v1.5"
 UA = {"User-Agent": "Mozilla/5.0 (compatible; crispy-bot/1.0)"}
 COLOR = 0xF39C12
+HINTS = os.path.join(HERE, "faq_hints.json")   # who was last shown the "you can ask me" hint, and when
+HINT_SCORE = 0.80                # a chat question must match this well before Yoink suggests !ask / /ask
+HINT_EVERY = {"g": 86400, "d": 7 * 86400}     # at most one hint a day per player in game, a week per Discord user
+TIP_MINUTES = 75                 # a "you can ask me" tip in game chat on each server with players on (0 = off)
+TIPS = ["how do I vote", "how do I link Discord", "what's my vote streak", "who's online", "how do I switch servers",
+        "can I play Skyblock with friends", "do I keep my items in the market"]
+QWORD = re.compile(r"^(how|what|whats|what's|where|wheres|when|why|who|whos|who's|is|are|can|could|does|do|did|will|anyone know|any1 know)\b", re.I)
 
 STOP = set("a an the is are am was be do does did i me my you your u ur we our it its to of in on at for and or "
            "can could would should will how what whats what's where when who why which there this that with from "
@@ -372,6 +383,58 @@ def _cool(key):
     return False
 
 
+def _looks_like_question(text):
+    t = (text or "").strip()
+    return len(t.split()) >= 3 and (t.endswith("?") or bool(QWORD.match(t))) and not t.startswith(("!", "/", "$"))
+
+
+def _hint_due(key):
+    """True (and remembered) if this person hasn't had a hint within HINT_EVERY."""
+    try:
+        with open(HINTS, encoding="utf-8") as f: seen = json.load(f)
+    except (OSError, ValueError):
+        seen = {}
+    k, now = f"{key[0]}:{key[1]}", time.time()
+    if now - seen.get(k, 0) < HINT_EVERY[key[0]]: return False
+    seen = {x: t for x, t in seen.items() if now - t < 8 * 86400}
+    seen[k] = now
+    try:
+        with open(HINTS, "w", encoding="utf-8") as f: json.dump(seen, f)
+    except OSError:
+        pass
+    return True
+
+
+async def _maybe_hint(question, key):
+    """If a chat line is a question Yoink can answer well, and this person hasn't been told lately, True."""
+    if not _looks_like_question(question) or not entries: return False
+    e, score, _ = await asyncio.to_thread(match, question)
+    return e is not None and not e.get("live") and score >= HINT_SCORE and _hint_due(key)
+
+
+async def tips_loop(bridges, list_players, rcon):
+    """Every TIP_MINUTES: one line in game chat on each bridged server that has players, rotating example questions."""
+    n = 0
+    await asyncio.sleep(600)
+    while TIP_MINUTES:
+        example = TIPS[n % len(TIPS)]; n += 1
+        msg = {"text": "", "extra": [
+            {"text": "[Yoink] ", "color": "gold", "bold": True},
+            {"text": "Got a question about the server? Type ", "color": "gray", "bold": False},
+            {"text": "!ask <question>", "color": "yellow", "bold": False},
+            {"text": " in chat, e.g. ", "color": "gray", "bold": False},
+            {"text": f"!ask {example}", "color": "aqua", "bold": False}],
+            "clickEvent": {"action": "suggest_command", "value": "!ask "}, "click_event": {"action": "suggest_command", "command": "!ask "},
+            "hoverEvent": {"action": "show_text", "contents": "Click to start a question"}, "hover_event": {"action": "show_text", "value": "Click to start a question"}}
+        for key, cfg in bridges.items():
+            try:
+                names, _ = await list_players(cfg)
+                if names: await rcon(cfg, "tellraw @a " + json.dumps(msg, ensure_ascii=False))
+            except Exception:
+                pass
+        await asyncio.sleep(TIP_MINUTES * 60)
+
+
 ASK_RE = re.compile(r"^\s*!ask\b[\s:,]*(.*)$", re.I | re.S)
 
 
@@ -389,6 +452,7 @@ def register(bot, discord, app_commands, bridges, list_players, rcon):
                 await reload()
                 await asyncio.sleep(REFRESH)
         asyncio.create_task(refresher())
+        asyncio.create_task(tips_loop(ctx_base["bridges"], ctx_base["list_players"], rcon))
     bot.setup_hook = hook
 
     def dctx(user):
@@ -412,6 +476,10 @@ def register(bot, discord, app_commands, bridges, list_players, rcon):
             if bot.user and re.search(rf"<@!?{bot.user.id}>", content):
                 question = re.sub(rf"<@!?{bot.user.id}>", "", content).strip()
                 if question: await ask_message(message, question)
+                return
+            if await _maybe_hint(content, ("d", message.author.id)):
+                await message.reply("💡 I might know this one! Ask me with `/ask`, `!ask <question>` or by mentioning me, "
+                                    f"e.g. `!ask {content[:80]}`", mention_author=False)
         except Exception as ex:
             print(f"[faq] message failed: {type(ex).__name__}: {ex}")
     bot.extras = extras
@@ -473,9 +541,22 @@ def register(bot, discord, app_commands, bridges, list_players, rcon):
 async def game(bot, cfg, rcon, list_players, bridges, player, text):
     """From the chat bridge: '!ask <question>' in game chat -> the answer, to that player only."""
     m = ASK_RE.match(text or "")
-    if not m: return
-    question = m.group(1).strip()
     target = player if re.fullmatch(r"\.?[A-Za-z0-9_]{1,16}", player or "") else None
+    if not m:
+        try:
+            if target and await _maybe_hint(text, ("g", player.lower())):
+                tip = {"text": "", "extra": [
+                    {"text": "[Yoink] ", "color": "gold", "bold": True},
+                    {"text": "I might know that! Type ", "color": "gray", "bold": False},
+                    {"text": "!ask " + text.strip()[:60], "color": "yellow", "bold": False},
+                    {"text": " (click to ask)", "color": "aqua", "bold": False}],
+                    "clickEvent": {"action": "suggest_command", "value": "!ask " + text.strip()[:200]},
+                    "click_event": {"action": "suggest_command", "command": "!ask " + text.strip()[:200]}}
+                await rcon(cfg, "tellraw " + target + " " + json.dumps(tip, ensure_ascii=False))
+        except Exception as ex:
+            print(f"[faq] hint {player}: {type(ex).__name__}: {ex}")
+        return
+    question = m.group(1).strip()
     if not target or _cool(("g", player.lower())): return
     try:
         if not question:
