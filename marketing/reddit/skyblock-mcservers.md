@@ -9,7 +9,10 @@ mentioned on purpose: they aren't open yet.
 
 ## Title
 
-[Java & Bedrock] [1.13–26.3] Crispy Skyblock – 7 themed starter islands, skills, minions, pets, a player Bazaar and craftable gear. No pay-to-win
+r/mcservers format: the server name only, then one primary tag in [ ] and secondary tags in { }.
+
+
+Crispy Skyblock [Skyblock] {Java} {Bedrock} {1.13-26.3} {No P2W} {Minions} {Pets} {Skills} {Bazaar} {Co-op}
 
 ## Body
 
