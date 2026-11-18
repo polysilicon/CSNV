@@ -8,7 +8,7 @@ llms.txt. Images come from images/ next to this file. The BlueMap 3D map is depl
 Every claim here was checked against the live servers (see marketing/listings.md for the rules: no player counts,
 no "biggest/best", no franchise names).
 """
-import json, os, shutil, sys, html
+import re, json, os, shutil, sys, html
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from news import NEWS
 from datetime import date
@@ -55,11 +55,33 @@ WEBSITE = {"@type": "WebSite", "@id": SITE + "/#website", "name": "Crispy Anarch
            "inLanguage": "en"}
 
 
+DATES_FILE = os.path.join(HERE, "page_dates.json")   # path -> [content hash, date it last changed]
+try:
+    DATES = json.load(open(DATES_FILE))
+except (OSError, ValueError):
+    DATES = {}
+SHOW_UPDATED = ("/anarchy/", "/skyblock/", "/pvp/", "/extraction-zone/", "/vanilla-anarchy/", "/bedrock-skyblock/",
+                "/bedrock-anarchy/", "/2b2t-alternative/", "/guides/anarchy-survival/", "/guides/skyblock-beginners/", "/faq/", "/join/", "/rules/")
+
+
+def changed(path, title, desc, body):
+    """The date this page's content last changed (kept in page_dates.json, which is committed), not the build date."""
+    import hashlib
+    h = hashlib.sha1((title + "\0" + desc + "\0" + body).encode()).hexdigest()[:16]
+    old = DATES.get(path)
+    if not old or old[0] != h:
+        DATES[path] = [h, UPDATED]
+    return DATES[path][1]
+
+
 def page(path, title, desc, body, crumbs=None, extra_ld=(), image="/img/og.jpg", h1_hero=None):
     url = SITE + path
+    modified = changed(path, title, desc, body)
+    if path in SHOW_UPDATED:
+        body += f'<p class="wrap fine page-updated">Last updated <time datetime="{modified}">{fmt_date(modified)}</time>.</p>\n'
     graph = [ORG, WEBSITE, {"@type": "WebPage", "@id": url + "#page", "url": url, "name": title, "description": desc,
                             "isPartOf": {"@id": SITE + "/#website"}, "about": {"@id": SITE + "/#org"},
-                            "dateModified": UPDATED, "primaryImageOfPage": SITE + image, "inLanguage": "en"}]
+                            "dateModified": modified, "primaryImageOfPage": SITE + image, "inLanguage": "en"}]
     if crumbs:
         graph.append({"@type": "BreadcrumbList", "itemListElement": [
             {"@type": "ListItem", "position": i + 1, "name": n, "item": SITE + p} for i, (p, n) in enumerate([("/", "Home")] + crumbs)]})
@@ -112,7 +134,12 @@ def page(path, title, desc, body, crumbs=None, extra_ld=(), image="/img/og.jpg",
     </div>
     <div class="foot-links">
       {''.join(f'<a href="{p}">{n}</a>' for p, n in NAV[1:])}
+      <a href="/vanilla-anarchy/">Vanilla anarchy</a>
       <a href="/bedrock-anarchy/">Bedrock anarchy</a>
+      <a href="/bedrock-skyblock/">Bedrock Skyblock</a>
+      <a href="/guides/anarchy-survival/">Anarchy guide</a>
+      <a href="/guides/skyblock-beginners/">Skyblock guide</a>
+      <a href="/2b2t-alternative/">Servers like 2b2t</a>
       <a href="/rules/">Rules</a>
       <a href="{DISCORD}" rel="noopener">Discord</a>
     </div>
@@ -255,12 +282,13 @@ FAQ_ALL = FAQ + [qa for _, qas in FAQ_MORE for qa in qas]
 def home():
     modes = [
         ("/anarchy/", "Anarchy", "No gameplay rules, no claims, one world since 2020. Custom enchantments, implants, a market and a hidden black market."),
-        ("/anarchy/#vanilla", "Vanilla Anarchy", "Plain survival anarchy with no custom items, for people who like it pure."),
+        ("/vanilla-anarchy/", "Vanilla Anarchy", "Plain survival anarchy with no custom items, for people who like it pure."),
         ("/skyblock/", "Skyblock", "Grow your island with skills, collections, pets, 43 minions, a Bazaar and gear crafted from what you farm."),
         ("/pvp/", "Multiverse", "36 playable characters: arena PvP, ranked duels, zombie waves, Core Defense and a roguelite tower."),
         ("/extraction-zone/", "Extraction Zone", "New: loot a ruined city, fight armed raiders and other players, and get out alive. Open now."),
         ("/spawn-map/", "3D spawn map", "Fly over two square kilometres of spawn, wrecked by six years of anarchy."),
         ("/bedrock-anarchy/", "Bedrock anarchy", "Play anarchy from Windows, phone, tablet or console, in the same world as Java players."),
+        ("/bedrock-skyblock/", "Bedrock Skyblock", "Skyblock on Windows, phone, tablet or console, on the same islands and Bazaar as Java players."),
     ]
     cards = "".join(f'<a class="card" href="{u}"><h3>{n}</h3><p>{d}</p></a>' for u, n, d in modes)
     latest = "".join(f'''<article class="post-card"><p class="date"><time datetime="{n['date']}">{fmt_date(n['date'])}</time></p><h3><a href="/news/{n['slug']}/">{e(n['title'])}</a></h3><p>{e(n['summary'])}</p></article>''' for n in NEWS[:3])
@@ -277,7 +305,7 @@ def home():
 <section class="wrap block">
   <h2>What is Crispy Anarchy?</h2>
   <p class="measure">Crispy Anarchy is a free Minecraft anarchy server that has been running since 2020 without a map reset. There are no gameplay rules and no land claims: players grief, raid, fight and build wherever they like, and everything that happens stays in the world. Java Edition players join at <code>{JAVA}</code>; Bedrock Edition players join at <code>{JAVA}</code> on port <code>{BEDROCK_PORT}</code>.</p>
-  <p class="measure">Crispy Anarchy is also the name of the wider Crispy network, which adds Vanilla Anarchy, Skyblock, a PvP server and Extraction Zone, linked by one chat and one Discord.</p>
+  <p class="measure">Crispy Anarchy is also the name of the wider Crispy network: our <a href="/anarchy/">Minecraft anarchy server</a> plus a <a href="/vanilla-anarchy/">vanilla anarchy server</a>, a <a href="/skyblock/">Minecraft Skyblock server</a>, a <a href="/pvp/">PvP server</a> and <a href="/extraction-zone/">Extraction Zone</a>, linked by one chat and one Discord.</p>
   <ul class="facts">
     <li><b>2020</b><span>world started, never reset</span></li>
     <li><b>0</b><span>rules or land claims</span></li>
@@ -303,13 +331,21 @@ def home():
   <p><a href="/news/">All news</a></p>
 </section>
 <section class="wrap block">
+  <h2>Guides for new players</h2>
+  <ul class="more">
+    <li><a href="/guides/anarchy-survival/">How to survive on a Minecraft anarchy server</a></li>
+    <li><a href="/guides/skyblock-beginners/">Crispy Skyblock beginner's guide: your first hours</a></li>
+    <li><a href="/2b2t-alternative/">Looking for a server like 2b2t?</a></li>
+  </ul>
+</section>
+<section class="wrap block">
   <h2>Quick answers</h2>
   <div class="faq">{faq_html(FAQ[:5])}</div>
   <p><a href="/faq/">All questions</a></p>
 </section>
 """
-    return page("/", "Crispy Anarchy – Minecraft Anarchy Server (Java & Bedrock) | crispyanarchy.net",
-                "Crispy Anarchy is a Minecraft anarchy server with no gameplay rules, running since 2020 and never reset. Java and Bedrock crossplay, 193 custom enchantments, implants and a market. IP: crispyanarchy.net",
+    return page("/", "Crispy Anarchy – Minecraft Anarchy Server & Network (Java & Bedrock)",
+                "Crispy Anarchy is a Minecraft anarchy server with no gameplay rules, running since 2020 and never reset, and a network with Skyblock, PvP and Extraction Zone. Java and Bedrock crossplay. IP: crispyanarchy.net",
                 body, extra_ld=[GAMESERVER, faq_ld(FAQ[:5])])
 
 
@@ -342,7 +378,10 @@ def anarchy():
   {fig("anarchy-blackmarket", "A market merchant on Crispy Anarchy who only trades with players wearing the Black Market tag", "Some merchants only deal with players who have found the black market.")}
 
   <h2 id="vanilla">Vanilla Anarchy</h2>
-  <p>Prefer anarchy without custom items? Vanilla Anarchy is a separate server with plain survival anarchy: no custom enchantments, no implants, no shops. Pick it from the lobby.</p>
+  <p>Prefer anarchy without custom items? <a href="/vanilla-anarchy/">Vanilla Anarchy</a> is a separate server with plain survival anarchy: no custom enchantments, no implants, no shops. Pick it from the lobby.</p>
+
+  <h2>New to anarchy?</h2>
+  <p>Read <a href="/guides/anarchy-survival/">how to survive on a Minecraft anarchy server</a> before you jump in. Coming from 2b2t? See <a href="/2b2t-alternative/">what's the same and what's different</a>.</p>
 
   <h2>Play from Java or Bedrock</h2>
   <p>Java Edition 1.13 to 26.3 can join at <code>{JAVA}</code>. Bedrock Edition players on Windows, phones, tablets and consoles join at <code>{JAVA}</code> on port <code>{BEDROCK_PORT}</code> and share the same world. Step-by-step instructions are on the <a href="/join/">how to join</a> page.</p>
@@ -355,39 +394,358 @@ def anarchy():
                 body, crumbs=[("/anarchy/", "Anarchy")], extra_ld=[GAMESERVER, faq_ld(qas)], image="/img/low.webp")
 
 
+SKYBLOCK_FAQ = [
+    ("What is the Crispy Skyblock server IP?",
+     f"Java Edition: skyblock.crispyanarchy.net, or {JAVA} and pick Skyblock in the lobby. Bedrock Edition: {JAVA}, port {BEDROCK_PORT}, then pick Skyblock in the lobby."),
+    ("Is Crispy Skyblock pay-to-win?",
+     "No. Coins, gear, minions and pets all come from playing: farming, mining, fighting and trading on the Bazaar. Nothing that makes you stronger is sold for real money."),
+    ("Can I play Crispy Skyblock on Bedrock?",
+     f"Yes. Bedrock Edition players on Windows, phones, tablets and consoles join {JAVA} on port {BEDROCK_PORT}, pick Skyblock in the lobby, and play on the same islands as Java players."),
+    ("Is there PvP on Crispy Skyblock?",
+     "No. PvP is off on islands (visitors included), in the hub and in the resource zones, so nobody can kill you while you farm or visit a friend."),
+    ("Do minions keep working when I'm offline?",
+     "Yes. Minions run on real time and keep collecting while you're offline until their storage is full. Collect from them when you're back."),
+    ("Can I play Skyblock with friends?",
+     "Yes. Type /invite <player> to add a friend to your island. An island holds 4 members at first and up to 8 with co-op upgrades. /visit <player> lets you look around someone else's island; visitors can't build, break or open anything."),
+]
+
+
 def skyblock():
+    islands = [("Classic", "Plains", "The classic L of dirt with an oak tree, and a chest with lava, ice, cactus, sugar cane, melon and pumpkin seeds."),
+               ("Desert Oasis", "Desert", "Sand, sandstone, cactus and a tiny oasis. It never rains, and dirt only comes from the chest."),
+               ("Jungle", "Jungle", "A tall jungle tree with cocoa, plus bamboo and a melon."),
+               ("Frozen Peak", "Snowy taiga", "Spruce, snow, a frozen pond and sweet berries."),
+               ("Mushroom Isle", "Mushroom fields", "A giant mushroom and a mooshroom. No hostile mobs spawn here."),
+               ("Swamp island", "Swamp", "Mud, a lily-pad pond and vines. Slimes come out at night."),
+               ("Farm island", "Plains", "Ripe wheat, carrot and potato rows, a barn and a scarecrow.")]
+    island_rows = "".join(f"<tr><td>{n}</td><td>{b}</td><td>{d}</td></tr>" for n, b, d in islands)
+    skills = [("Farming", "Fully grown crops", "+2% chance of double crop drops per level"),
+              ("Mining", "Ores, stone, obsidian", "+2% chance of double ore drops per level"),
+              ("Foraging", "Logs", "+2% chance of double logs per level"),
+              ("Combat", "Hostile mobs and bosses", "+1% damage per level"),
+              ("Fishing", "Every catch", "More luck, so better catches")]
+    skill_rows = "".join(f"<tr><td>{n}</td><td>{x}</td><td>{p}</td></tr>" for n, x, p in skills)
     body = f"""
 <section class="wrap block head">
-  <p class="kicker">Skyblock · Java + Bedrock</p>
-  <h1>Minecraft Skyblock server with skills, pets and minions</h1>
-  <p class="lede measure">Crispy Skyblock starts you on one of seven themed islands and gives you plenty to grow into: five skills, 68 collections, 43 kinds of minions, pets, a player-run Bazaar and gear you craft from what you farm. No pay-to-win.</p>
+  <p class="kicker">Skyblock · Java + Bedrock · no pay-to-win</p>
+  <h1>Minecraft Skyblock server with skills, minions, pets and a player Bazaar</h1>
+  <p class="lede measure">Crispy Skyblock starts you on one of seven themed islands in the void and gives you years of things to grow into: five skills, 68 collections, 43 kinds of minions, pets, a player-run Bazaar, island bosses and gear you craft from what you farm. It's free, there's no pay-to-win, PvP is off, and Java and Bedrock players share the same islands.</p>
+  {join_box(True)}
+  <p class="note">Java players can also connect straight to <code>skyblock.crispyanarchy.net</code>. Everyone else picks Skyblock in the lobby.</p>
+</section>
+<figure class="wrap shot"><img src="/img/shots/skyblock-hub.webp" alt="Aerial view of the Crispy Skyblock hub island: cherry trees, market stalls, a central plaza and a lookout tower" width="1600" height="900"><figcaption>The Skyblock hub: market stalls, merchants, player plots and portals to your island and the resource zones.</figcaption></figure>
+<section class="wrap block prose">
+  <h2>What is Crispy Skyblock?</h2>
+  <p>Skyblock is Minecraft survival on a small island floating over the void: everything you build starts from a few blocks of dirt, one tree and a chest. Crispy Skyblock keeps that start and adds a long road of progression on top, all without mods or a resource pack. You can play it alone, or bring friends onto your island and grow it together.</p>
+  <p>It's part of the Crispy network, which has run an anarchy server since 2020. Skyblock has its own world and economy, but shares one chat and one <a href="{DISCORD}" rel="noopener">Discord</a> with the rest of the network.</p>
+
+  <h2>Seven themed starter islands</h2>
+  <p>The first time you go to your island you pick where to start. Each island has its own biome across your whole plot and its own starter chest:</p>
+</section>
+<section class="wrap block"><div class="tablewrap"><table class="modes"><thead><tr><th>Island</th><th>Biome</th><th>What you start with</th></tr></thead><tbody>{island_rows}</tbody></table></div></section>
+<section class="wrap block prose">
+  <p>While you play, the sky helps out: an animal drops onto your island every 15 minutes of island play time, a supply crate every 25, an ore meteor every 45, and dungeons to clear at 30, 90 and 180 minutes. After 150 minutes an End portal arrives. Any of these drops can be switched off per island.</p>
+
+  <h2>Five skills that level as you play</h2>
+  <p>There's no grinding a menu for XP: you level a skill by doing it. Every skill goes up to level 25, every level-up pays coins, and every level makes you better at that job.</p>
+</section>
+<section class="wrap block"><div class="tablewrap"><table class="modes"><thead><tr><th>Skill</th><th>XP from</th><th>Perk</th></tr></thead><tbody>{skill_rows}</tbody></table></div></section>
+<section class="wrap block prose">
+  <p>Blocks you placed yourself give no XP and no double drops, so placing and breaking the same block won't level you. A cobblestone generator still counts.</p>
+
+  <h2>68 collections and 26 challenges</h2>
+  <p>Everything you gather counts toward its collection: 23 farming, 20 mining, 8 foraging, 10 combat and 7 fishing resources, plus your minions' haul at half rate. Each collection has nine tiers, and every tier pays coins and skill XP. Only what you gather yourself counts, so buying from the Bazaar won't get you there. Open them with <code>/collections</code>.</p>
+  {fig("sb-collections", "The Crispy Skyblock Collections menu showing Farming, Mining and Foraging categories and tier progress", "The Collections menu: 68 resources, nine tiers each, coins and skill XP for every tier.")}
+  <p>On top of that, 26 one-time challenges (Easy, Medium, Hard and three that need an island level) pay out resources, spawn eggs and XP. Find them in <code>/challenges</code>.</p>
+
+  <h2>Island level and the Top Islands board</h2>
+  <p>Every block on your island adds to its level, and valuable blocks such as diamond, emerald and netherite blocks or beacons add more. The best islands appear on the Top Islands board in the hub, and <code>/island top</code> lists the top ten.</p>
+
+  <h2>43 kinds of minions</h2>
+  <p>Minions are small helpers you craft and place on your island. Each one keeps collecting its resource, from crops and logs to ores and mob drops, and they run on real time, so they keep working while you're offline until their storage is full. Upgrade a minion to make it faster and give it more room. You start with five minion slots and get more as your island level rises and through island upgrades.</p>
+  {fig("skyblock-minion", "Minions working on a player's Skyblock island next to storage chests, with an Oak Minion label", "Minions at work on an island, filling up while you play elsewhere.")}
+
+  <h2>The Bazaar: a market run by players</h2>
+  <p>The Bazaar is where players trade. Place a sell offer or a buy order at your own price; new orders match the best price on the other side straight away. Sales go through even if you're offline, and you collect your coins later. Open it with <code>/bazaar</code> (or <code>/bz</code>), or visit the Bazaar merchant in the hub.</p>
+
+  <h2>Pets</h2>
+  <p>Pets float beside you and boost one skill's XP, by 10% plus 1% for every pet level, up to level 30. Pick a Pig for Farming, a Silverfish for Mining, a Fox for Foraging, a Wolf for Combat or a Squid for Fishing. The rare Phoenix can't be bought at all: it can drop for anyone on an island that beats an End boss, and it boosts every skill.</p>
+
+  <h2>Crafted gear with abilities</h2>
+  <p>Turn stacks of what you farm into enchanted versions, then craft 17 armour sets and 19 weapons. Armour sets give a bonus when you wear all four pieces, from Speed and Haste for farmers to extra hearts and void protection, and weapons have right-click abilities such as short-range teleports, ground slams and healing. Better gear needs more farming, not real money. <code>/gear</code> shows every item and its recipe.</p>
+
+  <h2>Your own Nether and End, and island bosses</h2>
+  <p>Every island has a Nether plot of its own, where fortress wrecks with blaze spawners and pieces of bastion land over time, and its own End island once your End portal arrives. Both have a boss altar: summon the island's next boss when you're ready, from the Blaze King and the Magma Titan in the Nether to the Ender Colossus and the Void Ravager in the End. Every member gets coins and loot for each kill.</p>
+
+  <h2>Resource zones off your island</h2>
+  <p>Portals in the hub lead to two shared resource zones with levelled mobs:</p>
+  <ul>
+    <li><b>The Deep Mines</b>: caves through a rock island, lined with ores that grow back after 45 seconds. The deeper you go, the richer the ores and the tougher the mobs.</li>
+    <li><b>Whispering Woods</b>: a dense forest of big trees whose logs grow back after 30 seconds.</li>
+  </ul>
+  <p>If you die in a zone you only drop what you gathered there; the rest of your inventory and your XP come back when you respawn.</p>
+
+  <h2>Island upgrades and co-op</h2>
+  <p>Spend coins in <code>/island upgrades</code> to grow your island from 128 to 256 blocks across, add minion slots, raise the member limit from 4 to 8, and upgrade your cobblestone generator so it sometimes makes ore (at the top tier, diamond and emerald too). Invite friends with <code>/invite &lt;player&gt;</code>, and let anyone look around with <code>/visit &lt;player&gt;</code>: visitors can't build, break or open anything.</p>
+
+  <h2>No PvP, no pay-to-win</h2>
+  <p>PvP is off across Skyblock: on islands (visitors included), in the hub and in the resource zones. And nothing that makes you stronger is sold for real money. Coins, gear, minions and pets all come from playing.</p>
+
+  <h2>The hub</h2>
+  <p>The hub is a floating island with a plaza, a fountain and merchants in market stalls. Buy a plot there for a shop or a house, and use its portals to reach your island and the resource zones.</p>
+
+  <h2>How to join Crispy Skyblock</h2>
+  <ol class="steps">
+    <li>Java Edition (1.13 to 26.3): add the server <code>skyblock.crispyanarchy.net</code>, or <code>{JAVA}</code> and pick Skyblock in the lobby.</li>
+    <li>Bedrock Edition: add <code>{JAVA}</code> with port <code>{BEDROCK_PORT}</code>, join, and pick Skyblock in the lobby. See <a href="/bedrock-skyblock/">Skyblock on Bedrock</a> for console steps.</li>
+    <li>Choose your starter island, read the Skyblock Guide book you get on joining, and start farming.</li>
+  </ol>
+  <p>New to it? The <a href="/guides/skyblock-beginners/">Crispy Skyblock beginner's guide</a> walks through your first hours.</p>
+</section>
+<section class="wrap block"><h2>Skyblock questions</h2><div class="faq">{faq_html(SKYBLOCK_FAQ)}</div></section>
+"""
+    return page("/skyblock/", "Minecraft Skyblock Server (Java & Bedrock) – No P2W | Crispy Skyblock",
+                "A free Minecraft Skyblock server for Java and Bedrock: 7 themed starter islands, 5 skills, 68 collections, 43 minions, pets, a player Bazaar, island bosses and craftable gear. No pay-to-win, no PvP.",
+                body, crumbs=[("/skyblock/", "Skyblock")], extra_ld=[GAMESERVER, faq_ld(SKYBLOCK_FAQ)], image="/img/shots/skyblock-hub.webp")
+
+
+def bedrock_skyblock():
+    blocks = "".join(f"<div><h2>{e(k)}</h2><ol class='steps'>{''.join(f'<li>{e(x.replace(chr(10), ' '))}</li>' for x in v[:-1])}<li>Save, then join. You arrive in the lobby: pick <b>Skyblock</b>.</li></ol></div>"
+                     for k, v in BEDROCK_STEPS.items())
+    qas = [
+        ("Is there a Minecraft Bedrock Skyblock server?",
+         f"Yes. Crispy Skyblock accepts Bedrock Edition players on Windows, phones, tablets and consoles at {JAVA}, port {BEDROCK_PORT}. Pick Skyblock in the lobby."),
+        ("Can Bedrock and Java players play Skyblock together?",
+         "Yes. Bedrock and Java players share the same Skyblock world, the same Bazaar and the same chat, and can be members of the same island."),
+        ("What port does Crispy Skyblock use on Bedrock?",
+         f"Port {BEDROCK_PORT}, not the default 19132. The address is {JAVA}."),
+        ("Is Crispy Skyblock free on Bedrock?",
+         "Yes. You sign in with the Microsoft account you already use for Minecraft Bedrock, and there's nothing to buy to play."),
+    ]
+    howtos = [{"@type": "HowTo", "name": f"Join Crispy Skyblock on Minecraft Bedrock ({k})",
+               "step": [{"@type": "HowToStep", "position": i + 1, "text": x} for i, x in enumerate(v[:-1] + ["Save, then join. You arrive in the lobby: pick Skyblock."])]}
+              for k, v in BEDROCK_STEPS.items()]
+    body = f"""
+<section class="wrap block head">
+  <p class="kicker">Bedrock Skyblock · crossplay with Java</p>
+  <h1>A Minecraft Bedrock Skyblock server, shared with Java players</h1>
+  <p class="lede measure">Crispy Skyblock isn't Java-only. Bedrock Edition players on Windows, phones, tablets, Xbox, PlayStation and Switch join the same Skyblock world as Java players, with the same skills, minions, pets and player Bazaar, and no pay-to-win.</p>
   {join_box(True)}
 </section>
-<figure class="wrap shot"><img src="/img/shots/skyblock-hub.webp" alt="Aerial view of the Crispy Skyblock hub island: cherry trees, market stalls, a central plaza and a lookout tower" width="1600" height="900"><figcaption>The Skyblock hub: market stalls, NPCs, plots and the island portal.</figcaption></figure>
+<section class="wrap block two">{blocks}</section>
 <section class="wrap block prose">
-  <h2>Islands and upgrades</h2>
-  <p>Choose one of seven themed starter islands. Upgrade its size, minion slots, co-op slots and ore generator as you go, and invite friends to build with you. Island level grows with what you place.</p>
-  <h2>Five skills</h2>
-  <p>Level Farming, Mining, Combat, Foraging and Fishing by doing them. Each level gives rewards.</p>
-  <h2>68 collections</h2>
-  <p>Every resource you gather counts toward its collection: crops, ores, logs, mob drops and fish, and your minions' haul at half rate. Each of the 68 collections has nine tiers, and every tier pays coins and skill XP. Only what you gather yourself counts, so buying from the Bazaar won't get you there. Open them with <code>/collections</code>.</p>
-  {fig("sb-collections", "The Crispy Skyblock Collections menu: Farming, Mining and Foraging categories, with 15 of 612 tiers unlocked", "The Collections menu: 68 resources, nine tiers each, coins and skill XP for every tier.")}
-  <h2>43 minions</h2>
-  <p>Minions collect resources for you while you play elsewhere. There are 43 kinds, from crops and ores to mob drops.</p>
-  {fig("skyblock-minion", "Minions working on a player's Skyblock island next to storage chests, with an Oak Minion label", "Minions at work on an island, filling chests while you play.")}
-  <h2>Enchanted resources and crafted gear</h2>
-  <p>Turn stacks of farmed resources into enchanted versions at the Compactor, then craft 17 armour sets and 19 weapons with their own abilities. Better gear needs more farming, not real money.</p>
-  <h2>Bazaar, pets and the hub</h2>
-  <p>Trade with other players on the Bazaar with buy and sell orders. Level up pets that follow you around. Buy a plot in the hub for a shop or a house.</p>
-  <h2>Mines, forests and a boss rift</h2>
-  <p>Regenerating mines and forests are full of levelled mobs, and the Sky Lord's Rift holds a boss. Loot and dungeons fall from the sky onto your island.</p>
-  <h2>How to get there</h2>
-  <p>Join <code>{JAVA}</code> (Bedrock: port <code>{BEDROCK_PORT}</code>) and choose Skyblock in the lobby.</p>
+  <h2>What Bedrock players get on Skyblock</h2>
+  <ul>
+    <li>Your own island: seven themed starter islands to choose from, island upgrades and co-op with up to 8 members.</li>
+    <li>Five skills, 68 collections, 26 challenges and an island level on the Top Islands board.</li>
+    <li>43 kinds of minions that keep working while you're offline, and pets that boost your skills.</li>
+    <li>The same player-run Bazaar as Java players, so you trade with everyone.</li>
+    <li>Your island's own Nether and End with bosses, and the shared resource zones.</li>
+    <li>No PvP anywhere on Skyblock, and nothing that makes you stronger is sold for real money.</li>
+  </ul>
+  <p>Everything is described on the main <a href="/skyblock/">Crispy Skyblock page</a>, and the <a href="/guides/skyblock-beginners/">beginner's guide</a> covers your first hours.</p>
+  <h2>Playing on Bedrock</h2>
+  <p>Bedrock players connect through a translation layer, so a few custom menus and item textures look slightly different from Java. Everything still works the same way. If something doesn't, tell us in the <a href="{DISCORD}" rel="noopener">Discord</a>.</p>
+  <h2>Can't connect?</h2>
+  <ul>
+    <li>Check the port is <b>{BEDROCK_PORT}</b>. The default 19132 won't work.</li>
+    <li>Update Minecraft: the server supports the current Bedrock version.</li>
+    <li>On a console, make sure the DNS change saved and that you joined a featured server to open the list.</li>
+  </ul>
 </section>
+<section class="wrap block"><h2>Bedrock Skyblock questions</h2><div class="faq">{faq_html(qas)}</div></section>
 """
-    return page("/skyblock/", "Minecraft Skyblock Server with Skills, Pets & Minions | Crispy Network",
-                "Skyblock on the Crispy network: 7 starter islands, 5 skills, 68 collections, 43 minions, pets, a player Bazaar and craftable gear. No pay-to-win. Java & Bedrock at crispyanarchy.net",
-                body, crumbs=[("/skyblock/", "Skyblock")], extra_ld=[GAMESERVER], image="/img/shots/skyblock-hub.webp")
+    return page("/bedrock-skyblock/", "Bedrock Skyblock Server – Crossplay with Java, No P2W | Crispy Skyblock",
+                f"Crispy Skyblock is a Minecraft Bedrock Skyblock server shared with Java players: skills, 43 minions, pets and a player Bazaar, no pay-to-win. Join at {JAVA} port {BEDROCK_PORT} on Windows, mobile and console.",
+                body, crumbs=[("/skyblock/", "Skyblock"), ("/bedrock-skyblock/", "Bedrock Skyblock")], extra_ld=howtos + [faq_ld(qas)],
+                image="/img/shots/skyblock-hub.webp")
+
+
+def vanilla_anarchy():
+    qas = [
+        ("What is a vanilla anarchy server?",
+         "An anarchy server with no gameplay rules that also keeps the game itself close to vanilla: no custom items, enchantments or shops. Survival the way Minecraft ships it, with nobody protecting anything."),
+        ("How do I join Crispy's Vanilla Anarchy?",
+         f"Join {JAVA} (Bedrock: port {BEDROCK_PORT}) and pick Vanilla Anarchy in the lobby's Pick a Server menu."),
+        ("Is Vanilla Anarchy the same world as Crispy Anarchy?",
+         "No. Vanilla Anarchy is a separate world on its own server. Crispy Anarchy is the main world, with custom enchantments, implants and a market on top of anarchy."),
+        ("Does Vanilla Anarchy have rules?",
+         "No gameplay rules: griefing, raiding and PvP are all allowed. Only the network's community rules apply: no hate speech or hateful builds, no real-life harassment, threats or doxxing, and no spam."),
+    ]
+    body = f"""
+<section class="wrap block head">
+  <p class="kicker">Vanilla Anarchy · Java + Bedrock</p>
+  <h1>Vanilla anarchy server: plain survival, no rules, no custom items</h1>
+  <p class="lede measure">Vanilla Anarchy is the Crispy network's pure anarchy server: survival with no gameplay rules and no land claims, and none of the custom enchantments, implants or shops of our main anarchy world. Just Minecraft, other players, and whatever you can hold on to.</p>
+  {join_box(True)}
+</section>
+<section class="wrap block prose">
+  <h2>Anarchy without the extras</h2>
+  <p>Some players want anarchy exactly as the game ships it: no custom gear to chase, no economy, no shops, nothing you can buy an edge with. That's what Vanilla Anarchy is for. Your gear comes from mining, enchanting tables, villagers and whatever you can take from other players.</p>
+  <ul>
+    <li><b>No gameplay rules.</b> Griefing, raiding, stealing and PvP are all part of the game.</li>
+    <li><b>No claims and no protection.</b> Anything you build can be found and taken apart.</li>
+    <li><b>No custom items.</b> No custom enchantments, no implants, no market. Survival as Mojang made it.</li>
+    <li><b>Random spawns.</b> New players land somewhere random, so nobody can camp the spawn point.</li>
+    <li><b>Chat reports off.</b> The server runs No Chat Reports, so messages can't be reported to Mojang through the game.</li>
+    <li><b>Java and Bedrock.</b> Java Edition 1.13 to 26.3 and Bedrock players on Windows, phones, tablets and consoles share the same world.</li>
+  </ul>
+
+  <h2>Vanilla Anarchy or Crispy Anarchy?</h2>
+  <p>Both have no gameplay rules. The difference is what sits on top:</p>
+</section>
+<section class="wrap block"><div class="tablewrap"><table class="modes"><thead><tr><th></th><th>Vanilla Anarchy</th><th>Crispy Anarchy</th></tr></thead><tbody>
+<tr><td>Gameplay rules</td><td>None</td><td>None</td></tr>
+<tr><td>Custom enchantments</td><td>No</td><td>193, in nine tiers</td></tr>
+<tr><td>Implants</td><td>No</td><td>Cyberpunk implants from the Ripperdoc</td></tr>
+<tr><td>Market and economy</td><td>No</td><td>Villager market, Gold Coins, a bank and a crypto exchange</td></tr>
+<tr><td>World</td><td>Its own world</td><td>One world since 2020, never reset</td></tr>
+</tbody></table></div></section>
+<section class="wrap block prose">
+  <p>Both are on the same network, so you can switch between them from the lobby any time, and the chat is shared. Read more about the main world on the <a href="/anarchy/">Crispy Anarchy page</a>, or see the <a href="/guides/anarchy-survival/">anarchy survival guide</a> before you jump in. The tips there work on both servers.</p>
+
+  <h2>How to join Vanilla Anarchy</h2>
+  <ol class="steps">
+    <li>Java Edition: add the server <code>{JAVA}</code>. Bedrock Edition: add <code>{JAVA}</code> with port <code>{BEDROCK_PORT}</code>.</li>
+    <li>Join: you arrive in the lobby.</li>
+    <li>Use the Pick a Server item in your hotbar and choose <b>Vanilla Anarchy</b>.</li>
+  </ol>
+  <p>The only rules are the <a href="/rules/">community rules</a> that apply on every server.</p>
+</section>
+<section class="wrap block"><h2>Vanilla Anarchy questions</h2><div class="faq">{faq_html(qas)}</div></section>
+"""
+    return page("/vanilla-anarchy/", "Vanilla Anarchy Server – No Rules, No Custom Items (Java & Bedrock) | Crispy Anarchy",
+                f"A Minecraft vanilla anarchy server: plain survival with no gameplay rules, no claims and no custom items. Random spawns, chat reports off, Java & Bedrock. Join at {JAVA} and pick Vanilla Anarchy.",
+                body, crumbs=[("/anarchy/", "Anarchy"), ("/vanilla-anarchy/", "Vanilla Anarchy")], extra_ld=[faq_ld(qas)])
+
+
+def alt_2b2t():
+    qas = [
+        ("Is there a Minecraft server like 2b2t?",
+         f"Yes. Crispy Anarchy works the same way: no gameplay rules, no claims, and a world that is never reset (it has run since 2020). Unlike 2b2t, Bedrock players can join too, at {JAVA} port {BEDROCK_PORT}."),
+        ("Can Bedrock players play on an anarchy server like 2b2t?",
+         f"2b2t is a Java Edition server. Crispy Anarchy lets Bedrock Edition players on Windows, phones, tablets and consoles join the same anarchy world as Java players, at {JAVA} port {BEDROCK_PORT}."),
+        ("Is Crispy Anarchy a 2b2t clone?",
+         "No. It shares the anarchy idea, but it's its own server and world, with extras 2b2t doesn't have: 193 custom enchantments, cyberpunk implants, a market with a crypto exchange and a hidden black market. There's also a Vanilla Anarchy server for anyone who wants plain survival anarchy."),
+    ]
+    body = f"""
+<section class="wrap block head">
+  <p class="kicker">Anarchy servers like 2b2t</p>
+  <h1>Looking for a Minecraft server like 2b2t?</h1>
+  <p class="lede measure">2b2t is the best-known Minecraft anarchy server: a Java Edition world with no rules that has run since 2010. If that's the kind of game you want, Crispy Anarchy runs on the same idea: no gameplay rules, no claims and a world that's never reset, running since 2020. Here's what's the same and what's different.</p>
+  {join_box(True)}
+</section>
+<section class="wrap block prose">
+  <h2>What's the same</h2>
+  <ul>
+    <li><b>No gameplay rules.</b> Griefing, raiding, stealing and PvP are all allowed, and staff don't step in.</li>
+    <li><b>No land claims.</b> Nothing is protected. Hiding your base well is the only defence.</li>
+    <li><b>A world that's never reset.</b> Crispy Anarchy's world started in 2020 and has never been wiped, so the land around spawn carries years of history. You can fly over it on the <a href="/spawn-map/">3D spawn map</a>.</li>
+    <li><b>Chat reports off.</b> The server runs No Chat Reports.</li>
+  </ul>
+
+  <h2>What's different</h2>
+  <ul>
+    <li><b>Bedrock players can join.</b> 2b2t is Java Edition only. On Crispy Anarchy, Bedrock players on Windows, phones, tablets and consoles play in the same world as Java players. See <a href="/bedrock-anarchy/">Bedrock anarchy</a>.</li>
+    <li><b>Custom content on top of anarchy.</b> 193 custom enchantments in nine tiers, cyberpunk implants from a Ripperdoc, a villager market with Gold Coins, a bank, a crypto exchange with a moving price, and a black market you have to find yourself. All without mods.</li>
+    <li><b>A pure option too.</b> If you'd rather have anarchy exactly as the game ships it, <a href="/vanilla-anarchy/">Vanilla Anarchy</a> is a separate world with no custom items at all.</li>
+    <li><b>A smaller community.</b> You meet the same faces quickly and can join a clan (<code>/clan list</code>), and there's a shared chat and Discord with the rest of the network.</li>
+    <li><b>More to play on the same network.</b> When you need a break from anarchy: <a href="/skyblock/">Skyblock</a>, <a href="/pvp/">Multiverse PvP</a> and <a href="/extraction-zone/">Extraction Zone</a>.</li>
+  </ul>
+
+  <h2>Rules, honestly</h2>
+  <p>There are no gameplay rules, but there are a few <a href="/rules/">community rules</a> about people, on every server: no hate speech or hateful builds, no real-life harassment, threats or doxxing, and no spam.</p>
+
+  <h2>Before you join</h2>
+  <p>New players land somewhere random near the old spawn, the most wrecked part of the map. Read the <a href="/guides/anarchy-survival/">anarchy survival guide</a> first: it covers getting out of spawn alive, keeping your base hidden and what the market is for.</p>
+</section>
+<section class="wrap block"><h2>Questions</h2><div class="faq">{faq_html(qas)}</div></section>
+"""
+    return page("/2b2t-alternative/", "Minecraft Servers Like 2b2t – An Anarchy Server for Java & Bedrock | Crispy Anarchy",
+                "Looking for a Minecraft server like 2b2t? Crispy Anarchy has no gameplay rules, no claims and a world never reset since 2020, and Bedrock players can join too. What's the same and what's different.",
+                body, crumbs=[("/anarchy/", "Anarchy"), ("/2b2t-alternative/", "Servers like 2b2t")], extra_ld=[faq_ld(qas)], image="/img/low.webp")
+
+
+def guide(path, title, desc, h1, kicker, intro, steps, outro, crumb, image="/img/og.jpg"):
+    """A how-to guide: numbered sections (each a heading and paragraphs), HowTo structured data."""
+    secs = "".join(f'<h2 id="s{i + 1}">{i + 1}. {e(h)}</h2>' + "".join(f"<p>{p}</p>" for p in ps) for i, (h, ps) in enumerate(steps))
+    toc = "".join(f'<li><a href="#s{i + 1}">{e(h)}</a></li>' for i, (h, _) in enumerate(steps))
+    howto = {"@type": "HowTo", "name": h1, "description": desc,
+             "step": [{"@type": "HowToStep", "position": i + 1, "name": h, "text": re.sub(r"<[^>]+>", "", " ".join(ps)), "url": SITE + path + f"#s{i + 1}"}
+                      for i, (h, ps) in enumerate(steps)]}
+    body = f"""
+<article class="wrap block head prose">
+  <p class="kicker">{kicker}</p>
+  <h1>{e(h1)}</h1>
+  <p class="lede">{intro}</p>
+  <p><b>In this guide:</b></p><ol class="steps">{toc}</ol>
+  {secs}
+  {outro}
+</article>
+<section class="wrap block"><h2>Ready?</h2>{join_box(True)}</section>
+"""
+    return page(path, title, desc, body, crumbs=[crumb, (path, h1)], extra_ld=[howto], image=image)
+
+
+def guide_anarchy():
+    steps = [
+        ("Get away from spawn", [
+            "New players land somewhere random near the old spawn, the most griefed part of the map: lava casts, holes and players who come back to hunt newcomers. Don't settle there. Gather wood, food and a few tools, and head out.",
+            "The further you go, the more untouched land you find. A couple of thousand blocks is a start; many players go much further. Travelling in the Nether covers eight blocks of overworld for every block you walk."]),
+        ("Set your respawn point", [
+            "Sleep in a bed as soon as you can. Without one, you respawn somewhere random when you die. A bed in a hidden spot far from spawn means a death doesn't throw you back to the start."]),
+        ("Use your ender chest", [
+            "An ender chest is the only storage nobody else can open: its contents belong to you, whichever ender chest you open. Keep your best gear and anything you can't afford to lose in it, and carry a spare ender chest so you can reach it anywhere."]),
+        ("Hide your base", [
+            "There are no claims, so nothing protects your base except nobody finding it. Build away from highways, portals and other players' paths, don't leave trails such as torches or bridges leading to it, and think twice before sharing coordinates. Yoink, our Discord bot, hides coordinates when it relays game chat to Discord, but anyone on the server can still read them in game."]),
+        ("Know what you can lose", [
+            "When you die you drop everything you carry, and anyone can pick it up. Don't carry your best things on a trip you might not survive. The one exception is the market: PvP is on there, but if you're killed in the market you keep your items, XP and implants."]),
+        ("Use the market", [
+            "Type <code>/trigger market</code> to reach the market. The Enchanter sells random custom enchantment books for XP (there are 193 enchantments in nine tiers), the Ripperdoc fits cyberpunk implants for diamonds or netherite, and the Banker turns emeralds or diamonds into Gold Coins for the villager shops. There's also a crypto trader whose Bitcoin price moves like the real thing."]),
+        ("Expect the combat tag", [
+            "Hitting or being hit by another player puts you in combat for 15 seconds. Until it runs out you can't escape with <code>/home</code>, <code>/spawn</code>, <code>/back</code>, <code>/tpa</code>, <code>/lobby</code> and similar commands. Win the fight or run on foot."]),
+        ("Find people, or don't", [
+            "You can play alone, but a group is safer and builds faster. <code>/clan list</code> shows the clans, and you can ask in chat to join one or make your own with <code>/clan create</code>. Chat is shared with every Crispy server and the Discord. Just remember anyone can turn on you: it's anarchy."]),
+        ("Look for the black market", [
+            "Somewhere in the world there's a black market. Its location isn't published. Find it once and you earn the [Black Market] tag, which some merchants ask for before they'll deal with you."]),
+    ]
+    outro = """<h2>Still stuck?</h2><p>Type <code>/trigger cw_help</code> in game for the survival tips any time, or ask in chat with <code>!ask &lt;question&gt;</code> and Yoink answers. More answers are in the <a href="/faq/">FAQ</a>, and the server itself is described on the <a href="/anarchy/">Crispy Anarchy page</a>. Prefer it with no custom items? Try <a href="/vanilla-anarchy/">Vanilla Anarchy</a>.</p>"""
+    return guide("/guides/anarchy-survival/", "How to Survive on a Minecraft Anarchy Server – Beginner's Guide | Crispy Anarchy",
+                 "A beginner's guide to surviving on a Minecraft anarchy server: getting away from spawn, respawn points, ender chests, hiding your base, the market, the combat tag and clans.",
+                 "How to survive on a Minecraft anarchy server", "Guide · Anarchy",
+                 "Anarchy servers have no rules and no protection, so your first hour decides a lot. These are the habits that keep new players alive on Crispy Anarchy, and most of them work on any anarchy server.",
+                 steps, outro, ("/anarchy/", "Anarchy"), image="/img/low.webp")
+
+
+def guide_skyblock():
+    steps = [
+        ("Pick your starter island", [
+            "The first time you go to your island you choose one of seven. Classic is the safest start: plenty of dirt and a chest with lava and ice for a cobblestone generator. Mushroom Isle has no hostile mobs. Desert Oasis is the hardest: no rain, and dirt only from the chest."]),
+        ("Don't fall, and read the Guide", [
+            "The void is below every island. Build carefully and keep a few blocks spare. You get a Skyblock Guide book on joining: right-click it (or type <code>/guide</code>) for how-to pages and a recipe viewer. Lost it? <code>/guide book</code>."]),
+        ("Build a cobblestone generator", [
+            "Lava next to flowing water makes cobblestone, and that's your supply of stone for building and tools. Mining generator cobblestone also counts for the Mining skill. Later, the ore generator upgrade makes it sometimes produce ore."]),
+        ("Grow a farm and plant trees", [
+            "Plant the saplings and seeds from your chest straight away. Farming and Foraging level up as you harvest, and every level gives a chance of double drops. Only fully grown crops give XP, and blocks you placed yourself don't count, so you can't level by placing and breaking."]),
+        ("Work through the challenges", [
+            "<code>/challenges</code> has 26 one-time hand-ins, from easy ones you can do on day one to hard ones that need an island level. They pay resources, spawn eggs and XP, and they're the quickest way to get things the island can't make yet."]),
+        ("Craft your first minion", [
+            "Minions collect a resource for you and keep going while you're offline until their storage is full. Your island starts with five minion slots. Every minion recipe is in your recipe book: craft one, place it, and collect from it when you come back."]),
+        ("Watch the sky", [
+            "While you play, things drop onto your island: an animal every 15 minutes, a supply crate every 25, an ore meteor every 45, and dungeons at 30, 90 and 180 minutes of island play time. Clear the dungeons for loot. At 150 minutes an End portal arrives."]),
+        ("Visit the hub and trade", [
+            "Walk through the portal on your island to reach the hub. Merchants there sell supplies (also from anywhere with <code>/shop</code>), and the Bazaar (<code>/bazaar</code>) is where players trade with buy and sell orders at their own prices. Collections and skills keep paying coins as you go, too."]),
+        ("Go to the resource zones", [
+            "The hub's portals lead to the Deep Mines (ores that grow back) and the Whispering Woods (logs that grow back), both with levelled mobs. If you die there you only drop what you gathered there; your own gear and XP come back when you respawn."]),
+        ("Upgrade, invite friends and take on bosses", [
+            "Spend coins in <code>/island upgrades</code> on size, minion slots, co-op slots and the ore generator. <code>/invite &lt;player&gt;</code> adds friends to your island. When you're well geared, your island's own Nether and End each have a boss altar: every member gets coins and loot for each kill, and End bosses can drop the rare Phoenix pet."]),
+    ]
+    outro = """<h2>Keep going</h2><p>Everything on Skyblock is on the <a href="/skyblock/">Crispy Skyblock page</a>. Playing on a phone or console? See <a href="/bedrock-skyblock/">Skyblock on Bedrock</a>. And if you get stuck, ask in game chat with <code>!ask &lt;question&gt;</code> and Yoink answers.</p>"""
+    return guide("/guides/skyblock-beginners/", "Minecraft Skyblock Beginner's Guide: Your First Hours | Crispy Skyblock",
+                 "A beginner's guide to Crispy Skyblock: picking a starter island, a cobblestone generator, farms, challenges, your first minion, sky drops, the Bazaar, resource zones, upgrades and bosses.",
+                 "Crispy Skyblock beginner's guide: your first hours", "Guide · Skyblock",
+                 "Starting on a few blocks over the void can feel slow. This guide covers what to do first on Crispy Skyblock and what to aim for next, so you're not stuck wondering where to go.",
+                 steps, outro, ("/skyblock/", "Skyblock"), image="/img/shots/skyblock-hub.webp")
 
 
 def pvp():
@@ -735,6 +1093,20 @@ def news_index():
                 body, crumbs=[("/news/", "News")], extra_ld=[blog])
 
 
+MODE_PAGES = [("Skyblock", "/skyblock/", "Crispy Skyblock"), ("Extraction", "/extraction-zone/", "Extraction Zone"),
+              ("Multiverse", "/pvp/", "Multiverse"), ("Outbreak", "/pvp/", "Multiverse"), ("Anarchy", "/anarchy/", "Crispy Anarchy"),
+              ("Soulbound", "/anarchy/", "Crispy Anarchy"), ("Black Market", "/anarchy/", "Crispy Anarchy"), ("Crypto", "/anarchy/", "Crispy Anarchy")]
+
+
+def mode_link(n):
+    """'More about <mode>' links under a news post, for every mode its title names."""
+    seen, out = set(), []
+    for word, url, name in MODE_PAGES:
+        if word.lower() in n["title"].lower() and url not in seen:
+            seen.add(url); out.append(f'<a href="{url}">{name}</a>')
+    return f'<p class="note">More about {" and ".join(out)}.</p>' if out else ""
+
+
 def news_post(n):
     path = f"/news/{n['slug']}/"
     i = NEWS.index(n)
@@ -746,6 +1118,7 @@ def news_post(n):
   <h1>{e(n['title'])}</h1>
   <p class="lede">{e(n['summary'])}</p>
   {n['body']}
+  {mode_link(n)}
 </article>
 <section class="wrap block">
   <h2>Come and see</h2>
@@ -865,7 +1238,9 @@ def main(out):
     os.makedirs(out)
     pages = {"/": home, "/anarchy/": anarchy, "/skyblock/": skyblock, "/pvp/": pvp, "/extraction-zone/": extraction,
              "/spawn-map/": spawn_map, "/join/": join, "/vote/": vote, "/faq/": faq,
-             "/bedrock-anarchy/": bedrock, "/news/": news_index, "/rules/": rules}
+             "/bedrock-anarchy/": bedrock, "/news/": news_index, "/rules/": rules,
+             "/vanilla-anarchy/": vanilla_anarchy, "/bedrock-skyblock/": bedrock_skyblock, "/2b2t-alternative/": alt_2b2t,
+             "/guides/anarchy-survival/": guide_anarchy, "/guides/skyblock-beginners/": guide_skyblock}
     for n in NEWS:
         pages[f"/news/{n['slug']}/"] = (lambda n=n: news_post(n))
     for path, fn in pages.items():
@@ -873,9 +1248,11 @@ def main(out):
         os.makedirs(d, exist_ok=True)
         open(os.path.join(d, "index.html"), "w").write(fn())
     open(os.path.join(out, "404.html"), "w").write(notfound())
-    prio = {"/": "1.0", "/anarchy/": "0.9", "/join/": "0.9", "/bedrock-anarchy/": "0.8"}
+    prio = {"/": "1.0", "/anarchy/": "0.9", "/skyblock/": "0.9", "/join/": "0.9", "/bedrock-anarchy/": "0.8", "/bedrock-skyblock/": "0.8",
+            "/vanilla-anarchy/": "0.8"}
     mod = {f"/news/{n['slug']}/": n["date"] for n in NEWS}
-    sm = "".join(f"<url><loc>{SITE}{p}</loc><lastmod>{mod.get(p, UPDATED)}</lastmod><priority>{prio.get(p, '0.6' if p in mod else '0.7')}</priority></url>" for p in pages)
+    with open(DATES_FILE, "w") as f: json.dump(DATES, f, indent=1, sort_keys=True)
+    sm = "".join(f"<url><loc>{SITE}{p}</loc><lastmod>{mod.get(p) or DATES.get(p, [0, UPDATED])[1]}</lastmod><priority>{prio.get(p, '0.6' if p in mod else '0.7')}</priority></url>" for p in pages)
     open(os.path.join(out, "sitemap.xml"), "w").write(
         f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{sm}</urlset>\n')
     open(os.path.join(out, "robots.txt"), "w").write(ROBOTS)

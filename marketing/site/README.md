@@ -16,3 +16,12 @@ at the Minecraft server, so the site lives on `www`.
 Deploy (Direct Upload): hash the built files (`marketing/bluemap/hashes.js`), merge with the BlueMap manifest under
 `/map/`, upload missing assets with the project's upload JWT, then create the deployment with the manifest and
 `_headers` as form fields. Only changed files are uploaded.
+
+## SEO pages and dates (2026-11-18)
+
+- Intent pages: `/vanilla-anarchy/`, `/bedrock-skyblock/`, `/2b2t-alternative/`; guides `/guides/anarchy-survival/` and
+  `/guides/skyblock-beginners/` (HowTo data, built by `guide()`). `/skyblock/` has its own FAQ (`SKYBLOCK_FAQ`).
+- `page_dates.json` (committed) keeps each page's content hash and the date it last really changed; that date is the
+  page's `dateModified`, its sitemap `lastmod` and the "Last updated" line on the pages in `SHOW_UPDATED`. Commit the
+  file after every deploy so dates don't reset.
+- News posts link to the mode pages their titles name (`MODE_PAGES`).
