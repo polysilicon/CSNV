@@ -9,10 +9,12 @@ mentioned on purpose: they aren't open yet.
 
 ## Title
 
-r/mcservers format: the server name only, then one primary tag in [ ] and secondary tags in { }.
+r/mcservers format: the server name only, then every pre-approved primary tag that applies in [ ], then secondary tags
+in { }. [SMP]: survival (Skyblock isn't on the approved list, so it's a secondary tag); not [PVE], because PvP is only off
+in the hub and the resource zones; not [Semi-vanilla], because skills, minions and the Bazaar change the game a lot.
+[Network]: it's reached through the lobby of a multi-mode network. Not whitelisted, so no {Whitelist}.
 
-
-Crispy Skyblock [Skyblock] {Java} {Bedrock} {1.13-26.3} {No P2W} {Minions} {Pets} {Skills} {Bazaar} {Co-op}
+Crispy Skyblock [SMP] [Network] {Skyblock} {Java} {Bedrock} {Crossplay} {1.13-26.3} {No P2W} {Minions} {Pets} {Skills} {Bazaar} {Co-op}
 
 ## Body
 
