@@ -512,7 +512,7 @@ def skyblock():
 
 
 CRISPYMON = "crispymon.org:12673"
-MODPACK_URL = ""   # the Crispymon modpack download; empty = "get it in the Discord"
+MODPACK_URL = "https://www.curseforge.com/minecraft/modpacks/crispymon-cobblemon-1-8-1-modpack"   # the Crispymon modpack download; empty = "get it in the Discord"
 
 
 def crispymon():
@@ -564,7 +564,7 @@ def crispymon():
 
   <h2>How to join Crispymon</h2>
   <ol class="steps">
-    <li>{get_pack}, and install it in a launcher that supports modpacks (Java Edition 1.21.1).</li>
+    <li>{get_pack}, and install it with the CurseForge app (or any launcher that imports CurseForge modpacks, such as Prism Launcher).</li>
     <li>Give Minecraft at least 4 GB of memory in the launcher, ideally 6 GB.</li>
     <li>Add the server <code>{CRISPYMON}</code> and join.</li>
   </ol>
