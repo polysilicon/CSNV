@@ -89,18 +89,23 @@ final class HubPlots {
         plots(level.getServer());
         return pos.getX() >= box[0] && pos.getX() <= box[3] && pos.getY() >= box[1] - 60 && pos.getY() <= box[4] && pos.getZ() >= box[2] && pos.getZ() <= box[5];
     }
-    /** The hub (plaza and the plot ring round it): no PvP here, for either side (ServerPlayerMixin.canHarmPlayer). */
+    /** The hub (plaza and the plot ring round it). */
     static boolean inHub(Player p) {
         if (p.level().dimension() != Level.OVERWORLD) return false;
         return Math.abs(p.getBlockX()) <= Sidebar.HUB && Math.abs(p.getBlockZ()) <= Sidebar.HUB || inDistrict(p.level(), p.blockPosition());
     }
+    /** No PvP anywhere on Skyblock except the Warlands: the hub, the resource zones and islands (2.18.2) are all off,
+     *  for either side (ServerPlayerMixin.canHarmPlayer). */
     public static boolean noPvp(Player victim, Player attacker) {
+        if (victim == attacker) return false;
         boolean hub = inHub(victim) || inHub(attacker);
         Zones.Zone zv = Zones.at(victim.level(), victim.blockPosition()), za = Zones.at(attacker.level(), attacker.blockPosition());
         if (!hub && Warlands.is(zv) && Warlands.is(za)) return Warlands.pvpBlocked(victim, attacker);   // PvP is on in the Warlands
+        // 2.18.2: PvP is off everywhere else too, islands included (their Nether and End as well), so visiting is safe.
+        // The only place players can fight is the Warlands (above).
         boolean zone = zv != null || za != null;
-        if (!hub && !zone) return false;
-        if (attacker instanceof ServerPlayer sp && sp != victim) sp.sendOverlayMessage(t(hub ? "PvP is off in the hub." : "PvP is off in the resource zones.", ChatFormatting.RED));
+        if (attacker instanceof ServerPlayer sp && sp != victim)
+            sp.sendOverlayMessage(t(hub ? "PvP is off in the hub." : zone ? "PvP is off in the resource zones." : "PvP is off on islands.", ChatFormatting.RED));
         return true;
     }
     static long price(MinecraftServer server) { return Economy.cfg(server).getLongOr("hubplot_price", 20_000); }
