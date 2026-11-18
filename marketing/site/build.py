@@ -31,7 +31,7 @@ VOTE = [
 ]
 
 NAV = [("/", "Home"), ("/anarchy/", "Anarchy"), ("/skyblock/", "Skyblock"), ("/pvp/", "Multiverse"),
-       ("/extraction-zone/", "Extraction Zone"), ("/spawn-map/", "3D Map"), ("/join/", "How to join"), ("/news/", "News"),
+       ("/extraction-zone/", "Extraction Zone"), ("/crispymon/", "Crispymon"), ("/join/", "How to join"), ("/news/", "News"),
        ("/vote/", "Vote"), ("/faq/", "FAQ")]
 
 e = html.escape
@@ -60,7 +60,7 @@ try:
     DATES = json.load(open(DATES_FILE))
 except (OSError, ValueError):
     DATES = {}
-SHOW_UPDATED = ("/anarchy/", "/skyblock/", "/pvp/", "/extraction-zone/", "/vanilla-anarchy/", "/bedrock-skyblock/",
+SHOW_UPDATED = ("/crispymon/", "/anarchy/", "/skyblock/", "/pvp/", "/extraction-zone/", "/vanilla-anarchy/", "/bedrock-skyblock/",
                 "/bedrock-anarchy/", "/2b2t-alternative/", "/guides/anarchy-survival/", "/guides/skyblock-beginners/", "/faq/", "/join/", "/rules/")
 
 
@@ -134,6 +134,7 @@ def page(path, title, desc, body, crumbs=None, extra_ld=(), image="/img/og.jpg",
     </div>
     <div class="foot-links">
       {''.join(f'<a href="{p}">{n}</a>' for p, n in NAV[1:])}
+      <a href="/spawn-map/">3D spawn map</a>
       <a href="/vanilla-anarchy/">Vanilla anarchy</a>
       <a href="/bedrock-anarchy/">Bedrock anarchy</a>
       <a href="/bedrock-skyblock/">Bedrock Skyblock</a>
@@ -288,6 +289,7 @@ def home():
         ("/extraction-zone/", "Extraction Zone", "New: loot a ruined city, fight armed raiders and other players, and get out alive. Open now."),
         ("/spawn-map/", "3D spawn map", "Fly over two square kilometres of spawn, wrecked by six years of anarchy."),
         ("/bedrock-anarchy/", "Bedrock anarchy", "Play anarchy from Windows, phone, tablet or console, in the same world as Java players."),
+        ("/crispymon/", "Crispymon", "Our Cobblemon server: catch and battle creatures, gym badges, trainers, breeding and trading. Modded Java 1.21.1."),
         ("/bedrock-skyblock/", "Bedrock Skyblock", "Skyblock on Windows, phone, tablet or console, on the same islands and Bazaar as Java players."),
     ]
     cards = "".join(f'<a class="card" href="{u}"><h3>{n}</h3><p>{d}</p></a>' for u, n, d in modes)
@@ -507,6 +509,78 @@ def skyblock():
     return page("/skyblock/", "Minecraft Skyblock Server (Java & Bedrock) – No P2W | Crispy Skyblock",
                 "A free Minecraft Skyblock server for Java and Bedrock: 7 themed starter islands, 5 skills, 68 collections, 43 minions, pets, a player Bazaar, island bosses and craftable gear. No pay-to-win, no PvP.",
                 body, crumbs=[("/skyblock/", "Skyblock")], extra_ld=[GAMESERVER, faq_ld(SKYBLOCK_FAQ)], image="/img/shots/skyblock-hub.webp")
+
+
+CRISPYMON = "crispymon.org:12673"
+MODPACK_URL = ""   # the Crispymon modpack download; empty = "get it in the Discord"
+
+
+def crispymon():
+    get_pack = (f'<a href="{MODPACK_URL}" rel="noopener">Download the Crispymon modpack</a>' if MODPACK_URL
+                else f'Get the Crispymon modpack from the Crispymon channel in our <a href="{DISCORD}" rel="noopener">Discord</a>')
+    qas = [
+        ("What is the Crispymon server IP?",
+         f"{CRISPYMON} (Java Edition 1.21.1, with the Crispymon modpack installed). It's a separate server from the rest of the Crispy network, so it has its own address."),
+        ("Is Crispymon a Cobblemon server?",
+         "Yes. Crispymon runs Cobblemon 1.8 on Minecraft 1.21.1, with gyms and badges, trainers to battle, breeding, a global trade station, an economy and player shops added on top."),
+        ("Do I need a modpack to join Crispymon?",
+         "Yes. Crispymon is a modded server, so you need the Crispymon modpack, which has the same mods as the server. " +
+         (f"Download it at {MODPACK_URL}." if MODPACK_URL else "The download link is in the Crispymon channel of our Discord.")),
+        ("Can Bedrock players join Crispymon?",
+         "No. Crispymon is a modded Java Edition server, and mods don't run on Bedrock. Bedrock players can join the rest of the Crispy network: Anarchy, Skyblock, Multiverse and Extraction Zone."),
+        ("Will Crispymon run on a low-end PC?",
+         "It's a pack of about 150 mods, so give Minecraft at least 4 GB of memory, ideally 6 GB, and keep render distance around 6 to 8 on weaker machines. Shaders and Distant Horizons are optional: leave them off on low-end PCs and laptops."),
+    ]
+    body = f"""
+<section class="wrap block head">
+  <p class="kicker">Crispymon · Cobblemon · Java 1.21.1 · modded</p>
+  <h1>Crispymon: a Cobblemon server with gyms, trainers, breeding and trading</h1>
+  <p class="lede measure">Crispymon is the Crispy community's Cobblemon server: catch, train and battle creatures across a big modded world, earn gym badges, take on trainers, breed for the perfect team and trade with other players. It runs Cobblemon 1.8 on Minecraft 1.21.1 with about 150 mods.</p>
+  <div class="join compact"><div class="addr-row"><span class="lbl">Java</span><code class="addr">{CRISPYMON}</code><button type="button" class="copy" data-copy="{CRISPYMON}">Copy</button></div></div>
+  <p class="note">Modded server: you need the Crispymon modpack (Java Edition 1.21.1). {get_pack}.</p>
+</section>
+<section class="wrap block prose">
+  <h2>Catch, train and battle</h2>
+  <p>Cobblemon brings catchable creatures into Minecraft: find them in the wild, battle and catch them, level them up and build a team. On Crispymon wild creatures can fight back too, and catching them earns you XP. Healing centers patch your team up between fights, and you can ride many of your creatures around the world.</p>
+
+  <h2>Gyms, badges and trainers</h2>
+  <p>Take on gyms, each with its own trainers and a leader to beat for its badge, and collect the set. On the road you'll meet trainers ready to battle, and legendary monuments and myth-and-legend structures hide some of the rarest encounters in the game.</p>
+
+  <h2>Breeding</h2>
+  <p>Breed your creatures to pass on moves and stats, and work toward the team you actually want instead of whatever you caught first.</p>
+
+  <h2>Trading and the economy</h2>
+  <ul>
+    <li><b>Global trade station:</b> list creatures and items for other players to buy, and browse what everyone else is selling, even when they're offline.</li>
+    <li><b>Money and shops:</b> earn coins as you play, buy supplies at the server shop, and set up chest shops of your own to sell to other players.</li>
+    <li><b>Gacha machines and a trading card game:</b> extra ways to spend your coins and collect.</li>
+  </ul>
+
+  <h2>A big world to explore</h2>
+  <p>Crispymon's world uses Terralith and Oh The Biomes We've Gone for far more varied terrain than vanilla, with new towns, temples, dungeons, towers and ocean ruins from YUNG's mods, Tidal Towns, Towns and Towers and more, plus extra Cobblemon structures to find. Waystones let you travel back to places you've found, and JourneyMap draws your map as you go.</p>
+
+  <h2>Build, farm and settle in</h2>
+  <p>Claim your land so it stays yours, then fill it with furniture, Macaw's doors, windows and bridges, Farmer's Delight cooking, Supplementaries decorations and Sophisticated Backpacks and Storage for everything you collect. Your creatures can even help out around your base.</p>
+
+  <h2>How to join Crispymon</h2>
+  <ol class="steps">
+    <li>{get_pack}, and install it in a launcher that supports modpacks (Java Edition 1.21.1).</li>
+    <li>Give Minecraft at least 4 GB of memory in the launcher, ideally 6 GB.</li>
+    <li>Add the server <code>{CRISPYMON}</code> and join.</li>
+  </ol>
+  <p>On a lower-end PC or laptop, keep render distance around 6 to 8 and leave shaders and Distant Horizons off.</p>
+
+  <h2>Part of the Crispy community</h2>
+  <p>Crispymon has its own address and world, but shares the Crispy <a href="{DISCORD}" rel="noopener">Discord</a> with our <a href="/anarchy/">anarchy server</a>, <a href="/skyblock/">Skyblock</a>, <a href="/pvp/">Multiverse PvP</a> and <a href="/extraction-zone/">Extraction Zone</a>. Pick the Modded Minecraft role in the Discord's welcome channel to see the Crispymon channels.</p>
+</section>
+<section class="wrap block"><h2>Crispymon questions</h2><div class="faq">{faq_html(qas)}</div></section>
+"""
+    server = {"@type": "GameServer", "@id": SITE + "/crispymon/#server", "name": "Crispymon Cobblemon server", "url": SITE + "/crispymon/",
+              "game": {"@type": "VideoGame", "name": "Minecraft", "gamePlatform": ["PC (Java Edition)"]}, "serverStatus": "OnlineServerStatus",
+              "provider": {"@id": SITE + "/#org"}, "description": f"Cobblemon 1.8 server on Minecraft 1.21.1 (modded). Address {CRISPYMON}."}
+    return page("/crispymon/", "Cobblemon Server – Crispymon: Gyms, Trainers, Breeding & Trading (1.21.1)",
+                f"Crispymon is a Cobblemon server for Minecraft 1.21.1: catch and battle creatures, earn gym badges, battle trainers, breed and trade on a global trade station. Modded Java, join at {CRISPYMON}.",
+                body, crumbs=[("/crispymon/", "Crispymon")], extra_ld=[server, faq_ld(qas)])
 
 
 def bedrock_skyblock():
@@ -1240,7 +1314,7 @@ def main(out):
              "/spawn-map/": spawn_map, "/join/": join, "/vote/": vote, "/faq/": faq,
              "/bedrock-anarchy/": bedrock, "/news/": news_index, "/rules/": rules,
              "/vanilla-anarchy/": vanilla_anarchy, "/bedrock-skyblock/": bedrock_skyblock, "/2b2t-alternative/": alt_2b2t,
-             "/guides/anarchy-survival/": guide_anarchy, "/guides/skyblock-beginners/": guide_skyblock}
+             "/guides/anarchy-survival/": guide_anarchy, "/guides/skyblock-beginners/": guide_skyblock, "/crispymon/": crispymon}
     for n in NEWS:
         pages[f"/news/{n['slug']}/"] = (lambda n=n: news_post(n))
     for path, fn in pages.items():
