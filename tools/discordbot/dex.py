@@ -74,8 +74,8 @@ MAJORS = {"SOL", "WSOL", "USDC", "USDT", "ETH", "WETH", "BNB", "WBNB", "USDC.E",
 
 
 async def _main_pair(session, addr, as_base, same):
-    """The pair DexScreener itself shows for the token (its per-chain endpoint lists that first); if that fails, the
-    busiest pair against a major currency, ignoring pairs whose market cap is way off the others'."""
+    """The pair DexScreener itself shows for the token (its per-chain endpoint lists that first), if it has a price and
+    liquidity; otherwise the busiest priced pair against a major currency, ignoring pairs whose market cap is way off."""
     # an EVM address can exist on several chains (forks copy them): use the chain where it actually trades most
     vol = {}
     for p in as_base: vol[p.get("chainId")] = vol.get(p.get("chainId"), 0) + ((p.get("volume") or {}).get("h24") or 0)
@@ -86,10 +86,12 @@ async def _main_pair(session, addr, as_base, same):
                                timeout=aiohttp.ClientTimeout(total=10)) as r:
             main = await r.json() if r.status == 200 else []
         main = [p for p in main if isinstance(p, dict) and same((p.get("baseToken") or {}).get("address", ""))]
-        if main: return main[0]
+        # only if it really trades: a fresh pump.fun coin's "main" pair can be an empty one with no price or liquidity
+        if main and _f(main[0].get("priceUsd")) and ((main[0].get("liquidity") or {}).get("usd") or 0) > 0: return main[0]
     except Exception as e:
         print(f"[dex] main pair for {addr}: {type(e).__name__}: {e}")
-    good = [p for p in as_base if ((p.get("quoteToken") or {}).get("symbol") or "").upper() in MAJORS] or as_base
+    live = [p for p in as_base if _f(p.get("priceUsd"))] or as_base   # pairs with a price at all
+    good = [p for p in live if ((p.get("quoteToken") or {}).get("symbol") or "").upper() in MAJORS] or live
     caps = sorted(c for c in ((p.get("marketCap") or p.get("fdv")) for p in good) if c)
     if len(caps) >= 3:
         med = caps[len(caps) // 2]
