@@ -220,7 +220,7 @@ async def buy(s, mint, info, metrics, pair):
         await asyncio.sleep(2)
         amount = await token_balance(s, mint) or amount
     if info.get("creator"): asyncio.create_task(watch_creators([info["creator"]]))
-    state["positions"][mint] = {"sym": info["sym"], "name": info["name"], "amount": amount, "cost_sol": cfg["trade_sol"], "creator": info.get("creator"),
+    state["positions"][mint] = {"sym": info["sym"], "name": info["name"], "amount": amount, "amount0": amount, "realized": 0.0, "steps": 0, "cost_sol": cfg["trade_sol"], "creator": info.get("creator"),
                                 "t": int(time.time()), "peak_pct": 0.0, "liq0": metrics["liq"], "url": pair.get("url"), "sig": sig}
     state["traded"] = (state["traded"] + [mint])[-3000:]
     save()
@@ -228,11 +228,15 @@ async def buy(s, mint, info, metrics, pair):
     log("BUY", info["sym"], mint, metrics)
 
 
-async def sell(s, mint, reason):
+async def sell(s, mint, reason, fraction=1.0):
+    """Sell `fraction` of the position (1 = all of it and close it). Partial sells keep the rest open."""
     pos = state["positions"][mint]
+    partial = fraction < 0.999
+    amt = int(pos["amount"] * fraction) if partial else pos["amount"]
+    if amt <= 0: return False
     q = RETRY
     for _ in range(3):
-        try: q = await jup_quote(s, mint, SOL_MINT, pos["amount"])
+        try: q = await jup_quote(s, mint, SOL_MINT, amt)
         except Exception: q = RETRY
         if q != RETRY: break
         await asyncio.sleep(1)
@@ -242,16 +246,26 @@ async def sell(s, mint, reason):
     if live():
         if not q: log("sell: no route for", mint); return False
         sig = await swap(s, q)
-    pnl = out_sol - pos["cost_sol"] - (cfg["priority_fee_sol"] * 2 if live() else 0)
+    fee = cfg["priority_fee_sol"] if live() else 0.0
+    if partial:
+        pos["amount"] -= amt; pos["realized"] = pos.get("realized", 0.0) + out_sol - fee; pos["steps"] = pos.get("steps", 0) + 1
+        save()
+        event(kind="partial", mint=mint, sym=pos["sym"], name=pos["name"], sold_pct=round(fraction * 100), sol_out=round(out_sol, 6),
+              realized=round(pos["realized"], 6), cost=pos["cost_sol"], reason=reason, held_min=round((time.time() - pos["t"]) / 60, 1), url=pos.get("url"), sig=sig)
+        log("PARTIAL", pos["sym"], reason, f"{out_sol:.4f} SOL")
+        return True
+    total_out = pos.get("realized", 0.0) + out_sol
+    pnl = total_out - pos["cost_sol"] - fee - (cfg["priority_fee_sol"] if live() else 0.0)   # this sell and the buy
     state["positions"].pop(mint)
     if state["day"] != today(): state["day"], state["day_pnl"] = today(), 0.0
     state["day_pnl"] += pnl; state["total_pnl"] += pnl
     state["wins" if pnl > 0 else "losses"] += 1
-    state["closed"] = (state["closed"] + [{"mint": mint, "sym": pos["sym"], "cost": pos["cost_sol"], "out": out_sol, "pnl": pnl,
-                                            "reason": reason, "t0": pos["t"], "t1": int(time.time())}])[-500:]
+    state["closed"] = (state["closed"] + [{"mint": mint, "sym": pos["sym"], "cost": pos["cost_sol"], "out": total_out, "pnl": pnl,
+                                            "reason": reason, "steps": pos.get("steps", 0), "t0": pos["t"], "t1": int(time.time())}])[-500:]
     save()
-    event(kind="sell", mint=mint, sym=pos["sym"], name=pos["name"], sol_in=pos["cost_sol"], sol_out=round(out_sol, 6), pnl_sol=round(pnl, 6),
-          pnl_pct=round(pnl / pos["cost_sol"] * 100, 1), reason=reason, held_min=round((time.time() - pos["t"]) / 60, 1), url=pos.get("url"), sig=sig)
+    event(kind="sell", mint=mint, sym=pos["sym"], name=pos["name"], sol_in=pos["cost_sol"], sol_out=round(total_out, 6), pnl_sol=round(pnl, 6),
+          pnl_pct=round(pnl / pos["cost_sol"] * 100, 1), reason=reason, steps=pos.get("steps", 0),
+          held_min=round((time.time() - pos["t"]) / 60, 1), url=pos.get("url"), sig=sig)
     log("SELL", pos["sym"], reason, f"{pnl:+.4f} SOL")
     return True
 
@@ -267,7 +281,8 @@ async def manage(s):
         if q == RETRY and not pos.get("dev_sold") and "sellall" not in stop: continue
         pos["noroute"] = 0 if q and q != RETRY else pos.get("noroute", 0) + 1
         value = int(q["outAmount"]) / LAMPORTS if q and q != RETRY else 0.0
-        pct = (value / pos["cost_sol"] - 1) * 100
+        # the price move since entry, per token (so it still means the same after partial sells)
+        pct = (value * pos.get("amount0", pos["amount"]) / (pos["amount"] * pos["cost_sol"]) - 1) * 100 if pos["amount"] else -100.0
         pos["peak_pct"] = max(pos["peak_pct"], pct)
         held = (time.time() - pos["t"]) / 60
         reason = None
@@ -276,10 +291,23 @@ async def manage(s):
             else: continue   # a missing quote isn't a price: wait for the next check
         if pos.get("dev_sold"): reason = f"creator sold {pct:+.0f}%" if q and q != RETRY else "creator sold"
         elif not q or q == RETRY: reason = "no route (pool gone?)"
-        elif pct >= cfg["take_profit_pct"]: reason = f"take profit {pct:+.0f}%"
-        elif pct <= -cfg["stop_loss_pct"]: reason = f"stop loss {pct:+.0f}%"
-        elif pos["peak_pct"] >= cfg["trail_after_pct"] and pct <= pos["peak_pct"] - cfg["trail_pct"]: reason = f"trailing stop {pct:+.0f}% (peak {pos['peak_pct']:+.0f}%)"
-        elif held >= cfg["max_hold_min"]: reason = f"time limit {pct:+.0f}%"
+        else:
+            ladder = cfg.get("take_profit_steps") or [[cfg.get("take_profit_pct", 60), 100]]
+            step = pos.get("steps", 0)
+            runner = step > 0   # some profit already taken: the rest rides with looser rules
+            if step < len(ladder) and pct >= ladder[step][0]:
+                part = ladder[step][1] / 100
+                label = f"take profit {step + 1}/{len(ladder)} at {pct:+.0f}%"
+                try:
+                    if part >= 0.999: await sell(s, mint, label)
+                    else: await sell(s, mint, label + f": sold {ladder[step][1]}%, the rest rides", part)
+                except Exception as e: log("sell failed", mint, e); event(kind="error", mint=mint, sym=pos["sym"], error=str(e)[:200])
+                await asyncio.sleep(0.3); continue
+            trail = cfg.get("runner_trail_pct", cfg["trail_pct"]) if runner else cfg["trail_pct"]
+            if not runner and pct <= -cfg["stop_loss_pct"]: reason = f"stop loss {pct:+.0f}%"
+            elif runner and pct <= cfg.get("runner_floor_pct", 0): reason = f"back to entry {pct:+.0f}% (profit already taken)"
+            elif pos["peak_pct"] >= cfg["trail_after_pct"] and pct <= pos["peak_pct"] - trail: reason = f"trailing stop {pct:+.0f}% (peak {pos['peak_pct']:+.0f}%)"
+            elif held >= (cfg.get("runner_max_hold_min", cfg["max_hold_min"]) if runner else cfg["max_hold_min"]): reason = f"time limit {pct:+.0f}%"
         if reason:
             try: await sell(s, mint, reason)
             except Exception as e: log("sell failed", mint, e); event(kind="error", mint=mint, sym=pos["sym"], error=str(e)[:200])

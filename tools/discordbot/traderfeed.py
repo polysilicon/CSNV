@@ -50,6 +50,10 @@ def card(discord, e):
         em = discord.Embed(color=0x5865F2, title=f"{tag} · Bought {name}", url=e.get("url"),
                            description=f"**{e['sol']} SOL** in · mcap ${m.get('mcap', 0):,} · liquidity ${m.get('liq', 0):,}\n"
                                        f"5 min: {m.get('m5')}% · vol ${m.get('vol5', 0):,} · {m.get('buys5')} buys / {m.get('sells5')} sells")
+    elif e["kind"] == "partial":
+        em = discord.Embed(color=0x2ECC71, title=f"{tag} · Took profit on {name}", url=e.get("url"),
+                           description=f"Sold **{e['sold_pct']}%** for {e['sol_out']} SOL ({e['reason']}).\n"
+                                       f"Taken so far: **{e['realized']} SOL** of the {e['cost']} SOL stake · the rest is still riding")
     elif e["kind"] == "sell":
         up = e["pnl_sol"] >= 0
         em = discord.Embed(color=0x23A55A if up else 0xDA373C, title=f"{tag} · Sold {name}: {e['pnl_pct']:+.1f}%", url=e.get("url"),
@@ -83,7 +87,8 @@ def register(bot, discord, app_commands):
         em.add_field(name="Win rate", value=f"{st.get('wins', 0)}/{n} ({st.get('wins', 0) / n * 100:.0f}%)" if n else "no trades yet")
         pos = st.get("positions", {})
         em.add_field(name=f"Open ({len(pos)}/{cfg.get('max_open', '?')})", inline=False,
-                     value="\n".join(f"[${p['sym']}]({p.get('url')}) · {p['cost_sol']} SOL · <t:{p['t']}:R> · peak {p.get('peak_pct', 0):+.0f}%" for p in pos.values()) or "none")
+                     value="\n".join(f"[${p['sym']}]({p.get('url')}) · {p['cost_sol']} SOL · <t:{p['t']}:R> · peak {p.get('peak_pct', 0):+.0f}%"
+                                     + (f" · {p.get('steps')} profit step(s), {p.get('realized', 0):.3f} SOL taken" if p.get("steps") else "") for p in pos.values()) or "none")
         ls = st.get("last_scan")
         if ls:
             fails = ", ".join(f"{k} {v}" for k, v in sorted(ls.get("fails", {}).items(), key=lambda x: -x[1])) or "none"
@@ -94,5 +99,5 @@ def register(bot, discord, app_commands):
             em.add_field(name="Last trades", inline=False,
                          value="\n".join(f"${c['sym']} {c['pnl']:+.4f} SOL ({c['reason']})" for c in reversed(recent)))
         em.set_footer(text=f"{cfg.get('trade_sol')} SOL/trade · max {cfg.get('max_open')} open · stops after -{cfg.get('daily_loss_sol')} SOL a day · "
-                           f"TP +{cfg.get('take_profit_pct')}% / SL -{cfg.get('stop_loss_pct')}%")
+                           "TP " + " then ".join(f"+{a}% sell {b}%" for a, b in cfg.get("take_profit_steps", [])) + f" · runner trails {cfg.get('runner_trail_pct')}% · SL -{cfg.get('stop_loss_pct')}%")
         await interaction.response.send_message(embed=em, ephemeral=True)

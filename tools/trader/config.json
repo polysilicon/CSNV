@@ -15,7 +15,10 @@
   "max_change_m5_pct": 60,
   "max_change_h1_pct": 400,
 
-  "take_profit_pct": 60,
+  "take_profit_steps": [[60, 50], [200, 50]],
+  "runner_trail_pct": 35,
+  "runner_max_hold_min": 240,
+  "runner_floor_pct": 0,
   "stop_loss_pct": 25,
   "trail_after_pct": 30,
   "trail_pct": 20,

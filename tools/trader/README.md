@@ -8,8 +8,9 @@ from the Discord bot, so the wallet key never sits in Yoink.
   Address: `8ThgGCXFsdg8b9GGffFA19hHVzMqvULJ4wcWn9rPmq2Q`. `wallet.py balance` shows its SOL.
 - Strategy and limits: `config.json` (re-read every 15 s, no restart needed). Defaults: 0.2 SOL a trade, 5 open
   positions, no new buys after losing 0.5 SOL in a UTC day; entries 3-30 min after launch with liquidity >= $8K, market
-  cap $15K-$300K, 5-min volume >= $5K, buys >= 1.3x sells, 5-min move +5..+60%, 1-hour move <= +400%; exits at +60%
-  take profit, -25% stop loss, a 20% trailing stop once up 30%, 45 min max hold, or no route left (rug).
+  cap $15K-$300K, 5-min volume >= $5K, buys >= 1.3x sells, 5-min move +5..+60%, 1-hour move <= +400%; exits: -25% stop loss, a 20% trailing stop once up 30%, 45 min max hold, or no route left (rug). Profits are taken in steps
+  (`take_profit_steps`): sell 50% at +60%, half the rest at +200%, and the last part rides with a 35% trailing stop
+  (`runner_trail_pct`) for up to 4 hours, sold if it falls back to the entry price (`runner_floor_pct`).
 - How it trades: see the docstring of `trader.py`. Paper mode prices every buy and sell with a real Jupiter quote (the
   one a live trade would use), so fees and price impact are counted. `"mode": "live"` signs and sends those swaps from
   the wallet; it does nothing live while the wallet is missing.
