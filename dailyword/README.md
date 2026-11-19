@@ -4,8 +4,11 @@ Guess the day's five-letter word in six tries, in a chest menu on the Lobby serv
 Open it with `/word` (alias `/dailyword`) or from **Lobby Minigames** in the server selector (`/minigames`).
 
 ## Playing
-- Click **Type a guess** and send a five-letter word in chat. That message is hidden: nobody else sees it.
-  `/word <guess>` works too.
+- **Java players get a popup** (1.1.0, Paper's dialog API): the guesses so far in coloured letters, the letters tried,
+  a text box and a **Guess** button. Each guess brings the popup straight back with the new row, so you never leave it.
+  **Board & stats** opens the chest view.
+- **Bedrock players** (Floodgate names start with a dot) get the chest view: click **Type a guess** and send the word in
+  chat; that message is hidden, nobody else sees it. `/word <guess>` works for everyone.
 - Each guess shows as a row of glass named by its letter: **green** = right letter, right spot; **yellow** = in the
   word, wrong spot; **grey** = not in it. The same colours are repeated in chat, and the sign in the corner shows
   every letter you've tried. Repeated letters follow the standard rules (see `Score.java`).
@@ -31,6 +34,6 @@ today's counts, never today's word; yesterday's word and results; current streak
 ## Build and test
 ```
 CP=$(find <lobby>/libraries -name '*.jar' | grep -v paper-api/1.21 | tr '\n' ':')
-javac --release 21 -proc:none -cp "$CP" -d out $(find src -name '*.java') && cp res/* out/ && (cd out && jar cf ../DailyWord-1.0.0.jar .)
+javac --release 21 -proc:none -cp "$CP" -d out $(find src -name '*.java') && cp res/* out/ && (cd out && jar cf ../DailyWord-1.1.0.jar .)
 javac --release 21 -cp out -d tout test/crispy/word/ScoreTest.java && java -cp tout:out crispy.word.ScoreTest
 ```

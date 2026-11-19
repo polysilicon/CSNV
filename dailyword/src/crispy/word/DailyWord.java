@@ -3,6 +3,15 @@ package crispy.word;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.registry.data.dialog.ActionButton;
+import io.papermc.paper.registry.data.dialog.DialogBase;
+import io.papermc.paper.registry.data.dialog.action.DialogAction;
+import io.papermc.paper.registry.data.dialog.body.DialogBody;
+import io.papermc.paper.registry.data.dialog.input.DialogInput;
+import io.papermc.paper.registry.data.dialog.type.DialogType;
+import net.kyori.adventure.text.event.ClickCallback;
+import java.time.Duration;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -246,11 +255,11 @@ public class DailyWord extends JavaPlugin implements Listener {
             if (sub.equals("help")) help(p);
             else if (sub.equals("stats")) showStats(p);
             else if (sub.equals("top")) showTop(p);
+            else if (sub.equals("board")) open(p);
             else if (WORD.matcher(sub).matches() || sub.equals("guess") && a.length > 1) {
                 String err = guess(p, sub.equals("guess") ? a[1] : sub);
-                if (err != null) msg(p, "&c" + err);
-                open(p);
-            } else open(p);
+                play(p, err == null ? null : "&c" + err);
+            } else play(p, null);
         });
         return true;
     }
@@ -281,6 +290,72 @@ public class DailyWord extends JavaPlugin implements Listener {
         List<ConfigurationSection> best = ps.getKeys(false).stream().map(ps::getConfigurationSection).filter(Objects::nonNull)
                 .filter(x -> x.getInt("best") > 0).sorted(Comparator.comparingInt((ConfigurationSection x) -> -x.getInt("best"))).limit(5).toList();
         if (!best.isEmpty()) p.sendMessage(c("&7Longest streaks: " + String.join("&7, ", best.stream().map(x -> "&f" + x.getString("name") + " &a" + x.getInt("best")).toList())));
+    }
+
+    // ------------------------------------------------------------------ the popup (1.1.0)
+    /** Bedrock players (Floodgate names start with a dot) may not get Java dialogs: they keep the chest and chat. */
+    static boolean bedrock(Player p) { return p.getName().startsWith("."); }
+
+    /** The game screen: the popup for Java players, the chest for Bedrock. note: a line shown above the board. */
+    void play(Player p, String note) {
+        if (word == null) { msg(p, "&cThere's no word today yet. Try again in a minute."); return; }
+        if (bedrock(p)) { if (note != null) msg(p, note); open(p); return; }
+        dialog(p, note);
+    }
+
+    /** A dialog: the guesses so far in coloured letters, the letters tried, and (until you're done) a text box and a
+     *  Guess button. Every guess shows a fresh popup, so you can keep typing without leaving it. */
+    void dialog(Player p, String note) {
+        ConfigurationSection s = pl(p);
+        List<String> gs = guesses(s);
+        boolean done = finished(gs);
+        int[] keys = new int[26]; Arrays.fill(keys, -1);
+        StringBuilder board = new StringBuilder();
+        for (int r = 0; r < TRIES; r++) {
+            if (r > 0) board.append("\n");
+            if (r < gs.size()) {
+                String g = gs.get(r); int[] sc = Score.score(g, word);
+                for (int i = 0; i < LEN; i++) {
+                    keys[g.charAt(i) - 'a'] = Math.max(keys[g.charAt(i) - 'a'], sc[i]);
+                    board.append(sc[i] == 2 ? "&a&l" : sc[i] == 1 ? "&e&l" : "&8&l").append(Character.toUpperCase(g.charAt(i))).append("  ");
+                }
+            } else board.append(r == gs.size() && !done ? "&f_  _  _  _  _" : "&8_  _  _  _  _");
+        }
+        StringBuilder kb = new StringBuilder();
+        String order = "QWERTYUIOPASDFGHJKLZXCVBNM";
+        for (int i = 0; i < 26; i++) {
+            if (i == 10 || i == 19) kb.append("\n");
+            char ch = order.charAt(i); int k = keys[ch - 'A'];
+            kb.append(k == 2 ? "&a&l" : k == 1 ? "&e&l" : k == 0 ? "&8&m" : "&f").append(ch).append("&r ");
+        }
+        List<DialogBody> body = new ArrayList<>();
+        if (note != null) body.add(DialogBody.plainMessage(c(note), 300));
+        body.add(DialogBody.plainMessage(c(board.toString()), 200));
+        if (done) body.add(DialogBody.plainMessage(c(gs.contains(word) ? "&a&lSolved in " + gs.size() + "/" + TRIES + "! &7Streak: &f" + s.getInt("streak")
+                : "&cOut of guesses. &7The word was &f&l" + word.toUpperCase(Locale.ROOT)), 300));
+        body.add(DialogBody.plainMessage(c(kb.toString()), 300));
+        body.add(DialogBody.plainMessage(c("&a■ &7right spot   &e■ &7in the word   &8■ &7not in it"), 300));
+        List<DialogInput> inputs = done ? List.of() : List.of(DialogInput.text("guess", c("&7Your guess (" + (gs.size() + 1) + "/" + TRIES + ")"))
+                .width(160).maxLength(LEN).labelVisible(true).build());
+        ClickCallback.Options once = ClickCallback.Options.builder().uses(1).lifetime(Duration.ofMinutes(30)).build();
+        List<ActionButton> buttons = new ArrayList<>();
+        if (!done) buttons.add(ActionButton.builder(c("&a&lGuess")).tooltip(c("&7Check your word")).width(110)
+                .action(DialogAction.customClick((view, audience) -> {
+                    String g = view.getText("guess");
+                    Bukkit.getScheduler().runTask(this, () -> {
+                        if (!p.isOnline()) return;
+                        String err = guess(p, g == null ? "" : g);
+                        dialog(p, err == null ? null : "&c" + err);
+                    });
+                }, once)).build());
+        buttons.add(ActionButton.builder(c("&fBoard & stats")).tooltip(c("&7The chest view, your stats and today's solvers")).width(110)
+                .action(DialogAction.customClick((view, audience) -> Bukkit.getScheduler().runTask(this, () -> { if (p.isOnline()) open(p); }), once)).build());
+        ActionButton close = ActionButton.builder(c("&7Close")).width(110).build();
+        Dialog d = Dialog.create(b -> b.empty()
+                .base(DialogBase.builder(c("&a&lDaily Word &f#" + number)).canCloseWithEscape(true)
+                        .afterAction(DialogBase.DialogAfterAction.CLOSE).body(body).inputs(inputs).build())
+                .type(DialogType.multiAction(buttons).exitAction(close).columns(2).build()));
+        p.showDialog(d);
     }
 
     // ------------------------------------------------------------------ the menu
@@ -325,7 +400,8 @@ public class DailyWord extends JavaPlugin implements Listener {
         }
         m.inv.setItem(0, item(Material.BOOK, "&a&lDaily Word &f#" + number, "&7Guess the five-letter word", "&7in six tries. Same word for everyone.",
                 "", "&a■ &7right spot  &e■ &7wrong spot  &8■ &7not in it", "", "&eClick for the rules"));
-        if (!done) m.inv.setItem(9, item(Material.WRITABLE_BOOK, "&a&lType a guess", "&7Click, then send a five-letter", "&7word in chat. Only you see it.", "&8Or: /word <guess>"));
+        if (!done) m.inv.setItem(9, item(Material.WRITABLE_BOOK, "&a&lType a guess", bedrock(p) ? "&7Click, then send a five-letter" : "&7Click to type it in a box.",
+                bedrock(p) ? "&7word in chat. Only you see it." : "&7Only you see it.", "&8Or: /word <guess>"));
         else m.inv.setItem(9, item(gs.contains(word) ? Material.EMERALD : Material.REDSTONE, gs.contains(word) ? "&a&lSolved in " + gs.size() + "/" + TRIES : "&c&lOut of guesses",
                 gs.contains(word) ? "&7Nice! Come back tomorrow." : "&7The word was &f" + word.toUpperCase(Locale.ROOT), "&7New word at midnight (Central)."));
         m.inv.setItem(18, item(Material.PAPER, "&fYour stats", "&7Played &f" + s.getInt("played") + " &8· &7Won &f" + s.getInt("won"),
@@ -352,6 +428,7 @@ public class DailyWord extends JavaPlugin implements Listener {
                 case 0 -> { p.closeInventory(); help(p); }
                 case 9 -> {
                     if (finished(guesses(pl(p)))) return;
+                    if (!bedrock(p)) { p.closeInventory(); dialog(p, null); return; }
                     typing.add(p.getUniqueId()); p.closeInventory();
                     msg(p, "&eType your guess in chat &7(five letters, only you see it). &8Changed your mind? Send &fcancel&8.");
                 }
