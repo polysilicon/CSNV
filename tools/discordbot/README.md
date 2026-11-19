@@ -58,6 +58,13 @@ the host (it reads tokens from `/etc/crispybot.env`); these two modules are copi
   `/askadmin status | test <q>` for staff. Tests: `python3 faq_eval.py [faq_tests_holdout.txt] [--words]`
   (2026-11-16: 97% on the tuning set, 88% on the held-out set; 71% held-out with keywords only).
 
+- `dailyword.py`: the lobby's Daily Word (repo `dailyword/`, a five-letter word in six tries). Once a minute it makes sure
+  the lobby plugin has today's word (America/Chicago days): on a new day it picks a random unused word and writes
+  `plugins/DailyWord/word.json`, `valid.txt` and `answers.txt` on the lobby. Lists (cached in `dailyword_lists.json`,
+  refreshed monthly): common no-swears US-English words kept only if they're lowercase dictionary words, minus the censor
+  list and `BLOCK`, plus Minecraft words about 1 day in 5; guesses from dwyl/english-words. Used words in
+  `dailyword_state.json`. `/dailyword`: today's counts (never the word), yesterday's word and results, streaks.
+
 `/console` was removed from bot.py on 2026-11-14 (backup `bot.py.bak-console`); `/mc` with its allowlist remains.
 
 Deploy: copy the modules into `/opt/crispybot`, `systemctl restart crispybot`. Backup of the pre-change bot:

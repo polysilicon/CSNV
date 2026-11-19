@@ -7,8 +7,8 @@
 # and the actions [CLOSE] then [COMMAND] <its command>. The plugin must open its menu a tick later (both games do).
 #
 #   row 1:  .  .  .  .  [About]  .  .  .  .
-#   row 2:  .  .  [Balatro Craft]  .  [UNO]  .  [More soon]  .  .
-#   row 3:  [« Back]  .  .  .  .  .  .  .  .
+#   row 2:  .  .  [Balatro Craft]  .  [UNO]  .  [Daily Word]  .  .
+#   row 3:  [« Back]  .  .  .  [More soon]  .  .  .  .
 
 slots: 27
 title: "&8Lobby Minigames"
@@ -73,9 +73,29 @@ items:
       - '[CLOSE]'
       - '[COMMAND] uno'
 
+  dailyword:
+    material: WRITABLE_BOOK
+    slot: 15
+    amount: 1
+    glow: true
+    display_name: '&a&lDaily &f&lWord'
+    lore:
+      - '&8Word game · Solo · New word every day'
+      - ''
+      - '&7Guess the five-letter word in six'
+      - '&7tries. &aGreen&7: right spot. &eYellow&7:'
+      - '&7in the word. Everyone gets the same one.'
+      - ''
+      - '&fStreaks: &7keep them going daily'
+      - ''
+      - '&a▶ Click to play &8(/word)'
+    actions:
+      - '[CLOSE]'
+      - '[COMMAND] word'
+
   more:
     material: LIGHT_GRAY_DYE
-    slot: 15
+    slot: 22
     amount: 1
     display_name: '&7More games coming'
     lore:

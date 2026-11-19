@@ -1,0 +1,10 @@
+name: DailyWord
+version: 1.0.0
+main: crispy.word.DailyWord
+api-version: '1.21'
+author: CrispyAnarchy
+description: Guess the day's five-letter word in six tries (the word comes from the Discord bot)
+commands:
+  word:
+    description: Play Daily Word (/word, /word <guess>, /word stats, /word top, /word help)
+    aliases: [dailyword]

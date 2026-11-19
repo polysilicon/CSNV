@@ -221,7 +221,7 @@ FAQ_MORE = [
          "No. Each mode has its own world, inventory and progress. What you keep everywhere is your vote points, your cosmetics "
          "(tags, name colours and chat colours) and your Discord link."),
         ("Are there games in the lobby?",
-         "Yes. UNO for 2 to 8 players (bots fill empty seats; type /uno) and a solo poker card game with a daily run on the same seed for everyone. Both are in the lobby's Pick a Server menu."),
+         "Yes, in Lobby Minigames (/minigames, or the Pick a Server menu): UNO for 2 to 8 players (bots fill empty seats; /uno), a solo poker card game with a daily run on the same seed for everyone, and Daily Word (/word): guess the day's five-letter word in six tries, with streaks."),
         ("Can I teleport away in the middle of a fight?",
          "No. Hitting or being hit by another player puts you in combat for 15 seconds. Until it runs out you can't leave with /lobby or /hub, "
          "and on Anarchy and Skyblock commands like /home, /spawn, /back, /tpa, /warp and /island are blocked too."),

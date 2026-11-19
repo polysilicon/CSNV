@@ -52,7 +52,7 @@ items:
       - '[MESSAGE] &bSkyblock &8- &7grow your own island; skills, pets, minions and a player market.'
       - '[MESSAGE] &dMultiverse &8- &7pick a character and fight, or team up in the PvE modes.'
       - '[MESSAGE] &6Extraction Zone &8- &7loot a ruined city with guns and get out alive.'
-      - '[MESSAGE] &aLobby Minigames &8- &7UNO and a poker roguelike, played right here in the lobby (&f/minigames&7).'
+      - '[MESSAGE] &aLobby Minigames &8- &7UNO, a poker roguelike and Daily Word, played right here in the lobby (&f/minigames&7).'
       - '[MESSAGE] &7Open the selector again with the &eNether Star&7. Back to the lobby any time: &f/lobby'
       - '[MESSAGE] &r'
 
@@ -69,6 +69,7 @@ items:
       - ''
       - '&6Balatro Craft &8- &7a solo poker roguelike'
       - '&cU&eN&aO &8- &72-8 players, bots fill seats'
+      - '&aDaily Word &8- &7a new five-letter word each day'
       - ''
       - '&7No server switch: play while you wait.'
       - ''
