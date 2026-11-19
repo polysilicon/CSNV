@@ -1,0 +1,14 @@
+[Unit]
+Description=Crispy Trader (Solana memecoin momentum, paper unless config mode is live)
+After=network-online.target
+
+[Service]
+User=crispytrader
+WorkingDirectory=/opt/crispytrader
+ExecStart=/opt/crispytrader/venv/bin/python -u /opt/crispytrader/trader.py
+Restart=always
+RestartSec=10
+UMask=0022
+
+[Install]
+WantedBy=multi-user.target
