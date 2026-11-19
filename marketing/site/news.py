@@ -6,6 +6,37 @@ spots or anything else players are meant to find.
 
 NEWS = [
     {
+        "slug": "lobby-minigames-daily-word",
+        "date": "2026-11-19",
+        "title": "Lobby Minigames and a new game: Daily Word",
+        "summary": "The lobby's games now have their own menu, with a new daily word game alongside UNO and Balatro Craft. Plus: ask Yoink questions, and safer Skyblock.",
+        "body": """
+<h2>Lobby Minigames</h2>
+<p>The games you can play right in the lobby, without switching servers, now have their own menu. Open the server selector (the Nether Star) and click <b>Lobby Minigames</b>, or type <code>/minigames</code> (or <code>/games</code>) anywhere in the lobby. There's room for more games, so if you have an idea for one, post it in the suggestions channel on our <a href="https://discord.gg/hF2bQgU" rel="noopener">Discord</a>.</p>
+
+<h2>New: Daily Word</h2>
+<p>Guess the day's five-letter word in six tries. After each guess, every letter turns <b>green</b> (right letter, right spot), <b>yellow</b> (in the word, wrong spot) or <b>grey</b> (not in it). Everyone gets the same word, and a new one arrives every night at midnight (US Central time).</p>
+<ul>
+<li><b>Play:</b> <code>/word</code>, or Daily Word in Lobby Minigames. On Java 1.21.6 or newer you type your guesses in a pop-up with your board in coloured letters. On Bedrock you use the chest menu and type your guess in chat, where only you see it. On any version, <code>/word &lt;guess&gt;</code> works too.</li>
+<li><b>Streaks and stats:</b> solve it on consecutive days to build a streak. <code>/word stats</code> shows your win rate and how many guesses you usually need, and <code>/word top</code> lists today's solvers and the longest streaks.</li>
+<li><b>No spoilers:</b> when someone solves it, the lobby sees how many guesses they took and their colour grid, never the word. Once you've finished, you can't post the answer in chat either.</li>
+<li><b>On Discord:</b> <code>/dailyword</code> shows how many people have played and solved today's word, yesterday's answer and the longest streaks. Every few days the word is a Minecraft one.</li>
+</ul>
+
+<h2>UNO and Balatro Craft</h2>
+<p>Both games got a round of fixes. Their buttons respond more reliably, UNO offers <b>Play again</b> when a game ends, and both have a button back to the other minigames.</p>
+
+<h2>Ask Yoink</h2>
+<p>Our Discord bot Yoink now answers questions about the servers: the IP, versions, Bedrock, voting, Discord linking, Skyblock, the Anarchy market and more. Use <code>/ask</code> on Discord, mention @Yoink, or type <code>!ask</code> followed by your question in game chat on any server, and the answer comes back to you. It can also tell you who's online and, once your account is linked, your vote points and streak. Answers come from our <a href="/faq/">FAQ</a>, which is bigger now too.</p>
+
+<h2>Skyblock: safer falls, no PvP on islands</h2>
+<ul>
+<li><b>PvP is off on islands.</b> Nobody can hurt you on your island or someone else's, visitors included. PvP was already off in the hub and the resource zones.</li>
+<li><b>Falling off the hub no longer kills you.</b> Players who walked off the edge of the hub were caught and sent back to spawn, then died from the fall when they landed. Now you land safely. Falling off your own island into the void still kills you, as it should in Skyblock.</li>
+</ul>
+""",
+    },
+    {
         "slug": "extraction-death-boxes-dual-wield-crate-timers",
         "date": "2026-11-16",
         "title": "Extraction Zone: death boxes, dual wielding and crate timers",
