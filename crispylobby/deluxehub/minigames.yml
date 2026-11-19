@@ -1,0 +1,91 @@
+# Lobby Minigames (DeluxeHub menu 'minigames'): games played right here in the lobby, in chest menus.
+# Opened from "Lobby Minigames" (slot 4) in the server selector, or /minigames (/games) via commands.yml.
+# Live copy: CrispyLobby01/Minecraft/plugins/DeluxeHub/menus/minigames.yml. Apply with: deluxehub reload
+#
+# Adding a game: give it the next free slot in the middle row (11, 13, 15, then 20, 22, 24), the same lore layout
+# (a grey "kind · players · where" tag, two or three lines on how it plays, one fact, "Click to play (/command)"),
+# and the actions [CLOSE] then [COMMAND] <its command>. The plugin must open its menu a tick later (both games do).
+#
+#   row 1:  .  .  .  .  [About]  .  .  .  .
+#   row 2:  .  .  [Balatro Craft]  .  [UNO]  .  [More soon]  .  .
+#   row 3:  [« Back]  .  .  .  .  .  .  .  .
+
+slots: 27
+title: "&8Lobby Minigames"
+
+refresh:
+  enabled: false
+  rate: 40
+
+items:
+  filler:
+    material: GRAY_STAINED_GLASS_PANE
+    display_name: '&r'
+    slot: -1
+
+  about:
+    material: BOOK
+    slot: 4
+    amount: 1
+    display_name: '&a&lLobby Minigames'
+    lore:
+      - '&7Quick games you play right here'
+      - '&7in the lobby, no server switch.'
+      - ''
+      - '&7Open this menu any time with &f/minigames&7.'
+
+  balatro:
+    material: EMERALD
+    slot: 11
+    amount: 1
+    glow: true
+    display_name: '&6&lBalatro &e&lCraft'
+    lore:
+      - '&8Card game · Solo · In the lobby'
+      - ''
+      - '&7A poker roguelike: play poker hands'
+      - '&7to beat each round''s target score.'
+      - '&7Mobs are your jokers, ores your suits.'
+      - ''
+      - '&fDaily run: &7same seed for everyone'
+      - ''
+      - '&a▶ Click to play &8(/balatro)'
+    actions:
+      - '[CLOSE]'
+      - '[COMMAND] balatro'
+
+  uno:
+    material: RED_CONCRETE
+    slot: 13
+    amount: 1
+    glow: true
+    display_name: '&c&lU&e&lN&a&lO'
+    lore:
+      - '&8Card game · 2-8 players · In the lobby'
+      - ''
+      - '&7The classic card game. Play with'
+      - '&7friends, or fill empty seats with bots.'
+      - ''
+      - '&fTurns: &730 seconds'
+      - ''
+      - '&a▶ Click to play &8(/uno)'
+    actions:
+      - '[CLOSE]'
+      - '[COMMAND] uno'
+
+  more:
+    material: LIGHT_GRAY_DYE
+    slot: 15
+    amount: 1
+    display_name: '&7More games coming'
+    lore:
+      - '&7Got an idea for a lobby game?'
+      - '&7Share it in the Discord''s suggestions.'
+
+  back:
+    material: ARROW
+    slot: 18
+    amount: 1
+    display_name: '&7« Back to servers'
+    actions:
+      - '[MENU] serverselector'

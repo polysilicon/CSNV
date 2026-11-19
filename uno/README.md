@@ -4,7 +4,7 @@ UNO played in a chest menu on the Lobby server (`CrispyLobby01`, Paper 26.2).
 
 To open it:
 - type `/uno`;
-- or click the red concrete **UNO** item in slot 6 of the DeluxeHub server selector, next to Balatro Craft.
+- or open **Lobby Minigames** in the DeluxeHub server selector (or `/minigames`) and click **UNO**.
 
 ## Playing
 - `/uno` opens the table list.
@@ -52,7 +52,7 @@ To open it:
 ## Build and test
 ```
 CP=$(ls <paper-api and its libraries>/*.jar | tr '\n' ':')
-javac --release 21 -proc:none -cp "$CP" -d out $(find src -name '*.java') && cp res/* out/ && (cd out && jar cf ../UnoCraft-1.1.0.jar .)
+javac --release 21 -proc:none -cp "$CP" -d out $(find src -name '*.java') && cp res/* out/ && (cd out && jar cf ../UnoCraft-1.2.0.jar .)
 javac --release 21 -cp out -d tout test/crispy/uno/SimTest.java && java -cp tout:out crispy.uno.SimTest
 ```
 `Game.java` has no Minecraft code. `SimTest` covers:
@@ -60,3 +60,9 @@ javac --release 21 -cp out -d tout test/crispy/uno/SimTest.java && java -cp tout
 - players leaving mid-game;
 - 200 games against a player who always times out;
 - the UNO penalty.
+
+## 1.2.0 (2026-11-19)
+- Menu clicks are handled on the next tick: opening or swapping menus from inside a click event is unsafe in Bukkit
+  (ghost items, menus that don't open). Actions also check the table still exists.
+- At the end of a game every player gets **[Play again]** (opens a new table) and **[All minigames]**.
+- The table list has an **« All minigames** button (back to the lobby's Minigames menu, `/minigames`).

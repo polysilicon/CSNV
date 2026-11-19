@@ -1,7 +1,7 @@
 # Balatro Craft
 
 A poker roguelike played in a chest menu on the Lobby server (`CrispyLobby01`, Paper 26.2).
-Open it with `/balatro` (aliases `/bc`, `/cards`) or the emerald in slot 4 of the DeluxeHub server selector.
+Open it with `/balatro` (aliases `/bc`, `/cards`), or from **Lobby Minigames** in the DeluxeHub server selector (or `/minigames`).
 
 ## How a run works
 - 8 cards in hand. Click cards to select up to 5 (selected cards rise a row), then **Play** or **Discard**.
@@ -38,7 +38,13 @@ by blinds cleared, then best hand. Rewards are cosmetic only; nothing is paid wi
 ## Build and test
 ```
 CP=$(find <lobby>/libraries -name '*.jar' | grep -v paper-api/1.21 | tr '\n' ':')
-javac --release 21 -proc:none -cp "$CP" -d out $(find src -name '*.java') && cp res/* out/ && (cd out && jar cf ../BalatroCraft-1.0.0.jar .)
+javac --release 21 -proc:none -cp "$CP" -d out $(find src -name '*.java') && cp res/* out/ && (cd out && jar cf ../BalatroCraft-1.1.0.jar .)
 javac --release 21 -cp "out:$CP" -d tout test/crispy/balatro/SimTest.java && java -cp "tout:out:$CP" crispy.balatro.SimTest
 ```
 `SimTest` checks hand detection and invariants, round-trips saves, and plays 2,000 bot runs (balance check).
+
+## 1.1.0 (2026-11-19)
+- Menu clicks are handled on the next tick (opening or swapping menus from inside a click event is unsafe in Bukkit),
+  and only if the same menu is still open.
+- Daily leaderboards and "already played today" lists older than 30 days are pruned on startup (`scores.yml` grew forever).
+- The main menu and the run-over screen have an **« All minigames** button (`/minigames`).

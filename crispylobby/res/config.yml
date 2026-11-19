@@ -423,4 +423,4 @@ welcome:
       name: "&d&lStay in the hub"
       icon: EMERALD
       lore: ["&7Play Balatro Craft or UNO right", "&7here at spawn."]
-      stay: ["&7Try &f/balatro &7for the poker roguelike, or &f/uno &7for a table with friends or bots.", "&7Use the &eServer Selector &7(nether star) to pick a world whenever you're ready."]
+      stay: ["&7Open &f/minigames &7for Balatro Craft (a poker roguelike) or UNO with friends or bots.", "&7Use the &eServer Selector &7(nether star) to pick a world whenever you're ready."]

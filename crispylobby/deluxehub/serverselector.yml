@@ -6,7 +6,7 @@
 # facts people ask first (PvP, rules, progress), then "Click to join". The empty top-left corner holds a new
 # "Not sure? Start here" guide that maps what you feel like playing to a server.
 #
-#   row 1:  [Start here] .  .  .  [Card game] .  [Card game] .  .
+#   row 1:  [Start here] .  .  .  [Lobby Minigames] .  .  .  .
 #   row 2:   .  .  [Crispy Anarchy]  .  [Extraction Zone]  .  [Vanilla Anarchy]  .  .
 #   row 3:   .  .  [Multiverse]  .  [Skyblock]  .  [Vote rewards]  .  .
 
@@ -38,7 +38,7 @@ items:
       - '&7Build and grind, no griefing &8» &bSkyblock'
       - '&7Quick fights and minigames &8» &dMultiverse'
       - '&7Loot, shoot and get out &8» &6Extraction Zone'
-      - '&7Something quick right here &8» &fthe card games'
+      - '&7Something quick right here &8» &aLobby Minigames'
       - ''
       - '&7Change servers any time with &f/lobby'
       - '&7Your tags and vote points'
@@ -52,49 +52,29 @@ items:
       - '[MESSAGE] &bSkyblock &8- &7grow your own island; skills, pets, minions and a player market.'
       - '[MESSAGE] &dMultiverse &8- &7pick a character and fight, or team up in the PvE modes.'
       - '[MESSAGE] &6Extraction Zone &8- &7loot a ruined city with guns and get out alive.'
-      - '[MESSAGE] &fCard games &8- &7Uno and a poker roguelike, played right here in the lobby.'
+      - '[MESSAGE] &aLobby Minigames &8- &7UNO and a poker roguelike, played right here in the lobby (&f/minigames&7).'
       - '[MESSAGE] &7Open the selector again with the &eNether Star&7. Back to the lobby any time: &f/lobby'
       - '[MESSAGE] &r'
 
-  # ---- lobby games (top row, same slots as before)
-  balatro:
-    material: EMERALD
+  # ---- lobby games: one entry, opening the Minigames menu (minigames.yml), so more games fit without crowding
+  # this one (2026-11-19; Balatro Craft was slot 4 and UNO slot 6 before)
+  minigames:
+    material: TARGET
     slot: 4
     amount: 1
     glow: true
-    display_name: '&6&lBalatro &e&lCraft'
+    display_name: '&a&lLobby Minigames'
     lore:
-      - '&8Card game · Solo · In the lobby'
+      - '&8Quick games · Right here in the lobby'
       - ''
-      - '&7A poker roguelike: play poker hands'
-      - '&7to beat each round''s target score.'
-      - '&7Mobs are your jokers, ores your suits.'
+      - '&6Balatro Craft &8- &7a solo poker roguelike'
+      - '&cU&eN&aO &8- &72-8 players, bots fill seats'
       - ''
-      - '&fDaily run: &7same seed for everyone'
+      - '&7No server switch: play while you wait.'
       - ''
-      - '&a▶ Click to play &8(/balatro)'
+      - '&a▶ Click to pick a game &8(/minigames)'
     actions:
-      - '[CLOSE]'
-      - '[COMMAND] balatro'
-
-  uno:
-    material: RED_CONCRETE
-    slot: 6
-    amount: 1
-    glow: true
-    display_name: '&c&lU&e&lN&a&lO'
-    lore:
-      - '&8Card game · 2-8 players · In the lobby'
-      - ''
-      - '&7The classic card game. Play with'
-      - '&7friends, or fill empty seats with bots.'
-      - ''
-      - '&fTurns: &730 seconds'
-      - ''
-      - '&a▶ Click to play &8(/uno)'
-    actions:
-      - '[CLOSE]'
-      - '[COMMAND] uno'
+      - '[MENU] minigames'
 
   # ---- servers (same slots and icons as before)
   CrispyAnarchy:

@@ -198,7 +198,9 @@ public class UnoCraft extends JavaPlugin implements Listener {
             if (p != null) {
                 if (p.getOpenInventory().getTopInventory().getHolder() instanceof Menu) p.closeInventory();
                 p.playSound(p.getLocation(), s == w ? Sound.UI_TOAST_CHALLENGE_COMPLETE : Sound.ENTITY_VILLAGER_NO, 0.8f, 1f);
-                msg(p, s == w ? "&6&lYou won! &7Play again with &f/uno&7." : "&7Game over. Play again with &f/uno&7.");
+                msg(p, s == w ? "&6&lYou won!" : "&7Game over.");
+                p.sendMessage(c(PREFIX).append(c("&a&n[Play again]").clickEvent(ClickEvent.runCommand("/uno create")))
+                        .append(c(" &8· ")).append(c("&e&n[All minigames]").clickEvent(ClickEvent.runCommand("/minigames"))));
             }
         }
         try { stats.save(statsFile); } catch (IOException e) { getLogger().warning("stats save failed: " + e); }
@@ -306,6 +308,7 @@ public class UnoCraft extends JavaPlugin implements Listener {
         if (slot == 9) put(m, 13, item(Material.GRAY_STAINED_GLASS_PANE, "&7No open tables", "&7Create one below!"), null);
         put(m, 21, glint(item(Material.RED_CONCRETE, "&a&lCreate a table", "&7Invite others or add bots, then start.")), "create");
         put(m, 23, item(Material.GOLDEN_HELMET, "&eTop players", "&7Most UNO wins"), "top");
+        put(m, 18, item(Material.ARROW, "&7« All minigames"), "games");
         fill(m.inv, Material.BLACK_STAINED_GLASS_PANE, 0, 26);
         p.openInventory(m.inv);
     }
@@ -394,32 +397,40 @@ public class UnoCraft extends JavaPlugin implements Listener {
         if (e.getClickedInventory() != e.getInventory()) return;
         String a = m.actions.get(e.getRawSlot());
         if (a == null) return;
+        boolean shift = e.isShiftClick();
+        // 1.2.0: act on the next tick. Opening or swapping menus from inside a click event is unsafe in Bukkit.
+        Bukkit.getScheduler().runTask(this, () -> { if (p.isOnline()) handle(p, m, a, shift); });
+    }
+
+    void handle(Player p, Menu m, String a, boolean shift) {
         Table t = m.t;
         switch (a.contains(":") ? a.substring(0, a.indexOf(':')) : a) {
             case "help" -> { p.closeInventory(); help(p); }
             case "top" -> { p.closeInventory(); showTop(p); }
             case "create" -> create(p);
             case "join" -> join(p, Integer.parseInt(a.substring(5)));
-            case "leave" -> { if (!m.kind.equals("game") || e.isShiftClick()) leave(p, true); else msg(p, "&7Shift-click to leave the game."); }
+            case "leave" -> { if (!m.kind.equals("game") || shift) leave(p, true); else msg(p, "&7Shift-click to leave the game."); }
+            case "games" -> { p.closeInventory(); p.performCommand("minigames"); }
             case "addbot" -> {
-                if (t.g.started || t.g.seats.size() >= MAX_SEATS) return;
+                if (t == null || t.g.started || t.g.seats.size() >= MAX_SEATS) return;
                 t.bots++;
                 t.g.seats.add(new Seat("bot" + t.bots, "Bot " + t.bots, true));
                 refresh(t);
             }
             case "rmbot" -> {
-                if (t.g.started) return;
+                if (t == null || t.g.started) return;
                 for (int i = t.g.seats.size() - 1; i >= 0; i--) if (t.g.seats.get(i).bot) { t.g.seats.remove(i); break; }
                 refresh(t);
             }
-            case "start" -> start(p, t);
+            case "start" -> { if (t != null && tables.get(t.id) == t) start(p, t); }
             case "prev", "next" -> {
+                if (t == null) return;
                 Seat me = t.seat(p.getUniqueId()); if (me == null) return;
                 t.page.merge(me.id, a.equals("next") ? 1 : -1, Integer::sum);
                 if (t.page.get(me.id) < 0) t.page.put(me.id, 0);
                 drawGame(p, t, m);
             }
-            case "card", "draw", "uno", "color" -> act(p, t, a);
+            case "card", "draw", "uno", "color" -> { if (t != null) act(p, t, a); }
             default -> {}
         }
     }

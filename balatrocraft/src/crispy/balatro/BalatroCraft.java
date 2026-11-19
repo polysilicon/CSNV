@@ -49,7 +49,23 @@ public class BalatroCraft extends JavaPlugin implements Listener {
     @Override public void onEnable() {
         runsDir = new File(getDataFolder(), "runs"); runsDir.mkdirs();
         scoresFile = new File(getDataFolder(), "scores.yml"); scores = YamlConfiguration.loadConfiguration(scoresFile);
+        pruneDaily();
         getServer().getPluginManager().registerEvents(this, this);
+    }
+
+    /** 1.1.0: daily leaderboards and "already played" lists older than KEEP_DAYS are dropped (they used to pile up). */
+    static final int KEEP_DAYS = 30;
+    void pruneDaily() {
+        LocalDate cut = LocalDate.now(ZONE).minusDays(KEEP_DAYS);
+        int n = 0;
+        for (String sec : List.of("daily", "daily-started")) {
+            ConfigurationSection c = scores.getConfigurationSection(sec);
+            if (c == null) continue;
+            for (String day : c.getKeys(false)) {
+                try { if (LocalDate.parse(day).isBefore(cut)) { scores.set(sec + "." + day, null); n++; } } catch (RuntimeException ignored) {}
+            }
+        }
+        if (n > 0) { saveScores(); getLogger().info("pruned " + n + " old daily entries"); }
     }
     @Override public void onDisable() { runs.forEach(this::saveRun); }
 
@@ -197,6 +213,7 @@ public class BalatroCraft extends JavaPlugin implements Listener {
         boolean dailyDone = scores.getStringList("daily-started." + today()).contains(p.getUniqueId().toString());
         inv.setItem(15, item(Material.CLOCK, "&6&lDaily Run", "&7Same seed for everyone today.", dailyDone ? "&cAlready played today" : "&aOne attempt per day"));
         inv.setItem(22, item(Material.GOLDEN_HELMET, "&eLeaderboard", "&7Click: today's daily", "&7Shift-click: all-time"));
+        inv.setItem(18, item(Material.ARROW, "&7« All minigames"));
         fill(inv, Material.BLACK_STAINED_GLASS_PANE, 0, 26);
     }
 
@@ -346,6 +363,7 @@ public class BalatroCraft extends JavaPlugin implements Listener {
         inv.setItem(11, glint(item(Material.EMERALD, "&a&lNew Run")));
         inv.setItem(15, item(Material.CLOCK, "&6&lDaily Run"));
         inv.setItem(22, item(Material.GOLDEN_HELMET, "&eLeaderboard", "&7Click: today's daily", "&7Shift-click: all-time"));
+        inv.setItem(18, item(Material.ARROW, "&7« All minigames"));
         fill(inv, Material.BLACK_STAINED_GLASS_PANE, 0, 26);
     }
 
@@ -371,6 +389,15 @@ public class BalatroCraft extends JavaPlugin implements Listener {
         if (!(e.getWhoClicked() instanceof Player p) || e.getClickedInventory() != e.getView().getTopInventory()) return;
         if (animating.contains(p.getUniqueId())) return;
         int s = e.getRawSlot(); boolean shift = e.isShiftClick();
+        // 1.1.0: act on the next tick. Opening or swapping menus from inside a click event is unsafe in Bukkit.
+        Bukkit.getScheduler().runTask(this, () -> {
+            if (!p.isOnline() || animating.contains(p.getUniqueId())) return;
+            if (!(p.getOpenInventory().getTopInventory().getHolder() instanceof Menu now) || now != m) return;   // menu changed meanwhile
+            handle(p, m, s, shift);
+        });
+    }
+
+    void handle(Player p, Menu m, int s, boolean shift) {
         Run r = run(p.getUniqueId());
         switch (m.type) {
             case "menu", "over" -> {
@@ -378,6 +405,7 @@ public class BalatroCraft extends JavaPlugin implements Listener {
                 else if (s == 15) { if (r != null && r.state == Run.State.OVER) dropRun(p.getUniqueId()); startDaily(p); }
                 else if (s == 13 && m.type.equals("menu")) help(p);
                 else if (s == 22) showTop(p, !shift);
+                else if (s == 18) { p.closeInventory(); p.performCommand("minigames"); }
             }
             case "table" -> { if (r != null) tableClick(p, r, s, shift); }
             case "shop" -> { if (r != null) shopClick(p, r, s, shift); }
