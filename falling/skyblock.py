@@ -1548,6 +1548,9 @@ function {NS}:p/ctx
 function {NS}:p/bounds2 with storage {NS}:d cur
 """)
 fn("p/bounds2", f"""
+# 2.18.3: below the bottom of the world (falling into the void) is left alone, so the void kills as normal; it used to
+# send you home, where you died anyway from the fall distance you carried
+execute if entity @s[y=-1000,dy=936] run return 0
 $execute if entity @s[x=$(x),y=-128,z=$(z),dx=$(sd),dy=500,dz=$(sd)] run return 0
 function {NS}:p/home
 tellraw @s {{text:"That's the edge of your island's space.",color:"red"}}

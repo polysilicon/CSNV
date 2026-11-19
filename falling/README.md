@@ -226,7 +226,7 @@ The Realtor NPC just south-west of the plaza, a plot's sign, or `/plots` opens t
 
 `Guide.java`. Every player gets a Skyblock Guide (a knowledge book with `custom_data {cs_guide:1b}`) the first time The guide also has a **Block values** page (2.12.5): every block worth more than 1 island-level point, highest first, read straight from `IslandLevels.VALUE`, with the 1-point and 0-point rules underneath.
 
-**Teleports clear fall distance** (2.18.3, `FallGuard`): players caught falling off the hub or into the void under an island were teleported to spawn/home still carrying ~110-230 blocks of fall distance and died on landing ("fell from a high place" at hub spawn or on their island). Any jump of more than 16 blocks in a tick, or a change of dimension, now resets it.
+**Hub catch keeps you alive, the void doesn't** (2.18.3): players caught falling off the hub were teleported to spawn still carrying ~110 blocks of fall distance and died on landing ("fell from a high place"). `FallGuard` now resets fall distance for any teleport that lands a player in the hub. Under an island, the island-bounds check (`p/bounds2`) no longer catches players below y -64, so falling off your island kills you in the void as normal (it used to send you home, where you died from the landing).
 
 **No PvP outside the Warlands** (2.18.2): islands too (their Nether and End included), so visiting is safe; the attacker sees "PvP is off on islands." The `pvp` game rule stays on only so the Warlands can have PvP.
 
