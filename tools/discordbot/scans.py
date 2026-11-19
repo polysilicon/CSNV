@@ -87,3 +87,8 @@ def decorate(em, message, key, price, fmt=None, user=None, guild=None, odds=Fals
         print(f"[scans] {key}: {e}"); return
     if first: em.add_field(name="Since first scan", inline=False,
                            value=since_odds(first, price or {}) if odds else since(first, price, fmt))
+    if not odds and message is not None:   # watch it for big moves (pricealerts.py)
+        try:
+            import pricealerts
+            pricealerts.track(guild.id if guild else 0, key, message.channel.id, price)
+        except Exception as e: print(f"[scans] pricealerts {key}: {e}")

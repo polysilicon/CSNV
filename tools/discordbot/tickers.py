@@ -55,7 +55,7 @@ async def _gecko(session, symbol):
     price, ch = m["current_price"], m.get("price_change_24h")
     meta = {"regularMarketPrice": price, "chartPreviousClose": (price - ch) if ch is not None else None, "currency": "USD",
             "longName": m.get("name"), "regularMarketDayHigh": m.get("high_24h"), "regularMarketDayLow": m.get("low_24h"),
-            "source": "CoinGecko", "rank": m.get("market_cap_rank"), "geckoId": coin["id"]}
+            "source": "CoinGecko", "rank": m.get("market_cap_rank"), "geckoId": coin["id"], "marketCap": m.get("market_cap")}
     closes = ((m.get("sparkline_in_7d") or {}).get("price") or [])[-24:]   # hourly: the last day
     return f"{symbol}-USD", meta, closes
 

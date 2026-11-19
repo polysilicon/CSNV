@@ -65,6 +65,11 @@ the host (it reads tokens from `/etc/crispybot.env`); these two modules are copi
   list and `BLOCK`, plus Minecraft words about 1 day in 5; guesses from dwyl/english-words. Used words in
   `dailyword_state.json`. `/dailyword`: today's counts (never the word), yesterday's word and results, streaks.
 
+- `pricealerts.py`: anything scanned in a channel ($TICKER and contract-address cards) is watched for 14 days after its
+  latest scan; every 15 min its price is checked again, and a move of ±5% (stocks, major coins, currencies) or ±20%
+  (coins under a $1B market cap and DEX tokens) since the scan or the last alert posts a card in that channel (at most
+  one an hour per item). Staff: `/pricealerts on|off|list`. State: `pricealerts.json`.
+
 `/console` was removed from bot.py on 2026-11-14 (backup `bot.py.bak-console`); `/mc` with its allowlist remains.
 
 Deploy: copy the modules into `/opt/crispybot`, `systemctl restart crispybot`. Backup of the pre-change bot:
