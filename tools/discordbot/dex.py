@@ -55,7 +55,7 @@ async def lookup(session, addr):
     as_base = [p for p in pairs if same((p.get("baseToken") or {}).get("address", ""))]
     out = None
     if as_base:
-        p = max(as_base, key=liq)
+        p = await _main_pair(session, addr, as_base, same)
         out = {"pair": p, "token": p["baseToken"], "price": _f(p.get("priceUsd")), "change": p.get("priceChange") or {}}
     else:   # only ever the other side of a trade (stablecoins, wrapped coins): its price from the pair
         as_quote = [p for p in pairs if same((p.get("quoteToken") or {}).get("address", ""))]
@@ -65,6 +65,36 @@ async def lookup(session, addr):
             out = {"pair": p, "token": p["quoteToken"], "price": (pu / pn) if pu and pn else None, "change": {}}
     _cache[addr.lower()] = (time.monotonic(), out)
     return out
+
+
+# Real money to trade against. Spam pairs quote a token against a worthless one of their own and fake huge
+# liquidity, so "most liquidity" alone picks them (2026-11-19: a DCTY/MM pair claiming $15M liquidity, $132B cap).
+MAJORS = {"SOL", "WSOL", "USDC", "USDT", "ETH", "WETH", "BNB", "WBNB", "USDC.E", "USDT.E", "DAI", "USD1", "PYUSD", "AVAX",
+          "WAVAX", "POL", "WPOL", "MATIC", "WMATIC", "CBBTC", "WBTC", "SUI"}
+
+
+async def _main_pair(session, addr, as_base, same):
+    """The pair DexScreener itself shows for the token (its per-chain endpoint lists that first); if that fails, the
+    busiest pair against a major currency, ignoring pairs whose market cap is way off the others'."""
+    # an EVM address can exist on several chains (forks copy them): use the chain where it actually trades most
+    vol = {}
+    for p in as_base: vol[p.get("chainId")] = vol.get(p.get("chainId"), 0) + ((p.get("volume") or {}).get("h24") or 0)
+    chain = max(vol, key=vol.get)
+    as_base = [p for p in as_base if p.get("chainId") == chain]
+    try:
+        async with session.get(f"https://api.dexscreener.com/tokens/v1/{chain}/{addr}", headers=UA,
+                               timeout=aiohttp.ClientTimeout(total=10)) as r:
+            main = await r.json() if r.status == 200 else []
+        main = [p for p in main if isinstance(p, dict) and same((p.get("baseToken") or {}).get("address", ""))]
+        if main: return main[0]
+    except Exception as e:
+        print(f"[dex] main pair for {addr}: {type(e).__name__}: {e}")
+    good = [p for p in as_base if ((p.get("quoteToken") or {}).get("symbol") or "").upper() in MAJORS] or as_base
+    caps = sorted(c for c in ((p.get("marketCap") or p.get("fdv")) for p in good) if c)
+    if len(caps) >= 3:
+        med = caps[len(caps) // 2]
+        good = [p for p in good if not (p.get("marketCap") or p.get("fdv")) or (p.get("marketCap") or p.get("fdv")) <= med * 5] or good
+    return max(good, key=lambda p: (((p.get("volume") or {}).get("h24") or 0), (p.get("liquidity") or {}).get("usd") or 0))
 
 
 def _f(x):
