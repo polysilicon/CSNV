@@ -60,48 +60,86 @@ def today(): return datetime.datetime.now(datetime.timezone.utc).date().isoforma
 
 
 # ------------------------------------------------------------------------------------------------ feed
+_ws = None
+
+
+async def watch_creators(keys):
+    """Follow these wallets' trades on PumpPortal (used for the creators of coins we hold)."""
+    if _ws and keys:
+        try: await _ws.send(json.dumps({"method": "subscribeAccountTrade", "keys": list(keys)}))
+        except Exception as e: log("watch:", e)
+
+
 async def feed():
+    global _ws
     import websockets
     while True:
         try:
             async with websockets.connect("wss://pumpportal.fun/api/data", open_timeout=20, ping_interval=30) as ws:
+                _ws = ws
                 await ws.send(json.dumps({"method": "subscribeNewToken"}))
+                await watch_creators({p["creator"] for p in state["positions"].values() if p.get("creator")})
                 log("feed: connected")
                 async for raw in ws:
                     try: m = json.loads(raw)
                     except ValueError: continue
                     mint = m.get("mint")
-                    if mint and mint not in state["seen"]:
-                        state["seen"][mint] = {"t": int(time.time()), "sym": (m.get("symbol") or "?")[:20], "name": (m.get("name") or "?")[:40]}
+                    if m.get("txType") == "sell" and mint in state["positions"]:
+                        pos = state["positions"][mint]
+                        if pos.get("creator") and m.get("traderPublicKey") == pos["creator"]:
+                            pos["dev_sold"] = True   # the creator is selling: often the start of a rug; manage() sells
+                            log("creator sold", pos["sym"])
+                        continue
+                    if m.get("txType") == "create" and mint and mint not in state["seen"]:
+                        state["seen"][mint] = {"t": int(time.time()), "sym": (m.get("symbol") or "?")[:20], "name": (m.get("name") or "?")[:40],
+                                               "creator": m.get("traderPublicKey")}
+                    elif mint and "txType" not in m and mint not in state["seen"]:
+                        state["seen"][mint] = {"t": int(time.time()), "sym": (m.get("symbol") or "?")[:20], "name": (m.get("name") or "?")[:40],
+                                               "creator": m.get("traderPublicKey")}
         except Exception as e:
             log("feed:", type(e).__name__, e)
+        _ws = None
         await asyncio.sleep(10)
 
 
 # ------------------------------------------------------------------------------------------------ prices
+RETRY = "retry"
+
+
 async def jup_quote(s, inp, out, amount):
     params = {"inputMint": inp, "outputMint": out, "amount": str(int(amount)), "slippageBps": str(cfg["slippage_bps"])}
     async with s.get(JUP + "/quote", params=params, headers=UA, timeout=aiohttp.ClientTimeout(total=10)) as r:
-        if r.status != 200: return None
+        if r.status == 400: return None            # no route: the token really can't be traded right now
+        if r.status != 200: return RETRY           # rate limit or a hiccup: try again next check, decide nothing
         q = await r.json()
     return q if q.get("outAmount") else None
 
 
 async def dex_pairs(s, mints):
-    """{mint: DexScreener main pair} for up to 30 mints."""
-    out = {}
-    async with s.get(DEX + ",".join(mints), headers=UA, timeout=aiohttp.ClientTimeout(total=15)) as r:
-        if r.status != 200: return out
-        for p in await r.json():
+    """{mint: (pair, minutes since it graduated or None)} for up to 30 mints. The pair is the one with real liquidity:
+    after a pump.fun coin graduates, DexScreener can still show its dead bonding-curve pair with stale numbers
+    (2026-11-19: two rugs bought on "+1,300%" bonding-curve data while the new pool was already dumping)."""
+    pairs = {}
+    async with s.get("https://api.dexscreener.com/latest/dex/tokens/" + ",".join(mints), headers=UA, timeout=aiohttp.ClientTimeout(total=15)) as r:
+        if r.status != 200: return {}
+        for p in (await r.json()).get("pairs") or []:
             m = (p.get("baseToken") or {}).get("address")
-            if m and m not in out: out[m] = p
+            if m in mints: pairs.setdefault(m, []).append(p)
+    out, now = {}, time.time()
+    for m, ps in pairs.items():
+        live = [p for p in ps if ((p.get("liquidity") or {}).get("usd") or 0) > 0 and p.get("priceUsd")]
+        if not live: continue
+        best = max(live, key=lambda p: (p.get("liquidity") or {}).get("usd") or 0)
+        pools = [p.get("pairCreatedAt") for p in ps if p.get("dexId") != "pumpfun" and p.get("pairCreatedAt")]
+        grad = (now - min(pools) / 1000) / 60 if pools and any(p.get("dexId") == "pumpfun" for p in ps) else None
+        out[m] = (best, grad)
     return out
 
 
 _fails = {}   # why candidates failed in the latest scan (shown by Yoink's /trader)
 
 
-def passes(p, age_min):
+def passes(p, age_min, grad_min=None):
     c = cfg
     liq = (p.get("liquidity") or {}).get("usd") or 0
     mcap = p.get("marketCap") or p.get("fdv") or 0
@@ -113,7 +151,8 @@ def passes(p, age_min):
     checks = {"liquidity": liq >= c["min_liquidity_usd"], "market cap": c["min_mcap_usd"] <= mcap <= c["max_mcap_usd"],
               "5m volume": vol5 >= c["min_vol_m5_usd"], "buy/sell": buys >= c["min_buy_sell_ratio_m5"] * max(sells, 1),
               "5m move": m5 is not None and c["min_change_m5_pct"] <= m5 <= c["max_change_m5_pct"],
-              "1h move": h1 is None or h1 <= c["max_change_h1_pct"], "age": c["min_age_min"] <= age_min <= c["max_age_min"]}
+              "1h move": h1 is None or h1 <= c["max_change_h1_pct"], "age": c["min_age_min"] <= age_min <= c["max_age_min"],
+              "just graduated": grad_min is None or grad_min >= c.get("skip_after_graduation_min", 15)}
     for k, ok in checks.items():
         if not ok: _fails[k] = _fails.get(k, 0) + 1
     return all(checks.values()), {"liq": round(liq), "mcap": round(mcap), "vol5": round(vol5), "buys5": buys, "sells5": sells, "m5": m5, "h1": h1}
@@ -172,7 +211,7 @@ def live(): return cfg.get("mode") == "live" and os.path.exists(WALLET)
 async def buy(s, mint, info, metrics, pair):
     lamports = int(cfg["trade_sol"] * LAMPORTS)
     q = await jup_quote(s, SOL_MINT, mint, lamports)
-    if not q: return
+    if not q or q == RETRY: return
     sig, amount = None, int(q["outAmount"])
     if live():
         if await sol_balance(s) < cfg["trade_sol"] + 0.01:
@@ -180,7 +219,8 @@ async def buy(s, mint, info, metrics, pair):
         sig = await swap(s, q)
         await asyncio.sleep(2)
         amount = await token_balance(s, mint) or amount
-    state["positions"][mint] = {"sym": info["sym"], "name": info["name"], "amount": amount, "cost_sol": cfg["trade_sol"],
+    if info.get("creator"): asyncio.create_task(watch_creators([info["creator"]]))
+    state["positions"][mint] = {"sym": info["sym"], "name": info["name"], "amount": amount, "cost_sol": cfg["trade_sol"], "creator": info.get("creator"),
                                 "t": int(time.time()), "peak_pct": 0.0, "liq0": metrics["liq"], "url": pair.get("url"), "sig": sig}
     state["traded"] = (state["traded"] + [mint])[-3000:]
     save()
@@ -190,7 +230,13 @@ async def buy(s, mint, info, metrics, pair):
 
 async def sell(s, mint, reason):
     pos = state["positions"][mint]
-    q = await jup_quote(s, mint, SOL_MINT, pos["amount"])
+    q = RETRY
+    for _ in range(3):
+        try: q = await jup_quote(s, mint, SOL_MINT, pos["amount"])
+        except Exception: q = RETRY
+        if q != RETRY: break
+        await asyncio.sleep(1)
+    if q == RETRY: log("sell: no quote right now", pos["sym"]); return False
     out_sol = int(q["outAmount"]) / LAMPORTS if q else 0.0
     sig = None
     if live():
@@ -216,17 +262,24 @@ async def manage(s):
     for mint, pos in list(state["positions"].items()):
         if "sellall" in stop:
             await sell(s, mint, "manual sell-all"); continue
-        q = await jup_quote(s, mint, SOL_MINT, pos["amount"])
-        value = int(q["outAmount"]) / LAMPORTS if q else 0.0
+        try: q = await jup_quote(s, mint, SOL_MINT, pos["amount"])
+        except Exception: q = RETRY
+        if q == RETRY and not pos.get("dev_sold") and "sellall" not in stop: continue
+        pos["noroute"] = 0 if q and q != RETRY else pos.get("noroute", 0) + 1
+        value = int(q["outAmount"]) / LAMPORTS if q and q != RETRY else 0.0
         pct = (value / pos["cost_sol"] - 1) * 100
         pos["peak_pct"] = max(pos["peak_pct"], pct)
         held = (time.time() - pos["t"]) / 60
         reason = None
-        if pct >= cfg["take_profit_pct"]: reason = f"take profit {pct:+.0f}%"
+        if not q or q == RETRY:
+            if pos.get("dev_sold") or "sellall" in stop or pos["noroute"] >= 3: pass
+            else: continue   # a missing quote isn't a price: wait for the next check
+        if pos.get("dev_sold"): reason = f"creator sold {pct:+.0f}%" if q and q != RETRY else "creator sold"
+        elif not q or q == RETRY: reason = "no route (pool gone?)"
+        elif pct >= cfg["take_profit_pct"]: reason = f"take profit {pct:+.0f}%"
         elif pct <= -cfg["stop_loss_pct"]: reason = f"stop loss {pct:+.0f}%"
         elif pos["peak_pct"] >= cfg["trail_after_pct"] and pct <= pos["peak_pct"] - cfg["trail_pct"]: reason = f"trailing stop {pct:+.0f}% (peak {pos['peak_pct']:+.0f}%)"
         elif held >= cfg["max_hold_min"]: reason = f"time limit {pct:+.0f}%"
-        elif not q: reason = "no route (pool gone?)"
         if reason:
             try: await sell(s, mint, reason)
             except Exception as e: log("sell failed", mint, e); event(kind="error", mint=mint, sym=pos["sym"], error=str(e)[:200])
@@ -249,9 +302,9 @@ async def scan(s):
         try: pairs = await dex_pairs(s, window[i:i + 30])
         except Exception as e: log("dex:", e); continue
         listed += len(pairs)
-        for mint, p in pairs.items():
+        for mint, (p, grad) in pairs.items():
             if len(state["positions"]) >= cfg["max_open"] or mint in state["positions"]: continue
-            ok, metrics = passes(p, (now - state["seen"][mint]["t"]) / 60)
+            ok, metrics = passes(p, (now - state["seen"][mint]["t"]) / 60, grad)
             if ok:
                 try: await buy(s, mint, state["seen"][mint], metrics, p)
                 except Exception as e: log("buy failed", mint, e); event(kind="error", mint=mint, sym=state["seen"][mint]["sym"], error=str(e)[:200])
@@ -269,11 +322,11 @@ async def main():
             try:
                 with open(CONFIG) as f: cfg.update(json.load(f))
                 await manage(s)
-                if n % 4 == 0: await scan(s)   # entries once a minute, exits every 15 s
+                if n % max(1, 60 // cfg.get("exit_check_sec", 5)) == 0: await scan(s)   # entries once a minute, exits every few seconds
             except Exception as e:
                 log("loop:", type(e).__name__, e); traceback.print_exc()
             n += 1
-            await asyncio.sleep(15)
+            await asyncio.sleep(cfg.get("exit_check_sec", 5))
 
 
 if __name__ == "__main__":
