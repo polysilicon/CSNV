@@ -47,6 +47,7 @@ public class SkyblockMod implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(Pets::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Zones::onTick);
         ServerTickEvents.END_SERVER_TICK.register(ZoneRules::onTick);
+        ServerTickEvents.END_SERVER_TICK.register(FallGuard::onTick);   // 2.18.3: teleports clear fall distance
         ServerTickEvents.END_SERVER_TICK.register(Warlands::onTick);
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register(ZoneRules::onEntityLoad);
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register(Pets::onEntityLoad);
