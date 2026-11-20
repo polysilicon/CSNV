@@ -133,6 +133,22 @@ async def sync_wallets():
                       "top": [{"wallet": w, "pnl": round(p, 2), "coins": n, "wins": wn} for p, w, n, wn in sm.top()]}
 
 
+LAUNCHES = os.path.join(HERE, "launches.jsonl")
+LAUNCHES_MAX = 2_000_000
+
+
+def share_launch(m):
+    """Append a new launch to launches.jsonl for Yoink's /newpairs, so the server keeps ONE PumpPortal connection
+    (PumpPortal asks for one per IP; two got us refused). Yoink tails the file; it's emptied when it gets big."""
+    try:
+        if os.path.exists(LAUNCHES) and os.path.getsize(LAUNCHES) > LAUNCHES_MAX: open(LAUNCHES, "w").close()
+        with open(LAUNCHES, "a") as f:
+            f.write(json.dumps({"t": int(time.time()), "mint": m.get("mint"), "name": (m.get("name") or "")[:60],
+                                "symbol": (m.get("symbol") or "")[:20], "marketCapSol": m.get("marketCapSol")}) + "\n")
+    except OSError as e:
+        log("launches.jsonl:", e)
+
+
 async def feed():
     global _ws
     import websockets
@@ -165,6 +181,7 @@ async def feed():
                     if m.get("txType") == "create" and mint and cfg.get("track_wallets", True) and pp_key():
                         sm.on_create(mint, m.get("traderPublicKey"))
                         await ws_send({"method": "subscribeTokenTrade", "keys": [mint]})
+                    if m.get("txType") == "create" and mint: share_launch(m)
                     if m.get("txType") == "create" and mint and mint not in state["seen"]:
                         state["seen"][mint] = {"t": int(time.time()), "sym": (m.get("symbol") or "?")[:20], "name": (m.get("name") or "?")[:40],
                                                "creator": m.get("traderPublicKey")}

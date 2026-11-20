@@ -3,8 +3,9 @@
 When something happens, new coins named after it appear within minutes. This keeps a rolling 24 h list of every
 newly launched coin and searches it by name and symbol:
 
-- pump.fun launches, live, from PumpPortal's public data feed (wss://pumpportal.fun/api/data, subscribeNewToken; free,
-  no key). Pump.fun's own site API is behind bot protection and isn't used.
+- pump.fun launches, live, read from /opt/crispytrader/launches.jsonl, which Crispy Trader writes from its PumpPortal
+  connection (the server keeps one PumpPortal connection; PumpPortal refuses IPs with more). Pump.fun's own site API
+  is behind bot protection and isn't used.
 - New trading pools on Solana, Base and Ethereum DEXes, from GeckoTerminal's public new_pools list, polled every minute.
 
 /newpairs shows the newest matches with their current market cap and liquidity (DexScreener, one batched call), age
@@ -17,6 +18,7 @@ import aiohttp
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SAVE = os.path.join(HERE, "newpairs.json")
+LAUNCHES = "/opt/crispytrader/launches.jsonl"   # written by Crispy Trader (tools/trader)
 KEEP_S = 24 * 3600
 UA = {"User-Agent": "Mozilla/5.0 (compatible; crispy-bot/1.0)"}
 GT_EVERY = {"solana": 1, "base": 2, "eth": 2}   # network -> poll every N rounds (one page of 20); GeckoTerminal's free limit is small
@@ -58,24 +60,28 @@ def search(topic, coins=None):
 
 # ---- feeds
 async def pump_feed():
-    import websockets
-    delay = 5
+    """pump.fun launches from Crispy Trader's PumpPortal connection: it appends each one to LAUNCHES. Yoink no longer
+    connects to PumpPortal itself, since PumpPortal allows one connection per IP and two got the server refused."""
+    pos = os.path.getsize(LAUNCHES) if os.path.exists(LAUNCHES) else 0
     while True:
+        await asyncio.sleep(5)
         try:
-            async with websockets.connect("wss://pumpportal.fun/api/data", open_timeout=20, ping_interval=30) as ws:
-                await ws.send(json.dumps({"method": "subscribeNewToken"}))
-                stats["pump_up"] = True; delay = 5
-                async for raw in ws:
-                    try: m = json.loads(raw)
-                    except ValueError: continue
-                    if "mint" not in m: continue
-                    add({"t": time.time(), "chain": "solana", "addr": m["mint"], "name": (m.get("name") or "")[:60],
-                         "sym": (m.get("symbol") or "")[:20], "src": "pump.fun", "mcap": None, "sol": m.get("marketCapSol")})
-                    stats["pump"] += 1
+            if not os.path.exists(LAUNCHES): stats["pump_up"] = False; continue
+            size = os.path.getsize(LAUNCHES)
+            if size < pos: pos = 0          # the trader emptied it
+            stats["pump_up"] = time.time() - os.path.getmtime(LAUNCHES) < 300
+            if size == pos: continue
+            with open(LAUNCHES) as f:
+                f.seek(pos); rows = f.readlines(); pos = f.tell()
+            for l in rows:
+                try: m = json.loads(l)
+                except ValueError: continue
+                if not m.get("mint"): continue
+                add({"t": m.get("t") or time.time(), "chain": "solana", "addr": m["mint"], "name": m.get("name") or "",
+                     "sym": m.get("symbol") or "", "src": "pump.fun", "mcap": None, "sol": m.get("marketCapSol")})
+                stats["pump"] += 1
         except Exception as e:
-            print(f"[newpairs] pump.fun feed: {type(e).__name__}: {e}")
-        stats["pump_up"] = False
-        await asyncio.sleep(delay); delay = min(delay * 2, 300)
+            print(f"[newpairs] pump.fun launches: {type(e).__name__}: {e}")
 
 
 def _ts(s):
