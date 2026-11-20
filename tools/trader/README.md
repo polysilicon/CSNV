@@ -23,7 +23,7 @@ from the Discord bot, so the wallet key never sits in Yoink.
   creator's wallet is watched and any sell by them exits at once, and open positions are re-priced every `exit_check_sec` (5) s. A failed quote (rate limit) is
   never read as a price; "no route" only sells after 3 checks in a row. A rug that drains the pool in one transaction
   can still beat any stop loss: position size is the real limit.
-- Breakouts (older coins, `"breakout"` in config): every 2 min, GeckoTerminal's trending and busiest Solana pools are
+- Breakouts (older coins, `"breakout"` in config): every 3 min, GeckoTerminal's trending and busiest Solana pools are
   checked for coins 1 h to `max_age_days` (30) old, $300K-$20M market cap, $50K+ liquidity, up 3-20% in 5 min and 5-80%
   in 1 h on 5-min volume at least 1.5x the hour's average, more buys than sells. Same rug and holder checks. Its own
   exits (`breakout.exits`: take profit +20% then +50%, stop -10%, trail 8%, 2 h limit), at most `max_open` (2) at a

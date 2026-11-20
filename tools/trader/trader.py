@@ -624,7 +624,7 @@ async def scan(s):
 
 
 # ------------------------------------------------------------------------------------------------ breakouts (older coins)
-BREAKOUT = {"enabled": True, "every_sec": 120, "min_age_h": 1, "max_age_days": 30, "min_mcap_usd": 300_000, "max_mcap_usd": 20_000_000,
+BREAKOUT = {"enabled": True, "every_sec": 180, "min_age_h": 1, "max_age_days": 30, "min_mcap_usd": 300_000, "max_mcap_usd": 20_000_000,
             "min_liquidity_usd": 50_000, "min_vol_m5_usd": 15_000, "min_vol_accel": 1.5, "min_change_m5_pct": 3, "max_change_m5_pct": 20,
             "min_change_h1_pct": 5, "max_change_h1_pct": 80, "max_change_h24_pct": 300, "min_buy_sell_ratio_m5": 1.2,
             "max_open": 2, "cooldown_h": 12,
@@ -648,17 +648,19 @@ async def trending_mints(s):
     out = []
     for path, params in (("trending_pools", {"duration": "5m"}), ("trending_pools", {"duration": "1h"}),
                          ("pools", {"sort": "h24_tx_count_desc"})):
-        for page in ("1", "2"):
+        for attempt in (1, 2):
             try:
-                async with s.get(f"https://api.geckoterminal.com/api/v2/networks/solana/{path}", params={**params, "page": page}, headers=UA,
+                async with s.get(f"https://api.geckoterminal.com/api/v2/networks/solana/{path}", params={**params, "page": "1"}, headers=UA,
                                  timeout=aiohttp.ClientTimeout(total=15)) as r:
-                    if r.status != 200: log(f"trending: GeckoTerminal {path} {r.status}"); continue
+                    if r.status == 429 and attempt == 1: await asyncio.sleep(20); continue   # over the shared limit: one retry
+                    if r.status != 200: log(f"trending: GeckoTerminal {path} {r.status}"); break
                     for p in (await r.json()).get("data") or []:
                         mint = ((p.get("relationships") or {}).get("base_token") or {}).get("data", {}).get("id", "").removeprefix("solana_")
                         if mint and mint not in out and mint not in STABLE: out.append(mint)
             except Exception as e:
                 log("trending:", type(e).__name__, e)
-            await asyncio.sleep(2.5)   # GeckoTerminal's free limit is about 30 calls a minute
+            break
+        await asyncio.sleep(5)   # GeckoTerminal's free limit (about 30 a minute) is shared with Yoink's /newpairs
     return out
 
 
@@ -690,6 +692,11 @@ def passes_breakout(p, b):
 
 
 async def scan_breakouts(s):
+    try: await _scan_breakouts(s)
+    except Exception as e: log("breakouts:", type(e).__name__, e)
+
+
+async def _scan_breakouts(s):
     b = bcfg()
     if not b["enabled"] or time.time() - _bo["last"] < b["every_sec"]: return
     if os.path.exists(STOP) or state["day_pnl"] <= -cfg["daily_loss_sol"]: return
@@ -738,7 +745,8 @@ async def main():
                 per_min = max(1, 60 // cfg.get("exit_check_sec", 5))
                 if n % per_min == 0:
                     await scan(s)   # entries once a minute, exits every few seconds
-                    await scan_breakouts(s)   # older coins, every breakout.every_sec
+                    t = _bo.get("task")
+                    if t is None or t.done(): _bo["task"] = asyncio.create_task(scan_breakouts(s))   # own task: its waits don't hold up exits
                     old = sm.expired()
                     if old: await ws_send({"method": "unsubscribeTokenTrade", "keys": old})
                 if n % (per_min * 5) == 0: await sync_wallets()
