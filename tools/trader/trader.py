@@ -235,6 +235,15 @@ async def dex_pairs(s, mints):
 _fails = {}   # why candidates failed in the latest scan (shown by Yoink's /trader)
 
 
+def pool_sane(liq, mcap, vol5):
+    """Rug tells seen on 2026-11-19/20 (every one went -93% to -100% within minutes; no winner had either):
+    - market cap under min_mcap_to_liq x liquidity: a real pool holds only part of the supply, so liquidity above the
+      market cap means a pool seeded to look deep (WOOF, DOWNCAT, MBBURN, RUDY: 0.5-0.6x);
+    - 5-minute volume over max_vol5_to_liq x liquidity: wash-traded by bots before a dump (FIONA 7.6x, RUDY 10.9x)."""
+    c = cfg
+    return mcap >= c.get("min_mcap_to_liq", 1.5) * liq and vol5 <= c.get("max_vol5_to_liq", 6) * max(liq, 1)
+
+
 def passes(p, age_min, grad_min=None):
     c = cfg
     liq = (p.get("liquidity") or {}).get("usd") or 0
@@ -248,7 +257,8 @@ def passes(p, age_min, grad_min=None):
               "5m volume": vol5 >= c["min_vol_m5_usd"], "buy/sell": buys >= c["min_buy_sell_ratio_m5"] * max(sells, 1),
               "5m move": m5 is not None and c["min_change_m5_pct"] <= m5 <= c["max_change_m5_pct"],
               "1h move": h1 is None or h1 <= c["max_change_h1_pct"], "age": c["min_age_min"] <= age_min <= c["max_age_min"],
-              "just graduated": grad_min is None or grad_min >= c.get("skip_after_graduation_min", 15)}
+              "just graduated": grad_min is None or grad_min >= c.get("skip_after_graduation_min", 15),
+              "fake pool": pool_sane(liq, mcap, vol5)}
     for k, ok in checks.items():
         if not ok: _fails[k] = _fails.get(k, 0) + 1
     return all(checks.values()), {"liq": round(liq), "mcap": round(mcap), "vol5": round(vol5), "buys5": buys, "sells5": sells, "m5": m5, "h1": h1}
@@ -263,7 +273,8 @@ def passes_smart(p, grad_min=None):
     m5 = (p.get("priceChange") or {}).get("m5")
     ok = (liq >= c["min_liquidity_usd"] and c["min_mcap_usd"] <= mcap <= c.get("smart_max_mcap_usd", 1_000_000)
           and (tx5.get("buys") or 0) >= (tx5.get("sells") or 0) and (m5 is None or m5 > -10)
-          and (grad_min is None or grad_min >= c.get("skip_after_graduation_min", 15)))
+          and (grad_min is None or grad_min >= c.get("skip_after_graduation_min", 15))
+          and pool_sane(liq, mcap, (p.get("volume") or {}).get("m5") or 0))
     return ok, {"liq": round(liq), "mcap": round(mcap), "vol5": round((p.get("volume") or {}).get("m5") or 0),
                 "buys5": tx5.get("buys"), "sells5": tx5.get("sells"), "m5": m5, "h1": (p.get("priceChange") or {}).get("h1")}
 

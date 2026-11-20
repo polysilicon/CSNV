@@ -31,7 +31,7 @@
   "trail_pct": 20,
   "max_hold_min": 45,
   "rug_liquidity_drop_pct": 50,
-  "skip_after_graduation_min": 15,
+  "skip_after_graduation_min": 0,
   "exit_check_sec": 5,
   "fee_pct": 1.0,
   "slippage_bps": 300,
@@ -42,5 +42,7 @@
   "smart_window_min": 10,
   "smart_max_mcap_usd": 1000000,
   "follow_wallets": [],
-  "min_lp_locked_pct": 30
+  "min_lp_locked_pct": 30,
+  "min_mcap_to_liq": 1.5,
+  "max_vol5_to_liq": 6
 }
