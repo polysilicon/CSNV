@@ -462,7 +462,7 @@ async def buy(s, mint, info, metrics, pair, signal="momentum"):
     metrics = dict(metrics)
     ok, why = await rug_ok(s, mint, pair, metrics)
     if not ok:
-        state["traded"] = (state["traded"] + [mint])[-3000:]   # don't keep re-checking it
+        if signal != "breakout": state["traded"] = (state["traded"] + [mint])[-3000:]   # don't keep re-checking it
         key = why.split(":")[0].split("(")[0].strip()
         _fails[key] = _fails.get(key, 0) + 1
         state.setdefault("rug_skips", []).append({"t": int(time.time()), "sym": info["sym"], "why": why})
@@ -486,9 +486,9 @@ async def buy(s, mint, info, metrics, pair, signal="momentum"):
         except Exception as e: log("creator balance:", e)
     state["positions"][mint] = {"sym": info["sym"], "name": info["name"], "amount": amount, "amount0": amount, "realized": 0.0, "steps": 0, "cost_sol": cfg["trade_sol"], "creator": info.get("creator"), "creator_bal": creator_bal,
                                 "t": int(time.time()), "peak_pct": 0.0, "liq0": metrics["liq"], "url": pair.get("url"), "sig": sig}
-    state["traded"] = (state["traded"] + [mint])[-3000:]
-    save()
     state["positions"][mint]["signal"] = signal
+    if signal != "breakout": state["traded"] = (state["traded"] + [mint])[-3000:]
+    save()
     event(kind="buy", mint=mint, sym=info["sym"], name=info["name"], sol=cfg["trade_sol"], metrics=metrics, url=pair.get("url"), sig=sig, signal=signal)
     log("BUY", info["sym"], mint, metrics)
 
@@ -526,7 +526,8 @@ async def sell(s, mint, reason, fraction=1.0):
     state["day_pnl"] += pnl; state["total_pnl"] += pnl
     state["wins" if pnl > 0 else "losses"] += 1
     state["closed"] = (state["closed"] + [{"mint": mint, "sym": pos["sym"], "cost": pos["cost_sol"], "out": total_out, "pnl": pnl,
-                                            "reason": reason, "steps": pos.get("steps", 0), "t0": pos["t"], "t1": int(time.time())}])[-500:]
+                                            "reason": reason, "steps": pos.get("steps", 0), "t0": pos["t"], "t1": int(time.time()),
+                                            "signal": pos.get("signal", "momentum")}])[-500:]
     save()
     event(kind="sell", mint=mint, sym=pos["sym"], name=pos["name"], sol_in=pos["cost_sol"], sol_out=round(total_out, 6), pnl_sol=round(pnl, 6),
           pnl_pct=round(pnl / pos["cost_sol"] * 100, 1), reason=reason, steps=pos.get("steps", 0),
@@ -550,6 +551,7 @@ async def manage(s):
         pct = (value * pos.get("amount0", pos["amount"]) / (pos["amount"] * pos["cost_sol"]) - 1) * 100 if pos["amount"] else -100.0
         pos["peak_pct"] = max(pos["peak_pct"], pct)
         held = (time.time() - pos["t"]) / 60
+        x = exit_cfg(pos)
         reason = None
         if not q or q == RETRY:
             if pos.get("dev_sold") or "sellall" in stop or pos["noroute"] >= 3: pass
@@ -557,7 +559,7 @@ async def manage(s):
         if pos.get("dev_sold"): reason = f"creator sold {pct:+.0f}%" if q and q != RETRY else "creator sold"
         elif not q or q == RETRY: reason = "no route (pool gone?)"
         else:
-            ladder = cfg.get("take_profit_steps") or [[cfg.get("take_profit_pct", 60), 100]]
+            ladder = x.get("take_profit_steps") or [[x.get("take_profit_pct", 60), 100]]
             step = pos.get("steps", 0)
             runner = step > 0   # some profit already taken: the rest rides with looser rules
             if step < len(ladder) and pct >= ladder[step][0]:
@@ -568,11 +570,11 @@ async def manage(s):
                     else: await sell(s, mint, label + f": sold {ladder[step][1]}%, the rest rides", part)
                 except Exception as e: log("sell failed", mint, e); event(kind="error", mint=mint, sym=pos["sym"], error=str(e)[:200])
                 await asyncio.sleep(0.3); continue
-            trail = cfg.get("runner_trail_pct", cfg["trail_pct"]) if runner else cfg["trail_pct"]
-            if not runner and pct <= -cfg["stop_loss_pct"]: reason = f"stop loss {pct:+.0f}%"
-            elif runner and pct <= cfg.get("runner_floor_pct", 0): reason = f"back to entry {pct:+.0f}% (profit already taken)"
-            elif pos["peak_pct"] >= cfg["trail_after_pct"] and pct <= pos["peak_pct"] - trail: reason = f"trailing stop {pct:+.0f}% (peak {pos['peak_pct']:+.0f}%)"
-            elif held >= (cfg.get("runner_max_hold_min", cfg["max_hold_min"]) if runner else cfg["max_hold_min"]): reason = f"time limit {pct:+.0f}%"
+            trail = x.get("runner_trail_pct", x["trail_pct"]) if runner else x["trail_pct"]
+            if not runner and pct <= -x["stop_loss_pct"]: reason = f"stop loss {pct:+.0f}%"
+            elif runner and pct <= x.get("runner_floor_pct", 0): reason = f"back to entry {pct:+.0f}% (profit already taken)"
+            elif pos["peak_pct"] >= x["trail_after_pct"] and pct <= pos["peak_pct"] - trail: reason = f"trailing stop {pct:+.0f}% (peak {pos['peak_pct']:+.0f}%)"
+            elif held >= (x.get("runner_max_hold_min", x["max_hold_min"]) if runner else x["max_hold_min"]): reason = f"time limit {pct:+.0f}%"
         if reason:
             try: await sell(s, mint, reason)
             except Exception as e: log("sell failed", mint, e); event(kind="error", mint=mint, sym=pos["sym"], error=str(e)[:200])
@@ -621,6 +623,104 @@ async def scan(s):
     state["last_scan"] = {"t": int(now), "launches": len(state["seen"]), "in_window": len(window), "listed": listed, "fails": dict(_fails)}
 
 
+# ------------------------------------------------------------------------------------------------ breakouts (older coins)
+BREAKOUT = {"enabled": True, "every_sec": 120, "min_age_h": 1, "max_age_days": 30, "min_mcap_usd": 300_000, "max_mcap_usd": 20_000_000,
+            "min_liquidity_usd": 50_000, "min_vol_m5_usd": 15_000, "min_vol_accel": 1.5, "min_change_m5_pct": 3, "max_change_m5_pct": 20,
+            "min_change_h1_pct": 5, "max_change_h1_pct": 80, "max_change_h24_pct": 300, "min_buy_sell_ratio_m5": 1.2,
+            "max_open": 2, "cooldown_h": 12,
+            "exits": {"take_profit_steps": [[20, 50], [50, 50]], "stop_loss_pct": 10, "trail_after_pct": 10, "trail_pct": 8,
+                      "runner_trail_pct": 15, "max_hold_min": 120, "runner_max_hold_min": 360, "runner_floor_pct": 0}}
+_bo = {"last": 0.0, "fails": {}}
+
+
+def bcfg():
+    return {**BREAKOUT, **(cfg.get("breakout") or {})}
+
+
+def exit_cfg(pos):
+    """The exit settings for a position: breakout buys use their own (tighter: older coins move less), the rest cfg."""
+    if pos.get("signal") != "breakout": return cfg
+    return {**cfg, **BREAKOUT["exits"], **((cfg.get("breakout") or {}).get("exits") or {})}
+
+
+async def trending_mints(s):
+    """Solana coins in GeckoTerminal's trending pools (5 min and 1 h) and its busiest pools: older coins that are moving."""
+    out = []
+    for path, params in (("trending_pools", {"duration": "5m"}), ("trending_pools", {"duration": "1h"}),
+                         ("pools", {"sort": "h24_tx_count_desc"})):
+        for page in ("1", "2"):
+            try:
+                async with s.get(f"https://api.geckoterminal.com/api/v2/networks/solana/{path}", params={**params, "page": page}, headers=UA,
+                                 timeout=aiohttp.ClientTimeout(total=15)) as r:
+                    if r.status != 200: log(f"trending: GeckoTerminal {path} {r.status}"); continue
+                    for p in (await r.json()).get("data") or []:
+                        mint = ((p.get("relationships") or {}).get("base_token") or {}).get("data", {}).get("id", "").removeprefix("solana_")
+                        if mint and mint not in out and mint not in STABLE: out.append(mint)
+            except Exception as e:
+                log("trending:", type(e).__name__, e)
+            await asyncio.sleep(2.5)   # GeckoTerminal's free limit is about 30 calls a minute
+    return out
+
+
+STABLE = {SOL_MINT, "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"}
+
+
+def passes_breakout(p, b):
+    """An older coin breaking out: big enough not to be a fresh rug, moving now on volume that's picking up."""
+    liq = (p.get("liquidity") or {}).get("usd") or 0
+    mcap = p.get("marketCap") or p.get("fdv") or 0
+    vol = p.get("volume") or {}
+    vol5, vol1h = vol.get("m5") or 0, vol.get("h1") or 0
+    tx5 = (p.get("txns") or {}).get("m5") or {}
+    buys, sells = tx5.get("buys") or 0, tx5.get("sells") or 0
+    ch = p.get("priceChange") or {}
+    m5, h1, h24 = ch.get("m5"), ch.get("h1"), ch.get("h24")
+    age_h = (time.time() - p["pairCreatedAt"] / 1000) / 3600 if p.get("pairCreatedAt") else None
+    checks = {"age": age_h is not None and b["min_age_h"] <= age_h <= b["max_age_days"] * 24,
+              "market cap": b["min_mcap_usd"] <= mcap <= b["max_mcap_usd"], "liquidity": liq >= b["min_liquidity_usd"],
+              "5m volume": vol5 >= b["min_vol_m5_usd"], "volume picking up": vol5 >= b["min_vol_accel"] * vol1h / 12,
+              "5m move": m5 is not None and b["min_change_m5_pct"] <= m5 <= b["max_change_m5_pct"],
+              "1h move": h1 is not None and b["min_change_h1_pct"] <= h1 <= b["max_change_h1_pct"],
+              "24h move": h24 is None or h24 <= b["max_change_h24_pct"],
+              "buy/sell": buys >= b["min_buy_sell_ratio_m5"] * max(sells, 1), "fake pool": pool_sane(liq, mcap, vol5)}
+    for k, ok in checks.items():
+        if not ok: _bo["fails"][k] = _bo["fails"].get(k, 0) + 1
+    return all(checks.values()), {"liq": round(liq), "mcap": round(mcap), "vol5": round(vol5), "buys5": buys, "sells5": sells,
+                                  "m5": m5, "h1": h1, "h24": h24, "age_h": round(age_h, 1) if age_h else None}
+
+
+async def scan_breakouts(s):
+    b = bcfg()
+    if not b["enabled"] or time.time() - _bo["last"] < b["every_sec"]: return
+    if os.path.exists(STOP) or state["day_pnl"] <= -cfg["daily_loss_sol"]: return
+    _bo["last"] = time.time()
+    open_b = sum(1 for p in state["positions"].values() if p.get("signal") == "breakout")
+    if open_b >= b["max_open"] or len(state["positions"]) >= cfg["max_open"]: return
+    recent = state.setdefault("breakout_traded", {})
+    for m in [m for m, t in recent.items() if time.time() - t > b["cooldown_h"] * 3600]: recent.pop(m)
+    mints = [m for m in await trending_mints(s) if m not in state["positions"] and m not in recent]
+    _bo["fails"] = {}
+    checked = 0
+    for i in range(0, len(mints), 30):
+        try: pairs = await dex_pairs(s, mints[i:i + 30])
+        except Exception as e: log("dex:", e); continue
+        for mint, p in pairs.items():
+            checked += 1
+            if open_b >= b["max_open"] or len(state["positions"]) >= cfg["max_open"]: break
+            ok, metrics = passes_breakout(p, b)
+            if not ok: continue
+            tok = p.get("baseToken") or {}
+            info = {"sym": (tok.get("symbol") or "?")[:20], "name": (tok.get("name") or "?")[:40], "creator": None}
+            recent[mint] = int(time.time())   # checked or bought: leave it alone for cooldown_h
+            try:
+                before = len(state["positions"])
+                await buy(s, mint, info, metrics, p, signal="breakout")
+                if len(state["positions"]) > before: open_b += 1
+            except Exception as e: log("buy failed", mint, e); event(kind="error", mint=mint, sym=info["sym"], error=str(e)[:200])
+        await asyncio.sleep(1)
+    state["last_breakout_scan"] = {"t": int(time.time()), "coins": len(mints), "checked": checked, "fails": dict(_bo["fails"])}
+
+
 async def main():
     load()
     sm.load()
@@ -638,6 +738,7 @@ async def main():
                 per_min = max(1, 60 // cfg.get("exit_check_sec", 5))
                 if n % per_min == 0:
                     await scan(s)   # entries once a minute, exits every few seconds
+                    await scan_breakouts(s)   # older coins, every breakout.every_sec
                     old = sm.expired()
                     if old: await ws_send({"method": "unsubscribeTokenTrade", "keys": old})
                 if n % (per_min * 5) == 0: await sync_wallets()

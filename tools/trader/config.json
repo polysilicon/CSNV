@@ -46,5 +46,10 @@
   "max_vol5_to_liq": 6,
   "min_holders": 30,
   "max_buys_per_holder": 20,
-  "max_top10_pct": 35
+  "max_top10_pct": 35,
+  "breakout": {
+    "enabled": true,
+    "max_age_days": 30,
+    "max_open": 2
+  }
 }

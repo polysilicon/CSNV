@@ -50,6 +50,7 @@ def card(discord, e):
         em = discord.Embed(color=0x5865F2, title=f"{tag} · Bought {name}", url=e.get("url"),
                            description=f"**{e['sol']} SOL** in · mcap ${m.get('mcap', 0):,} · liquidity ${m.get('liq', 0):,}\n"
                                        f"5 min: {m.get('m5')}% · vol ${m.get('vol5', 0):,} · {m.get('buys5')} buys / {m.get('sells5')} sells\n"
+                                       + (f"Coin age: {m['age_h']:.0f} h · 1 h: {m.get('h1')}% · 24 h: {m.get('h24')}%\n" if m.get("age_h") else "")
                                        + (f"{m['holders']:,} holders · top 10 wallets hold {m['top10']}%\n" if m.get("holders") and m.get("top10") is not None else "")
                                        + f"Signal: **{e.get('signal', 'momentum')}**")
     elif e["kind"] == "partial":
@@ -109,13 +110,24 @@ def register(bot, discord, app_commands):
         em.add_field(name="Win rate", value=f"{st.get('wins', 0)}/{n} ({st.get('wins', 0) / n * 100:.0f}%)" if n else "no trades yet")
         pos = st.get("positions", {})
         em.add_field(name=f"Open ({len(pos)}/{cfg.get('max_open', '?')})", inline=False,
-                     value="\n".join(f"[${p['sym']}]({p.get('url')}) · {p['cost_sol']} SOL · <t:{p['t']}:R> · peak {p.get('peak_pct', 0):+.0f}%"
+                     value="\n".join(f"[${p['sym']}]({p.get('url')}) · {'📈 ' if p.get('signal') == 'breakout' else ''}{p['cost_sol']} SOL · <t:{p['t']}:R> · peak {p.get('peak_pct', 0):+.0f}%"
                                      + (f" · {p.get('steps')} profit step(s), {p.get('realized', 0):.3f} SOL taken" if p.get("steps") else "") for p in pos.values()) or "none")
         ls = st.get("last_scan")
         if ls:
             fails = ", ".join(f"{k} {v}" for k, v in sorted(ls.get("fails", {}).items(), key=lambda x: -x[1])) or "none"
             em.add_field(name="Last scan", inline=False, value=f"<t:{ls['t']}:R>: {ls['launches']} recent launches, {ls['in_window']} the right age, "
                                                                f"{ls['listed']} on DexScreener.\nFailed on: {fails}")
+        bs = st.get("last_breakout_scan")
+        if bs:
+            fails = ", ".join(f"{k} {v}" for k, v in sorted(bs.get("fails", {}).items(), key=lambda x: -x[1])[:5]) or "none"
+            em.add_field(name="Breakout scan (older coins)", inline=False,
+                         value=f"<t:{bs['t']}:R>: {bs['coins']} trending coins, {bs['checked']} on DexScreener.\nFailed on: {fails}")
+        by = {}
+        for c in st.get("closed", []):
+            g = by.setdefault(c.get("signal") or "momentum", [0, 0, 0.0]); g[0] += 1; g[1] += c["pnl"] > 0; g[2] += c["pnl"]
+        if len(by) > 1 or "breakout" in by:
+            em.add_field(name="By strategy", inline=False,
+                         value="\n".join(f"**{k}**: {v[2]:+.3f} SOL · {v[1]}/{v[0]} wins" for k, v in sorted(by.items())))
         sm = st.get("smart")
         if sm:
             tops = "\n".join(f"`{t['wallet'][:4]}…{t['wallet'][-4:]}` {t['pnl']:+.2f} SOL · {t['wins']}/{t['coins']} wins" for t in sm.get("top", [])[:3])
