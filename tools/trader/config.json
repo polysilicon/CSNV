@@ -36,7 +36,7 @@
   "fee_pct": 1.0,
   "slippage_bps": 300,
   "priority_fee_sol": 0.0005,
-  "track_wallets": false,
+  "track_wallets": true,
   "smart_entries": true,
   "smart_min_wallets": 2,
   "smart_window_min": 10,
