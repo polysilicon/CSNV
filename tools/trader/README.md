@@ -15,9 +15,12 @@ from the Discord bot, so the wallet key never sits in Yoink.
   one a live trade would use), so fees and price impact are counted. `"mode": "live"` signs and sends those swaps from
   the wallet; it does nothing live while the wallet is missing.
 - Anti-rug (2026-11-19, after two paper trades lost 96-97% to rugs right after graduation): coins are scored on the
-  pair with real liquidity (never a dead pump.fun bonding-curve pair), coins that graduated less than
-  `skip_after_graduation_min` (15) ago are skipped, the creator's wallet is watched on PumpPortal and any sell by
-  them exits at once, and open positions are re-priced every `exit_check_sec` (5) s. A failed quote (rate limit) is
+  pair with real liquidity (never a dead pump.fun bonding-curve pair). Fresh pools are allowed (a pool-age skip
+  cost as many winners as rugs). Instead, before a buy: fake pools (market cap under `min_mcap_to_liq` x liquidity)
+  and wash-traded ones (5 min volume over `max_vol5_to_liq` x liquidity) are skipped; so are coins with under
+  `min_holders` holders, over `max_buys_per_holder` 5 min buys per holder, or with the 10 biggest non-pool wallets
+  holding over `max_top10_pct` of the supply (Helius; holders and top10 are saved with each buy for tuning). The
+  creator's wallet is watched and any sell by them exits at once, and open positions are re-priced every `exit_check_sec` (5) s. A failed quote (rate limit) is
   never read as a price; "no route" only sells after 3 checks in a row. A rug that drains the pool in one transaction
   can still beat any stop loss: position size is the real limit.
 - Smart money (`smartmoney.py`): follows every trade on new coins for 30 min, keeps a profit-and-loss per wallet, and

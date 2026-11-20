@@ -208,8 +208,7 @@ async def jup_quote(s, inp, out, amount):
 
 
 async def dex_pairs(s, mints):
-    """{mint: (pair, minutes since that pool was created, or None while it's still on the pump.fun bonding curve)} for up
-    to 30 mints. The pair is the one with real liquidity:
+    """{mint: pair} for up to 30 mints. The pair is the one with real liquidity:
     after a pump.fun coin graduates, DexScreener can still show its dead bonding-curve pair with stale numbers
     (2026-11-19: two rugs bought on "+1,300%" bonding-curve data while the new pool was already dumping)."""
     pairs = {}
@@ -223,12 +222,7 @@ async def dex_pairs(s, mints):
         live = [p for p in ps if ((p.get("liquidity") or {}).get("usd") or 0) > 0 and p.get("priceUsd")]
         if not live: continue
         best = max(live, key=lambda p: (p.get("liquidity") or {}).get("usd") or 0)
-        # Age of the pool we'd trade. It used to be counted only for coins whose pump.fun bonding-curve pair DexScreener
-        # still listed, so other launchpads (Meteora DBC) and coins whose curve pair had dropped off passed as "not just
-        # graduated": 11 trades on 2026-11-19/20 lost 93-100% within minutes, all in pools 2-14 minutes old.
-        grad = None if best.get("dexId") == "pumpfun" else \
-            ((now - best["pairCreatedAt"] / 1000) / 60 if best.get("pairCreatedAt") else 0.0)   # no date: treat as brand new
-        out[m] = (best, grad)
+        out[m] = best
     return out
 
 
@@ -244,7 +238,7 @@ def pool_sane(liq, mcap, vol5):
     return mcap >= c.get("min_mcap_to_liq", 1.5) * liq and vol5 <= c.get("max_vol5_to_liq", 6) * max(liq, 1)
 
 
-def passes(p, age_min, grad_min=None):
+def passes(p, age_min):
     c = cfg
     liq = (p.get("liquidity") or {}).get("usd") or 0
     mcap = p.get("marketCap") or p.get("fdv") or 0
@@ -257,14 +251,13 @@ def passes(p, age_min, grad_min=None):
               "5m volume": vol5 >= c["min_vol_m5_usd"], "buy/sell": buys >= c["min_buy_sell_ratio_m5"] * max(sells, 1),
               "5m move": m5 is not None and c["min_change_m5_pct"] <= m5 <= c["max_change_m5_pct"],
               "1h move": h1 is None or h1 <= c["max_change_h1_pct"], "age": c["min_age_min"] <= age_min <= c["max_age_min"],
-              "just graduated": grad_min is None or grad_min >= c.get("skip_after_graduation_min", 15),
               "fake pool": pool_sane(liq, mcap, vol5)}
     for k, ok in checks.items():
         if not ok: _fails[k] = _fails.get(k, 0) + 1
     return all(checks.values()), {"liq": round(liq), "mcap": round(mcap), "vol5": round(vol5), "buys5": buys, "sells5": sells, "m5": m5, "h1": h1}
 
 
-def passes_smart(p, grad_min=None):
+def passes_smart(p):
     """The safety half of the filters, for coins smart wallets are buying (no momentum needed)."""
     c = cfg
     liq = (p.get("liquidity") or {}).get("usd") or 0
@@ -273,7 +266,6 @@ def passes_smart(p, grad_min=None):
     m5 = (p.get("priceChange") or {}).get("m5")
     ok = (liq >= c["min_liquidity_usd"] and c["min_mcap_usd"] <= mcap <= c.get("smart_max_mcap_usd", 1_000_000)
           and (tx5.get("buys") or 0) >= (tx5.get("sells") or 0) and (m5 is None or m5 > -10)
-          and (grad_min is None or grad_min >= c.get("skip_after_graduation_min", 15))
           and pool_sane(liq, mcap, (p.get("volume") or {}).get("m5") or 0))
     return ok, {"liq": round(liq), "mcap": round(mcap), "vol5": round((p.get("volume") or {}).get("m5") or 0),
                 "buys5": tx5.get("buys"), "sells5": tx5.get("sells"), "m5": m5, "h1": (p.get("priceChange") or {}).get("h1")}
@@ -410,10 +402,17 @@ BAD_RISKS = {"Mint Authority still enabled", "Freeze Authority still enabled", "
              "Top 10 holders high ownership", "High ownership", "Copycat token"}
 
 
-async def rug_ok(s, mint, pool=None):
+async def rug_ok(s, mint, pair, metrics):
     """RugCheck's full report, right before a buy. (ok, why). Fails if RugCheck flags a danger from rug_risks, or if the
     pool we'd trade (DexScreener's main pair; else the deepest pool RugCheck knows) has under min_lp_locked_pct of its
-    liquidity locked or burned: whoever holds unlocked LP tokens can pull the pool. If RugCheck can't answer, don't buy."""
+    liquidity locked or burned: whoever holds unlocked LP tokens can pull the pool. If RugCheck can't answer, don't buy.
+
+    Then who holds it (2026-11-20: rugs that dumped -93% to -100% within seconds of our buy):
+    - holders: under min_holders, or more than max_buys_per_holder 5-minute buys per holder, means a few wallets are
+      faking the activity (the rugs had 3-36 holders behind 300-1,300 buys; winners 54-3,900 holders, under 14 per holder);
+    - supply: the 10 biggest wallets other than the pool (Helius, live) holding over max_top10_pct of the supply can
+      dump the pool in one go. Both numbers are recorded with every buy so the limits can be tuned on real results."""
+    pool = pair.get("pairAddress")
     try:
         async with s.get(f"https://api.rugcheck.xyz/v1/tokens/{mint}/report", headers={**UA, "Accept": "application/json"},
                          timeout=aiohttp.ClientTimeout(total=20)) as r:
@@ -429,12 +428,39 @@ async def rug_ok(s, mint, pool=None):
     if mk is None: return False, "rugcheck: no pool data"
     locked = (mk.get("lp") or {}).get("lpLockedPct") or 0
     if locked < cfg.get("min_lp_locked_pct", 30): return False, f"rugcheck: only {locked:.0f}% of the trading pool's liquidity locked"
+    holders = d.get("totalHolders") or 0
+    metrics["holders"] = holders
+    if holders < cfg.get("min_holders", 30): return False, f"holders: only {holders}"
+    if (metrics.get("buys5") or 0) > cfg.get("max_buys_per_holder", 20) * holders:
+        return False, f"holders: {metrics.get('buys5')} buys in 5 min from {holders} holders (wash trading)"
+    try:
+        top = await top10_pct(s, mint, pair)
+    except Exception as e:
+        top = None; log("top holders:", type(e).__name__, e)
+    metrics["top10"] = top
+    if top is not None and top > cfg.get("max_top10_pct", 35): return False, f"holders: top 10 wallets hold {top:.0f}% of the supply"
     return True, f"pool LP {locked:.0f}% locked"
+
+
+async def top10_pct(s, mint, pair):
+    """% of the supply in the 10 biggest token accounts, leaving out the pool's own (the one holding about the pool's
+    token reserve, pair.liquidity.base). Two RPC calls."""
+    sup = await rpc(s, "getTokenSupply", [mint])
+    supply = float(sup["value"]["uiAmount"] or 0)
+    if supply <= 0: return None
+    accts = (await rpc(s, "getTokenLargestAccounts", [mint]))["value"]
+    base = float((pair.get("liquidity") or {}).get("base") or 0)
+    held = [float(a.get("uiAmount") or 0) for a in accts]
+    if base > 0 and held:
+        pool_i = min(range(len(held)), key=lambda i: abs(held[i] - base))
+        if abs(held[pool_i] - base) <= 0.05 * base: held.pop(pool_i)
+    return round(sum(sorted(held, reverse=True)[:10]) / supply * 100, 1)
 
 
 async def buy(s, mint, info, metrics, pair, signal="momentum"):
     lamports = int(cfg["trade_sol"] * LAMPORTS)
-    ok, why = await rug_ok(s, mint, pair.get("pairAddress"))
+    metrics = dict(metrics)
+    ok, why = await rug_ok(s, mint, pair, metrics)
     if not ok:
         state["traded"] = (state["traded"] + [mint])[-3000:]   # don't keep re-checking it
         key = why.split(":")[0].split("(")[0].strip()
@@ -569,9 +595,9 @@ async def scan(s):
         try: pairs = await dex_pairs(s, window[i:i + 30])
         except Exception as e: log("dex:", e); continue
         listed += len(pairs)
-        for mint, (p, grad) in pairs.items():
+        for mint, p in pairs.items():
             if len(state["positions"]) >= cfg["max_open"] or mint in state["positions"]: continue
-            ok, metrics = passes(p, (now - state["seen"][mint]["t"]) / 60, grad)
+            ok, metrics = passes(p, (now - state["seen"][mint]["t"]) / 60)
             if ok:
                 try: await buy(s, mint, state["seen"][mint], metrics, p)
                 except Exception as e: log("buy failed", mint, e); event(kind="error", mint=mint, sym=state["seen"][mint]["sym"], error=str(e)[:200])
@@ -583,9 +609,9 @@ async def scan(s):
         if hot:
             try: pairs = await dex_pairs(s, list(hot)[:30])
             except Exception as e: log("dex:", e); pairs = {}
-            for mint, (p, grad) in pairs.items():
+            for mint, p in pairs.items():
                 if len(state["positions"]) >= cfg["max_open"]: break
-                ok, metrics = passes_smart(p, grad)
+                ok, metrics = passes_smart(p)
                 if not ok: continue
                 tok = p.get("baseToken") or {}
                 info = state["seen"].get(mint) or {"sym": (tok.get("symbol") or "?")[:20], "name": (tok.get("name") or "?")[:40], "creator": sm.creators.get(mint)}
