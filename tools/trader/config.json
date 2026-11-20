@@ -3,7 +3,6 @@
   "trade_sol": 0.2,
   "max_open": 5,
   "daily_loss_sol": 0.5,
-
   "min_age_min": 3,
   "max_age_min": 30,
   "min_liquidity_usd": 8000,
@@ -14,8 +13,16 @@
   "min_change_m5_pct": 5,
   "max_change_m5_pct": 60,
   "max_change_h1_pct": 400,
-
-  "take_profit_steps": [[60, 50], [200, 50]],
+  "take_profit_steps": [
+    [
+      60,
+      50
+    ],
+    [
+      200,
+      50
+    ]
+  ],
   "runner_trail_pct": 35,
   "runner_max_hold_min": 240,
   "runner_floor_pct": 0,
@@ -26,8 +33,13 @@
   "rug_liquidity_drop_pct": 50,
   "skip_after_graduation_min": 15,
   "exit_check_sec": 5,
-
   "fee_pct": 1.0,
   "slippage_bps": 300,
-  "priority_fee_sol": 0.0005
+  "priority_fee_sol": 0.0005,
+  "track_wallets": true,
+  "smart_entries": true,
+  "smart_min_wallets": 2,
+  "smart_window_min": 10,
+  "smart_max_mcap_usd": 1000000,
+  "follow_wallets": []
 }

@@ -19,10 +19,18 @@ Not financial advice: most new memecoins go to zero.
 """
 import asyncio, base64, datetime, json, os, time, traceback
 import aiohttp
+import smartmoney as sm
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG, STATE, EVENTS, STOP = (os.path.join(HERE, f) for f in ("config.json", "state.json", "events.jsonl", "STOP"))
 WALLET = os.environ.get("TRADER_WALLET", "/etc/crispytrader/wallet.json")
+PP_KEY_FILE = "/etc/crispytrader/pumpportal.key"   # PumpPortal API key: per-coin and per-wallet trade feeds need one
+
+
+def pp_key():
+    try:
+        with open(PP_KEY_FILE) as f: return f.read().strip() or None
+    except OSError: return None
 RPC = os.environ.get("TRADER_RPC", "https://api.mainnet-beta.solana.com")
 SOL_MINT = "So11111111111111111111111111111111111111112"
 JUP = "https://lite-api.jup.ag/swap/v1"
@@ -61,13 +69,42 @@ def today(): return datetime.datetime.now(datetime.timezone.utc).date().isoforma
 
 # ------------------------------------------------------------------------------------------------ feed
 _ws = None
+_kinds = {}   # PumpPortal message types seen (logged every 5 minutes)
+
+
+_accounts = set()   # wallets we follow on PumpPortal (creators of coins we hold, smart wallets, followed wallets)
+
+
+async def ws_send(obj):
+    if _ws:
+        try: await _ws.send(json.dumps(obj))
+        except Exception as e: log("ws send:", e)
 
 
 async def watch_creators(keys):
     """Follow these wallets' trades on PumpPortal (used for the creators of coins we hold)."""
-    if _ws and keys:
-        try: await _ws.send(json.dumps({"method": "subscribeAccountTrade", "keys": list(keys)}))
-        except Exception as e: log("watch:", e)
+    if not pp_key(): return   # wallet feeds need a funded PumpPortal key
+    keys = set(keys) - _accounts
+    if keys:
+        _accounts.update(keys)
+        await ws_send({"method": "subscribeAccountTrade", "keys": list(keys)})
+
+
+async def sync_wallets():
+    """Every few minutes: re-rank wallets, follow the smart ones and the configured ones, drop the rest."""
+    want = sm.rescore() | set(cfg.get("follow_wallets", [])) | {p["creator"] for p in state["positions"].values() if p.get("creator")}
+    drop = _accounts - want
+    if drop and pp_key():
+        _accounts.difference_update(drop)
+        await ws_send({"method": "unsubscribeAccountTrade", "keys": list(drop)})
+    await watch_creators(want)
+    sm.save()
+    mins = max(1.0, (time.time() - sm.stats["since"]) / 60)
+    log("feed messages so far:", dict(_kinds))
+    state["smart_needs_key"] = not pp_key()
+    state["smart"] = {"wallets_tracked": len(sm.wallets), "smart": len(sm.smart), "following": len(cfg.get("follow_wallets", [])),
+                      "trades_per_min": round(sm.stats["trades"] / mins), "coins_followed": len(sm.tracked),
+                      "top": [{"wallet": w, "pnl": round(p, 2), "coins": n, "wins": wn} for p, w, n, wn in sm.top()]}
 
 
 async def feed():
@@ -75,21 +112,32 @@ async def feed():
     import websockets
     while True:
         try:
-            async with websockets.connect("wss://pumpportal.fun/api/data", open_timeout=20, ping_interval=30) as ws:
+            key = pp_key()
+            url = "wss://pumpportal.fun/api/data" + (f"?api-key={key}" if key else "")
+            async with websockets.connect(url, open_timeout=20, ping_interval=30) as ws:
                 _ws = ws
                 await ws.send(json.dumps({"method": "subscribeNewToken"}))
-                await watch_creators({p["creator"] for p in state["positions"].values() if p.get("creator")})
+                _accounts.clear()
+                await watch_creators({p["creator"] for p in state["positions"].values() if p.get("creator")} | sm.smart | set(cfg.get("follow_wallets", [])))
+                if sm.tracked and cfg.get("track_wallets", True) and pp_key(): await ws_send({"method": "subscribeTokenTrade", "keys": list(sm.tracked)})
                 log("feed: connected")
                 async for raw in ws:
                     try: m = json.loads(raw)
                     except ValueError: continue
                     mint = m.get("mint")
+                    k = m.get("txType") or ("message" if "message" in m else "other")
+                    _kinds[k] = _kinds.get(k, 0) + 1
+                    if k in ("message", "other") and _kinds[k] <= 3: log("feed says:", str(m)[:200])
+                    if m.get("txType") in ("buy", "sell"): sm.on_trade(m, set(cfg.get("follow_wallets", [])))
                     if m.get("txType") == "sell" and mint in state["positions"]:
                         pos = state["positions"][mint]
                         if pos.get("creator") and m.get("traderPublicKey") == pos["creator"]:
                             pos["dev_sold"] = True   # the creator is selling: often the start of a rug; manage() sells
                             log("creator sold", pos["sym"])
                         continue
+                    if m.get("txType") == "create" and mint and cfg.get("track_wallets", True) and pp_key():
+                        sm.on_create(mint, m.get("traderPublicKey"))
+                        await ws_send({"method": "subscribeTokenTrade", "keys": [mint]})
                     if m.get("txType") == "create" and mint and mint not in state["seen"]:
                         state["seen"][mint] = {"t": int(time.time()), "sym": (m.get("symbol") or "?")[:20], "name": (m.get("name") or "?")[:40],
                                                "creator": m.get("traderPublicKey")}
@@ -158,6 +206,20 @@ def passes(p, age_min, grad_min=None):
     return all(checks.values()), {"liq": round(liq), "mcap": round(mcap), "vol5": round(vol5), "buys5": buys, "sells5": sells, "m5": m5, "h1": h1}
 
 
+def passes_smart(p, grad_min=None):
+    """The safety half of the filters, for coins smart wallets are buying (no momentum needed)."""
+    c = cfg
+    liq = (p.get("liquidity") or {}).get("usd") or 0
+    mcap = p.get("marketCap") or p.get("fdv") or 0
+    tx5 = (p.get("txns") or {}).get("m5") or {}
+    m5 = (p.get("priceChange") or {}).get("m5")
+    ok = (liq >= c["min_liquidity_usd"] and c["min_mcap_usd"] <= mcap <= c.get("smart_max_mcap_usd", 1_000_000)
+          and (tx5.get("buys") or 0) >= (tx5.get("sells") or 0) and (m5 is None or m5 > -10)
+          and (grad_min is None or grad_min >= c.get("skip_after_graduation_min", 15)))
+    return ok, {"liq": round(liq), "mcap": round(mcap), "vol5": round((p.get("volume") or {}).get("m5") or 0),
+                "buys5": tx5.get("buys"), "sells5": tx5.get("sells"), "m5": m5, "h1": (p.get("priceChange") or {}).get("h1")}
+
+
 # ------------------------------------------------------------------------------------------------ live trading (Jupiter)
 _kp = None
 def keypair():
@@ -208,7 +270,7 @@ async def sol_balance(s):
 def live(): return cfg.get("mode") == "live" and os.path.exists(WALLET)
 
 
-async def buy(s, mint, info, metrics, pair):
+async def buy(s, mint, info, metrics, pair, signal="momentum"):
     lamports = int(cfg["trade_sol"] * LAMPORTS)
     q = await jup_quote(s, SOL_MINT, mint, lamports)
     if not q or q == RETRY: return
@@ -224,7 +286,8 @@ async def buy(s, mint, info, metrics, pair):
                                 "t": int(time.time()), "peak_pct": 0.0, "liq0": metrics["liq"], "url": pair.get("url"), "sig": sig}
     state["traded"] = (state["traded"] + [mint])[-3000:]
     save()
-    event(kind="buy", mint=mint, sym=info["sym"], name=info["name"], sol=cfg["trade_sol"], metrics=metrics, url=pair.get("url"), sig=sig)
+    state["positions"][mint]["signal"] = signal
+    event(kind="buy", mint=mint, sym=info["sym"], name=info["name"], sol=cfg["trade_sol"], metrics=metrics, url=pair.get("url"), sig=sig, signal=signal)
     log("BUY", info["sym"], mint, metrics)
 
 
@@ -337,11 +400,28 @@ async def scan(s):
                 try: await buy(s, mint, state["seen"][mint], metrics, p)
                 except Exception as e: log("buy failed", mint, e); event(kind="error", mint=mint, sym=state["seen"][mint]["sym"], error=str(e)[:200])
         await asyncio.sleep(1)
+    if cfg.get("smart_entries", True) and len(state["positions"]) < cfg["max_open"]:
+        follow = set(cfg.get("follow_wallets", []))
+        hot = {m: ws for m, ws in sm.hot(cfg.get("smart_min_wallets", 2), cfg.get("smart_window_min", 10), follow).items()
+               if m not in state["positions"] and m not in state["traded"]}
+        if hot:
+            try: pairs = await dex_pairs(s, list(hot)[:30])
+            except Exception as e: log("dex:", e); pairs = {}
+            for mint, (p, grad) in pairs.items():
+                if len(state["positions"]) >= cfg["max_open"]: break
+                ok, metrics = passes_smart(p, grad)
+                if not ok: continue
+                tok = p.get("baseToken") or {}
+                info = state["seen"].get(mint) or {"sym": (tok.get("symbol") or "?")[:20], "name": (tok.get("name") or "?")[:40], "creator": sm.creators.get(mint)}
+                n = len(hot[mint]); f = any(w in follow for w in hot[mint])
+                try: await buy(s, mint, info, metrics, p, signal=f"smart money: {n} wallet{'s' if n > 1 else ''}" + (" (one you follow)" if f else ""))
+                except Exception as e: log("buy failed", mint, e); event(kind="error", mint=mint, sym=info["sym"], error=str(e)[:200])
     state["last_scan"] = {"t": int(now), "launches": len(state["seen"]), "in_window": len(window), "listed": listed, "fails": dict(_fails)}
 
 
 async def main():
     load()
+    sm.load()
     log(f"Crispy Trader starting in {cfg['mode']} mode" + (" (no wallet: paper only)" if cfg["mode"] == "live" and not os.path.exists(WALLET) else ""))
     asyncio.create_task(feed())
     n = 0
@@ -350,7 +430,12 @@ async def main():
             try:
                 with open(CONFIG) as f: cfg.update(json.load(f))
                 await manage(s)
-                if n % max(1, 60 // cfg.get("exit_check_sec", 5)) == 0: await scan(s)   # entries once a minute, exits every few seconds
+                per_min = max(1, 60 // cfg.get("exit_check_sec", 5))
+                if n % per_min == 0:
+                    await scan(s)   # entries once a minute, exits every few seconds
+                    old = sm.expired()
+                    if old: await ws_send({"method": "unsubscribeTokenTrade", "keys": old})
+                if n % (per_min * 5) == 0: await sync_wallets()
             except Exception as e:
                 log("loop:", type(e).__name__, e); traceback.print_exc()
             n += 1

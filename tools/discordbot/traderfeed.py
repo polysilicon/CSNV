@@ -49,7 +49,8 @@ def card(discord, e):
         m = e.get("metrics") or {}
         em = discord.Embed(color=0x5865F2, title=f"{tag} · Bought {name}", url=e.get("url"),
                            description=f"**{e['sol']} SOL** in · mcap ${m.get('mcap', 0):,} · liquidity ${m.get('liq', 0):,}\n"
-                                       f"5 min: {m.get('m5')}% · vol ${m.get('vol5', 0):,} · {m.get('buys5')} buys / {m.get('sells5')} sells")
+                                       f"5 min: {m.get('m5')}% · vol ${m.get('vol5', 0):,} · {m.get('buys5')} buys / {m.get('sells5')} sells\n"
+                                       f"Signal: **{e.get('signal', 'momentum')}**")
     elif e["kind"] == "partial":
         em = discord.Embed(color=0x2ECC71, title=f"{tag} · Took profit on {name}", url=e.get("url"),
                            description=f"Sold **{e['sold_pct']}%** for {e['sol_out']} SOL ({e['reason']}).\n"
@@ -94,6 +95,12 @@ def register(bot, discord, app_commands):
             fails = ", ".join(f"{k} {v}" for k, v in sorted(ls.get("fails", {}).items(), key=lambda x: -x[1])) or "none"
             em.add_field(name="Last scan", inline=False, value=f"<t:{ls['t']}:R>: {ls['launches']} recent launches, {ls['in_window']} the right age, "
                                                                f"{ls['listed']} on DexScreener.\nFailed on: {fails}")
+        sm = st.get("smart")
+        if sm:
+            tops = "\n".join(f"`{t['wallet'][:4]}…{t['wallet'][-4:]}` {t['pnl']:+.2f} SOL · {t['wins']}/{t['coins']} wins" for t in sm.get("top", [])[:3])
+            em.add_field(name="Smart money", inline=False,
+                         value=f"{sm['smart']} smart wallets (of {sm['wallets_tracked']:,} tracked) · {sm['following']} you follow · "
+                               f"{sm['trades_per_min']:,} trades/min watched\n" + (tops or "No wallet qualifies yet: it needs 5+ closed coins each."))
         recent = st.get("closed", [])[-5:]
         if recent:
             em.add_field(name="Last trades", inline=False,

@@ -20,6 +20,12 @@ from the Discord bot, so the wallet key never sits in Yoink.
   them exits at once, and open positions are re-priced every `exit_check_sec` (5) s. A failed quote (rate limit) is
   never read as a price; "no route" only sells after 3 checks in a row. A rug that drains the pool in one transaction
   can still beat any stop loss: position size is the real limit.
+- Smart money (`smartmoney.py`): follows every trade on new coins for 30 min, keeps a profit-and-loss per wallet, and
+  ranks wallets that keep closing coins in profit (5+ coins, +1 SOL, 55%+ wins, not a sniper bot, not the creator).
+  When 2+ smart wallets (or one wallet in `follow_wallets`) buy a coin within 10 min, it's a candidate if it passes
+  the safety half of the filters. **Needs a PumpPortal API key funded with 0.02 SOL** in
+  `/etc/crispytrader/pumpportal.key` (PumpPortal only streams per-coin and per-wallet trades with one); without it
+  the trader skips wallet tracking and the creator-sell exit (which uses the same feed).
 - Controls: a file named `STOP` in `/opt/crispytrader` pauses buying; `echo sellall > STOP` also sells everything.
 - Reports: `events.jsonl` (every buy, sell, error) and `state.json` (positions, profit, last scan's filter results).
   Yoink (`tools/discordbot/traderfeed.py`) DMs each event to the owner and has `/trader` (staff).
