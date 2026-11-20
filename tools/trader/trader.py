@@ -110,6 +110,7 @@ async def sync_wallets():
 async def feed():
     global _ws
     import websockets
+    delay = 10   # grows to 10 min while PumpPortal refuses us, so a block isn't made worse by hammering it
     while True:
         try:
             key = pp_key()
@@ -120,7 +121,7 @@ async def feed():
                 _accounts.clear()
                 await watch_creators({p["creator"] for p in state["positions"].values() if p.get("creator")} | sm.smart | set(cfg.get("follow_wallets", [])))
                 if sm.tracked and cfg.get("track_wallets", True) and pp_key(): await ws_send({"method": "subscribeTokenTrade", "keys": list(sm.tracked)})
-                log("feed: connected")
+                log("feed: connected"); delay = 10
                 async for raw in ws:
                     try: m = json.loads(raw)
                     except ValueError: continue
@@ -147,7 +148,7 @@ async def feed():
         except Exception as e:
             log("feed:", type(e).__name__, e)
         _ws = None
-        await asyncio.sleep(10)
+        await asyncio.sleep(delay); delay = min(delay * 2, 600)
 
 
 # ------------------------------------------------------------------------------------------------ prices
