@@ -371,8 +371,38 @@ async def gecko_launches():
                 log("geckoterminal:", type(e).__name__, e)
 
 
+BAD_RISKS = {"Large Amount of LP Unlocked", "Mint Authority still enabled", "Freeze Authority still enabled", "Single holder ownership",
+             "Top 10 holders high ownership", "High ownership", "Copycat token"}
+
+
+async def rug_ok(s, mint):
+    """RugCheck's summary for the coin, right before a buy (2026-11-20: pools with 0% of their liquidity locked were being
+    bought; whoever holds the LP tokens can pull the pool). (ok, why). If RugCheck can't answer, don't buy."""
+    try:
+        async with s.get(f"https://api.rugcheck.xyz/v1/tokens/{mint}/report/summary", headers={**UA, "Accept": "application/json"},
+                         timeout=aiohttp.ClientTimeout(total=15)) as r:
+            if r.status != 200: return False, f"rugcheck unavailable ({r.status})"
+            d = await r.json()
+    except Exception as e:
+        return False, f"rugcheck unavailable ({type(e).__name__})"
+    bad = [x.get("name") for x in d.get("risks") or [] if x.get("level") == "danger" and x.get("name") in set(cfg.get("rug_risks", BAD_RISKS))]
+    if bad: return False, "rugcheck: " + ", ".join(bad)
+    if (d.get("lpLockedPct") or 0) < cfg.get("min_lp_locked_pct", 50): return False, f"rugcheck: only {d.get('lpLockedPct') or 0:.0f}% of liquidity locked"
+    return True, f"LP {d.get('lpLockedPct') or 0:.0f}% locked"
+
+
 async def buy(s, mint, info, metrics, pair, signal="momentum"):
     lamports = int(cfg["trade_sol"] * LAMPORTS)
+    ok, why = await rug_ok(s, mint)
+    if not ok:
+        state["traded"] = (state["traded"] + [mint])[-3000:]   # don't keep re-checking it
+        key = why.split(":")[0].split("(")[0].strip()
+        _fails[key] = _fails.get(key, 0) + 1
+        state.setdefault("rug_skips", []).append({"t": int(time.time()), "sym": info["sym"], "why": why})
+        state["rug_skips"] = state["rug_skips"][-50:]
+        log("skip", info["sym"], why)
+        return
+    metrics = {**metrics, "rugcheck": why}
     q = await jup_quote(s, SOL_MINT, mint, lamports)
     if not q or q == RETRY: return
     sig, amount = None, int(q["outAmount"])

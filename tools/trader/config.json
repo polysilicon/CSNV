@@ -41,5 +41,6 @@
   "smart_min_wallets": 2,
   "smart_window_min": 10,
   "smart_max_mcap_usd": 1000000,
-  "follow_wallets": []
+  "follow_wallets": [],
+  "min_lp_locked_pct": 30
 }

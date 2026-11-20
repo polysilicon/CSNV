@@ -32,6 +32,10 @@ from the Discord bot, so the wallet key never sits in Yoink.
   (free-plan WebSocket): a sell in their logs plus a lower balance of our coin triggers the creator-sell exit, without
   PumpPortal. Keys are given in Discord with `/tradersetkey` (staff, ephemeral): Yoink drops them in `inbox/` (mode
   1730, Yoink can write but not list or read) and the trader moves them into `/etc/crispytrader` (600) within seconds.
+- RugCheck (2026-11-20): right before any buy, RugCheck's free summary must show no "danger" risk from `rug_risks`
+  (LP unlocked, mint or freeze authority, single holder or top-10 concentration, copycat) and at least
+  `min_lp_locked_pct` (30) of the liquidity locked or burned; if RugCheck can't be reached the coin is skipped.
+  Skips are listed in `state.json` `rug_skips` and counted in `/trader`'s last scan.
 - Controls: a file named `STOP` in `/opt/crispytrader` pauses buying; `echo sellall > STOP` also sells everything.
 - Reports: `events.jsonl` (every buy, sell, error) and `state.json` (positions, profit, last scan's filter results).
   Yoink (`tools/discordbot/traderfeed.py`) DMs each event to the owner and has `/trader` (staff).
