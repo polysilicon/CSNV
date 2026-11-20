@@ -371,29 +371,38 @@ async def gecko_launches():
                 log("geckoterminal:", type(e).__name__, e)
 
 
-BAD_RISKS = {"Large Amount of LP Unlocked", "Mint Authority still enabled", "Freeze Authority still enabled", "Single holder ownership",
+# "Large Amount of LP Unlocked" is left out on purpose: RugCheck computes it over all of a coin's pools, so an empty
+# unlocked side pool flags coins whose real pool is 100% locked (FEAR, GIGAGTA6, MF on 2026-11-20). The lock is checked
+# on the pool we actually trade instead (main_pool_lock below).
+BAD_RISKS = {"Mint Authority still enabled", "Freeze Authority still enabled", "Single holder ownership",
              "Top 10 holders high ownership", "High ownership", "Copycat token"}
 
 
-async def rug_ok(s, mint):
-    """RugCheck's summary for the coin, right before a buy (2026-11-20: pools with 0% of their liquidity locked were being
-    bought; whoever holds the LP tokens can pull the pool). (ok, why). If RugCheck can't answer, don't buy."""
+async def rug_ok(s, mint, pool=None):
+    """RugCheck's full report, right before a buy. (ok, why). Fails if RugCheck flags a danger from rug_risks, or if the
+    pool we'd trade (DexScreener's main pair; else the deepest pool RugCheck knows) has under min_lp_locked_pct of its
+    liquidity locked or burned: whoever holds unlocked LP tokens can pull the pool. If RugCheck can't answer, don't buy."""
     try:
-        async with s.get(f"https://api.rugcheck.xyz/v1/tokens/{mint}/report/summary", headers={**UA, "Accept": "application/json"},
-                         timeout=aiohttp.ClientTimeout(total=15)) as r:
+        async with s.get(f"https://api.rugcheck.xyz/v1/tokens/{mint}/report", headers={**UA, "Accept": "application/json"},
+                         timeout=aiohttp.ClientTimeout(total=20)) as r:
             if r.status != 200: return False, f"rugcheck unavailable ({r.status})"
             d = await r.json()
     except Exception as e:
         return False, f"rugcheck unavailable ({type(e).__name__})"
     bad = [x.get("name") for x in d.get("risks") or [] if x.get("level") == "danger" and x.get("name") in set(cfg.get("rug_risks", BAD_RISKS))]
     if bad: return False, "rugcheck: " + ", ".join(bad)
-    if (d.get("lpLockedPct") or 0) < cfg.get("min_lp_locked_pct", 50): return False, f"rugcheck: only {d.get('lpLockedPct') or 0:.0f}% of liquidity locked"
-    return True, f"LP {d.get('lpLockedPct') or 0:.0f}% locked"
+    markets = d.get("markets") or []
+    liq = lambda mk: ((mk.get("lp") or {}).get("quoteUSD") or 0) + ((mk.get("lp") or {}).get("baseUSD") or 0)
+    mk = next((x for x in markets if pool and x.get("pubkey") == pool), None) or (max(markets, key=liq) if markets else None)
+    if mk is None: return False, "rugcheck: no pool data"
+    locked = (mk.get("lp") or {}).get("lpLockedPct") or 0
+    if locked < cfg.get("min_lp_locked_pct", 30): return False, f"rugcheck: only {locked:.0f}% of the trading pool's liquidity locked"
+    return True, f"pool LP {locked:.0f}% locked"
 
 
 async def buy(s, mint, info, metrics, pair, signal="momentum"):
     lamports = int(cfg["trade_sol"] * LAMPORTS)
-    ok, why = await rug_ok(s, mint)
+    ok, why = await rug_ok(s, mint, pair.get("pairAddress"))
     if not ok:
         state["traded"] = (state["traded"] + [mint])[-3000:]   # don't keep re-checking it
         key = why.split(":")[0].split("(")[0].strip()
