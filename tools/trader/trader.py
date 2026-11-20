@@ -457,8 +457,33 @@ async def top10_pct(s, mint, pair):
     return round(sum(sorted(held, reverse=True)[:10]) / supply * 100, 1)
 
 
+SIZES = {"momentum": 0.1, "momentum_smart": 0.3, "smart": 0.25, "follow": 0.3, "breakout": 0.2}
+
+
+def strategy(signal):
+    """The strategy a signal label belongs to, for per-strategy stats."""
+    sig = signal or "momentum"
+    if sig == "breakout": return "breakout"
+    if sig.startswith("momentum + smart"): return "momentum + smart money"
+    if sig.startswith("smart money"): return "smart money"
+    return "momentum"
+
+
+def size_for(mint, signal):
+    """(SOL to spend, signal label): bigger on stronger signals. cfg "size_sol" overrides SIZES; without any of it,
+    every trade is trade_sol. A momentum coin that smart wallets are also buying counts as the stronger momentum_smart."""
+    sz = {**SIZES, **(cfg.get("size_sol") or {})} if cfg.get("size_sol") is not None else None
+    if sz is None: return cfg["trade_sol"], signal
+    if signal == "breakout": return sz["breakout"], signal
+    if signal.startswith("smart money"): return (sz["follow"] if "follow" in signal else sz["smart"]), signal
+    recent = {w: t for w, t in sm.signals.get(mint, {}).items() if time.time() - t <= cfg.get("smart_window_min", 10) * 60}
+    if recent: return sz["momentum_smart"], f"momentum + smart money ({len(recent)} wallet{'s' if len(recent) > 1 else ''})"
+    return sz["momentum"], signal
+
+
 async def buy(s, mint, info, metrics, pair, signal="momentum"):
-    lamports = int(cfg["trade_sol"] * LAMPORTS)
+    size, signal = size_for(mint, signal)
+    lamports = int(size * LAMPORTS)
     metrics = dict(metrics)
     ok, why = await rug_ok(s, mint, pair, metrics)
     if not ok:
@@ -474,7 +499,7 @@ async def buy(s, mint, info, metrics, pair, signal="momentum"):
     if not q or q == RETRY: return
     sig, amount = None, int(q["outAmount"])
     if live():
-        if await sol_balance(s) < cfg["trade_sol"] + 0.01:
+        if await sol_balance(s) < size + 0.01:
             log("buy skipped: wallet low on SOL"); return
         sig = await swap(s, q)
         await asyncio.sleep(2)
@@ -484,12 +509,12 @@ async def buy(s, mint, info, metrics, pair, signal="momentum"):
     if info.get("creator") and helius_key():
         try: creator_bal = await holder_balance(s, info["creator"], mint)
         except Exception as e: log("creator balance:", e)
-    state["positions"][mint] = {"sym": info["sym"], "name": info["name"], "amount": amount, "amount0": amount, "realized": 0.0, "steps": 0, "cost_sol": cfg["trade_sol"], "creator": info.get("creator"), "creator_bal": creator_bal,
+    state["positions"][mint] = {"sym": info["sym"], "name": info["name"], "amount": amount, "amount0": amount, "realized": 0.0, "steps": 0, "cost_sol": size, "creator": info.get("creator"), "creator_bal": creator_bal,
                                 "t": int(time.time()), "peak_pct": 0.0, "liq0": metrics["liq"], "url": pair.get("url"), "sig": sig}
     state["positions"][mint]["signal"] = signal
     if signal != "breakout": state["traded"] = (state["traded"] + [mint])[-3000:]
     save()
-    event(kind="buy", mint=mint, sym=info["sym"], name=info["name"], sol=cfg["trade_sol"], metrics=metrics, url=pair.get("url"), sig=sig, signal=signal)
+    event(kind="buy", mint=mint, sym=info["sym"], name=info["name"], sol=size, metrics=metrics, url=pair.get("url"), sig=sig, signal=signal)
     log("BUY", info["sym"], mint, metrics)
 
 
@@ -527,7 +552,7 @@ async def sell(s, mint, reason, fraction=1.0):
     state["wins" if pnl > 0 else "losses"] += 1
     state["closed"] = (state["closed"] + [{"mint": mint, "sym": pos["sym"], "cost": pos["cost_sol"], "out": total_out, "pnl": pnl,
                                             "reason": reason, "steps": pos.get("steps", 0), "t0": pos["t"], "t1": int(time.time()),
-                                            "signal": pos.get("signal", "momentum")}])[-500:]
+                                            "signal": strategy(pos.get("signal"))}])[-500:]
     save()
     event(kind="sell", mint=mint, sym=pos["sym"], name=pos["name"], sol_in=pos["cost_sol"], sol_out=round(total_out, 6), pnl_sol=round(pnl, 6),
           pnl_pct=round(pnl / pos["cost_sol"] * 100, 1), reason=reason, steps=pos.get("steps", 0),
@@ -570,10 +595,11 @@ async def manage(s):
                     else: await sell(s, mint, label + f": sold {ladder[step][1]}%, the rest rides", part)
                 except Exception as e: log("sell failed", mint, e); event(kind="error", mint=mint, sym=pos["sym"], error=str(e)[:200])
                 await asyncio.sleep(0.3); continue
-            trail = x.get("runner_trail_pct", x["trail_pct"]) if runner else x["trail_pct"]
+            tbs = x.get("trail_by_step")   # trailing stop size by profit steps taken: tight early, loose for the last runner
+            trail = tbs[min(step, len(tbs) - 1)] if tbs else (x.get("runner_trail_pct", x["trail_pct"]) if runner else x["trail_pct"])
             if not runner and pct <= -x["stop_loss_pct"]: reason = f"stop loss {pct:+.0f}%"
             elif runner and pct <= x.get("runner_floor_pct", 0): reason = f"back to entry {pct:+.0f}% (profit already taken)"
-            elif pos["peak_pct"] >= x["trail_after_pct"] and pct <= pos["peak_pct"] - trail: reason = f"trailing stop {pct:+.0f}% (peak {pos['peak_pct']:+.0f}%)"
+            elif (runner or pos["peak_pct"] >= x["trail_after_pct"]) and pct <= pos["peak_pct"] - trail: reason = f"trailing stop {pct:+.0f}% (peak {pos['peak_pct']:+.0f}%)"
             elif held >= (x.get("runner_max_hold_min", x["max_hold_min"]) if runner else x["max_hold_min"]): reason = f"time limit {pct:+.0f}%"
         if reason:
             try: await sell(s, mint, reason)
@@ -629,7 +655,8 @@ BREAKOUT = {"enabled": True, "every_sec": 180, "min_age_h": 1, "max_age_days": 3
             "min_change_h1_pct": 5, "max_change_h1_pct": 80, "max_change_h24_pct": 300, "min_buy_sell_ratio_m5": 1.2,
             "max_open": 2, "cooldown_h": 12,
             "exits": {"take_profit_steps": [[20, 50], [50, 50]], "stop_loss_pct": 10, "trail_after_pct": 10, "trail_pct": 8,
-                      "runner_trail_pct": 15, "max_hold_min": 120, "runner_max_hold_min": 360, "runner_floor_pct": 0}}
+                      "runner_trail_pct": 15, "max_hold_min": 120, "runner_max_hold_min": 360, "runner_floor_pct": 0,
+                      "trail_by_step": [8, 15, 15]}}
 _bo = {"last": 0.0, "fails": {}}
 
 

@@ -138,6 +138,10 @@ def register(bot, discord, app_commands):
         if recent:
             em.add_field(name="Last trades", inline=False,
                          value="\n".join(f"${c['sym']} {c['pnl']:+.4f} SOL ({c['reason']})" for c in reversed(recent)))
-        em.set_footer(text=f"{cfg.get('trade_sol')} SOL/trade · max {cfg.get('max_open')} open · stops after -{cfg.get('daily_loss_sol')} SOL a day · "
-                           "TP " + " then ".join(f"+{a}% sell {b}%" for a, b in cfg.get("take_profit_steps", [])) + f" · runner trails {cfg.get('runner_trail_pct')}% · SL -{cfg.get('stop_loss_pct')}%")
+        sz = cfg.get("size_sol")
+        size_txt = (f"{sz.get('momentum')}-{max(sz.values())} SOL/trade by signal" if sz else f"{cfg.get('trade_sol')} SOL/trade")
+        em.set_footer(text=f"{size_txt} · max {cfg.get('max_open')} open · stops after -{cfg.get('daily_loss_sol')} SOL a day · "
+                           "TP " + " then ".join(f"+{a}% sell {b}%" for a, b in cfg.get("take_profit_steps", [])) + " of what's left"
+                           + (f" · trails {'/'.join(str(t) for t in cfg['trail_by_step'])} pts by step" if cfg.get("trail_by_step") else f" · runner trails {cfg.get('runner_trail_pct')}%")
+                           + f" · SL -{cfg.get('stop_loss_pct')}%")
         await interaction.response.send_message(embed=em, ephemeral=True)
