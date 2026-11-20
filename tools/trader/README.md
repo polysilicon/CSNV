@@ -28,6 +28,10 @@ from the Discord bot, so the wallet key never sits in Yoink.
   in 1 h on 5-min volume at least 1.5x the hour's average, more buys than sells. Same rug and holder checks. Its own
   exits (`breakout.exits`: take profit +20% then +50%, stop -10%, trail 8%, 2 h limit), at most `max_open` (2) at a
   time, and a coin can be bought again after `cooldown_h` (12). Shown as "breakout" in /trader.
+- Live trading safeguards: cost and proceeds are the wallet's real SOL change (fees and rent included); sells allow
+  `sell_slippage_bps` (10%); an emptied token account is closed to get its ~0.002 SOL rent back; a coin with no
+  route at all is written off so it doesn't hold a slot; a failed sell retries with a pause and DMs only now and then;
+  positions opened on paper stay paper after switching to live.
 - Moonbag: when a trailing stop or time limit would close a trade in profit, `moonbag_pct` (25) of it is kept and rides
   with no stop loss, only a `moonbag_trail_pct` (50) point trailing stop and a `moonbag_max_hold_min` (240) limit.
 - Smart money (`smartmoney.py`): follows every trade on new coins for 30 min, keeps a profit-and-loss per wallet, and

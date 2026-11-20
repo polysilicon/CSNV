@@ -107,6 +107,9 @@ def register(bot, discord, app_commands):
         em = discord.Embed(color=0xE67E22 if live else 0x5865F2, title=f"Crispy Trader · {'💸 LIVE' if live else '🧪 PAPER'} mode")
         em.add_field(name="Today", value=f"{st.get('day_pnl', 0):+.4f} SOL")
         em.add_field(name="All time", value=f"{st.get('total_pnl', 0):+.4f} SOL")
+        lv = [c for c in st.get("closed", []) if c.get("mode") == "live"]
+        if lv:
+            em.add_field(name="💸 Real trades", value=f"{sum(c['pnl'] for c in lv):+.4f} SOL · {sum(c['pnl'] > 0 for c in lv)}/{len(lv)} wins")
         em.add_field(name="Win rate", value=f"{st.get('wins', 0)}/{n} ({st.get('wins', 0) / n * 100:.0f}%)" if n else "no trades yet")
         pos = st.get("positions", {})
         em.add_field(name=f"Open ({len(pos)}/{cfg.get('max_open', '?')})", inline=False,

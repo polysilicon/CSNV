@@ -214,8 +214,8 @@ async def feed():
 RETRY = "retry"
 
 
-async def jup_quote(s, inp, out, amount):
-    params = {"inputMint": inp, "outputMint": out, "amount": str(int(amount)), "slippageBps": str(cfg["slippage_bps"])}
+async def jup_quote(s, inp, out, amount, slippage_bps=None):
+    params = {"inputMint": inp, "outputMint": out, "amount": str(int(amount)), "slippageBps": str(slippage_bps or cfg["slippage_bps"])}
     async with s.get(JUP + "/quote", params=params, headers=UA, timeout=aiohttp.ClientTimeout(total=10)) as r:
         if r.status == 400: return None            # no route: the token really can't be traded right now
         if r.status != 200: return RETRY           # rate limit or a hiccup: try again next check, decide nothing
@@ -322,6 +322,27 @@ async def swap(s, quote):
         if st and st.get("err"): raise RuntimeError(f"tx failed: {st['err']}")
         if st and st.get("confirmationStatus") in ("confirmed", "finalized"): return sig
     raise RuntimeError(f"tx not confirmed: {sig}")
+
+
+async def close_token_accounts(s, mint):
+    """Close our (empty) token accounts for `mint`, returning their rent (about 0.002 SOL each) to the wallet."""
+    from solders.instruction import Instruction, AccountMeta
+    from solders.pubkey import Pubkey
+    from solders.message import MessageV0
+    from solders.hash import Hash
+    from solders.transaction import VersionedTransaction
+    kp = keypair()
+    res = await rpc(s, "getTokenAccountsByOwner", [str(kp.pubkey()), {"mint": mint}, {"encoding": "jsonParsed"}])
+    ixs = []
+    for a in res["value"]:
+        if int(a["account"]["data"]["parsed"]["info"]["tokenAmount"]["amount"]) != 0: continue
+        ixs.append(Instruction(Pubkey.from_string(a["account"]["owner"]), bytes([9]),   # SPL Token / Token-2022 CloseAccount
+                               [AccountMeta(Pubkey.from_string(a["pubkey"]), False, True), AccountMeta(kp.pubkey(), False, True),
+                                AccountMeta(kp.pubkey(), True, False)]))
+    if not ixs: return None
+    bh = (await rpc(s, "getLatestBlockhash", [{"commitment": "confirmed"}]))["value"]["blockhash"]
+    tx = VersionedTransaction(MessageV0.try_compile(kp.pubkey(), ixs, [], Hash.from_string(bh)), [kp])
+    return await rpc(s, "sendTransaction", [base64.b64encode(bytes(tx)).decode(), {"encoding": "base64", "maxRetries": 3}])
 
 
 async def token_balance(s, mint):
@@ -513,19 +534,27 @@ async def buy(s, mint, info, metrics, pair, signal="momentum"):
     metrics = {**metrics, "rugcheck": why}
     q = await jup_quote(s, SOL_MINT, mint, lamports)
     if not q or q == RETRY: return
-    sig, amount = None, int(q["outAmount"])
+    sig, amount, cost = None, int(q["outAmount"]), size
     if live():
-        if await sol_balance(s) < size + 0.01:
+        before = await sol_balance(s)
+        if before < size + 0.01:
             log("buy skipped: wallet low on SOL"); return
-        sig = await swap(s, q)
+        try: sig = await swap(s, q)
+        except Exception as e:
+            # "not confirmed" can still land a few seconds later: if we hold the coin now, track it rather than lose it
+            await asyncio.sleep(8)
+            if not await token_balance(s, mint): raise
+            log("buy landed despite:", e)
         await asyncio.sleep(2)
         amount = await token_balance(s, mint) or amount
+        spent = before - await sol_balance(s)   # the swap, fees and the new token account's rent: what really left the wallet
+        if 0 < spent < size * 3: cost = spent
     if info.get("creator"): asyncio.create_task(watch_creators([info["creator"]]))
     creator_bal = None
     if info.get("creator") and helius_key():
         try: creator_bal = await holder_balance(s, info["creator"], mint)
         except Exception as e: log("creator balance:", e)
-    state["positions"][mint] = {"sym": info["sym"], "name": info["name"], "amount": amount, "amount0": amount, "realized": 0.0, "steps": 0, "cost_sol": size, "creator": info.get("creator"), "creator_bal": creator_bal,
+    state["positions"][mint] = {"sym": info["sym"], "name": info["name"], "amount": amount, "amount0": amount, "realized": 0.0, "steps": 0, "cost_sol": cost, "mode": "live" if live() else "paper", "creator": info.get("creator"), "creator_bal": creator_bal,
                                 "t": int(time.time()), "peak_pct": 0.0, "liq0": metrics["liq"], "url": pair.get("url"), "sig": sig}
     state["positions"][mint]["signal"] = signal
     if signal != "breakout": state["traded"] = (state["traded"] + [mint])[-3000:]
@@ -537,38 +566,51 @@ async def buy(s, mint, info, metrics, pair, signal="momentum"):
 async def sell(s, mint, reason, fraction=1.0):
     """Sell `fraction` of the position (1 = all of it and close it). Partial sells keep the rest open."""
     pos = state["positions"][mint]
+    real = live() and pos.get("mode") == "live"   # positions opened on paper stay on paper
     partial = fraction < 0.999
+    if real and not partial:
+        pos["amount"] = await token_balance(s, mint)   # sell what the wallet really holds
     amt = int(pos["amount"] * fraction) if partial else pos["amount"]
-    if amt <= 0: return False
+    if amt <= 0 and partial: return False
     q = RETRY
     for _ in range(3):
-        try: q = await jup_quote(s, mint, SOL_MINT, amt)
+        try: q = await jup_quote(s, mint, SOL_MINT, amt, cfg.get("sell_slippage_bps", 1000)) if amt > 0 else None
         except Exception: q = RETRY
         if q != RETRY: break
         await asyncio.sleep(1)
     if q == RETRY: log("sell: no quote right now", pos["sym"]); return False
     out_sol = int(q["outAmount"]) / LAMPORTS if q else 0.0
-    sig = None
-    if live():
-        if not q: log("sell: no route for", mint); return False
+    sig, fee = None, 0.0
+    if real and q:
+        before = await sol_balance(s)
         sig = await swap(s, q)
-    fee = cfg["priority_fee_sol"] if live() else 0.0
+        if not partial:
+            try:
+                await asyncio.sleep(2)
+                await close_token_accounts(s, mint)
+                await asyncio.sleep(3)
+            except Exception as e: log("close token account:", type(e).__name__, e)
+        got = await sol_balance(s) - before   # what really came back, after fees (and the account rent, on a full sell)
+        if got >= 0: out_sol = got
+    elif real and not q and partial: return False
+    # (a full sell with no route at all writes the position off at 0: the coin can't be sold, don't hold a slot for it)
     if partial:
         pos["amount"] -= amt; pos["realized"] = pos.get("realized", 0.0) + out_sol - fee; pos["steps"] = pos.get("steps", 0) + 1
+        pos["sell_fails"] = 0
         save()
         event(kind="partial", mint=mint, sym=pos["sym"], name=pos["name"], sold_pct=round(fraction * 100), sol_out=round(out_sol, 6),
               realized=round(pos["realized"], 6), cost=pos["cost_sol"], reason=reason, held_min=round((time.time() - pos["t"]) / 60, 1), url=pos.get("url"), sig=sig)
         log("PARTIAL", pos["sym"], reason, f"{out_sol:.4f} SOL")
         return True
     total_out = pos.get("realized", 0.0) + out_sol
-    pnl = total_out - pos["cost_sol"] - fee - (cfg["priority_fee_sol"] if live() else 0.0)   # this sell and the buy
+    pnl = total_out - pos["cost_sol"] - fee   # live: cost and out are measured wallet changes, fees included
     state["positions"].pop(mint)
     if state["day"] != today(): state["day"], state["day_pnl"] = today(), 0.0
     state["day_pnl"] += pnl; state["total_pnl"] += pnl
     state["wins" if pnl > 0 else "losses"] += 1
     state["closed"] = (state["closed"] + [{"mint": mint, "sym": pos["sym"], "cost": pos["cost_sol"], "out": total_out, "pnl": pnl,
                                             "reason": reason, "steps": pos.get("steps", 0), "t0": pos["t"], "t1": int(time.time()),
-                                            "signal": strategy(pos.get("signal"))}])[-500:]
+                                            "signal": strategy(pos.get("signal")), "mode": pos.get("mode", "paper")}])[-500:]
     save()
     event(kind="sell", mint=mint, sym=pos["sym"], name=pos["name"], sol_in=pos["cost_sol"], sol_out=round(total_out, 6), pnl_sol=round(pnl, 6),
           pnl_pct=round(pnl / pos["cost_sol"] * 100, 1), reason=reason, steps=pos.get("steps", 0),
@@ -577,10 +619,21 @@ async def sell(s, mint, reason, fraction=1.0):
     return True
 
 
+def sell_failed(mint, pos, e):
+    """A sell that raised (a live swap that failed or didn't confirm): retry after a pause, and DM only the first
+    failure and every 10th, not one every 5 seconds."""
+    pos["sell_fails"] = pos.get("sell_fails", 0) + 1
+    pos["sell_retry_t"] = time.time() + min(60, 10 * pos["sell_fails"])
+    log("sell failed", pos["sym"], mint, e)
+    if pos["sell_fails"] == 1 or pos["sell_fails"] % 10 == 0:
+        event(kind="error", mint=mint, sym=pos["sym"], error=f"sell failed ({pos['sell_fails']}x so far, retrying): {str(e)[:180]}")
+
+
 async def manage(s):
     """Exits for open positions, from a real Jupiter quote for the whole position."""
     stop = open(STOP).read() if os.path.exists(STOP) else ""
     for mint, pos in list(state["positions"].items()):
+        if time.time() < pos.get("sell_retry_t", 0): continue   # a sell just failed: wait a moment before trying again
         if "sellall" in stop:
             await sell(s, mint, "manual sell-all"); continue
         try: q = await jup_quote(s, mint, SOL_MINT, pos["amount"])
@@ -609,7 +662,7 @@ async def manage(s):
                 try:
                     if part >= 0.999: await sell(s, mint, label)
                     else: await sell(s, mint, label + f": sold {ladder[step][1]}%, the rest rides", part)
-                except Exception as e: log("sell failed", mint, e); event(kind="error", mint=mint, sym=pos["sym"], error=str(e)[:200])
+                except Exception as e: sell_failed(mint, pos, e)
                 await asyncio.sleep(0.3); continue
             tbs = x.get("trail_by_step")   # trailing stop size by profit steps taken: tight early, loose for the last runner
             trail = tbs[min(step, len(tbs) - 1)] if tbs else (x.get("runner_trail_pct", x["trail_pct"]) if runner else x["trail_pct"])
@@ -627,11 +680,11 @@ async def manage(s):
             try:
                 await sell(s, mint, reason + f": sold {100 - bag * 100:.0f}%, {bag * 100:.0f}% kept as a moonbag", 1 - bag)
                 if mint in state["positions"]: state["positions"][mint]["moonbag"] = True
-            except Exception as e: log("sell failed", mint, e); event(kind="error", mint=mint, sym=pos["sym"], error=str(e)[:200])
+            except Exception as e: sell_failed(mint, pos, e)
             await asyncio.sleep(0.3); continue
         if reason:
             try: await sell(s, mint, reason)
-            except Exception as e: log("sell failed", mint, e); event(kind="error", mint=mint, sym=pos["sym"], error=str(e)[:200])
+            except Exception as e: sell_failed(mint, pos, e)
         await asyncio.sleep(0.3)
     save()
 
