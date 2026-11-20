@@ -31,7 +31,33 @@ def pp_key():
     try:
         with open(PP_KEY_FILE) as f: return f.read().strip() or None
     except OSError: return None
-RPC = os.environ.get("TRADER_RPC", "https://api.mainnet-beta.solana.com")
+PUBLIC_RPC = "https://api.mainnet-beta.solana.com"
+HELIUS_KEY_FILE = "/etc/crispytrader/helius.key"
+INBOX = os.path.join(HERE, "inbox")   # Yoink's /trader setkey drops keys here (group-writable); moved into /etc at once
+
+
+def take_inbox():
+    """Move a key Yoink dropped into the inbox into /etc/crispytrader (mode 600), so it never stays readable by Yoink."""
+    for name in ("helius.key",):
+        src = os.path.join(INBOX, name)
+        if os.path.exists(src):
+            key = open(src).read().strip()
+            os.remove(src)
+            if key:
+                fd = os.open(os.path.join("/etc/crispytrader", name), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+                with os.fdopen(fd, "w") as f: f.write(key)
+                log(f"{name} installed")
+
+
+def helius_key():
+    try:
+        with open(HELIUS_KEY_FILE) as f: return f.read().strip() or None
+    except OSError: return None
+
+
+def rpc_url():
+    k = helius_key()
+    return os.environ.get("TRADER_RPC") or (f"https://mainnet.helius-rpc.com/?api-key={k}" if k else PUBLIC_RPC)
 SOL_MINT = "So11111111111111111111111111111111111111112"
 JUP = "https://lite-api.jup.ag/swap/v1"
 DEX = "https://api.dexscreener.com/tokens/v1/solana/"
@@ -232,7 +258,7 @@ def keypair():
 
 
 async def rpc(s, method, params):
-    async with s.post(RPC, json={"jsonrpc": "2.0", "id": 1, "method": method, "params": params}, timeout=aiohttp.ClientTimeout(total=20)) as r:
+    async with s.post(rpc_url(), json={"jsonrpc": "2.0", "id": 1, "method": method, "params": params}, timeout=aiohttp.ClientTimeout(total=20)) as r:
         d = await r.json()
     if "error" in d: raise RuntimeError(f"{method}: {d['error']}")
     return d["result"]
@@ -271,6 +297,80 @@ async def sol_balance(s):
 def live(): return cfg.get("mode") == "live" and os.path.exists(WALLET)
 
 
+async def holder_balance(s, owner, mint):
+    res = await rpc(s, "getTokenAccountsByOwner", [owner, {"mint": mint}, {"encoding": "jsonParsed"}])
+    return sum(int(a["account"]["data"]["parsed"]["info"]["tokenAmount"]["amount"]) for a in res["value"])
+
+
+async def helius_watch():
+    """The creator-sell exit without PumpPortal: logsSubscribe (a standard, free-plan Solana WebSocket method) to the
+    creator of each coin we hold. Any of their transactions that logs a sell makes us check their balance of our coin;
+    if it dropped, they're selling it, and manage() exits. Only a few low-traffic subscriptions, so it costs little."""
+    import websockets
+    while True:
+        key = helius_key()
+        if not key: await asyncio.sleep(30); continue
+        try:
+            async with websockets.connect(f"wss://mainnet.helius-rpc.com/?api-key={key}", open_timeout=20, ping_interval=30) as ws, aiohttp.ClientSession() as s:
+                subs, pending, rid = {}, {}, 0   # creator -> subscription id; request id -> creator
+                log("helius: connected")
+                while True:
+                    want = {p["creator"] for p in state["positions"].values() if p.get("creator")}
+                    for c in want - set(subs) - set(pending.values()):
+                        rid += 1; pending[rid] = c
+                        await ws.send(json.dumps({"jsonrpc": "2.0", "id": rid, "method": "logsSubscribe", "params": [{"mentions": [c]}, {"commitment": "confirmed"}]}))
+                    for c in set(subs) - want:
+                        rid += 1
+                        await ws.send(json.dumps({"jsonrpc": "2.0", "id": rid, "method": "logsUnsubscribe", "params": [subs.pop(c)]}))
+                    try: m = json.loads(await asyncio.wait_for(ws.recv(), 10))
+                    except asyncio.TimeoutError: continue
+                    if "id" in m and m["id"] in pending:
+                        c = pending.pop(m["id"])
+                        if "result" in m: subs[c] = m["result"]
+                        continue
+                    if m.get("method") != "logsNotification": continue
+                    logs = " ".join((m["params"]["result"]["value"].get("logs") or []))
+                    if "Sell" not in logs: continue
+                    sub = m["params"]["subscription"]
+                    creator = next((c for c, i in subs.items() if i == sub), None)
+                    for mint, pos in list(state["positions"].items()):
+                        if pos.get("creator") != creator or pos.get("dev_sold"): continue
+                        try: bal = await holder_balance(s, creator, mint)
+                        except Exception as e: log("helius balance:", e); continue
+                        if pos.get("creator_bal") is not None and bal < pos["creator_bal"]:
+                            pos["dev_sold"] = True; log("creator sold (helius)", pos["sym"])
+                        pos["creator_bal"] = bal
+        except Exception as e:
+            log("helius:", type(e).__name__, e)
+        await asyncio.sleep(30)
+
+
+async def gecko_launches():
+    """Backup launch feed while PumpPortal is down: new Solana pools from GeckoTerminal (free, ~1 min behind).
+    These are pools (graduated pump.fun coins and other DEX launches), not coins still on the bonding curve."""
+    async with aiohttp.ClientSession() as s:
+        while True:
+            await asyncio.sleep(60)
+            if _ws is not None: continue   # PumpPortal is up: it's faster and has pre-graduation coins
+            try:
+                async with s.get("https://api.geckoterminal.com/api/v2/networks/solana/new_pools", params={"page": "1"}, headers=UA,
+                                 timeout=aiohttp.ClientTimeout(total=15)) as r:
+                    if r.status != 200: continue
+                    pools = (await r.json()).get("data") or []
+                n = 0
+                for p in pools:
+                    mint = ((p.get("relationships") or {}).get("base_token") or {}).get("data", {}).get("id", "").removeprefix("solana_")
+                    a = p.get("attributes") or {}
+                    if not mint or mint == SOL_MINT or mint in state["seen"]: continue
+                    try: t0 = datetime.datetime.fromisoformat(a["pool_created_at"].replace("Z", "+00:00")).timestamp()
+                    except Exception: t0 = time.time()
+                    name = (a.get("name") or "?").split(" / ")[0]
+                    state["seen"][mint] = {"t": int(t0), "sym": name[:20], "name": name[:40], "creator": None, "src": "geckoterminal"}; n += 1
+                if n: log(f"geckoterminal: {n} new pools")
+            except Exception as e:
+                log("geckoterminal:", type(e).__name__, e)
+
+
 async def buy(s, mint, info, metrics, pair, signal="momentum"):
     lamports = int(cfg["trade_sol"] * LAMPORTS)
     q = await jup_quote(s, SOL_MINT, mint, lamports)
@@ -283,7 +383,11 @@ async def buy(s, mint, info, metrics, pair, signal="momentum"):
         await asyncio.sleep(2)
         amount = await token_balance(s, mint) or amount
     if info.get("creator"): asyncio.create_task(watch_creators([info["creator"]]))
-    state["positions"][mint] = {"sym": info["sym"], "name": info["name"], "amount": amount, "amount0": amount, "realized": 0.0, "steps": 0, "cost_sol": cfg["trade_sol"], "creator": info.get("creator"),
+    creator_bal = None
+    if info.get("creator") and helius_key():
+        try: creator_bal = await holder_balance(s, info["creator"], mint)
+        except Exception as e: log("creator balance:", e)
+    state["positions"][mint] = {"sym": info["sym"], "name": info["name"], "amount": amount, "amount0": amount, "realized": 0.0, "steps": 0, "cost_sol": cfg["trade_sol"], "creator": info.get("creator"), "creator_bal": creator_bal,
                                 "t": int(time.time()), "peak_pct": 0.0, "liq0": metrics["liq"], "url": pair.get("url"), "sig": sig}
     state["traded"] = (state["traded"] + [mint])[-3000:]
     save()
@@ -425,11 +529,14 @@ async def main():
     sm.load()
     log(f"Crispy Trader starting in {cfg['mode']} mode" + (" (no wallet: paper only)" if cfg["mode"] == "live" and not os.path.exists(WALLET) else ""))
     asyncio.create_task(feed())
+    asyncio.create_task(helius_watch())
+    asyncio.create_task(gecko_launches())
     n = 0
     async with aiohttp.ClientSession() as s:
         while True:
             try:
                 with open(CONFIG) as f: cfg.update(json.load(f))
+                take_inbox()
                 await manage(s)
                 per_min = max(1, 60 // cfg.get("exit_check_sec", 5))
                 if n % per_min == 0:

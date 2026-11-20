@@ -74,6 +74,26 @@ def register(bot, discord, app_commands):
         asyncio.create_task(loop(bot, discord))
     bot.setup_hook = hook
 
+    @bot.tree.command(name="tradersetkey", description="Staff: give Crispy Trader an API key (only you see this)")
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.choices(service=[app_commands.Choice(name="Helius (Solana RPC)", value="helius")])
+    async def setkey_cmd(interaction: discord.Interaction, service: app_commands.Choice[str], key: str):
+        if not bot.is_staff(interaction.user):
+            return await interaction.response.send_message("Staff only.", ephemeral=True)
+        key = key.strip()
+        if not (8 <= len(key) <= 200) or not all(c.isalnum() or c in "-_" for c in key):
+            return await interaction.response.send_message("That doesn't look like an API key.", ephemeral=True)
+        # dropped into the trader's inbox (write-only for Yoink); the trader moves it to /etc/crispytrader (600) within seconds
+        path = DIR + "inbox/" + service.value + ".key"
+        try:
+            fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
+            with os.fdopen(fd, "w") as f: f.write(key)
+        except OSError as e:
+            return await interaction.response.send_message(f"Couldn't hand the key over: {e}", ephemeral=True)
+        await bot.audit(f"🔑 {interaction.user} set the trader's {service.name} key")
+        await interaction.response.send_message(f"✅ {service.name} key handed to Crispy Trader. It's stored on the server where only the "
+                                                "trader can read it; this message is only visible to you. You can delete it.", ephemeral=True)
+
     @bot.tree.command(name="trader", description="Staff: Crispy Trader status (mode, positions, profit)")
     @app_commands.default_permissions(manage_guild=True)
     async def trader_cmd(interaction: discord.Interaction):

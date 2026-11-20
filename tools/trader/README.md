@@ -26,6 +26,12 @@ from the Discord bot, so the wallet key never sits in Yoink.
   the safety half of the filters. **Needs a PumpPortal API key funded with 0.02 SOL** in
   `/etc/crispytrader/pumpportal.key` (PumpPortal only streams per-coin and per-wallet trades with one); without it
   the trader skips wallet tracking and the creator-sell exit (which uses the same feed).
+- Feeds and keys (2026-11-20): launches come from PumpPortal; while it's unreachable, from GeckoTerminal's new Solana
+  pools every minute (`gecko_launches`, graduated/DEX pools only). With a Helius key (`/etc/crispytrader/helius.key`)
+  the trader uses Helius as its RPC (live trading) and watches the creator of every coin it holds with `logsSubscribe`
+  (free-plan WebSocket): a sell in their logs plus a lower balance of our coin triggers the creator-sell exit, without
+  PumpPortal. Keys are given in Discord with `/tradersetkey` (staff, ephemeral): Yoink drops them in `inbox/` (mode
+  1730, Yoink can write but not list or read) and the trader moves them into `/etc/crispytrader` (600) within seconds.
 - Controls: a file named `STOP` in `/opt/crispytrader` pauses buying; `echo sellall > STOP` also sells everything.
 - Reports: `events.jsonl` (every buy, sell, error) and `state.json` (positions, profit, last scan's filter results).
   Yoink (`tools/discordbot/traderfeed.py`) DMs each event to the owner and has `/trader` (staff).
