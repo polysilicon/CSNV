@@ -101,16 +101,17 @@ here: a mode listing should match its tags.
 - 24 chars: `Crispy Skyblock | No P2W`
 
 ### Short description
-> Skyblock with 5 skills, 68 collections, 43 minions, pets, a player Bazaar and 36 craftable gear pieces. 7 starter islands. No pay-to-win. Java + Bedrock.
+> Skyblock with 5 skills, 68 collections, 43 minions, pets, a player Bazaar, island bosses and 36 craftable gear pieces. 7 starter islands, no PvP, no pay-to-win. Java + Bedrock.
 
 ### Long description
 ```
 CRISPY SKYBLOCK: grow an island, level your skills, no pay-to-win.
 
 YOUR ISLAND
-- Pick one of 7 themed starter islands
+- Pick one of 7 themed starter islands; a Skyblock Guide book explains everything in game
 - Upgrade its size, minion slots, co-op slots and ore generator
-- Invite friends to build with you; island level grows with what you place
+- Invite friends to build with you (up to 8 members); island level puts you on the Top Islands board
+- 26 challenges with resource, spawn egg and XP rewards
 
 SKILLS AND COLLECTIONS
 - 5 skills: Farming, Mining, Combat, Foraging and Fishing, each with level rewards
@@ -127,11 +128,19 @@ GEAR YOU CRAFT
 - Craft 17 armour sets and 19 weapons with their own abilities
 - Better gear needs more farming, not real money
 
+BOSSES
+- Your island gets its own Nether and End, each with a boss altar
+- Fight bosses like the Blaze King and the Ender Colossus for coins and rare loot (even an elytra)
+
 BEYOND YOUR ISLAND
 - Regenerating mines and forests full of levelled mobs
 - The Sky Lord's Rift, with a boss
 - Loot and dungeons fall from the sky onto your island
 - Buy a hub plot for your shop or house
+
+NO PVP, NO PAY-TO-WIN
+- PvP is off on islands, in the hub and in the resource zones, so visiting is safe
+- Nothing that makes you stronger is sold for real money
 
 Also on the same network: a no-rules anarchy server, a 36-character PvP server and an extraction shooter.
 
