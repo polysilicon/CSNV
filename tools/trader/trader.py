@@ -149,6 +149,20 @@ def share_launch(m):
         log("launches.jsonl:", e)
 
 
+MIGRATIONS = os.path.join(HERE, "migrations.jsonl")
+
+
+def log_migration(m):
+    """Every pump.fun graduation (time, mint, pool): an unbiased sample of graduates, winners and duds alike, for
+    studying what early charts lead to runners. Kept to about 20 MB."""
+    try:
+        if os.path.exists(MIGRATIONS) and os.path.getsize(MIGRATIONS) > 20_000_000: os.replace(MIGRATIONS, MIGRATIONS + ".old")
+        with open(MIGRATIONS, "a") as f:
+            f.write(json.dumps({"t": int(time.time()), "mint": m.get("mint"), "pool": m.get("pool")}) + "\n")
+    except OSError as e:
+        log("migrations.jsonl:", e)
+
+
 async def feed():
     global _ws
     import websockets
@@ -160,6 +174,7 @@ async def feed():
             async with websockets.connect(url, open_timeout=20, ping_interval=30) as ws:
                 _ws = ws
                 await ws.send(json.dumps({"method": "subscribeNewToken"}))
+                await ws.send(json.dumps({"method": "subscribeMigration"}))   # free: every graduation, logged for research
                 _accounts.clear()
                 await watch_creators({p["creator"] for p in state["positions"].values() if p.get("creator")} | sm.smart | set(cfg.get("follow_wallets", [])))
                 if sm.tracked and cfg.get("track_wallets", True) and pp_key(): await ws_send({"method": "subscribeTokenTrade", "keys": list(sm.tracked)})
@@ -182,6 +197,7 @@ async def feed():
                         sm.on_create(mint, m.get("traderPublicKey"))
                         await ws_send({"method": "subscribeTokenTrade", "keys": [mint]})
                     if m.get("txType") == "create" and mint: share_launch(m)
+                    if m.get("txType") == "migrate" and mint: log_migration(m)
                     if m.get("txType") == "create" and mint and mint not in state["seen"]:
                         state["seen"][mint] = {"t": int(time.time()), "sym": (m.get("symbol") or "?")[:20], "name": (m.get("name") or "?")[:40],
                                                "creator": m.get("traderPublicKey")}
