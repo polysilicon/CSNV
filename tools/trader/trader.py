@@ -315,12 +315,17 @@ async def swap(s, quote):
         tx_b64 = (await r.json())["swapTransaction"]
     raw = VersionedTransaction.from_bytes(base64.b64decode(tx_b64))
     signed = VersionedTransaction(raw.message, [kp])
-    sig = await rpc(s, "sendTransaction", [base64.b64encode(bytes(signed)).decode(), {"encoding": "base64", "skipPreflight": True, "maxRetries": 3}])
-    for _ in range(40):
-        await asyncio.sleep(1.5)
-        st = (await rpc(s, "getSignatureStatuses", [[sig]]))["value"][0]
+    wire = base64.b64encode(bytes(signed)).decode()
+    sig = await rpc(s, "sendTransaction", [wire, {"encoding": "base64", "skipPreflight": True, "maxRetries": 0}])
+    # Re-send the same signed transaction every 2 s until it lands or its blockhash expires (~60-90 s). Sending once
+    # and waiting let a buy drop on a busy network (2026-11-20, Singularity): resending is the standard way to land.
+    for i in range(45):
+        await asyncio.sleep(2)
+        st = (await rpc(s, "getSignatureStatuses", [[sig], {"searchTransactionHistory": True}]))["value"][0]
         if st and st.get("err"): raise RuntimeError(f"tx failed: {st['err']}")
         if st and st.get("confirmationStatus") in ("confirmed", "finalized"): return sig
+        try: await rpc(s, "sendTransaction", [wire, {"encoding": "base64", "skipPreflight": True, "maxRetries": 0}])
+        except Exception: pass   # "already processed" or a blip: keep checking
     raise RuntimeError(f"tx not confirmed: {sig}")
 
 
@@ -543,7 +548,7 @@ async def buy(s, mint, info, metrics, pair, signal="momentum"):
         except Exception as e:
             # "not confirmed" can still land a few seconds later: if we hold the coin now, track it rather than lose it
             await asyncio.sleep(8)
-            if not await token_balance(s, mint): raise
+            if not await token_balance(s, mint): raise RuntimeError(f"buy didn't go through, no SOL spent ({e})")
             log("buy landed despite:", e)
         await asyncio.sleep(2)
         amount = await token_balance(s, mint) or amount

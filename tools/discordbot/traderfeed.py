@@ -44,7 +44,7 @@ async def loop(bot, discord):
 
 def card(discord, e):
     tag = "🧪 PAPER" if e.get("mode") != "live" else "💸 LIVE"
-    name = f"{e.get('name', '?')} (${e.get('sym', '?')})"
+    name = f"{e['name']} (${e.get('sym', '?')})" if e.get("name") else f"${e.get('sym', '?')}"
     if e["kind"] == "buy":
         m = e.get("metrics") or {}
         em = discord.Embed(color=0x5865F2, title=f"{tag} · Bought {name}", url=e.get("url"),
@@ -62,7 +62,9 @@ def card(discord, e):
         em = discord.Embed(color=0x23A55A if up else 0xDA373C, title=f"{tag} · Sold {name}: {e['pnl_pct']:+.1f}%", url=e.get("url"),
                            description=f"{e['sol_in']} → **{e['sol_out']} SOL** ({e['pnl_sol']:+.4f}) after {e['held_min']} min\nWhy: {e['reason']}")
     else:
-        em = discord.Embed(color=0xE67E22, title=f"{tag} · Problem with {name}", description=str(e.get("error"))[:1000])
+        err = str(e.get("error"))
+        title = f"{tag} · Buy of {name} didn't go through" if "no SOL spent" in err else f"{tag} · Problem with {name}"
+        em = discord.Embed(color=0xE67E22, title=title, description=err[:1000])
     if e.get("sig"): em.add_field(name="Transaction", value=f"[Solscan](https://solscan.io/tx/{e['sig']})")
     em.timestamp = __import__("datetime").datetime.fromtimestamp(e["t"], __import__("datetime").timezone.utc)
     return em
