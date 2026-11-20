@@ -50,7 +50,8 @@ def card(discord, e):
         em = discord.Embed(color=0x5865F2, title=f"{tag} · Bought {name}", url=e.get("url"),
                            description=f"**{e['sol']} SOL** in · mcap ${m.get('mcap', 0):,} · liquidity ${m.get('liq', 0):,}\n"
                                        f"5 min: {m.get('m5')}% · vol ${m.get('vol5', 0):,} · {m.get('buys5')} buys / {m.get('sells5')} sells\n"
-                                       f"Signal: **{e.get('signal', 'momentum')}**")
+                                       + (f"{m['holders']:,} holders · top 10 wallets hold {m['top10']}%\n" if m.get("holders") and m.get("top10") is not None else "")
+                                       + f"Signal: **{e.get('signal', 'momentum')}**")
     elif e["kind"] == "partial":
         em = discord.Embed(color=0x2ECC71, title=f"{tag} · Took profit on {name}", url=e.get("url"),
                            description=f"Sold **{e['sold_pct']}%** for {e['sol_out']} SOL ({e['reason']}).\n"
