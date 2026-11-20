@@ -12,7 +12,8 @@ The move is measured from the price when it was scanned, or at its last alert, s
 same size. At most one alert per thing per COOLDOWN. The card says the move, from what to what, since when, and how
 it's done since its first scan in the server (scans.json). Polymarket cards aren't watched.
 
-Staff: /pricealerts on|off (per server, on by default) and /pricealerts list. State: pricealerts.json.
+Each alert has a "Stop tracking" button (staff): it drops that coin or stock from the watch list until someone scans it
+again. Staff: /pricealerts on|off (per server, on by default) and /pricealerts list. State: pricealerts.json.
 Information only, not financial advice.
 """
 import asyncio, json, os, time
@@ -91,6 +92,13 @@ async def _price(session, key):
         p.get("url"), lambda x: dex.usd(x, small=True)
 
 
+def stop_view(discord, k):
+    """The alert's button. Its custom_id carries the watch key, so it still works after a restart (see register)."""
+    v = discord.ui.View(timeout=None)
+    v.add_item(discord.ui.Button(label="Stop tracking", emoji="🔕", style=discord.ButtonStyle.secondary, custom_id=f"pa:stop:{k}"[:100]))
+    return v
+
+
 async def check(bot, discord):
     d = _load()
     now = int(time.time())
@@ -124,7 +132,7 @@ async def check(bot, discord):
             em.set_footer(text=f"Alerts at ±{threshold:.0f}% · {'smaller coin' if threshold == SMALL else 'stock or major coin'} · "
                                f"watched for {WATCH_DAYS} days after a scan · not financial advice")
             try:
-                await ch.send(embed=em, allowed_mentions=discord.AllowedMentions.none())
+                await ch.send(embed=em, view=stop_view(discord, k), allowed_mentions=discord.AllowedMentions.none())
             except Exception as e:
                 print(f"[pricealerts] send {key}: {e}"); continue
             w.update({"base": price, "base_t": now, "last_alert": now})
@@ -148,6 +156,30 @@ def register(bot, discord, app_commands):
         await orig()
         asyncio.create_task(loop(bot, discord))
     bot.setup_hook = hook
+
+    class StopButton(discord.ui.DynamicItem[discord.ui.Button], template=r"pa:stop:(?P<k>.+)"):
+        def __init__(self, k):
+            super().__init__(discord.ui.Button(label="Stop tracking", emoji="🔕", style=discord.ButtonStyle.secondary, custom_id=f"pa:stop:{k}"[:100]))
+            self.k = k
+
+        @classmethod
+        async def from_custom_id(cls, interaction, item, match):
+            return cls(match["k"])
+
+        async def callback(self, interaction: discord.Interaction):
+            if not bot.is_staff(interaction.user):
+                return await interaction.response.send_message("Only staff can stop price alerts.", ephemeral=True)
+            gone = _load()["watch"].pop(self.k, None) is not None
+            if gone: _save()
+            em = interaction.message.embeds[0] if interaction.message.embeds else None
+            if em:
+                em.set_footer(text=f"🔕 No longer tracked (stopped by {interaction.user.display_name}). Scan it again to restart alerts.")
+            v = discord.ui.View(); v.add_item(discord.ui.Button(label="Stopped", emoji="🔕", disabled=True, custom_id=f"pa:done:{self.k}"[:100]))
+            await interaction.response.edit_message(embed=em, view=v)
+            if not gone: await interaction.followup.send("It wasn't being tracked any more.", ephemeral=True)
+            await bot.audit(f"🔕 {interaction.user} stopped price alerts for `{self.k.split(':', 1)[1]}`")
+
+    bot.add_dynamic_items(StopButton)
 
     @bot.tree.command(name="pricealerts", description="Staff: price alerts for scanned stocks and coins (on, off, list)")
     @app_commands.default_permissions(manage_guild=True)
