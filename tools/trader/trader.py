@@ -597,10 +597,22 @@ async def manage(s):
                 await asyncio.sleep(0.3); continue
             tbs = x.get("trail_by_step")   # trailing stop size by profit steps taken: tight early, loose for the last runner
             trail = tbs[min(step, len(tbs) - 1)] if tbs else (x.get("runner_trail_pct", x["trail_pct"]) if runner else x["trail_pct"])
-            if not runner and pct <= -x["stop_loss_pct"]: reason = f"stop loss {pct:+.0f}%"
+            if pos.get("moonbag"):   # the part kept after a profitable exit: a free ride with a wide stop
+                if pct <= pos["peak_pct"] - x.get("moonbag_trail_pct", 50): reason = f"moonbag trailing stop {pct:+.0f}% (peak {pos['peak_pct']:+.0f}%)"
+                elif held >= x.get("moonbag_max_hold_min", 240): reason = f"moonbag time limit {pct:+.0f}%"
+            elif not runner and pct <= -x["stop_loss_pct"]: reason = f"stop loss {pct:+.0f}%"
             elif runner and pct <= x.get("runner_floor_pct", 0): reason = f"back to entry {pct:+.0f}% (profit already taken)"
             elif (runner or pos["peak_pct"] >= x["trail_after_pct"]) and pct <= pos["peak_pct"] - trail: reason = f"trailing stop {pct:+.0f}% (peak {pos['peak_pct']:+.0f}%)"
             elif held >= (x.get("runner_max_hold_min", x["max_hold_min"]) if runner else x["max_hold_min"]): reason = f"time limit {pct:+.0f}%"
+        bag = x.get("moonbag_pct", 0) / 100
+        if reason and bag > 0 and not pos.get("moonbag") and q and q != RETRY and pct > 0 \
+                and (reason.startswith("trailing stop") or reason.startswith("time limit")):
+            # a profitable exit: sell all but a moonbag, which then rides (H4CK 2026-11-20: sold +3%, went on to +236%)
+            try:
+                await sell(s, mint, reason + f": sold {100 - bag * 100:.0f}%, {bag * 100:.0f}% kept as a moonbag", 1 - bag)
+                if mint in state["positions"]: state["positions"][mint]["moonbag"] = True
+            except Exception as e: log("sell failed", mint, e); event(kind="error", mint=mint, sym=pos["sym"], error=str(e)[:200])
+            await asyncio.sleep(0.3); continue
         if reason:
             try: await sell(s, mint, reason)
             except Exception as e: log("sell failed", mint, e); event(kind="error", mint=mint, sym=pos["sym"], error=str(e)[:200])

@@ -28,6 +28,8 @@ from the Discord bot, so the wallet key never sits in Yoink.
   in 1 h on 5-min volume at least 1.5x the hour's average, more buys than sells. Same rug and holder checks. Its own
   exits (`breakout.exits`: take profit +20% then +50%, stop -10%, trail 8%, 2 h limit), at most `max_open` (2) at a
   time, and a coin can be bought again after `cooldown_h` (12). Shown as "breakout" in /trader.
+- Moonbag: when a trailing stop or time limit would close a trade in profit, `moonbag_pct` (25) of it is kept and rides
+  with no stop loss, only a `moonbag_trail_pct` (50) point trailing stop and a `moonbag_max_hold_min` (240) limit.
 - Smart money (`smartmoney.py`): follows every trade on new coins for 30 min, keeps a profit-and-loss per wallet, and
   ranks wallets that keep closing coins in profit (5+ coins, +1 SOL, 55%+ wins, not a sniper bot, not the creator).
   When 2+ smart wallets (or one wallet in `follow_wallets`) buy a coin within 10 min, it's a candidate if it passes
