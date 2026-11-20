@@ -208,7 +208,8 @@ async def jup_quote(s, inp, out, amount):
 
 
 async def dex_pairs(s, mints):
-    """{mint: (pair, minutes since it graduated or None)} for up to 30 mints. The pair is the one with real liquidity:
+    """{mint: (pair, minutes since that pool was created, or None while it's still on the pump.fun bonding curve)} for up
+    to 30 mints. The pair is the one with real liquidity:
     after a pump.fun coin graduates, DexScreener can still show its dead bonding-curve pair with stale numbers
     (2026-11-19: two rugs bought on "+1,300%" bonding-curve data while the new pool was already dumping)."""
     pairs = {}
@@ -222,8 +223,11 @@ async def dex_pairs(s, mints):
         live = [p for p in ps if ((p.get("liquidity") or {}).get("usd") or 0) > 0 and p.get("priceUsd")]
         if not live: continue
         best = max(live, key=lambda p: (p.get("liquidity") or {}).get("usd") or 0)
-        pools = [p.get("pairCreatedAt") for p in ps if p.get("dexId") != "pumpfun" and p.get("pairCreatedAt")]
-        grad = (now - min(pools) / 1000) / 60 if pools and any(p.get("dexId") == "pumpfun" for p in ps) else None
+        # Age of the pool we'd trade. It used to be counted only for coins whose pump.fun bonding-curve pair DexScreener
+        # still listed, so other launchpads (Meteora DBC) and coins whose curve pair had dropped off passed as "not just
+        # graduated": 11 trades on 2026-11-19/20 lost 93-100% within minutes, all in pools 2-14 minutes old.
+        grad = None if best.get("dexId") == "pumpfun" else \
+            ((now - best["pairCreatedAt"] / 1000) / 60 if best.get("pairCreatedAt") else 0.0)   # no date: treat as brand new
         out[m] = (best, grad)
     return out
 
