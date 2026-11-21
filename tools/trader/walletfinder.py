@@ -24,8 +24,8 @@ EVENTS = os.path.join(HERE, "events.jsonl")
 SOL = "So11111111111111111111111111111111111111112"
 UA = {"User-Agent": "Mozilla/5.0 (compatible; crispy-trader/1.0)", "Accept": "application/json"}
 
-MIN_AGE_H, MAX_AGE_D, MIN_FDV, MAX_FDV, MIN_RESERVE = 6, 7, 1_000_000, 50_000_000, 50_000
-MAX_RUNNERS, MAX_SIG_PAGES = 15, 150
+MIN_AGE_H, MAX_AGE_D, MIN_FDV, MAX_FDV, MIN_RESERVE = 6, 7, 500_000, 50_000_000, 40_000
+MAX_RUNNERS, MAX_SIG_PAGES = 15, 400
 EARLY_TX, MIN_BUY_SOL = 1500, 0.1
 MAX_CANDIDATES, VET_PAGES = 50, 3
 VET_MIN_COINS, VET_MIN_WINRATE, VET_MIN_PNL, VET_MIN_HOLD_S, VET_MAX_COINS_DAY, VET_MIN_AVG_BUY = 8, 0.5, 1.0, 120, 100, 0.2
@@ -81,12 +81,26 @@ def wallet_history(w, pages):
 def log(*a): print(time.strftime("%H:%M:%S"), *a, flush=True)
 
 
+def sol_change(tx, w):
+    """The wallet's SOL change in a transaction, counting wrapped SOL too: most traders pay and get paid in WSOL, whose
+    token account is separate from the wallet, so its native balance change alone shows ~0 (2026-11-21 first run)."""
+    native = sum(a.get("nativeBalanceChange", 0) for a in tx.get("accountData") or [] if a.get("account") == w) / 1e9
+    wsol = 0.0
+    for t in tx.get("tokenTransfers") or []:
+        if t.get("mint") != SOL: continue
+        amt = float(t.get("tokenAmount") or 0)
+        if t.get("toUserAccount") == w: wsol += amt
+        if t.get("fromUserAccount") == w: wsol -= amt
+    return native + wsol
+
+
 # ------------------------------------------------------------------------------------------------ 1. runners
 def runners(limit):
     now, found = time.time(), {}
     for path, params in (("trending_pools", "duration=24h"), ("trending_pools", "duration=6h"), ("trending_pools", "duration=1h"),
-                         ("dexes/pumpswap/pools", "sort=h24_volume_usd_desc"), ("dexes/pumpswap/pools", "sort=h24_tx_count_desc")):
-        for page in (1, 2, 3):
+                         ("dexes/pumpswap/pools", "sort=h24_volume_usd_desc"), ("dexes/pumpswap/pools", "sort=h24_tx_count_desc"),
+                         ("pools", "sort=h24_volume_usd_desc")):
+        for page in (1, 2, 3, 4, 5):
             calls["gecko"] += 1
             try: d = http(f"https://api.geckoterminal.com/api/v2/networks/solana/{path}?page={page}&{params}")
             except Exception as e: log("gecko:", e); break
@@ -123,7 +137,7 @@ def early_buyers(r):
             w = tx.get("feePayer")
             got = any(t.get("mint") == r["mint"] and t.get("toUserAccount") == w for t in tx.get("tokenTransfers") or [])
             if not w or not got: continue
-            spent = -sum(a.get("nativeBalanceChange", 0) for a in tx.get("accountData") or [] if a.get("account") == w) / 1e9
+            spent = -sol_change(tx, w)
             if spent >= MIN_BUY_SOL: buyers[w] = buyers.get(w, 0) + spent
     return buyers
 
@@ -134,7 +148,7 @@ def vet(w):
     if len(txs) < 5: return None
     coins = {}
     for t in sorted(txs, key=lambda t: t["timestamp"]):
-        sol = sum(a.get("nativeBalanceChange", 0) for a in t.get("accountData") or [] if a.get("account") == w) / 1e9
+        sol = sol_change(t, w)
         for tr in t.get("tokenTransfers") or []:
             m = tr.get("mint")
             if not m or m == SOL: continue
