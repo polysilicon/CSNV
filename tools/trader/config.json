@@ -73,5 +73,11 @@
     9000
   ],
   "exit_priority_max_sol": 0.002,
-  "priority_fee_max_sol": 0.0005
+  "priority_fee_max_sol": 0.0005,
+  "paper_strategies": [
+    "breakout"
+  ],
+  "confirm_entries": true,
+  "confirm_max_drop_pct": 3,
+  "bounce_max_m5_pct": 25
 }

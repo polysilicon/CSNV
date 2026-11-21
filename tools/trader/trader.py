@@ -86,7 +86,7 @@ def save():
 
 
 def event(**e):
-    e["t"] = int(time.time()); e["mode"] = cfg.get("mode", "paper")
+    e["t"] = int(time.time()); e.setdefault("mode", cfg.get("mode", "paper"))
     with open(EVENTS, "a") as f: f.write(json.dumps(e) + "\n")
 
 
@@ -267,7 +267,8 @@ def passes(p, age_min):
               "5m volume": vol5 >= c["min_vol_m5_usd"], "buy/sell": buys >= c["min_buy_sell_ratio_m5"] * max(sells, 1),
               "5m move": m5 is not None and c["min_change_m5_pct"] <= m5 <= c["max_change_m5_pct"],
               "1h move": h1 is None or h1 <= c["max_change_h1_pct"], "age": c["min_age_min"] <= age_min <= c["max_age_min"],
-              "fake pool": pool_sane(liq, mcap, vol5)}
+              "fake pool": pool_sane(liq, mcap, vol5),
+              "dead-cat bounce": not (m5 is not None and h1 is not None and h1 < 0 and m5 > c.get("bounce_max_m5_pct", 25))}
     for k, ok in checks.items():
         if not ok: _fails[k] = _fails.get(k, 0) + 1
     return all(checks.values()), {"liq": round(liq), "mcap": round(mcap), "vol5": round(vol5), "buys5": buys, "sells5": sells, "m5": m5, "h1": h1}
@@ -529,6 +530,7 @@ def size_for(mint, signal):
 
 async def buy(s, mint, info, metrics, pair, signal="momentum"):
     size, signal = size_for(mint, signal)
+    real = live() and strategy(signal) not in cfg.get("paper_strategies", [])   # e.g. breakouts stay on paper while live
     lamports = int(size * LAMPORTS)
     metrics = dict(metrics)
     ok, why = await rug_ok(s, mint, pair, metrics)
@@ -544,7 +546,7 @@ async def buy(s, mint, info, metrics, pair, signal="momentum"):
     q = await jup_quote(s, SOL_MINT, mint, lamports)
     if not q or q == RETRY: return
     sig, amount, cost = None, int(q["outAmount"]), size
-    if live():
+    if real:
         before = await sol_balance(s)
         if before < size + 0.01:
             log("buy skipped: wallet low on SOL"); return
@@ -563,12 +565,12 @@ async def buy(s, mint, info, metrics, pair, signal="momentum"):
     if info.get("creator") and helius_key():
         try: creator_bal = await holder_balance(s, info["creator"], mint)
         except Exception as e: log("creator balance:", e)
-    state["positions"][mint] = {"sym": info["sym"], "name": info["name"], "amount": amount, "amount0": amount, "realized": 0.0, "steps": 0, "cost_sol": cost, "mode": "live" if live() else "paper", "creator": info.get("creator"), "creator_bal": creator_bal,
+    state["positions"][mint] = {"sym": info["sym"], "name": info["name"], "amount": amount, "amount0": amount, "realized": 0.0, "steps": 0, "cost_sol": cost, "mode": "live" if real else "paper", "creator": info.get("creator"), "creator_bal": creator_bal,
                                 "t": int(time.time()), "peak_pct": 0.0, "liq0": metrics["liq"], "url": pair.get("url"), "sig": sig}
     state["positions"][mint]["signal"] = signal
     if signal != "breakout": state["traded"] = (state["traded"] + [mint])[-3000:]
     save()
-    event(kind="buy", mint=mint, sym=info["sym"], name=info["name"], sol=size, metrics=metrics, url=pair.get("url"), sig=sig, signal=signal)
+    event(kind="buy", mode="live" if real else "paper", mint=mint, sym=info["sym"], name=info["name"], sol=size, metrics=metrics, url=pair.get("url"), sig=sig, signal=signal)
     log("BUY", info["sym"], mint, metrics)
 
 
@@ -623,7 +625,7 @@ async def sell(s, mint, reason, fraction=1.0):
         pos["amount"] -= amt; pos["realized"] = pos.get("realized", 0.0) + out_sol - fee; pos["steps"] = pos.get("steps", 0) + 1
         pos["sell_fails"] = 0
         save()
-        event(kind="partial", mint=mint, sym=pos["sym"], name=pos["name"], sold_pct=round(fraction * 100), sol_out=round(out_sol, 6),
+        event(kind="partial", mode=pos.get("mode", "paper"), mint=mint, sym=pos["sym"], name=pos["name"], sold_pct=round(fraction * 100), sol_out=round(out_sol, 6),
               realized=round(pos["realized"], 6), cost=pos["cost_sol"], reason=reason, held_min=round((time.time() - pos["t"]) / 60, 1), url=pos.get("url"), sig=sig)
         log("PARTIAL", pos["sym"], reason, f"{out_sol:.4f} SOL")
         return True
@@ -631,13 +633,14 @@ async def sell(s, mint, reason, fraction=1.0):
     pnl = total_out - pos["cost_sol"] - fee   # live: cost and out are measured wallet changes, fees included
     state["positions"].pop(mint)
     if state["day"] != today(): state["day"], state["day_pnl"] = today(), 0.0
-    state["day_pnl"] += pnl; state["total_pnl"] += pnl
-    state["wins" if pnl > 0 else "losses"] += 1
+    if not live() or pos.get("mode") == "live":   # while live, paper-only strategies don't count toward money stats
+        state["day_pnl"] += pnl; state["total_pnl"] += pnl
+        state["wins" if pnl > 0 else "losses"] += 1
     state["closed"] = (state["closed"] + [{"mint": mint, "sym": pos["sym"], "cost": pos["cost_sol"], "out": total_out, "pnl": pnl,
                                             "reason": reason, "steps": pos.get("steps", 0), "t0": pos["t"], "t1": int(time.time()),
                                             "signal": strategy(pos.get("signal")), "mode": pos.get("mode", "paper")}])[-500:]
     save()
-    event(kind="sell", mint=mint, sym=pos["sym"], name=pos["name"], sol_in=pos["cost_sol"], sol_out=round(total_out, 6), pnl_sol=round(pnl, 6),
+    event(kind="sell", mode=pos.get("mode", "paper"), mint=mint, sym=pos["sym"], name=pos["name"], sol_in=pos["cost_sol"], sol_out=round(total_out, 6), pnl_sol=round(pnl, 6),
           pnl_pct=round(pnl / pos["cost_sol"] * 100, 1), reason=reason, steps=pos.get("steps", 0),
           held_min=round((time.time() - pos["t"]) / 60, 1), url=pos.get("url"), sig=sig)
     log("SELL", pos["sym"], reason, f"{pnl:+.4f} SOL")
@@ -724,6 +727,7 @@ async def scan(s):
     window = [m for m, i in state["seen"].items() if cfg["min_age_min"] * 60 <= now - i["t"] <= cfg["max_age_min"] * 60 and m not in state["traded"]]
     _fails.clear()
     listed = 0
+    for m in [m for m, v in state.get("pending", {}).items() if now - v["t"] > 300]: state["pending"].pop(m)
     for i in range(0, len(window), 30):
         if len(state["positions"]) >= cfg["max_open"]: return
         try: pairs = await dex_pairs(s, window[i:i + 30])
@@ -732,6 +736,17 @@ async def scan(s):
         for mint, p in pairs.items():
             if len(state["positions"]) >= cfg["max_open"] or mint in state["positions"]: continue
             ok, metrics = passes(p, (now - state["seen"][mint]["t"]) / 60)
+            pend = state.setdefault("pending", {})
+            if not ok: pend.pop(mint, None); continue
+            if cfg.get("confirm_entries", True):
+                # Buy on the second look, not the first: a coin must still pass a scan later and not have dropped more
+                # than confirm_max_drop_pct (2026-11-20: CAP lost 30% 18 s after a first-look buy at the top of a spike).
+                price, prev = float(p.get("priceUsd") or 0), pend.get(mint)
+                if prev is None or now - prev["t"] > 240: pend[mint] = {"t": now, "price": price}; continue
+                if now - prev["t"] < 40: continue
+                if not price or price < prev["price"] * (1 - cfg.get("confirm_max_drop_pct", 3) / 100):
+                    pend.pop(mint, None); _fails["fell before confirming"] = _fails.get("fell before confirming", 0) + 1; continue
+                pend.pop(mint, None)
             if ok:
                 try: await buy(s, mint, state["seen"][mint], metrics, p)
                 except Exception as e: log("buy failed", mint, e); event(kind="error", mint=mint, sym=state["seen"][mint]["sym"], error=str(e)[:200])

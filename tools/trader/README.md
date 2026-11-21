@@ -32,6 +32,10 @@ from the Discord bot, so the wallet key never sits in Yoink.
   `sell_slippage_bps` (10%); an emptied token account is closed to get its ~0.002 SOL rent back; a coin with no
   route at all is written off so it doesn't hold a slot; a failed sell retries with a pause and DMs only now and then;
   positions opened on paper stay paper after switching to live.
+- Entries are confirmed (`confirm_entries`): a momentum coin is bought only if it still passes on the next scan, ~1 min
+  later, and hasn't dropped more than `confirm_max_drop_pct` (3%). A 5-min jump over `bounce_max_m5_pct` (25%) while the
+  coin is down on the hour is skipped as a dead-cat bounce. Strategies in `paper_strategies` (breakout) trade on paper
+  even in live mode and don't count toward the money stats or the daily stop.
 - Moonbag: when a trailing stop or time limit would close a trade in profit, `moonbag_pct` (25) of it is kept and rides
   with no stop loss, only a `moonbag_trail_pct` (50) point trailing stop and a `moonbag_max_hold_min` (240) limit.
 - Smart money (`smartmoney.py`): follows every trade on new coins for 30 min, keeps a profit-and-loss per wallet, and
