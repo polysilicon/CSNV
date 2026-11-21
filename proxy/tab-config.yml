@@ -177,6 +177,7 @@ placeholder-output-replacements:
     "factions": "Factions"
     "skyblock": "Skyblock"
     "multiverse": "Multiverse"
+    "crispymon": "Crispymon"
 
 # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Conditional-placeholders
 conditions:

@@ -7,7 +7,7 @@
   (was `pvp`). Renamed on 2026-10-28; DeluxeHub's selector, CrispyLobby (`proxy:`), TAB's `%server%` names and
   CrispyTags' combat-tag lookup were updated with them.
 - Global player list: everyone on Lobby, Factions, Anarchy, Vanilla, Skyblock and Multiverse shows in one tab list,
-  sorted by server then name, tagged `[Server] name`, with live ping. Crispymon is not on the proxy.
+  sorted by server then name, tagged `[Server] name`, with live ping. Crispymon joined the proxy on 2026-11-21 (below).
 - Header "CrispyAnarchy / N players online"; footer with your server, ping and the Discord link.
 - Server names are prettified with `placeholder-output-replacements` for `%server%`.
 - DeluxeHub's own tablist on the Lobby is switched off (`tablist.enabled: false`) so it doesn't overwrite TAB.
@@ -98,3 +98,16 @@ minutes online in total (counted by the proxy, any server) the lobby pays over R
 `vote bonus <inviter> 10 0 ...` (CrispyLobby 1.24.0); an inviter's 3rd paid invite runs `vote grant <inviter> tag:recruiter`.
 The inviter must have played here (any server's usercache.json); two players can't name each other. Data:
 `plugins/crispytags/invites.json` on the proxy. No IP checks: every player arrives from the tunnel's address.
+
+## Crispymon on the proxy (2026-11-21, CrispyTags 1.13.0)
+- Crispymon (Cobblemon modpack, Fabric 1.21.1, AMP `Crispymon01`, port 25571) is the proxy server `crispymon`, with
+  FabricProxy-Lite 2.10.1 (Modrinth, sha512 checked; same config and secret as the other Fabric servers),
+  `online-mode=false`, `enforce-secure-profile=false`. Direct connections to 25571 are refused ("requires Velocity").
+- Forced hosts: `crispymon.org` and `www.crispymon.org` -> `crispymon` only. The LocalXpose tunnel for public port 12673
+  (VM 102) must point at the proxy (192.168.1.37:25565), like 13134.
+- Why routing: the modpack changes vanilla blocks' IDs (Amendments/Supplementaries add states to vanilla blocks), so
+  a modpack client sees garbled blocks on the vanilla servers, and a vanilla client can't join Crispymon.
+  `Modpack.java`: ChannelCap spots a modpack client by its `cobblemon:` channel registrations (and stops trimming its
+  channels); it is sent to `crispymon` whichever address it used (via crispyanarchy.net it lands in the lobby for a
+  moment, then is moved), can't `/server` to the other servers, and vanilla clients can't go to `crispymon`.
+- TAB: `crispymon` -> "Crispymon" in the global list and its sort order.

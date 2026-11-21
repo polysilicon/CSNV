@@ -51,6 +51,10 @@ final class ChannelCap {
         final Set<String> kept = new HashSet<>();
         int dropped;
         boolean logged;
+        /** 1.13.0: a Crispymon modpack client (it registers Cobblemon's channels). Its registrations pass untrimmed (the
+         *  Crispymon server needs every mod channel) and Modpack routes it to crispymon. The lobby no longer kicks big
+         *  channel lists itself either (paper.disableChannelLimit, 2026-11-21). */
+        volatile boolean modpack;
 
         @Override public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
             if (msg instanceof PluginMessagePacket p && ("minecraft:register".equals(p.getChannel()) || "REGISTER".equals(p.getChannel()))) {
@@ -58,6 +62,12 @@ final class ChannelCap {
                 String all = buf.toString(buf.readerIndex(), buf.readableBytes(), StandardCharsets.UTF_8);
                 List<String> chans = new ArrayList<>();
                 for (String c : all.split("\0")) if (!c.isEmpty()) chans.add(c);
+                if (!modpack && chans.stream().anyMatch(c -> c.startsWith(Modpack.MARKER))) {
+                    modpack = true;
+                    plugin.log.info("[modpack] {} is a Crispymon modpack client ({} channels)", ctx.channel().remoteAddress(), chans.size());
+                    Modpack.detected(plugin, ctx.channel());
+                }
+                if (modpack) { super.channelRead(ctx, msg); return; }
                 chans.sort((a, b) -> Integer.compare(rank(a), rank(b)));   // stable: keeps the client's order within a rank
                 List<String> pass = new ArrayList<>();
                 for (String c : chans) {
