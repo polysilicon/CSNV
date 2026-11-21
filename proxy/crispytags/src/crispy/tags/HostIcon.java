@@ -16,15 +16,24 @@ import java.util.Locale;
  */
 final class HostIcon {
     final CrispyTags plugin;
+    final Path path = Path.of(System.getProperty("crispytags.hostIcon", "plugins/crispytags/crispymon-icon.png"));   // relative to the proxy
     Favicon icon;
-    HostIcon(CrispyTags plugin) {
-        this.plugin = plugin;
-        Path p = Path.of(System.getProperty("crispytags.hostIcon", "plugins/crispytags/crispymon-icon.png"));   // relative to the proxy
-        try { if (Files.exists(p)) icon = Favicon.create(p); else plugin.log.warn("[icon] no {}", p); }
-        catch (Exception e) { plugin.log.warn("[icon] couldn't load {}: {}", p, e.toString()); }
+    long mtime = -1;
+    HostIcon(CrispyTags plugin) { this.plugin = plugin; load(); }
+
+    /** (Re)load the icon when the file changes (1.13.3), so swapping it needs no proxy restart. */
+    void load() {
+        try {
+            long m = Files.exists(path) ? Files.getLastModifiedTime(path).toMillis() : -1;
+            if (m == mtime) return;
+            mtime = m;
+            icon = m < 0 ? null : Favicon.create(path);
+            if (m < 0) plugin.log.warn("[icon] no {}", path);
+        } catch (Exception e) { plugin.log.warn("[icon] couldn't load {}: {}", path, e.toString()); }
     }
 
     @Subscribe(order = PostOrder.LAST) public void onPing(ProxyPingEvent e) {
+        load();
         if (icon == null) return;
         String host = e.getConnection().getVirtualHost().map(a -> a.getHostString().toLowerCase(Locale.ROOT)).orElse("");
         if (host.equals("crispymon.org") || host.equals("www.crispymon.org"))

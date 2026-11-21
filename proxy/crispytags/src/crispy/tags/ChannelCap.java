@@ -42,6 +42,19 @@ final class ChannelCap {
         });
     }
 
+    static final byte[] MARK = Modpack.MARKER.getBytes(StandardCharsets.UTF_8);
+
+    /** Whether the bytes of buf (left unread) contain needle. */
+    static boolean contains(ByteBuf buf, byte[] needle) {
+        int start = buf.readerIndex(), end = buf.writerIndex() - needle.length;
+        outer:
+        for (int i = start; i <= end; i++) {
+            for (int j = 0; j < needle.length; j++) if (buf.getByte(i + j) != needle[j]) continue outer;
+            return true;
+        }
+        return false;
+    }
+
     static int rank(String c) {
         for (int i = 0; i < FIRST.length; i++) if (c.startsWith(FIRST[i])) return i;
         return FIRST.length;
@@ -57,6 +70,14 @@ final class ChannelCap {
         volatile boolean modpack;
 
         @Override public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            // 1.13.3: recognise the modpack in ANY channel message, whatever its format. Fabric announces its channels
+            // with "c:register" (version, phase, list) during setup, not only "minecraft:register", and 1.13.0 only
+            // looked at the latter, so a modpack joining crispyanarchy.net stayed in the lobby (2026-11-21 test).
+            if (!modpack && msg instanceof PluginMessagePacket pm && contains(pm.content(), MARK)) {
+                modpack = true;
+                plugin.log.info("[modpack] {} is a Crispymon modpack client (seen in {})", ctx.channel().remoteAddress(), pm.getChannel());
+                Modpack.detected(plugin, ctx.channel());
+            }
             if (msg instanceof PluginMessagePacket p && ("minecraft:register".equals(p.getChannel()) || "REGISTER".equals(p.getChannel()))) {
                 ByteBuf buf = p.content();
                 String all = buf.toString(buf.readerIndex(), buf.readableBytes(), StandardCharsets.UTF_8);
