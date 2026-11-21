@@ -42,6 +42,7 @@ final class ChannelCap {
         });
     }
 
+    static final boolean DEBUG = "true".equals(System.getProperty("crispytags.channelDebug"));   // -Dcrispytags.channelDebug=true to log
     static final byte[] MARK = Modpack.MARKER.getBytes(StandardCharsets.UTF_8);
 
     /** Whether the bytes of buf (left unread) contain needle. */
@@ -68,11 +69,17 @@ final class ChannelCap {
          *  Crispymon server needs every mod channel) and Modpack routes it to crispymon. The lobby no longer kicks big
          *  channel lists itself either (paper.disableChannelLimit, 2026-11-21). */
         volatile boolean modpack;
+        int debugSeen;
 
         @Override public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
             // 1.13.3: recognise the modpack in ANY channel message, whatever its format. Fabric announces its channels
             // with "c:register" (version, phase, list) during setup, not only "minecraft:register", and 1.13.0 only
             // looked at the latter, so a modpack joining crispyanarchy.net stayed in the lobby (2026-11-21 test).
+            if (DEBUG && msg instanceof PluginMessagePacket dm && debugSeen++ < 30) {   // 1.13.4 temporary: what clients send
+                ByteBuf c = dm.content();
+                String txt = c.toString(c.readerIndex(), Math.min(c.readableBytes(), 200), StandardCharsets.UTF_8).replaceAll("[^ -~]", ".");
+                plugin.log.info("[chan-debug] {} {} ({} bytes): {}", ctx.channel().remoteAddress(), dm.getChannel(), c.readableBytes(), txt);
+            }
             if (!modpack && msg instanceof PluginMessagePacket pm && contains(pm.content(), MARK)) {
                 modpack = true;
                 plugin.log.info("[modpack] {} is a Crispymon modpack client (seen in {})", ctx.channel().remoteAddress(), pm.getChannel());
