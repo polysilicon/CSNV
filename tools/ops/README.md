@@ -11,3 +11,10 @@ Authorization header for api.cloudflare.com, so `/pages/assets/*` calls (which u
 the AMP host via `gx.py`; the deployment itself (`/deployments`, normal API token) runs from the session. The BlueMap
 part of the manifest can be rebuilt without the host: list `/AMPStorage/bluemap/deploy`, download each file from
 `https://crispy-map.pages.dev/map/<path>` (`index.html` from `/map/`) and hash with `marketing/bluemap/hashes.js`.
+
+## Instance settings to keep
+
+- **CrispyLobby01** Java options (AMP > Configuration > Java > Custom options, node `MinecraftModule.Java.CustomOpts`):
+  `-Dpaper.disableChannelLimit=true`. Without it Paper kicks heavily modded clients on login ("Invalid custom payload",
+  `Couldn't handle custom payload on channel minecraft:register`: too many plugin channels registered). It hit 7 new
+  players between 2026-10-17 and 2026-11-11, most retrying 2-4 times before giving up. Set 2026-11-21.
