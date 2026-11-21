@@ -33,7 +33,7 @@
   "rug_liquidity_drop_pct": 50,
   "exit_check_sec": 5,
   "fee_pct": 1.0,
-  "slippage_bps": 300,
+  "slippage_bps": 500,
   "priority_fee_sol": 0.0005,
   "track_wallets": false,
   "smart_entries": true,
