@@ -91,6 +91,12 @@ votes:
       icon: NETHERITE_SWORD
       instance: CrispyPvP01
       commands: []
+    crispymon:
+      label: "&c&lCrispymon"
+      icon: TURTLE_EGG
+      instance: Crispymon01
+      reward: ["&e300 PokeDollars", "&b3 Ultra Balls", "&a1 Exp. Candy M"]   # 7 sites a day = 2,100 PokeDollars
+      commands: ["balance %player% add 300", "give %player% cobblemon:ultra_ball 3", "give %player% cobblemon:exp_candy_m 1"]
 
 # Cosmetics, bought with vote points in /cosmetics (or /vote -> Cosmetics); one tag and one name colour at a time.
 # Both show on every server and in cross-chat/Discord: the chat-tags plugin/mod on each server reads the lobby's
@@ -216,6 +222,18 @@ cosmetics:
     r_maxed: {display: "&#FF6F00&l[&#FF7900&lM&#FF8400&la&#FF8E00&lx&#FF9800&le&#FFA200&ld&#FFAD00&l &#FFB700&lO&#FFC100&lu&#FFCC00&lt&#FFD600&l]", icon: ENCHANTED_GOLDEN_APPLE, score: sb.skills_min, min: 62500, rare: true}
     blackmarket: {display: "&#9A9A9A&l[&#919191&lB&#898989&ll&#808080&la&#787878&lc&#6F6F6F&lk&#676767&l &#5E5E5E&lM&#565656&la&#4D4D4D&lr&#454545&lk&#3C3C3C&le&#343434&lt&#2B2B2B&l]", icon: WITHER_ROSE, advancement: "anarchy:black_market", note: "A rumour says someone deals in the shadows of the market", rare: true}
     # ---- end of rare
+    # ---- Crispymon: earned only by playing Crispymon (its Cobblemon-modpack advancements; the Crispymon page)
+    c_trainer:   {display: "&c[Trainer]", icon: RED_WOOL, advancement: "cobblemon:catching/first_catch", note: "Catch your first Cobblemon"}
+    c_rider:     {display: "&6[Rider]", icon: SADDLE, advancement: "cobblemon:catching/ride_pokemon", note: "Ride one of your Cobblemon"}
+    c_fullteam:  {display: "&a[Full Team]", icon: TOTEM_OF_UNDYING, advancement: "cobblemon:catching/full_party", note: "Fill your party (six Cobblemon)"}
+    c_evolver:   {display: "&d[Evolver]", icon: EXPERIENCE_BOTTLE, advancement: "cobblemon:catching/first_evolution", note: "Evolve a Cobblemon"}
+    c_trader:    {display: "&e[Trader]", icon: EMERALD, advancement: "cobblemon:catching/trade_pokemon", note: "Trade a Cobblemon with another player"}
+    c_fossil:    {display: "&7[Fossil Hunter]", icon: BONE_BLOCK, advancement: "cobblemon:geological/resurrect_pokemon", note: "Revive a fossil"}
+    c_mega:      {display: "&5&l[Mega]", icon: AMETHYST_CLUSTER, advancement: "mega_showdown:mega_showdown/mega/mega_evolve", note: "Mega Evolve in battle"}
+    c_cards:     {display: "&b[Card Collector]", icon: PAPER, advancement: "cobbletcg:open_100", note: "Open 100 card packs"}
+    c_berries:   {display: "&2[Berry Master]", icon: SWEET_BERRIES, advancement: "cobblemon:agriculture/obtain_all_berries", note: "Collect every kind of berry"}
+    c_alpha:     {display: "&#FF4D4D&l[Alpha]", icon: NETHERITE_SWORD, advancement: "cobblemon:catching/first_alpha_catch", note: "Catch an alpha", rare: true}
+    c_shiny:     {display: "&#FFF1A8&l[&#FFE45C&lS&#FFD700&lh&#FFC800&li&#FFB800&ln&#FFA800&ly&#FF9900&l]", icon: GLOWSTONE_DUST, advancement: "cobblemon:catching/first_shiny_catch", note: "Catch a shiny", rare: true}
   # "joined-before" tags: a player qualifies if the earliest date found here (relative to network-stats.instances-dir)
   # is before that date: advancement timestamps, the firstPlayed time Paper left in old player files, and those files'
   # last-saved date. extra: names that always qualify.
@@ -227,7 +245,8 @@ cosmetics:
   earned-sources:
     advancements: [CrispyAnarchy01/Minecraft/world/players/advancements, Vanilla01/Minecraft/world/players/advancements,
                    Falling01/Minecraft/world/players/advancements, Factions01/Minecraft/world/advancements,
-                   CrispyLobby01/Minecraft/world/players/advancements]
+                   CrispyLobby01/Minecraft/world/players/advancements,
+                   Crispymon01/Minecraft/world/advancements]
   # code: colour codes (&b, &c&l, &#ff8800), a per-letter sequence ("&c|&6|&e"), rainbow, a fade ("&#ff0000>&#0000ff",
   # any number of stops, formats from the first) or flag bands ("&#ff0000/&#ffffff/&#0000ff"). See ColorCodes.java.
   name-colors:
@@ -304,6 +323,9 @@ cosmetics:
     # ---- rare (Skyblock)
     r_celestial: {name: "Celestial", code: "&#ffffff>&#8ec5ff>&#b388ff", cost: 0, icon: END_CRYSTAL, score: sb.island_lvl, min: 100, rare: true}
     # ---- end of rare
+    # ---- Crispymon: earned only by playing Crispymon
+    c_apricorn:  {name: Apricorn, code: "&#FF3B3B>&#FFFFFF", icon: RED_DYE, advancement: "cobblemon:catching/craft_apricorn_balls", note: "Craft an Apricorn ball"}
+    c_shinygold: {name: Shiny Gold, code: "&#FFE45C>&#FF9900", icon: GOLD_INGOT, advancement: "cobblemon:catching/first_shiny_catch", note: "Catch a shiny", rare: true}
   # chat colours: the sender's message text, on every server (chatcolors.json; same codes as name colours).
   # Messages with a link keep their own formatting.
   chat-colors:
@@ -375,6 +397,9 @@ cosmetics:
     # ---- rare (Skyblock)
     r_phoenix: {name: "Phoenix", code: "&#ff4500>&#ffd700>&#ff4500", cost: 0, icon: BLAZE_POWDER, score: sb.skills_min, min: 62500, rare: true}
     # ---- end of rare
+    # ---- Crispymon: earned only by playing Crispymon
+    c_berry:     {name: Berry, code: "&#E05AE0", icon: SWEET_BERRIES, advancement: "cobblemon:agriculture/obtain_berry", note: "Pick a berry"}
+    c_megaglow:  {name: Mega Glow, code: "&#FF7AE0>&#7A5CFF", icon: AMETHYST_SHARD, advancement: "mega_showdown:mega_showdown/mega/mega_evolve", note: "Mega Evolve in battle"}
 
 # First join to the network (never on the lobby, no earlier trace on Anarchy/Vanilla): a title, a "Start here" menu of
 # the worlds, a welcome line in the lobby (and over the Discord bridge, so people say hi), and one nudge after

@@ -75,7 +75,10 @@ final class Modpack {
 
     @Subscribe public void onDisconnect(com.velocitypowered.api.event.connection.DisconnectEvent e) {
         java.util.UUID id = e.getPlayer().getUniqueId();
-        if (candidate.remove(id) && !confirmed.contains(id)) {
+        // 1.13.6: per connection, not per account. The same account can come back on a vanilla client, and keeping it
+        // "confirmed" sent it straight to crispymon ("network protocol error", 2026-11-21).
+        boolean wasConfirmed = confirmed.remove(id);
+        if (candidate.remove(id) && !wasConfirmed) {
             notPack.add(id);
             plugin.log.info("[modpack] {} never got into {}: not the modpack, won't move them again", e.getPlayer().getUsername(), SERVER);
         }

@@ -77,15 +77,22 @@ public class Votes implements Listener {
         boolean event() { return score != null && score.startsWith(EVENT_SCORE); }
         /** Earned on Skyblock: one of its advancements, or a Skyblock score (sb.sk_<skill> XP, sb.island_lvl). */
         boolean skyblock() { return (advancement != null && advancement.startsWith(SKYBLOCK_ADV)) || (score != null && score.startsWith(SKYBLOCK_SCORE)); }
-        String page() { return event() ? "event" : skyblock() ? "skyblock" : granted ? "special" : score != null ? "mtags" : earned() ? "etags" : "tags"; }
+        /** Earned on Crispymon (1.25.0): a Cobblemon-modpack advancement (cobblemon:, mega_showdown:, cobbletcg:...). */
+        boolean crispymon() { return isCrispymon(advancement); }
+        String page() { return event() ? "event" : skyblock() ? "skyblock" : crispymon() ? "crispymon" : granted ? "special" : score != null ? "mtags" : earned() ? "etags" : "tags"; }
     }
     /** A name or chat colour: bought with vote points, or (score set) earned, free once that score reaches min (1 if
      *  unset): pvp.hw<n> = a Halloween colour (Halloween page), sb.* = a Skyblock colour (Skyblock page). */
-    record NameColor(String id, String name, String code, int cost, Material icon, String score, long min, boolean rare) {
+    record NameColor(String id, String name, String code, int cost, Material icon, String score, long min, boolean rare, String advancement, String note) {
         boolean event() { return score != null && score.startsWith(EVENT_SCORE); }
         boolean skyblock() { return score != null && score.startsWith(SKYBLOCK_SCORE); }
-        boolean earned() { return score != null; }
+        /** 1.25.0: unlocked by a Crispymon advancement (advancement + note in the config). */
+        boolean crispymon() { return isCrispymon(advancement); }
+        boolean earned() { return score != null || advancement != null; }
     }
+    /** Advancement namespaces of the Crispymon modpack: tags and colours earned with them get the Crispymon page. */
+    static final List<String> CRISPYMON_ADV = List.of("cobblemon:", "mega_showdown:", "cobbletcg:", "legendarymonuments:", "cobblemonextrastructures:");
+    static boolean isCrispymon(String adv) { return adv != null && CRISPYMON_ADV.stream().anyMatch(adv::startsWith); }
     static final String SKYBLOCK_ADV = "crispy_skyblock:", SKYBLOCK_SCORE = "sb.";
     /** Halloween cosmetics: unlocked one at a time by completing Haunted Night in the Multiverse (score pvp.hw<n>). */
     static final String EVENT_SCORE = "pvp.hw";
@@ -208,7 +215,8 @@ public class Votes implements Listener {
     void loadColors(ConfigurationSection cs, Map<String, NameColor> into) {
         if (cs != null) for (String k : cs.getKeys(false))
             into.put(k, new NameColor(k, cs.getString(k + ".name", k), cs.getString(k + ".code", "&f"), cs.getInt(k + ".cost", 5),
-                    mat(cs.getString(k + ".icon"), Material.WHITE_DYE), cs.getString(k + ".score"), cs.getLong(k + ".min"), cs.getBoolean(k + ".rare")));
+                    mat(cs.getString(k + ".icon"), Material.WHITE_DYE), cs.getString(k + ".score"), cs.getLong(k + ".min"), cs.getBoolean(k + ".rare"),
+                    cs.getString(k + ".advancement"), cs.getString(k + ".note")));
     }
     static Material mat(String s, Material def) { Material m = s == null ? null : Material.matchMaterial(s); return m == null ? def : m; }
 
@@ -620,6 +628,7 @@ public class Votes implements Listener {
         List<String> l = new ArrayList<>();
         if (t.skyblock()) { l.add(t.advancement() != null ? "&7Skyblock advancement: &f" + (t.note() != null ? t.note() : t.advancement())
                 : skyNeed(t.score(), t.min())); }
+        else if (t.crispymon()) { l.add("&7Crispymon advancement: &f" + (t.note() != null ? t.note() : t.advancement())); l.add("&8Earned on Crispymon (the Cobblemon modpack server)"); }
         else if (t.event()) { l.add("&7Survive &6Haunted Night &7in the Multiverse"); l.add("&8Each completed run unlocks one random"); l.add("&8Halloween cosmetic you don't have yet"); }
         else if (t.score() != null && !t.score().startsWith("pvp.mx")) l.add("&7" + (t.note() != null ? t.note() : t.score() + " " + t.min()));
         else if (t.score() != null) { l.add("&7Master &f" + (t.note() != null ? t.note() : t.id()) + " &7in the Multiverse"); l.add("&8" + String.format("%,d", t.min()) + " mastery XP with that character"); }
@@ -712,7 +721,10 @@ public class Votes implements Listener {
     static final String[][] COLOR_PAGES = {{"classic", "&f&lClassic", "WHITE_DYE"}, {"fades", "&d&lFades", "AMETHYST_SHARD"}, {"flags", "&b&lFlags", "WHITE_BANNER"}};
 
     // ------------------------------------------------------------------ Halloween (event) cosmetics
-    boolean eventUnlocked(Viewer p, NameColor c) { return c.earned() && plugin.stats.mastery(p.getName(), c.score()) >= Math.max(1, c.min()); }
+    boolean eventUnlocked(Viewer p, NameColor c) {
+        if (c.advancement() != null) return advancements(p).contains(c.advancement());
+        return c.score() != null && plugin.stats.mastery(p.getName(), c.score()) >= Math.max(1, c.min());
+    }
 
     @EventHandler public void onDrag(InventoryDragEvent e) { if (e.getInventory().getHolder() instanceof Menu) e.setCancelled(true); }
 
@@ -799,6 +811,7 @@ public class Votes implements Listener {
             out.add(new String[]{"mtags", "NETHER_STAR", "&e&lMultiverse", "Master characters and set", "records in the Multiverse."});
         } else out.add(new String[]{type.equals("color") ? "colors:classic" : "chatcolors:classic", "EMERALD", "&f&lShop", "Buy them with", "vote points."});
         out.add(new String[]{"skyblock:" + type, "OAK_SAPLING", "&a&lSkyblock", "Skyblock advancements, skill", "levels and your island level."});
+        out.add(new String[]{"crispymon:" + type, "TURTLE_EGG", "&c&lCrispymon", "Cobblemon advancements on", "Crispymon (the modpack server)."});
         out.add(new String[]{"event:" + type, "JACK_O_LANTERN", "&6&lEvents", "Halloween: survive Haunted", "Night in the Multiverse."});
         out.removeIf(s -> group(s[0]).isEmpty());
         return out;
@@ -846,6 +859,11 @@ public class Votes implements Listener {
         switch (head) {
             case "colors" -> colors.values().stream().filter(x -> !x.earned() && (tail.isEmpty() || ColorCodes.page(x.code()).equals(tail))).forEach(x -> out.add("color:" + x.id()));
             case "chatcolors" -> chatColors.values().stream().filter(x -> !x.earned() && (tail.isEmpty() || ColorCodes.page(x.code()).equals(tail))).forEach(x -> out.add("chat:" + x.id()));
+            case "crispymon" -> {
+                if (tail.isEmpty() || tail.equals("tag")) tags.values().stream().filter(t -> t.page().equals("crispymon")).forEach(t -> out.add("tag:" + t.id()));
+                if (tail.isEmpty() || tail.equals("color")) colors.values().stream().filter(NameColor::crispymon).forEach(x -> out.add("color:" + x.id()));
+                if (tail.isEmpty() || tail.equals("chat")) chatColors.values().stream().filter(NameColor::crispymon).forEach(x -> out.add("chat:" + x.id()));
+            }
             case "skyblock", "event" -> {
                 boolean sky = head.equals("skyblock");
                 if (tail.isEmpty() || tail.equals("tag")) tags.values().stream().filter(t -> t.page().equals(head)).forEach(t -> out.add("tag:" + t.id()));
@@ -861,7 +879,7 @@ public class Votes implements Listener {
         if (kind.equals("tags") || kind.equals("etags") || kind.equals("mtags")) return "cat:tag";
         if (kind.startsWith("colors:")) return "cat:color";
         if (kind.startsWith("chatcolors:")) return "cat:chat";
-        if (kind.startsWith("skyblock:") || kind.startsWith("event:")) return "cat:" + kind.substring(kind.indexOf(':') + 1);
+        if (kind.startsWith("skyblock:") || kind.startsWith("event:") || kind.startsWith("crispymon:")) return "cat:" + kind.substring(kind.indexOf(':') + 1);
         return "cosmetics";
     }
 
@@ -935,7 +953,8 @@ public class Votes implements Listener {
         String use = chat ? "use" : "use";
         if (c.earned()) {
             boolean open = own || eventUnlocked(p, c);
-            lore.add(c.skyblock() ? skyNeed(c.score(), c.min()) : "&7Survive &6Haunted Night &7in the Multiverse");
+            lore.add(c.skyblock() ? skyNeed(c.score(), c.min()) : c.crispymon() ? "&7Crispymon advancement: &f" + (c.note() != null ? c.note() : c.advancement())
+                    : "&7Survive &6Haunted Night &7in the Multiverse");
             if (!open && c.skyblock()) lore.add(plugin.stats.loaded() ? "&cYou: &f" + skyHave(c.score(), plugin.stats.mastery(p.getName(), c.score())) : "&8Stats are loading");
             state = on ? 0 : open ? 1 : 3;
             lore.add("");
@@ -988,7 +1007,7 @@ public class Votes implements Listener {
 
     /** One earned source for one kind: skyblock:<type> or event:<type>. */
     List<Entry> groupEntries(Viewer p, PD pd, String g) {
-        Set<String> advs = g.startsWith("skyblock") ? advancements(p) : Set.of();
+        Set<String> advs = g.startsWith("skyblock") || g.startsWith("crispymon") ? advancements(p) : Set.of();
         List<Entry> es = new ArrayList<>();
         for (String k : group(g)) es.add(entry(p, pd, k, advs));
         return es;
@@ -1013,6 +1032,14 @@ public class Votes implements Listener {
         listPage(p, "skyblock:" + type, "&a&lSkyblock " + typeWord(type), item(Material.OAK_SAPLING, "&a&lSkyblock " + typeWord(type), List.of("&7Earned on &bCrispy Skyblock&7: advancements,",
                 "&7skill levels (/skills) and your island's", "&7level (/island level).", "", "&8Yours to keep. Progress shows up here", "&8within a few minutes."), false),
                 groupEntries(p, pd, "skyblock:" + type), m -> offFor(m, pd, type));
+    }
+
+    void openCrispymon(Viewer p, String type) {
+        PD pd = pd(p.getName());
+        listPage(p, "crispymon:" + type, "&c&lCrispymon " + typeWord(type), item(Material.TURTLE_EGG, "&c&lCrispymon " + typeWord(type), List.of(
+                "&7Earned on &cCrispymon&7, the Cobblemon modpack", "&7server (crispymon.org): catch, ride, evolve,", "&7battle and collect to unlock them.",
+                "", "&8Only from playing Crispymon. Yours to keep;", "&8progress shows up here within a minute."), false),
+                groupEntries(p, pd, "crispymon:" + type), m -> offFor(m, pd, type));
     }
 
     void openEvent(Viewer p, String type) {
@@ -1050,6 +1077,7 @@ public class Votes implements Listener {
             case "tags", "etags", "mtags" -> openTags(p, kind);
             case "event" -> openEvent(p, "tag");
             case "skyblock" -> openSkyblock(p, "tag");
+            case "crispymon" -> openCrispymon(p, "tag");
             case "special" -> openSpecial(p);
             case "owned" -> openOwned(p);
             case "colors" -> openColorMenu(p, false, "classic");
@@ -1057,6 +1085,7 @@ public class Votes implements Listener {
             default -> {
                 if (kind.startsWith("cat:")) openCategory(p, kind.substring(4));
                 else if (kind.startsWith("skyblock:")) openSkyblock(p, kind.substring(9));
+                else if (kind.startsWith("crispymon:")) openCrispymon(p, kind.substring(10));
                 else if (kind.startsWith("event:")) openEvent(p, kind.substring(6));
                 else if (kind.startsWith("colors:")) openColorMenu(p, false, kind.substring(7));
                 else if (kind.startsWith("chatcolors:")) openColorMenu(p, true, kind.substring(11));
@@ -1173,6 +1202,7 @@ public class Votes implements Listener {
             boolean using = id.equals(isChat ? pd.chat : pd.color);
             if (!using && !eventUnlocked(p, ev)) {
                 msg(p, colored(ev.name(), ev.code()) + (ev.skyblock() ? " &7is locked: " + skyNeed(ev.score(), ev.min()).replace("&7", "&f") + "&7."
+                        : ev.crispymon() ? " &7is locked: on &cCrispymon&7, " + (ev.note() != null ? ev.note() : ev.advancement()) + "&7."
                         : " &7is locked: survive &6Haunted Night &7in the Multiverse to win Halloween cosmetics."));
                 p.playSound(Sound.ENTITY_VILLAGER_NO, 0.7f, 1f);
                 return;
