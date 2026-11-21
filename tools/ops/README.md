@@ -18,3 +18,8 @@ part of the manifest can be rebuilt without the host: list `/AMPStorage/bluemap/
   `-Dpaper.disableChannelLimit=true`. Without it Paper kicks heavily modded clients on login ("Invalid custom payload",
   `Couldn't handle custom payload on channel minecraft:register`: too many plugin channels registered). It hit 7 new
   players between 2026-10-17 and 2026-11-11, most retrying 2-4 times before giving up. Set 2026-11-21.
+- **test01** (Velocity) Java options: `-Dvelocity.max-plugin-message-payload-size.serverbound=2097152
+  -Dvelocity.max-clientside-plugin-channels=4096 -Dvelocity.max-known-packs=4096 -Dvelocity.packet-decode-logging=true`,
+  needed for Crispymon modpack clients (see proxy/README.md). Set 2026-11-21.
+- **Crispymon01**: `online-mode=false`, `enforce-secure-profile=false`, mods FabricProxy-Lite 2.10.1 and CrossStitch 0.1.6
+  (it's behind the proxy since 2026-11-21; the 12673 tunnel points at the proxy, 192.168.1.37:25565).

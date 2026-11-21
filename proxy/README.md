@@ -111,3 +111,13 @@ The inviter must have played here (any server's usercache.json); two players can
   channels); it is sent to `crispymon` whichever address it used (via crispyanarchy.net it lands in the lobby for a
   moment, then is moved), can't `/server` to the other servers, and vanilla clients can't go to `crispymon`.
 - TAB: `crispymon` -> "Crispymon" in the global list and its sort order.
+- What else it took (all found by testing with the real modpack on 2026-11-21):
+  - Velocity limits, raised with Java options on the proxy (AMP `test01`, `MinecraftModule.Java.CustomOpts`):
+    `-Dvelocity.max-plugin-message-payload-size.serverbound=2097152 -Dvelocity.max-clientside-plugin-channels=4096
+    -Dvelocity.max-known-packs=4096 -Dvelocity.packet-decode-logging=true` (the modpack lists far more data packs than
+    the default `max-known-packs` allows: "Error decoding KnownPacksPacket"). Decode logging can go once it's settled.
+  - CrossStitch 0.1.6 (Velocity team, Modrinth, sha512 checked) on Crispymon: wraps modded command argument types so
+    Velocity can read the command tree ("Error decoding AvailableCommandsPacket" right after "Loading terrain").
+  - CrispyTags 1.13.1: the first connection is never blocked (1.13.0 stopped modpack players joining crispymon.org,
+    because the modpack is only recognised after the first server is picked).
+- Result: lbxd joined Crispymon through crispymon.org at their saved position (progress intact).
