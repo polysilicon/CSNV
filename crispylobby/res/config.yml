@@ -230,7 +230,7 @@ cosmetics:
     c_trader:    {display: "&e[Trader]", icon: EMERALD, advancement: "cobblemon:catching/trade_pokemon", note: "Trade a Cobblemon with another player"}
     c_fossil:    {display: "&7[Fossil Hunter]", icon: BONE_BLOCK, advancement: "cobblemon:geological/resurrect_pokemon", note: "Revive a fossil"}
     c_mega:      {display: "&5&l[Mega]", icon: AMETHYST_CLUSTER, advancement: "mega_showdown:mega_showdown/mega/mega_evolve", note: "Mega Evolve in battle"}
-    c_cards:     {display: "&b[Card Collector]", icon: PAPER, advancement: "cobbletcg:open_100", note: "Open 100 card packs"}
+    c_cards:     {display: "&#FF3B3B&l[&#FF8A00&lD&#FFE600&le&#3BFF6A&lg&#00D1FF&le&#7A5CFF&ln&#FF4FD8&l]", icon: PAPER, advancement: "cobbletcg:open_100", note: "Open 100 card packs"}
     c_berries:   {display: "&2[Berry Master]", icon: SWEET_BERRIES, advancement: "cobblemon:agriculture/obtain_all_berries", note: "Collect every kind of berry"}
     c_alpha:     {display: "&#FF4D4D&l[Alpha]", icon: NETHERITE_SWORD, advancement: "cobblemon:catching/first_alpha_catch", note: "Catch an alpha", rare: true}
     c_shiny:     {display: "&#FFF1A8&l[&#FFE45C&lS&#FFD700&lh&#FFC800&li&#FFB800&ln&#FFA800&ly&#FF9900&l]", icon: GLOWSTONE_DUST, advancement: "cobblemon:catching/first_shiny_catch", note: "Catch a shiny", rare: true}
