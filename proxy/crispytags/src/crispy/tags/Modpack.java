@@ -64,16 +64,20 @@ final class Modpack {
         if (is(p)) plugin.proxy.getScheduler().buildTask(plugin, () -> { if (p.isActive()) reroute(p); }).delay(500, TimeUnit.MILLISECONDS).schedule();
     }
 
-    /** Keep each kind of client where it works. The first connection is let through (the modpack isn't recognised yet
-     *  for a moment; it's moved right after). */
+    /** Keep each kind of client where it works when they switch servers. */
     @Subscribe(order = PostOrder.EARLY) public void onPreConnect(ServerPreConnectEvent e) {
         Player p = e.getPlayer();
         String to = e.getOriginalServer().getServerInfo().getName();
         boolean toModpack = to.equalsIgnoreCase(SERVER);
+        // Only switches are checked. The first connection is always let through: the client's channels (how a modpack is
+        // recognised) arrive after the first server is picked, so a modpack player joining crispymon.org would look
+        // vanilla here and be stuck with no server (2026-11-21 first test). A vanilla client joining crispymon.org is
+        // turned away by Crispymon itself (missing mods); a modpack client landing in the lobby is moved by onPostConnect.
+        if (e.getPreviousServer() == null) return;
         if (toModpack && !is(p)) {
             e.setResult(ServerPreConnectEvent.ServerResult.denied());
             p.sendMessage(Component.text("Crispymon needs the Crispymon modpack (search \"Crispymon\" on CurseForge), then join crispymon.org.", NamedTextColor.RED));
-        } else if (!toModpack && is(p) && e.getPreviousServer() != null) {
+        } else if (!toModpack && is(p)) {
             e.setResult(ServerPreConnectEvent.ServerResult.denied());
             p.sendMessage(Component.text("The other Crispy servers are vanilla: blocks show up wrong with the modpack. Use a vanilla profile to play them.", NamedTextColor.RED));
         }
