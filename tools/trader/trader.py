@@ -304,12 +304,16 @@ async def rpc(s, method, params):
     return d["result"]
 
 
-async def swap(s, quote):
-    """Sign and send a Jupiter swap for this quote; return the signature once confirmed, else raise."""
+async def swap(s, quote, urgent=False):
+    """Sign and send a Jupiter swap for this quote; return the signature once confirmed, else raise. The priority fee
+    is Jupiter's live estimate: "veryHigh" for urgent exits (capped at exit_priority_max_sol), "high" otherwise
+    (capped at priority_fee_max_sol)."""
     from solders.transaction import VersionedTransaction
     kp = keypair()
     body = {"quoteResponse": quote, "userPublicKey": str(kp.pubkey()), "wrapAndUnwrapSol": True, "dynamicComputeUnitLimit": True,
-            "prioritizationFeeLamports": int(cfg["priority_fee_sol"] * LAMPORTS)}
+            "prioritizationFeeLamports": {"priorityLevelWithMaxLamports": {
+                "priorityLevel": "veryHigh" if urgent else "high", "global": False,
+                "maxLamports": int((cfg.get("exit_priority_max_sol", 0.002) if urgent else cfg.get("priority_fee_max_sol", 0.0005)) * LAMPORTS)}}}
     async with s.post(JUP + "/swap", json=body, headers=UA, timeout=aiohttp.ClientTimeout(total=20)) as r:
         if r.status != 200: raise RuntimeError(f"swap build {r.status}: {(await r.text())[:200]}")
         tx_b64 = (await r.json())["swapTransaction"]
@@ -579,7 +583,8 @@ async def sell(s, mint, reason, fraction=1.0):
     if amt <= 0 and partial: return False
     q = RETRY
     for _ in range(3):
-        try: q = await jup_quote(s, mint, SOL_MINT, amt, cfg.get("sell_slippage_bps", 1000)) if amt > 0 else None
+        bps = cfg.get("exit_slippage_steps", [2500])[0] if (real and not partial) else cfg.get("sell_slippage_bps", 1000)
+        try: q = await jup_quote(s, mint, SOL_MINT, amt, bps) if amt > 0 else None
         except Exception: q = RETRY
         if q != RETRY: break
         await asyncio.sleep(1)
@@ -588,7 +593,22 @@ async def sell(s, mint, reason, fraction=1.0):
     sig, fee = None, 0.0
     if real and q:
         before = await sol_balance(s)
-        sig = await swap(s, q)
+        # Exits (stop loss, creator sold, trailing stop...) must get out even in a crash: wide slippage, and on a
+        # slippage failure (Jupiter 6001) a fresh quote at once with wider still (WEZID 2026-11-21: one 10% try failed,
+        # the retry 14 s later sold at -98%). Partial take-profits aren't urgent: they keep the normal limit.
+        urgent = not partial
+        ladder = cfg.get("exit_slippage_steps", [2500, 5000, 9000]) if urgent else [cfg.get("sell_slippage_bps", 1000)]
+        for i, bps in enumerate(ladder):
+            if i:
+                q = await jup_quote(s, mint, SOL_MINT, amt, bps)
+                if not q or q == RETRY: continue
+            try:
+                sig = await swap(s, q, urgent=urgent); break
+            except RuntimeError as e:
+                if ("6001" in str(e) or "0x1771" in str(e)) and i < len(ladder) - 1:
+                    log("sell slippage, retrying wider", pos["sym"], bps); continue
+                raise
+        if sig is None: raise RuntimeError("sell: no fresh quote for a wider-slippage retry")
         if not partial:
             try:
                 await asyncio.sleep(2)
@@ -628,7 +648,7 @@ def sell_failed(mint, pos, e):
     """A sell that raised (a live swap that failed or didn't confirm): retry after a pause, and DM only the first
     failure and every 10th, not one every 5 seconds."""
     pos["sell_fails"] = pos.get("sell_fails", 0) + 1
-    pos["sell_retry_t"] = time.time() + min(60, 10 * pos["sell_fails"])
+    pos["sell_retry_t"] = time.time() + (2 if pos["sell_fails"] <= 3 else min(30, 5 * pos["sell_fails"]))
     log("sell failed", pos["sym"], mint, e)
     if pos["sell_fails"] == 1 or pos["sell_fails"] % 10 == 0:
         event(kind="error", mint=mint, sym=pos["sym"], error=f"sell failed ({pos['sell_fails']}x so far, retrying): {str(e)[:180]}")

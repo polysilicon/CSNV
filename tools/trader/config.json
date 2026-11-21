@@ -66,5 +66,12 @@
   },
   "moonbag_pct": 25,
   "moonbag_trail_pct": 50,
-  "moonbag_max_hold_min": 240
+  "moonbag_max_hold_min": 240,
+  "exit_slippage_steps": [
+    2500,
+    5000,
+    9000
+  ],
+  "exit_priority_max_sol": 0.002,
+  "priority_fee_max_sol": 0.0005
 }
