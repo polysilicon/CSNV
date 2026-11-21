@@ -68,12 +68,41 @@ final class Guide {
         if (!p.getInventory().add(b)) p.drop(b, false);
     }
 
-    /** Join: everyone gets one the first time (tag cs_guide on the player). */
+    /** Join: everyone gets one the first time (tag cs_guide on the player). A brand-new player also gets a welcome: a
+     *  title pointing at the portal to their island, a clickable [Get my island now], and the starter-island picker
+     *  opened for them a few seconds later. Before 2.18.4 new players only got the guide line, and two of three who
+     *  came in through skyblock.crispyanarchy.net left the hub within 20 s without finding their island. */
     static void onJoin(ServerPlayer p) {
         if (p.entityTags().contains(MARK)) return;
         p.addTag(MARK);
         give(p);
-        p.sendSystemMessage(t("📖 You've got a Skyblock Guide: right-click it any time for recipes, skills and tips.", ChatFormatting.GOLD));
+        p.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket(10, 90, 20));
+        p.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket(t("Welcome to Skyblock!", ChatFormatting.GOLD, ChatFormatting.BOLD)));
+        p.connection.send(new net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket(t("Your own island is waiting: walk through the portal ahead", ChatFormatting.YELLOW)));
+        p.sendSystemMessage(t("Welcome to Crispy Skyblock! ", ChatFormatting.GOLD, ChatFormatting.BOLD)
+                .append(t("You start on your own floating island. ", ChatFormatting.YELLOW))
+                .append(t("[Get my island now]", ChatFormatting.GREEN).withStyle(st -> st.withBold(true)
+                        .withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/island home"))
+                        .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(t("Pick your starter island", ChatFormatting.GRAY))))));
+        p.sendSystemMessage(t("📖 You've got a Skyblock Guide: right-click it any time for recipes, skills and tips. Esc opens the Island Menu.", ChatFormatting.GOLD));
+        OPEN_PICKER.put(p.getUUID(), (long) p.level().getServer().getTickCount() + PICKER_DELAY);
+    }
+
+    private static final Map<UUID, Long> OPEN_PICKER = new HashMap<>();
+    private static final int PICKER_DELAY = 100;   // ticks (5 s): time to read the title first
+
+    /** END_SERVER_TICK: open the starter-island picker for new players whose welcome delay is up (if still online). */
+    static void onTick(MinecraftServer server) {
+        if (OPEN_PICKER.isEmpty()) return;
+        long now = server.getTickCount();
+        OPEN_PICKER.entrySet().removeIf(e -> {
+            if (e.getValue() > now) return false;
+            ServerPlayer p = server.getPlayerList().getPlayer(e.getKey());
+            // only if they still have no island and haven't opened a menu themselves meanwhile
+            if (p != null && p.containerMenu == p.inventoryMenu && SkyblockMod.plot(server, p) <= 0)
+                server.getCommands().performPrefixedCommand(p.createCommandSourceStack(), "island home");
+            return true;
+        });
     }
 
     /** UseItemCallback: right-clicking the guide opens it instead of the knowledge book's own use. */

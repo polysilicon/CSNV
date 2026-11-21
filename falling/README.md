@@ -14,6 +14,10 @@ Skyblock on `Falling01` (Fabric 26.2, Velocity name `skyblock`, was `falling`). 
 
 ## How it plays
 
+- **First join (2.18.4).** A brand-new player gets a title ("Welcome to Skyblock!" / walk through the portal ahead), a
+  clickable **[Get my island now]** in chat, the Skyblock Guide, and 5 s later the starter-island picker opens for them
+  (only if they still have no island and no other menu open). Before this, 2 of 3 new players from
+  skyblock.crispyanarchy.net left the hub within 20 s without finding their island.
 - **Starter islands.** The first time a player goes to their island they pick one of seven from a chest menu. Each has
   its own chest, and the whole 128x128 plot gets the island's biome:
 

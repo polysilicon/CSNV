@@ -38,6 +38,7 @@ public class SkyblockMod implements ModInitializer {
     public void onInitialize() {
         ServerTickEvents.END_SERVER_TICK.register(IslandLevels::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Minions::onTick);
+        ServerTickEvents.END_SERVER_TICK.register(Guide::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Sidebar::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Portals::onTick);
         ServerTickEvents.END_SERVER_TICK.register(Skills::onTick);
