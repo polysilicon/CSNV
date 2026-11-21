@@ -108,8 +108,10 @@ async def ws_send(obj):
 
 
 async def watch_creators(keys):
-    """Follow these wallets' trades on PumpPortal (used for the creators of coins we hold)."""
-    if not pp_key() or not cfg.get("track_wallets", True): return   # wallet feeds need a funded PumpPortal key
+    """Follow these wallets' trades on PumpPortal: followed wallets, smart wallets and the creators of coins we hold.
+    Needs a funded PumpPortal key. Not tied to track_wallets: that switch is only the costly every-coin trade feed used
+    to score wallets; a few wallets' own trades cost almost nothing (and follow_wallets depends on this)."""
+    if not pp_key(): return
     keys = set(keys) - _accounts
     if keys:
         _accounts.update(keys)

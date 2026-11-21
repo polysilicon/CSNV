@@ -40,7 +40,10 @@
   "smart_min_wallets": 2,
   "smart_window_min": 10,
   "smart_max_mcap_usd": 1000000,
-  "follow_wallets": [],
+  "follow_wallets": [
+    "7FPqg7MpJwvGneBPvkBrCDjAvZhFnAvoiUw9LF91nsN",
+    "14Q6HJ1dmFn1LiyTzKooE7mmC25N5eEThRnyxQYXruez"
+  ],
   "min_lp_locked_pct": 30,
   "min_mcap_to_liq": 1.5,
   "max_vol5_to_liq": 6,
