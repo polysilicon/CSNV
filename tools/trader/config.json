@@ -79,5 +79,7 @@
   ],
   "confirm_entries": true,
   "confirm_max_drop_pct": 3,
-  "bounce_max_m5_pct": 25
+  "bounce_max_m5_pct": 25,
+  "pool_wake_pct": 4,
+  "pool_drain_pct": 25
 }

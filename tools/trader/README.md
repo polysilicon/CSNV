@@ -36,6 +36,9 @@ from the Discord bot, so the wallet key never sits in Yoink.
   later, and hasn't dropped more than `confirm_max_drop_pct` (3%). A 5-min jump over `bounce_max_m5_pct` (25%) while the
   coin is down on the hour is skipped as a dead-cat bounce. Strategies in `paper_strategies` (breakout) trade on paper
   even in live mode and don't count toward the money stats or the daily stop.
+- Fast exits (`pool_watch`): a Helius websocket follows the reserve accounts of each held coin's pool (PumpSwap and
+  others whose reserves the pool account owns). A move of `pool_wake_pct` (4%) or a drain of `pool_drain_pct` (25%) of
+  its SOL wakes the exit check at once instead of at the next 5 s check. Entry scans run in their own task.
 - Moonbag: when a trailing stop or time limit would close a trade in profit, `moonbag_pct` (25) of it is kept and rides
   with no stop loss, only a `moonbag_trail_pct` (50) point trailing stop and a `moonbag_max_hold_min` (240) limit.
 - Smart money (`smartmoney.py`): follows every trade on new coins for 30 min, keeps a profit-and-loss per wallet, and

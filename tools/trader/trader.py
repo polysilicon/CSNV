@@ -416,6 +416,78 @@ async def helius_watch():
         await asyncio.sleep(30)
 
 
+_wake = asyncio.Event()   # set by pool_watch when a held coin's pool moves: manage() runs at once
+
+
+async def pool_vaults(s, pos, mint):
+    """The pool's token and SOL reserve accounts (owned by the pool account itself, as on PumpSwap), or None."""
+    pool = pos.get("pool")
+    if not pool: return None
+    a = (await rpc(s, "getTokenAccountsByOwner", [pool, {"mint": mint}, {"encoding": "jsonParsed"}]))["value"]
+    b = (await rpc(s, "getTokenAccountsByOwner", [pool, {"mint": SOL_MINT}, {"encoding": "jsonParsed"}]))["value"]
+    return (a[0]["pubkey"], b[0]["pubkey"]) if a and b else None
+
+
+async def pool_watch():
+    """Fast exits: a Helius websocket subscription to the two reserve accounts of each held coin's pool. Any swap
+    changes them, so we see every price move within a block instead of at the next 5-second check. When the price has
+    moved pool_wake_pct since manage() last looked, or the SOL side drains pool_drain_pct at once (a rug in progress),
+    manage() is woken to quote and act right away. Pools whose reserves aren't owned by the pool account (some
+    Meteora / Raydium pools) keep the regular checks. Standard websockets, a few small messages per swap."""
+    import websockets
+    while True:
+        key = helius_key()
+        if not key: await asyncio.sleep(30); continue
+        try:
+            async with websockets.connect(f"wss://mainnet.helius-rpc.com/?api-key={key}", open_timeout=20, ping_interval=30, max_size=2**22) as ws, \
+                    aiohttp.ClientSession() as s:
+                subs, pending, rid, res = {}, {}, 0, {}   # (mint, side) -> sub id; req id -> (mint, side); mint -> reserves
+                bysub, tried = {}, {}
+                log("pool watch: connected")
+                while True:
+                    held = set(state["positions"])
+                    for mint in held:
+                        pos = state["positions"][mint]
+                        if (mint, "b") in subs or (mint, "b") in pending.values() or time.time() - tried.get(mint, 0) < 120: continue
+                        tried[mint] = time.time()
+                        try: v = pos.get("vaults") or await pool_vaults(s, pos, mint)
+                        except Exception as e: log("pool watch vaults:", type(e).__name__, e); continue
+                        if not v: continue
+                        pos["vaults"] = list(v)
+                        for side, acct in zip(("b", "q"), v):
+                            rid += 1; pending[rid] = (mint, side)
+                            await ws.send(json.dumps({"jsonrpc": "2.0", "id": rid, "method": "accountSubscribe",
+                                                      "params": [acct, {"encoding": "jsonParsed", "commitment": "processed"}]}))
+                    for k in [k for k in subs if k[0] not in held]:
+                        rid += 1; sid = subs.pop(k); bysub.pop(sid, None); res.pop(k[0], None)
+                        await ws.send(json.dumps({"jsonrpc": "2.0", "id": rid, "method": "accountUnsubscribe", "params": [sid]}))
+                    try: m = json.loads(await asyncio.wait_for(ws.recv(), 5))
+                    except asyncio.TimeoutError: continue
+                    if "id" in m and m["id"] in pending:
+                        k = pending.pop(m["id"])
+                        if "result" in m: subs[k] = m["result"]; bysub[m["result"]] = k
+                        continue
+                    if m.get("method") != "accountNotification": continue
+                    k = bysub.get(m["params"]["subscription"])
+                    if not k or k[0] not in state["positions"]: continue
+                    try: amt = float(m["params"]["result"]["value"]["data"]["parsed"]["info"]["tokenAmount"]["uiAmount"] or 0)
+                    except (KeyError, TypeError): continue
+                    r = res.setdefault(k[0], {})
+                    prev_q = r.get("q")
+                    r[k[1]] = amt
+                    if not r.get("b") or not r.get("q"): continue
+                    price = r["q"] / r["b"]
+                    last = r.setdefault("seen", price)
+                    drained = prev_q and k[1] == "q" and amt < prev_q * (1 - cfg.get("pool_drain_pct", 25) / 100)
+                    if drained or abs(price / last - 1) * 100 >= cfg.get("pool_wake_pct", 4):
+                        r["seen"] = price
+                        if drained: log("pool drain", state["positions"][k[0]]["sym"], f"{prev_q:.1f} -> {amt:.1f} SOL")
+                        _wake.set()
+        except Exception as e:
+            log("pool watch:", type(e).__name__, e)
+        await asyncio.sleep(10)
+
+
 async def gecko_launches():
     """Backup launch feed while PumpPortal is down: new Solana pools from GeckoTerminal (free, ~1 min behind).
     These are pools (graduated pump.fun coins and other DEX launches), not coins still on the bonding curve."""
@@ -565,7 +637,7 @@ async def buy(s, mint, info, metrics, pair, signal="momentum"):
     if info.get("creator") and helius_key():
         try: creator_bal = await holder_balance(s, info["creator"], mint)
         except Exception as e: log("creator balance:", e)
-    state["positions"][mint] = {"sym": info["sym"], "name": info["name"], "amount": amount, "amount0": amount, "realized": 0.0, "steps": 0, "cost_sol": cost, "mode": "live" if real else "paper", "creator": info.get("creator"), "creator_bal": creator_bal,
+    state["positions"][mint] = {"sym": info["sym"], "name": info["name"], "amount": amount, "amount0": amount, "realized": 0.0, "steps": 0, "cost_sol": cost, "pool": pair.get("pairAddress"), "dex": pair.get("dexId"), "mode": "live" if real else "paper", "creator": info.get("creator"), "creator_bal": creator_bal,
                                 "t": int(time.time()), "peak_pct": 0.0, "liq0": metrics["liq"], "url": pair.get("url"), "sig": sig}
     state["positions"][mint]["signal"] = signal
     if signal != "breakout": state["traded"] = (state["traded"] + [mint])[-3000:]
@@ -715,6 +787,11 @@ async def manage(s):
             except Exception as e: sell_failed(mint, pos, e)
         await asyncio.sleep(0.3)
     save()
+
+
+async def scan_safe(s):
+    try: await scan(s)
+    except Exception as e: log("scan:", type(e).__name__, e); traceback.print_exc()
 
 
 async def scan(s):
@@ -883,25 +960,32 @@ async def main():
     asyncio.create_task(feed())
     asyncio.create_task(helius_watch())
     asyncio.create_task(gecko_launches())
-    n = 0
+    asyncio.create_task(pool_watch())
+    n, last_scan, last_sync = 0, 0.0, 0.0
     async with aiohttp.ClientSession() as s:
         while True:
             try:
                 with open(CONFIG) as f: cfg.update(json.load(f))
                 take_inbox()
+                _wake.clear()   # before manage(): a pool move during it still wakes the next round
                 await manage(s)
-                per_min = max(1, 60 // cfg.get("exit_check_sec", 5))
-                if n % per_min == 0:
-                    await scan(s)   # entries once a minute, exits every few seconds
+                if time.time() - last_scan >= 60:
+                    last_scan = time.time()
+                    st = _bo.get("scan")   # entries once a minute in their own task, so exits never wait on a scan
+                    if st is None or st.done(): _bo["scan"] = asyncio.create_task(scan_safe(s))
                     t = _bo.get("task")
                     if t is None or t.done(): _bo["task"] = asyncio.create_task(scan_breakouts(s))   # own task: its waits don't hold up exits
                     old = sm.expired()
                     if old: await ws_send({"method": "unsubscribeTokenTrade", "keys": old})
-                if n % (per_min * 5) == 0: await sync_wallets()
+                if time.time() - last_sync >= 300: last_sync = time.time(); await sync_wallets()
             except Exception as e:
                 log("loop:", type(e).__name__, e); traceback.print_exc()
             n += 1
-            await asyncio.sleep(cfg.get("exit_check_sec", 5))
+            # sleep until the next regular check, or until pool_watch sees a held coin move (then at most once a second)
+            t0 = time.time()
+            try: await asyncio.wait_for(_wake.wait(), cfg.get("exit_check_sec", 5))
+            except asyncio.TimeoutError: pass
+            if time.time() - t0 < 1: await asyncio.sleep(1 - (time.time() - t0))
 
 
 if __name__ == "__main__":
