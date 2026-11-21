@@ -71,6 +71,7 @@ public class CrispyTags {
         proxy.getEventManager().register(this, new ChannelCap(this));  // 1.11.0: big mod packs no longer kicked by the lobby
         modpack = new Modpack(this);
         proxy.getEventManager().register(this, modpack);              // 1.13.0: Crispymon modpack clients go to crispymon
+        proxy.getEventManager().register(this, new HostIcon(this));   // 1.13.2: crispymon.org's server-list icon
         var cm = proxy.getCommandManager();
         // /vote and /cosmetics are no longer taken here (1.7.0): every server draws the lobby's menus itself
         // (crispy_chattags 1.7.0 on Fabric, CrispyChatTags 1.6.0 on Factions, CrispyLobby 1.16.0 RemoteMenus).

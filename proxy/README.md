@@ -121,3 +121,10 @@ The inviter must have played here (any server's usercache.json); two players can
   - CrispyTags 1.13.1: the first connection is never blocked (1.13.0 stopped modpack players joining crispymon.org,
     because the modpack is only recognised after the first server is picked).
 - Result: lbxd joined Crispymon through crispymon.org at their saved position (progress intact).
+- Server list for crispymon.org (2026-11-21): MiniMOTD `extra-configs/crispymon.conf` (copy: `proxy/minimotd-crispymon.conf`),
+  mapped in `plugin_settings.conf` for crispymon.org / www.crispymon.org on ports 12673, 25565 and 13134; it shows only
+  Crispymon's player count (`servers=[crispymon]`). Its icon is set by CrispyTags 1.13.2 (`HostIcon`, from
+  `plugins/crispytags/crispymon-icon.png`, Crispymon's own server icon), because MiniMOTD's `icon=random` draws from one
+  shared folder and a Crispymon icon there would show up on the network's list too. `minimotd reload` applies text edits.
+- Discord: Yoink bridges Crispymon chat like the other servers (`[bridge.crispymon]` in /opt/crispybot/config.toml,
+  RCON 25580, password from RCON_CRISPYMON), so its chat reaches Server-Status and the other servers' cross-chat.
