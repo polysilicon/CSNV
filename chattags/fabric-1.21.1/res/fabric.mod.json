@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "crispy_chattags",
+  "version": "1.10.0+mc1.21.1",
+  "name": "Crispy Chat Tags",
+  "description": "Crispymon build: vote-cosmetic tags, name and chat colours (from the lobby) in chat; /vote and /cosmetics; slur filter; combat state for the proxy.",
+  "environment": "server",
+  "mixins": [
+    "crispy_chattags.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "1.21.1"
+  },
+  "entrypoints": {
+    "main": [
+      "crispy.chattags.ChatTags"
+    ]
+  }
+}

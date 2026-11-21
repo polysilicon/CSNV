@@ -1,0 +1,20 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "crispy.chattags.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "server": [
+    "ChatNameMixin",
+    "CombatHitMixin",
+    "CombatTickMixin",
+    "CombatCommandMixin",
+    "CommandsMixin",
+    "CensorTextMixin",
+    "CensorAnvilMixin",
+    "CensorChatMixin",
+    "CensorLogMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
