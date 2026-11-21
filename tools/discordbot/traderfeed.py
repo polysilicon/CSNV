@@ -71,7 +71,7 @@ def card(discord, e):
                            description=f"{e['sol_in']} → **{e['sol_out']} SOL** ({e['pnl_sol']:+.4f}) after {e['held_min']} min\nWhy: {e['reason']}")
     else:
         err = str(e.get("error"))
-        title = f"{tag} · Buy of {name} didn't go through" if "no SOL spent" in err else f"{tag} · Problem with {name}"
+        title = f"{tag} · Buy of {name} didn't go through" if "buy didn't go through" in err else f"{tag} · Problem with {name}"
         em = discord.Embed(color=0xE67E22, title=title, description=err[:1000])
     if e.get("sig"): em.add_field(name="Transaction", value=f"[Solscan](https://solscan.io/tx/{e['sig']})")
     em.timestamp = __import__("datetime").datetime.fromtimestamp(e["t"], __import__("datetime").timezone.utc)

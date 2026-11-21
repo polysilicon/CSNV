@@ -628,7 +628,9 @@ async def buy(s, mint, info, metrics, pair, signal="momentum"):
         except Exception as e:
             # "not confirmed" can still land a few seconds later: if we hold the coin now, track it rather than lose it
             await asyncio.sleep(8)
-            if not await token_balance(s, mint): raise RuntimeError(f"buy didn't go through, no SOL spent ({e})")
+            if not await token_balance(s, mint):
+                why = "the price rose past the 3% slippage limit before it landed" if ("6001" in str(e) or "0x1771" in str(e)) else str(e)
+                raise RuntimeError(f"buy didn't go through, nothing bought; at most the network fee was paid ({why})")
             log("buy landed despite:", e)
         await asyncio.sleep(2)
         amount = await token_balance(s, mint) or amount
