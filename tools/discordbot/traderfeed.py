@@ -43,6 +43,14 @@ async def loop(bot, discord):
 
 
 def card(discord, e):
+    if e.get("kind") == "wallets":   # walletfinder.py's report: wallets worth following, for the owner to approve
+        rows = "\n".join(f"`{w['wallet']}`\n{w['wins']}/{w['coins']} wins · {w['pnl_sol']:+} SOL · holds ~{w['median_hold_s'] // 60} min · {w['coins_per_day']} coins/day"
+                         for w in e.get("passed", [])) or "No wallet passed this time."
+        em = discord.Embed(color=0x9B59B6, title="🔎 Wallet finder: wallets worth following",
+                           description=f"Checked early buyers of {e.get('runners')} recent runners, vetted {e.get('vetted')} wallets.\n\n{rows}"[:4000])
+        em.set_footer(text="Nothing is followed until you approve it · ask Claude to add the ones you want")
+        em.timestamp = __import__("datetime").datetime.fromtimestamp(e["t"], __import__("datetime").timezone.utc)
+        return em
     tag = "🧪 PAPER" if e.get("mode") != "live" else "💸 LIVE"
     name = f"{e['name']} (${e.get('sym', '?')})" if e.get("name") else f"${e.get('sym', '?')}"
     if e["kind"] == "buy":
